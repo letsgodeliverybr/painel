@@ -1088,3 +1088,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
     renderTabs();
     setTimeout(()=>{ goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido'); _carregarSaldoTopbar(); },150);
+  } catch(e){ sessionStorage.removeItem('lg_user'); }
+});
