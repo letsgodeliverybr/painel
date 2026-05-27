@@ -581,6 +581,9 @@ function renderPedidosLista(){
           <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')"
             style="background:none;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:12px;padding:0;"
             title="Editar pedido">✏️</button>
+          <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')"
+            style="background:none;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:12px;padding:0;"
+            title="Alocar motoboy">🛵</button>
           <span class="badge-wrapper" id="badge-wrapper-${p.id}">
             <span ${prontoStyle} class="p-badge b-${sk}"
               onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')"
@@ -739,7 +742,78 @@ async function salvarEdicaoPedido(pedidoId){
 }
 
 // ═══════════════════════════════════════════════
-// GEOCODING & DISTÂNCIA
+// ALOCAR MOTOBOY
+// ═══════════════════════════════════════════════
+async function abrirAlocarMotoboy(pedidoId){
+  const p = allPedidos.find(x=>x.id===pedidoId);
+  if(!p) return;
+
+  // Busca motoboys online em ordem alfabética
+  const motoboys = await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
+
+  let modal = document.getElementById('modal-alocar-motoboy');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-alocar-motoboy';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  const listaMotoboys = motoboys.length === 0
+    ? `<div style="text-align:center;padding:24px;color:var(--text3)">
+        <div style="font-size:32px;margin-bottom:8px">🛵</div>
+        Nenhum motoboy online no momento
+      </div>`
+    : motoboys.map(m => `
+      <div onclick="alocarMotoboy('${pedidoId}','${m.id}','${(m.nome||'').replace(/'/g,"\\'")}',this)"
+        style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);"
+        onmouseover="this.style.borderColor='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:36px;height:36px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🛵</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:var(--text);font-size:14px">${m.nome||'—'}</div>
+          <div style="font-size:11px;color:var(--text2)">${m.telefone||'Online'}</div>
+        </div>
+        <div style="background:#22c55e20;color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">Online</div>
+      </div>`).join('');
+
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">🛵 Alocar Motoboy — Pedido #${p.numero||pedidoId.substring(0,6)}</span>
+        <button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+          📍 ${p.endereco||'—'} &nbsp;·&nbsp; <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">
+          Motoboys disponíveis (${motoboys.length})
+        </div>
+        ${listaMotoboys}
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+async function alocarMotoboy(pedidoId, motoboyId, motoboyNome, el){
+  // Feedback visual
+  el.style.background = '#1A56DB20';
+  el.style.borderColor = 'var(--accent)';
+
+  await db('pedidos','PATCH',{
+    motoboy_id: motoboyId,
+    status: 'aceito',
+    status_detalhado: 'aceito',
+    aceito_em: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }, `?id=eq.${pedidoId}`);
+
+  await logAcao('alocar_motoboy',{pedido_id:pedidoId, motoboy_id:motoboyId, motoboy_nome:motoboyNome});
+  showNotif('✅ Motoboy alocado!', `${motoboyNome} foi designado para o pedido`);
+  document.getElementById('modal-alocar-motoboy')?.classList.remove('open');
+  await atualizarTudo();
+}
 // ═══════════════════════════════════════════════
 async function geocodificarEndereco(endereco){
   try{
