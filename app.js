@@ -577,14 +577,19 @@ function renderPedidosLista(){
     return`<div class="pedido-item${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
       <div class="pedido-item-top">
         <span class="pedido-num">#${p.numero||p.id?.substring(0,6)}</span>
-        <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-          <span ${prontoStyle} class="p-badge b-${sk}"
-            onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')"
-            style="cursor:pointer;user-select:none"
-            title="Clique para alterar status">
-            ${getStatusLabel(p)} ▾
+        <div style="display:flex;align-items:center;gap:5px">
+          <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')"
+            style="background:none;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:12px;padding:0;"
+            title="Editar pedido">✏️</button>
+          <span class="badge-wrapper" id="badge-wrapper-${p.id}">
+            <span ${prontoStyle} class="p-badge b-${sk}"
+              onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')"
+              style="cursor:pointer;user-select:none"
+              title="Clique para alterar status">
+              ${getStatusLabel(p)} ▾
+            </span>
           </span>
-        </span>
+        </div>
       </div>
       <div class="pedido-end">📍 ${p.endereco||'—'}</div>
       <div class="pedido-footer">
@@ -663,6 +668,75 @@ function selecionarPedido(id){
   }
 }
 function fecharDetalhe(){selectedPedidoId=null;renderPedidosLista();}
+
+// ═══════════════════════════════════════════════
+// EDITAR PEDIDO
+// ═══════════════════════════════════════════════
+function abrirEditarPedido(pedidoId){
+  const p = allPedidos.find(x=>x.id===pedidoId);
+  if(!p) return;
+  // Cria modal dinâmico
+  let modal = document.getElementById('modal-editar-pedido');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-editar-pedido';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span>
+        <button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="fi"><label>Cliente</label><input id="ep-cliente" value="${p.cliente||''}"/></div>
+          <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${p.telefone||''}"/></div>
+        </div>
+        <div class="form-row full"><div class="fi"><label>Endereço</label><input id="ep-endereco" value="${p.endereco||''}"/></div></div>
+        <div class="form-row">
+          <div class="fi"><label>Valor (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
+          <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
+        </div>
+        <div class="form-row">
+          <div class="fi"><label>Nº Pedido</label><input id="ep-numero" value="${p.numero||''}"/></div>
+          <div class="fi"><label>⭐ Pontos</label><input type="number" id="ep-pontos" value="${p.pontos||4}" min="1" max="20"/></div>
+        </div>
+        <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="ep-descricao">${p.descricao||''}</textarea></div></div>
+        <div id="ep-feedback" style="margin-top:4px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button>
+        <button class="btn-modal-primary" onclick="salvarEdicaoPedido('${pedidoId}')">💾 Salvar</button>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+async function salvarEdicaoPedido(pedidoId){
+  const fb = document.getElementById('ep-feedback');
+  if(fb) fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
+  const update = {
+    cliente: document.getElementById('ep-cliente')?.value||'',
+    telefone: document.getElementById('ep-telefone')?.value||'',
+    endereco: document.getElementById('ep-endereco')?.value||'',
+    valor: parseFloat(document.getElementById('ep-valor')?.value)||0,
+    taxa_entrega: parseFloat(document.getElementById('ep-taxa')?.value)||0,
+    numero: document.getElementById('ep-numero')?.value||'',
+    pontos: parseInt(document.getElementById('ep-pontos')?.value)||4,
+    descricao: document.getElementById('ep-descricao')?.value||'',
+    updated_at: new Date().toISOString(),
+  };
+  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  await logAcao('editar_pedido',{pedido_id:pedidoId});
+  if(fb) fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';
+  showNotif('✅ Pedido atualizado!','');
+  setTimeout(()=>{
+    document.getElementById('modal-editar-pedido')?.classList.remove('open');
+    atualizarTudo();
+  },1200);
+}
 
 // ═══════════════════════════════════════════════
 // GEOCODING & DISTÂNCIA
