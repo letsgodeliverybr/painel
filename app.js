@@ -5,8 +5,8 @@ const SB_URL='https://astbkmpegcmqljltmdpx.supabase.co';
 const SB_KEY='sb_publishable_8ocBGGO6EM8GYlg-6HBdmQ_LA6VDL9O';
 
 let currentUser=null,currentPerfil=null,map=null;
-let motoboyMarkers={},pedidoMarkers={},realtimeInterval=null;
-let allPedidos=[],allMotoboys=[],filterStatus='todos',selectedPedidoId=null;
+let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
+let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null;
 
 // IDs já notificados (para não tocar som repetido)
 let idsProntoNotificados=new Set();
@@ -484,6 +484,7 @@ async function atualizarTudo(){
   // 1. Busca pedidos ativos (excluindo finalizados/cancelados)
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
   allMotoboys=await db('entregadores','GET',null,'');
+  allLojas=await db('lojas','GET',null,'?ativo=eq.true');
 
   // 2. Auto-vira recebido → pronto (60s)
   await processarAutoPronto();
@@ -602,7 +603,24 @@ function renderPedidosLista(){
 function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));
   Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));
-  motoboyMarkers={};pedidoMarkers={};
+  Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));
+  motoboyMarkers={};pedidoMarkers={};lojaMarkers={};
+
+  // Ícones das LOJAS
+  allLojas.forEach(l=>{
+    const lat=l.latitude,lng=l.longitude;
+    if(!lat||!lng)return;
+    const nome=(l.nome||'Loja').substring(0,12);
+    const icon=L.divIcon({
+      html:`<div style="display:flex;flex-direction:column;align-items:center">
+        <div style="background:#f97316;width:36px;height:36px;border-radius:8px;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(0,0,0,.5)">🏪</div>
+        <div style="background:#f97316;color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.4)">${nome}</div>
+      </div>`,
+      iconSize:[60,52],iconAnchor:[30,52],className:''
+    });
+    lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map)
+      .bindPopup(`<b>🏪 ${l.nome}</b><br>${l.endereco||'—'}`);
+  });
 
   allMotoboys.forEach(e=>{
     const lat=e.lat||e.latitude,lng=e.lng||e.longitude;
