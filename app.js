@@ -924,6 +924,11 @@ async function abrirEditarLoja(lojaId){
       </div>
     </div>`;
   modal.classList.add('open');
+
+  // Inicia autocomplete no campo de endereço
+  setTimeout(() => {
+    iniciarAutocompleteEndereco('el-endereco', 'el-lat', 'el-lng', 'el-geo-feedback');
+  }, 100);
 }
 
 async function geocodificarLoja(){
@@ -1216,3 +1221,85 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(()=>{ goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido'); _carregarSaldoTopbar(); },150);
   } catch(e){ sessionStorage.removeItem('lg_user'); }
 });
+
+// ═══════════════════════════════════════════════
+// AUTOCOMPLETE DE ENDEREÇO (Nominatim)
+// ═══════════════════════════════════════════════
+let _autocompleteTimer = null;
+
+function iniciarAutocompleteEndereco(inputId, latId, lngId, feedbackId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  // Cria container de sugestões
+  let dropdown = document.getElementById(inputId + '-suggestions');
+  if (!dropdown) {
+    dropdown = document.createElement('div');
+    dropdown.id = inputId + '-suggestions';
+    dropdown.style.cssText = `
+      position:absolute; z-index:9999; background:#1e2130;
+      border:1px solid #1A56DB; border-radius:8px; margin-top:2px;
+      max-height:200px; overflow-y:auto; display:none;
+      box-shadow:0 8px 24px rgba(0,0,0,.5); width:100%;
+    `;
+    input.parentElement.style.position = 'relative';
+    input.parentElement.appendChild(dropdown);
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(_autocompleteTimer);
+    const val = input.value.trim();
+    if (val.length < 4) { dropdown.style.display = 'none'; return; }
+
+    _autocompleteTimer = setTimeout(async () => {
+      const fb = feedbackId ? document.getElementById(feedbackId) : null;
+      if (fb) fb.innerHTML = '<span style="color:var(--text2);font-size:11px">🔍 Buscando...</span>';
+      try {
+        const query = encodeURIComponent(val + ', Ribeirão Preto, SP, Brasil');
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5&addressdetails=1`,
+          { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'LetsGoDelivery/1.0' } }
+        );
+        const results = await r.json();
+        if (!results.length) {
+          dropdown.style.display = 'none';
+          if (fb) fb.innerHTML = '<span style="color:var(--red);font-size:11px">Nenhum resultado</span>';
+          return;
+        }
+        if (fb) fb.innerHTML = '';
+        dropdown.innerHTML = results.map((res, i) => `
+          <div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${res.display_name.replace(/"/g,'')}"
+            style="padding:10px 14px; cursor:pointer; font-size:12px; color:#fff; border-bottom:1px solid #2a2d3e; line-height:1.4;"
+            onmouseover="this.style.background='#1A56DB22'"
+            onmouseout="this.style.background='none'">
+            📍 ${res.display_name.split(',').slice(0,3).join(',')}
+          </div>
+        `).join('');
+
+        dropdown.querySelectorAll('div').forEach(item => {
+          item.addEventListener('click', () => {
+            const lat = parseFloat(item.dataset.lat);
+            const lng = parseFloat(item.dataset.lng);
+            const label = item.dataset.label.split(',').slice(0,3).join(',').trim();
+            input.value = label;
+            document.getElementById(latId).value = lat.toFixed(6);
+            document.getElementById(lngId).value = lng.toFixed(6);
+            dropdown.style.display = 'none';
+            if (fb) fb.innerHTML = `<span style="color:var(--green);font-size:11px">✅ Lat: ${lat.toFixed(6)} / Lng: ${lng.toFixed(6)}</span>`;
+          });
+        });
+
+        dropdown.style.display = 'block';
+      } catch(e) {
+        dropdown.style.display = 'none';
+      }
+    }, 500);
+  });
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+}
