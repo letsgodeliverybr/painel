@@ -8,13 +8,8 @@ let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null;
 
-// IDs já notificados (para não tocar som repetido)
 let idsProntoNotificados=new Set();
 
-
-// ═══════════════════════════════════════════════
-// SUPABASE HELPER
-// ═══════════════════════════════════════════════
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
   const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''};
@@ -31,9 +26,6 @@ async function logAcao(acao,detalhes={}){
   await db('logs_acoes','POST',{usuario_id:currentUser.id,acao,detalhes});
 }
 
-// ═══════════════════════════════════════════════
-// SOM DE NOTIFICAÇÃO
-// ═══════════════════════════════════════════════
 function tocarSomPronto(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -50,10 +42,6 @@ function tocarSomPronto(){
   }catch(e){}
 }
 
-// ═══════════════════════════════════════════════
-// AUTO: VIRAR RECEBIDO → PRONTO APÓS 60s
-// Chamado pelo polling — roda no cliente, atualiza Supabase
-// ═══════════════════════════════════════════════
 async function processarAutoPronto(){
   const agora=new Date();
   const pedidosRecebidos=allPedidos.filter(p=>
@@ -61,9 +49,8 @@ async function processarAutoPronto(){
   );
   for(const p of pedidosRecebidos){
     const recebidoEm=new Date(p.recebido_em);
-    const diff=(agora-recebidoEm)/1000; // segundos
+    const diff=(agora-recebidoEm)/1000;
     if(diff>=60){
-      // Gera código 4 dígitos
       const codigo=String(Math.floor(Math.random()*9000)+1000);
       await db('pedidos','PATCH',{
         status:'pronto',
@@ -76,9 +63,6 @@ async function processarAutoPronto(){
   }
 }
 
-// ═══════════════════════════════════════════════
-// NOTIFICAÇÕES DE PEDIDOS PRONTOS
-// ═══════════════════════════════════════════════
 function verificarNovosProtos(pedidos){
   pedidos.forEach(p=>{
     if((p.status_detalhado==='pronto'||p.status==='pronto')&&!idsProntoNotificados.has(p.id)){
@@ -86,16 +70,12 @@ function verificarNovosProtos(pedidos){
       tocarSomPronto();
       showNotif('🔔 Pedido Pronto!',`#${p.numero||p.id?.substring(0,6)} aguardando motoboy`,'var(--pink)');
     }
-    // Remove da lista se finalizou
     if(p.status==='finalizado'||p.status==='entregue'){
       idsProntoNotificados.delete(p.id);
     }
   });
 }
 
-// ═══════════════════════════════════════════════
-// UI HELPERS
-// ═══════════════════════════════════════════════
 function showNotif(title,msg,color='var(--green)'){
   const el=document.getElementById('notif');
   document.getElementById('notif-title').textContent=title;
@@ -107,9 +87,6 @@ function showNotif(title,msg,color='var(--green)'){
 function abrirModal(id){document.getElementById(id).classList.add('open');}
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
 
-// ═══════════════════════════════════════════════
-// DROPDOWN DE STATUS — clique no badge
-// ═══════════════════════════════════════════════
 const TODOS_STATUS = [
   {key:'recebido',    label:'Recebido',    cor:'#ef4444'},
   {key:'pronto',      label:'Pronto',      cor:'#ec4899'},
@@ -125,28 +102,20 @@ let _dropdownAberto = null;
 
 function abrirDropdownStatus(event, pedidoId) {
   event.stopPropagation();
-
-  // Fecha dropdown anterior
   fecharDropdownStatus();
-
   const wrapper = document.getElementById(`badge-wrapper-${pedidoId}`);
   if (!wrapper) return;
-
   const dropdown = document.createElement('div');
   dropdown.className = 'status-dropdown';
   dropdown.id = 'status-dropdown-atual';
-
   dropdown.innerHTML = TODOS_STATUS.map(s => `
     <button class="status-dropdown-item" onclick="event.stopPropagation();alterarStatusPedido('${pedidoId}','${s.key}')">
       <span class="status-dot" style="background:${s.cor}"></span>
       <span style="color:${s.cor}">${s.label}</span>
     </button>
   `).join('');
-
   wrapper.appendChild(dropdown);
   _dropdownAberto = pedidoId;
-
-  // Fecha ao clicar fora
   setTimeout(() => document.addEventListener('click', fecharDropdownStatus, {once:true}), 10);
 }
 
@@ -158,44 +127,33 @@ function fecharDropdownStatus() {
 
 async function alterarStatusPedido(pedidoId, novoStatus) {
   fecharDropdownStatus();
-
   const agora = new Date().toISOString();
   const update = {
     status: novoStatus,
     status_detalhado: novoStatus,
     updated_at: agora,
   };
-
-  // Timestamps específicos por status
   if (novoStatus === 'pronto')      update.pronto_em = agora;
   if (novoStatus === 'aceito')      update.aceito_em = agora;
   if (novoStatus === 'em_rota')     update.em_rota_em = agora;
   if (novoStatus === 'retornando')  update.retornando_em = agora;
   if (novoStatus === 'finalizado')  update.finalizado_em = agora;
   if (novoStatus === 'recebido')    update.recebido_em = agora;
-
-  // Se voltou para pronto, reseta notificação para tocar de novo no app
   if (novoStatus === 'pronto') {
     idsProntoNotificados.delete(pedidoId);
     tocarSomPronto();
     showNotif('🔔 Pedido Pronto!', 'Motoboys serão notificados', 'var(--pink)');
   }
-
   if (novoStatus === 'cancelado') {
     showNotif('❌ Pedido cancelado', '', 'var(--red)');
   }
-
   await db('pedidos', 'PATCH', update, `?id=eq.${pedidoId}`);
   await logAcao('alterar_status_manual', {pedido_id: pedidoId, novo_status: novoStatus});
   await atualizarTudo();
 }
 
-// ═══════════════════════════════════════════════
-// SALDO NA TOPBAR
-// ═══════════════════════════════════════════════
 async function _carregarSaldoTopbar(){
   try{
-    // Tenta buscar saldo da tabela de carteira/saldo se existir
     const pedidos = await db('pedidos','GET',null,'?status=eq.finalizado');
     const total = pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     const el = document.getElementById('topbar-saldo');
@@ -207,9 +165,6 @@ async function _carregarSaldoTopbar(){
   }catch(_){}
 }
 
-// ═══════════════════════════════════════════════
-// MENU LATERAL SIDEBAR
-// ═══════════════════════════════════════════════
 const NAV_ITEMS_ADM = [
   {id:'mapa',          icon:'🗺️', label:'Mapa ao Vivo'},
   {id:'pedidos',       icon:'📦', label:'Pedidos'},
@@ -268,33 +223,20 @@ function fecharNavSidebar() {
 
 function navGoTab(id) {
   fecharNavSidebar();
-  // Pequeno delay para o drawer fechar antes de renderizar o mapa
   setTimeout(() => goTab(id), 50);
 }
 
-// ═══════════════════════════════════════════════
-// ALTERAR PONTOS DO PEDIDO
-// ═══════════════════════════════════════════════
 async function alterarPontos(pedidoId, delta) {
   const p = allPedidos.find(x => x.id === pedidoId);
   if (!p) return;
   const novosPontos = Math.max(0, Math.min(20, (p.pontos || 4) + delta));
-  
-  // Atualiza UI imediatamente
   const el = document.getElementById(`pontos-${pedidoId}`);
   if (el) el.textContent = novosPontos;
-  
-  // Atualiza no banco
   await db('pedidos', 'PATCH', { pontos: novosPontos, updated_at: new Date().toISOString() }, `?id=eq.${pedidoId}`);
   await logAcao('alterar_pontos', { pedido_id: pedidoId, pontos: novosPontos });
-  
-  // Atualiza local sem recarregar tudo
   p.pontos = novosPontos;
 }
 
-// ═══════════════════════════════════════════════
-// PAGAMENTO ENTREGUE (para pedidos retornando)
-// ═══════════════════════════════════════════════
 async function confirmarPagamento(pedidoId) {
   await db('pedidos','PATCH',{
     pagamento_confirmado: true,
@@ -308,7 +250,7 @@ async function confirmarPagamento(pedidoId) {
   showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');
   await atualizarTudo();
 }
-// ═══════════════════════════════════════════════
+
 const STATUS_LABEL={
   recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',
   chegou_local:'No local',em_rota:'Em rota',retornando:'Retornando',
@@ -325,9 +267,6 @@ function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
 
-// ═══════════════════════════════════════════════
-// LOGIN
-// ═══════════════════════════════════════════════
 async function fazerLogin(){
   const email=document.getElementById('login-email').value.trim();
   const senha=document.getElementById('login-senha').value;
@@ -343,13 +282,11 @@ async function fazerLogin(){
     errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;
   }
   currentUser=usuarios[0];currentPerfil=currentUser.perfil;
-  // Salva sessão para restaurar ao recarregar
   sessionStorage.setItem('lg_user', JSON.stringify(currentUser));
   await logAcao('login',{email,perfil});
   document.getElementById('login-screen').style.display='none';
   const appEl = document.getElementById('app');
   appEl.style.display='flex';
-  // Força reflow para o DOM atualizar antes de renderizar o mapa
   appEl.getBoundingClientRect();
   document.getElementById('user-nome').textContent=currentUser.nome;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
@@ -358,16 +295,11 @@ async function fazerLogin(){
   badge.className='user-perfil-badge '+badgeMap[currentPerfil];
   badge.textContent=labelMap[currentPerfil];
   renderTabs();
-  // Delay para garantir que o DOM está pronto antes de renderizar o mapa
   setTimeout(() => {
     goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido');
   }, 100);
-
-  // Mostra botão novo pedido na topbar (exceto suporte)
   const btnNovo = document.getElementById('btn-novo-pedido');
   if(btnNovo) btnNovo.style.display = currentPerfil!=='suporte' ? 'flex' : 'none';
-
-  // Carrega saldo
   _carregarSaldoTopbar();
 }
 
@@ -382,9 +314,6 @@ function logout(){
   document.getElementById('login-senha').value='';
 }
 
-// ═══════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════
 const tabsAdm=[
   {id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},
   {id:'pedidos',icon:'📦',label:'Pedidos'},
@@ -429,9 +358,6 @@ function goTab(id){
   if(pages[id])pages[id]();
 }
 
-// ═══════════════════════════════════════════════
-// MAPA AO VIVO
-// ═══════════════════════════════════════════════
 function renderMapaPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="sidebar-pedidos">
@@ -468,7 +394,6 @@ function renderMapaPage(){
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();
-    // Polling a cada 10 segundos
     realtimeInterval=setInterval(atualizarTudo,10000);
   },100);
 }
@@ -481,44 +406,28 @@ function setFilter(status,el){
 }
 
 async function atualizarTudo(){
-  // 1. Busca pedidos ativos (excluindo finalizados/cancelados)
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
   allMotoboys=await db('entregadores','GET',null,'');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
-
-  // 2. Auto-vira recebido → pronto (60s)
   await processarAutoPronto();
-
-  // 3. Recarrega após a mutação
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
-
-  // 4. Verifica novos prontos para tocar som
   verificarNovosProtos(allPedidos);
-
-  // 5. Atualiza UI
   const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
   const emRota=allPedidos.filter(p=>p.status==='em_rota').length;
   const ms1=document.getElementById('ms-online');
   const ms2=document.getElementById('ms-pedidos');
   const ms3=document.getElementById('ms-rota');
-  // live-count removido da topbar
   if(ms1)ms1.textContent=online;
   if(ms2)ms2.textContent=allPedidos.length;
   if(ms3)ms3.textContent=emRota;
-
   renderPedidosLista();
   if(map)atualizarMarcadores();
 }
 
-// ═══════════════════════════════════════════════
-// RENDER LISTA SIDEBAR
-// ═══════════════════════════════════════════════
 function renderPedidosLista(){
   const lista=document.getElementById('pedidos-lista');
   const count=document.getElementById('sb-count');
   if(!lista)return;
-
-  // Filtra por status
   let filtered=allPedidos;
   if(filterStatus!=='todos'){
     filtered=allPedidos.filter(p=>
@@ -535,11 +444,7 @@ function renderPedidosLista(){
     const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
     const sk=getStatusKey(p);
     const isSelected=selectedPedidoId===p.id;
-
-    // Badge pronto pulsando
     const prontoStyle=sk==='pronto'?'class="pronto-pulse"':'';
-
-    // Detalhes expandidos
     const detalhes=isSelected?`
       <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
         ${p.codigo_confirmacao?`
@@ -558,11 +463,8 @@ function renderPedidosLista(){
         <div style="font-size:11px;color:var(--text3);margin-bottom:8px;margin-top:${sk==='retornando'?'8':'0'}px">
           Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}
         </div>
-          Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}
-        </div>
         ${p.descricao?`<div style="background:var(--bg);border-radius:6px;padding:7px;font-size:11px;color:var(--text2);margin-bottom:8px">📋 ${p.descricao}</div>`:''}
         <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
-        <!-- Editar pontos -->
         <div style="margin-top:8px;background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px">
           <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
           <div style="display:flex;align-items:center;gap:8px">
@@ -602,19 +504,14 @@ function renderPedidosLista(){
       ${detalhes}
     </div>`;
   }).join('');
-
 }
 
-// ═══════════════════════════════════════════════
-// MARCADORES NO MAPA
-// ═══════════════════════════════════════════════
 function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));
   Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));
   Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));
   motoboyMarkers={};pedidoMarkers={};lojaMarkers={};
 
-  // Ícones das LOJAS
   allLojas.forEach(l=>{
     const lat=l.latitude,lng=l.longitude;
     if(!lat||!lng)return;
@@ -672,13 +569,9 @@ function selecionarPedido(id){
 }
 function fecharDetalhe(){selectedPedidoId=null;renderPedidosLista();}
 
-// ═══════════════════════════════════════════════
-// EDITAR PEDIDO
-// ═══════════════════════════════════════════════
 function abrirEditarPedido(pedidoId){
   const p = allPedidos.find(x=>x.id===pedidoId);
   if(!p) return;
-  // Cria modal dinâmico
   let modal = document.getElementById('modal-editar-pedido');
   if(!modal){
     modal = document.createElement('div');
@@ -741,16 +634,10 @@ async function salvarEdicaoPedido(pedidoId){
   },1200);
 }
 
-// ═══════════════════════════════════════════════
-// ALOCAR MOTOBOY
-// ═══════════════════════════════════════════════
 async function abrirAlocarMotoboy(pedidoId){
   const p = allPedidos.find(x=>x.id===pedidoId);
   if(!p) return;
-
-  // Busca motoboys online em ordem alfabética
   const motoboys = await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
-
   let modal = document.getElementById('modal-alocar-motoboy');
   if(!modal){
     modal = document.createElement('div');
@@ -758,7 +645,6 @@ async function abrirAlocarMotoboy(pedidoId){
     modal.className = 'modal-overlay';
     document.body.appendChild(modal);
   }
-
   const listaMotoboys = motoboys.length === 0
     ? `<div style="text-align:center;padding:24px;color:var(--text3)">
         <div style="font-size:32px;margin-bottom:8px">🛵</div>
@@ -776,7 +662,6 @@ async function abrirAlocarMotoboy(pedidoId){
         </div>
         <div style="background:#22c55e20;color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">Online</div>
       </div>`).join('');
-
   modal.innerHTML = `
     <div class="modal">
       <div class="modal-header">
@@ -797,10 +682,8 @@ async function abrirAlocarMotoboy(pedidoId){
 }
 
 async function alocarMotoboy(pedidoId, motoboyId, motoboyNome, el){
-  // Feedback visual
   el.style.background = '#1A56DB20';
   el.style.borderColor = 'var(--accent)';
-
   await db('pedidos','PATCH',{
     motoboy_id: motoboyId,
     status: 'aceito',
@@ -808,13 +691,12 @@ async function alocarMotoboy(pedidoId, motoboyId, motoboyNome, el){
     aceito_em: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }, `?id=eq.${pedidoId}`);
-
   await logAcao('alocar_motoboy',{pedido_id:pedidoId, motoboy_id:motoboyId, motoboy_nome:motoboyNome});
   showNotif('✅ Motoboy alocado!', `${motoboyNome} foi designado para o pedido`);
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');
   await atualizarTudo();
 }
-// ═══════════════════════════════════════════════
+
 async function geocodificarEndereco(endereco){
   try{
     const query=encodeURIComponent(endereco+', Ribeirão Preto, SP, Brasil');
@@ -843,9 +725,6 @@ async function encontrarMotoboyMaisProximo(lat,lng){
   return melhor;
 }
 
-// ═══════════════════════════════════════════════
-// CRIAR PEDIDO
-// ═══════════════════════════════════════════════
 async function criarPedido(){
   const endereco=(document.getElementById('np-endereco')||{}).value||'';
   const valor=parseFloat((document.getElementById('np-valor')||{}).value)||0;
@@ -855,29 +734,20 @@ async function criarPedido(){
   const taxa=parseFloat((document.getElementById('np-taxa')||{}).value)||0;
   const pontos=parseInt((document.getElementById('np-pontos')||{}).value)||4;
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
-
   const fb=document.getElementById('np-feedback');
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando endereço...</div>';
-
   const geo=await geocodificarEndereco(endereco);
   const lat=geo?.lat||-21.1775;
   const lng=geo?.lng||-47.8103;
   const agora=new Date().toISOString();
-
-  // Calcula distância da loja ao cliente
-  // Pega coordenadas da loja se tiver, senão usa centro de Ribeirão Preto
   let latLoja=-21.1775, lngLoja=-47.8103;
   if(currentPerfil==='loja'&&currentUser.loja_id){
     const lojaData=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}`);
     if(lojaData&&lojaData[0]?.latitude) { latLoja=lojaData[0].latitude; lngLoja=lojaData[0].longitude; }
   }
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,lat,lng).toFixed(2));
-
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
-
   const lojaId=currentPerfil==='loja'?currentUser.loja_id:null;
-
-  // Pedido começa como RECEBIDO — vira PRONTO automaticamente em 60s
   const pedido={
     numero:String(numero),
     numero_loja:String(numero),
@@ -891,14 +761,12 @@ async function criarPedido(){
     pontos:pontos,
     distancia_km:distKm,
     recebido_em:agora,
-    codigo_confirmacao:null,  // será gerado ao virar pronto
+    codigo_confirmacao:null,
     created_at:agora,
     updated_at:agora
   };
-
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil});
-
   if(result&&result.length>0){
     if(fb){
       fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">
@@ -913,9 +781,6 @@ async function criarPedido(){
   }
 }
 
-// ═══════════════════════════════════════════════
-// PÁGINAS SECUNDÁRIAS
-// ═══════════════════════════════════════════════
 async function renderPedidosPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -972,6 +837,9 @@ async function renderMotoboyPage(){
     </tr>`).join('');
 }
 
+// ═══════════════════════════════════════════════
+// LOJAS — com botão ✏️ editar
+// ═══════════════════════════════════════════════
 async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -980,22 +848,123 @@ async function renderLojasPage(){
         <button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button>
       </div>
       <div class="card"><div style="overflow-x:auto">
-        <table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th></tr></thead>
-        <tbody id="tbody-lojas"><tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table>
+        <table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-lojas"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table>
       </div></div>
     </div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');
   if(!tbody)return;
   tbody.innerHTML=data.length===0
-    ?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>'
+    ?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>'
     :data.map(l=>`<tr>
       <td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td>
       <td>${l.telefone||'—'}</td>
       <td>${l.endereco||'—'}</td>
       <td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td>
       <td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td>
+      <td>
+        <button onclick="abrirEditarLoja('${l.id}')"
+          style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;"
+          title="Editar loja">✏️</button>
+      </td>
     </tr>`).join('');
+}
+
+async function abrirEditarLoja(lojaId){
+  const data = await db('lojas','GET',null,`?id=eq.${lojaId}`);
+  const l = data[0];
+  if(!l) return;
+  let modal = document.getElementById('modal-editar-loja');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-editar-loja';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Editar Loja — ${l.nome}</span>
+        <button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="fi"><label>Nome</label><input id="el-nome" value="${l.nome||''}"/></div>
+          <div class="fi"><label>Telefone</label><input id="el-telefone" value="${l.telefone||''}"/></div>
+        </div>
+        <div class="form-row full">
+          <div class="fi"><label>Endereço</label><input id="el-endereco" value="${l.endereco||''}" placeholder="Rua, número, bairro"/></div>
+        </div>
+        <div class="form-row">
+          <div class="fi"><label>E-mail acesso</label><input id="el-email" value="${l.email||''}"/></div>
+          <div class="fi"><label>Status</label>
+            <select id="el-ativo" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px">
+              <option value="true" ${l.ativo?'selected':''}>Ativa</option>
+              <option value="false" ${!l.ativo?'selected':''}>Inativa</option>
+            </select>
+          </div>
+        </div>
+        <div style="background:#1A56DB10;border:1px solid #1A56DB40;border-radius:10px;padding:14px;margin-top:4px">
+          <div style="font-size:11px;color:#1A56DB;font-weight:700;margin-bottom:10px">📍 COORDENADAS GPS (obrigatório para validação de 35m)</div>
+          <div class="form-row">
+            <div class="fi"><label>Latitude</label><input type="number" id="el-lat" step="0.000001" value="${l.latitude||''}" placeholder="-21.1775"/></div>
+            <div class="fi"><label>Longitude</label><input type="number" id="el-lng" step="0.000001" value="${l.longitude||''}" placeholder="-47.8103"/></div>
+          </div>
+          <button onclick="geocodificarLoja()" style="background:#1A56DB20;color:#1A56DB;border:1px solid #1A56DB50;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-top:4px">
+            🔍 Buscar coordenadas pelo endereço
+          </button>
+          <div id="el-geo-feedback" style="margin-top:6px;font-size:12px"></div>
+        </div>
+        <div id="el-feedback" style="margin-top:10px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button>
+        <button class="btn-modal-primary" onclick="salvarEdicaoLoja('${lojaId}')">💾 Salvar</button>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+async function geocodificarLoja(){
+  const endereco = document.getElementById('el-endereco')?.value;
+  const fb = document.getElementById('el-geo-feedback');
+  if(!endereco){ if(fb) fb.innerHTML='<span style="color:var(--red)">Preencha o endereço primeiro</span>'; return; }
+  if(fb) fb.innerHTML='<span style="color:var(--text2)">⏳ Buscando coordenadas...</span>';
+  const geo = await geocodificarEndereco(endereco);
+  if(geo){
+    document.getElementById('el-lat').value = geo.lat.toFixed(6);
+    document.getElementById('el-lng').value = geo.lng.toFixed(6);
+    if(fb) fb.innerHTML=`<span style="color:var(--green)">✅ Lat: ${geo.lat.toFixed(6)} / Lng: ${geo.lng.toFixed(6)}</span>`;
+  } else {
+    if(fb) fb.innerHTML='<span style="color:var(--red)">❌ Não encontrado. Informe manualmente.</span>';
+  }
+}
+
+async function salvarEdicaoLoja(lojaId){
+  const fb = document.getElementById('el-feedback');
+  if(fb) fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
+  const lat = parseFloat(document.getElementById('el-lat')?.value)||null;
+  const lng = parseFloat(document.getElementById('el-lng')?.value)||null;
+  const update = {
+    nome:      document.getElementById('el-nome')?.value||'',
+    telefone:  document.getElementById('el-telefone')?.value||'',
+    endereco:  document.getElementById('el-endereco')?.value||'',
+    email:     document.getElementById('el-email')?.value||'',
+    ativo:     document.getElementById('el-ativo')?.value === 'true',
+    latitude:  lat,
+    longitude: lng,
+    updated_at: new Date().toISOString(),
+  };
+  if(!update.nome){ if(fb) fb.innerHTML='<div style="color:var(--red);font-size:13px">Nome obrigatório.</div>'; return; }
+  await db('lojas','PATCH',update,`?id=eq.${lojaId}`);
+  await logAcao('editar_loja',{loja_id:lojaId, nome:update.nome});
+  if(fb) fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja atualizada!</div>';
+  showNotif('✅ Loja atualizada!', update.nome);
+  setTimeout(()=>{
+    document.getElementById('modal-editar-loja')?.classList.remove('open');
+    renderLojasPage();
+  },1200);
 }
 
 async function criarLoja(){
@@ -1147,9 +1116,6 @@ async function renderLogsPage(){
     }).join('');
 }
 
-// ═══════════════════════════════════════════════
-// TABELAS DE PREÇOS
-// ═══════════════════════════════════════════════
 let _tabAba='cobranca';
 async function renderTabelasPrecoPage(){
   document.getElementById('app-body').innerHTML=`
@@ -1208,9 +1174,6 @@ async function adicionarFaixa(tabelaId,tabelaNome,tipo){fecharModal('modal-tabel
 async function editarFaixa(faixaId,tabelaId,tabelaNome,tipo,de,ate,sem,com){const ns=prompt(`Sem retorno (${de}-${ate}km):`,parseFloat(sem).toFixed(4));if(ns===null)return;const nc=prompt(`Com retorno (${de}-${ate}km):`,parseFloat(com).toFixed(4));if(nc===null)return;await db('tabelas_preco_faixas','PATCH',{valor_sem_retorno:parseFloat(ns)||0,valor_com_retorno:parseFloat(nc)||0},`?id=eq.${faixaId}`);showNotif('✅ Atualizado!','');verFaixas(tabelaId,tabelaNome,tipo);}
 async function excluirTabela(id){if(!confirm('Excluir tabela e faixas?'))return;await db('tabelas_preco_faixas','DELETE',null,`?tabela_id=eq.${id}`);await db('tabelas_preco','DELETE',null,`?id=eq.${id}`);showNotif('🗑️ Excluída','','var(--red)');carregarTabelasPreco();}
 
-// ═══════════════════════════════════════════════
-// PÁGINAS LOJA
-// ═══════════════════════════════════════════════
 function renderNovoPedidoPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">➕ Novo Pedido</div></div><div class="card"><div class="modal-body"><div class="form-row"><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço</label><input id="np-endereco" placeholder="Rua, número, bairro"/></div></div><div class="form-row"><div class="fi"><label>Valor (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="Ex: 8001"/></div></div><div class="form-row"><div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
 }
@@ -1232,9 +1195,6 @@ async function renderLojaRelatorioPage(){
   document.getElementById('lr-fat').textContent='R$'+pedidos.reduce((s,p)=>s+(p.valor||0),0).toFixed(2);
 }
 
-// ═══════════════════════════════════════════════
-// INICIALIZAÇÃO AUTOMÁTICA (sessão persistida)
-// ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   const sessao = sessionStorage.getItem('lg_user');
   if (!sessao) return;
