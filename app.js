@@ -208,7 +208,7 @@ function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
 
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'},{id:'lojas',icon:'🏪',label:'Lojas'},{id:'usuarios',icon:'👥',label:'Usuários'},{id:'tabelas-preco',icon:'💰',label:'Tabelas de Preço'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 let _navAtivo='';
@@ -251,7 +251,7 @@ function logout(){
   document.getElementById('login-email').value='';document.getElementById('login-senha').value='';
 }
 
-const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'},{id:'lojas',icon:'🏪',label:'Lojas'},{id:'usuarios',icon:'👥',label:'Usuários'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 function renderTabs(){
@@ -262,7 +262,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'motoboys':renderMotoboyPage,'lojas':renderLojasPage,'usuarios':renderUsuariosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'tabelas-preco':renderTabelasPrecoPage,'novo-pedido':renderNovoPedidoPage,'loja-pedidos':renderLojaPedidosPage,'loja-mapa':renderLojaMapaPage,'loja-relatorio':renderLojaRelatorioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'novo-pedido':renderNovoPedidoPage,'loja-pedidos':renderLojaPedidosPage,'loja-mapa':renderLojaMapaPage,'loja-relatorio':renderLojaRelatorioPage};
   if(pages[id])pages[id]();
 }
 
@@ -446,6 +446,135 @@ async function criarPedido(){
     if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ⏱ Pronto em 60s${gorjeta>0?' • 🎁 Gorjeta: R$ '+gorjeta.toFixed(2):''}</span></div>`;
     showNotif('Pedido criado!','Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
   }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao criar pedido.</div>';}
+}
+
+
+// ═══════════════════════════════════════════════
+// CADASTROS — página com sub-abas
+// ═══════════════════════════════════════════════
+let _cadastrosAba='clientes';
+
+function renderCadastrosPage(aba){
+  _cadastrosAba=aba||_cadastrosAba||'clientes';
+  const abas=[
+    {id:'clientes',    icon:'🏪', label:'Clientes'},
+    {id:'entregadores',icon:'🛵', label:'Entregadores'},
+    {id:'usuarios',    icon:'👥', label:'Usuários'},
+    {id:'precificacao',icon:'💰', label:'Precificação Padrão'},
+    {id:'preco-din',   icon:'📈', label:'Preço Dinâmico'},
+    {id:'preco-din-ent',icon:'📈',label:'Preço Din. Entregador'},
+  ];
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header"><div class="page-title">🗂️ Cadastros</div></div>
+      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
+        ${abas.map(a=>`<button id="cad-aba-${a.id}" onclick="renderCadastrosPage('${a.id}')"
+          style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_cadastrosAba===a.id?'var(--accent)':'transparent'};color:${_cadastrosAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+      </div>
+      <div id="cad-content"></div>
+    </div>`;
+  _renderCadastrosConteudo(_cadastrosAba);
+}
+
+async function _renderCadastrosConteudo(aba){
+  _cadastrosAba=aba;
+  // Atualiza estilo das abas
+  ['clientes','entregadores','usuarios','precificacao','preco-din','preco-din-ent'].forEach(id=>{
+    const el=document.getElementById('cad-aba-'+id);
+    if(!el)return;
+    el.style.borderBottom=id===aba?'2px solid var(--accent)':'2px solid transparent';
+    el.style.color=id===aba?'var(--accent)':'var(--text3)';
+  });
+  const el=document.getElementById('cad-content');
+  if(!el)return;
+
+  if(aba==='clientes'){
+    await _renderClientesTab(el);
+  } else if(aba==='entregadores'){
+    await _renderEntregadoresTab(el);
+  } else if(aba==='usuarios'){
+    await _renderUsuariosTab(el);
+  } else if(aba==='precificacao'){
+    await _renderPrecificacaoTab(el);
+  } else if(aba==='preco-din'){
+    _renderPrecoDinamicoTab(el,'cliente');
+  } else if(aba==='preco-din-ent'){
+    _renderPrecoDinamicoTab(el,'entregador');
+  }
+}
+
+async function _renderClientesTab(el){
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-clientes"></tbody></table></div></div>`;
+  const data=await db('lojas','GET',null,'?order=created_at.desc');
+  const tbody=document.getElementById('tbody-clientes');if(!tbody)return;
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
+}
+
+async function _renderEntregadoresTab(el){
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
+  const data=await db('entregadores','GET',null,'?order=updated_at.desc');
+  const tbody=document.getElementById('tbody-entregadores');if(!tbody)return;
+  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(4)+', '+e.lng?.toFixed(4):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td></tr>`).join('');
+}
+
+async function _renderUsuariosTab(el){
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
+  const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
+  const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
+  const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleString('pt-BR'):'—'}</td></tr>`;}).join('');
+}
+
+async function _renderPrecificacaoTab(el){
+  el.innerHTML=`
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)">
+      <button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button>
+      <button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><div id="tp-btn-novo"></div></div>
+    <div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
+  _tabAba='cobranca';await carregarTabelasPreco();
+}
+
+function _renderPrecoDinamicoTab(el,tipo){
+  const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
+  const cor=tipo==='cliente'?'var(--accent)':'#10b981';
+  el.innerHTML=`
+    <div class="card" style="max-width:480px">
+      <div class="card-header"><span class="card-title">📈 Preço Dinâmico — ${label}</span></div>
+      <div style="padding:20px">
+        <p style="color:var(--text2);font-size:13px;margin-bottom:16px">
+          ${tipo==='cliente'?'Valor fixo extra somado à taxa cobrada da loja em todos os pedidos.':'Valor fixo extra somado ao pagamento do entregador em todos os pedidos.'}
+        </p>
+        <div class="fi" style="margin-bottom:16px">
+          <label>Valor extra (R$)</label>
+          <input type="number" id="preco-din-valor-${tipo}" step="0.01" placeholder="0.00" style="max-width:200px"/>
+        </div>
+        <div id="preco-din-feedback-${tipo}" style="margin-bottom:12px;font-size:12px"></div>
+        <button class="btn-modal-primary" onclick="salvarPrecoDinamico('${tipo}')">💾 Salvar</button>
+      </div>
+    </div>`;
+  // Carrega valor atual
+  db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`).then(data=>{
+    const input=document.getElementById(`preco-din-valor-${tipo}`);
+    if(input&&data&&data[0])input.value=parseFloat(data[0].valor||0).toFixed(2);
+  });
+}
+
+async function salvarPrecoDinamico(tipo){
+  const input=document.getElementById(`preco-din-valor-${tipo}`);
+  const fb=document.getElementById(`preco-din-feedback-${tipo}`);
+  const valor=parseFloat(input?.value)||0;
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
+  // Upsert na tabela configuracoes
+  const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
+  if(existing&&existing.length>0){
+    await db('configuracoes','PATCH',{valor:String(valor),updated_at:new Date().toISOString()},`?chave=eq.preco_dinamico_${tipo}`);
+  }else{
+    await db('configuracoes','POST',{chave:`preco_dinamico_${tipo}`,valor:String(valor),created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+  }
+  if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
+  showNotif('✅ Preço dinâmico salvo!','');
 }
 
 async function renderNovoPedidoPage(){
