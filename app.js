@@ -79,7 +79,30 @@ function showNotif(title,msg,color='var(--green)'){
   el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),4000);
 }
-function abrirModal(id){document.getElementById(id).classList.add('open');}
+async function abrirModal(id){
+  document.getElementById(id).classList.add('open');
+  // Injeta seletor de loja no modal-pedido se for ADM
+  if(id==='modal-pedido' && currentPerfil==='adm'){
+    // Aguarda o modal estar visível
+    setTimeout(async()=>{
+      const modalBody = document.querySelector('#modal-pedido .modal-body');
+      if(!modalBody || document.getElementById('np-loja-id')) return;
+      const lojas = await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
+      const div = document.createElement('div');
+      div.className = 'form-row full';
+      div.style.marginBottom = '8px';
+      div.innerHTML = `
+        <div class="fi">
+          <label style="color:#1A56DB;font-weight:700">🏪 Loja (obrigatório para validação GPS)</label>
+          <select id="np-loja-id" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px">
+            <option value="">Selecione a loja...</option>
+            ${lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('')}
+          </select>
+        </div>`;
+      modalBody.insertBefore(div, modalBody.firstChild);
+    }, 50);
+  }
+}
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
 
 const TODOS_STATUS=[
