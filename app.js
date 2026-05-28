@@ -257,6 +257,8 @@ const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos'
 function renderTabs(){
   const tabs=currentPerfil==='adm'?tabsAdm:currentPerfil==='loja'?tabsLoja:tabsSuporte;
   document.getElementById('tab-buttons').innerHTML=tabs.map(t=>`<button class="tab-btn" id="tab-${t.id}" onclick="goTab('${t.id}')"><span>${t.icon}</span>${t.label}</button>`).join('');
+  const tabBar=document.getElementById('tab-buttons');
+  if(tabBar)tabBar.style.display='none';
 }
 function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
