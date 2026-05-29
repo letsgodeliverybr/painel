@@ -193,7 +193,7 @@ const _gruposColapsados=new Set();
       font-weight: 600 !important;
     }
     .b-recebido    { background:#fee2e2 !important; color:#dc2626 !important; }
-    .b-pronto      { background:#fce7f3 !important; color:#db2777 !important; }
+    .b-pronto      { background:#F97316 !important; color:#fff !important; }
     .b-aceito      { background:#fef9c3 !important; color:#b45309 !important; }
     .b-chegou_local{ background:#ede9fe !important; color:#7c3aed !important; }
     .b-em_rota     { background:#dbeafe !important; color:#1d4ed8 !important; }
@@ -620,8 +620,8 @@ const _gruposColapsados=new Set();
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 420px !important;
-      min-width: 420px !important;
+      width: 500px !important;
+      min-width: 500px !important;
       flex-shrink: 0 !important;
       transition: width .2s ease, min-width .2s ease !important;
     }
@@ -913,7 +913,7 @@ async function calcularTaxaAuto(){
 }
 
 const TODOS_STATUS=[
-  {key:'recebido',label:'Recebido',cor:'#ef4444'},{key:'pronto',label:'Pronto',cor:'#ec4899'},
+  {key:'recebido',label:'Recebido',cor:'#ef4444'},{key:'pronto',label:'Pronto',cor:'#F97316'},
   {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'No local',cor:'#8B5CF6'},
   {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'retornando',label:'Retornando',cor:'#10B981'},
   {key:'finalizado',label:'Finalizado',cor:'#10B981'},{key:'cancelado',label:'Cancelado',cor:'#ef4444'},
@@ -965,7 +965,7 @@ async function alterarPontos(pedidoId,delta){
 }
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'No local',em_rota:'Em rota',retornando:'Retornando',finalizado:'Finalizado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila'};
-const STATUS_CORES={recebido:'#ef4444',pronto:'#ec4899',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
+const STATUS_CORES={recebido:'#ef4444',pronto:'#F97316',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
