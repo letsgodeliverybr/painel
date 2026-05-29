@@ -212,13 +212,16 @@ const _gruposColapsados=new Set();
       border-radius: 12px !important;
       border: 1px solid #E5E7EB !important;
       box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+      color: #111827 !important;
     }
     .mapa-stat-val { color: #111827 !important; font-weight: 800 !important; }
     .mapa-stat-label { color: #6B7280 !important; font-size: 10px !important; }
-    /* Forçar sempre tema claro na barra de stats, mesmo em dark mode */
-    html.dark .mapa-stats { background: #ffffff !important; border-color: #E5E7EB !important; box-shadow: 0 2px 8px rgba(0,0,0,.06) !important; }
+    /* Forçar sempre tema claro na barra de stats e botões flutuantes */
+    html.dark .mapa-stats { background: #ffffff !important; border-color: #E5E7EB !important; box-shadow: 0 2px 8px rgba(0,0,0,.06) !important; color: #111827 !important; }
     html.dark .mapa-stat-val { color: #111827 !important; }
     html.dark .mapa-stat-label { color: #6B7280 !important; }
+    #btn-filtro-motoboys, #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
+    html.dark #btn-filtro-motoboys, html.dark #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
     .mapa-refresh {
       background: rgba(255,255,255,.95) !important;
       color: var(--accent) !important;
@@ -1060,8 +1063,8 @@ function renderMapaPage(){
       </div>
       <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
       <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
-        <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar só entregadores disponíveis" style="background:#1A56DB;border:2px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:border .15s">🪖</button>
-        <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="background:#1A56DB;border:2px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:border .15s">🏪</button>
+        <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar só entregadores disponíveis" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🪖</button>
+        <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🏪</button>
       </div>
       <div id="map"></div>
     </div>`;
@@ -1076,11 +1079,11 @@ function renderMapaPage(){
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab){tab.textContent=min?'►':'◀';tab.style.transform=min?'translateY(-50%)':'translate(-100%,-50%)';}if(map)setTimeout(()=>map.invalidateSize(),220);}
 let _filtroLojaAtivo=false;
-function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.border=_filtroLojaAtivo?'2px solid white':'2px solid rgba(255,255,255,.3)';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
+function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.border=_filtroLojaAtivo?'2px solid #1A56DB':'2px solid #E5E7EB';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
 let _filtroMotoboyAtivo=false;
 let _detalheColapsado=new Set();
 function toggleDetalheCard(id){if(_detalheColapsado.has(id))_detalheColapsado.delete(id);else _detalheColapsado.add(id);renderPedidosLista();}
-function toggleFiltroMotoboys(){_filtroMotoboyAtivo=!_filtroMotoboyAtivo;const btn=document.getElementById('btn-filtro-motoboys');if(btn){btn.style.border=_filtroMotoboyAtivo?'2px solid white':'2px solid rgba(255,255,255,.3)';btn.title=_filtroMotoboyAtivo?'Mostrar todos os entregadores':'Mostrar só entregadores disponíveis';}atualizarMarcadores();}
+function toggleFiltroMotoboys(){_filtroMotoboyAtivo=!_filtroMotoboyAtivo;const btn=document.getElementById('btn-filtro-motoboys');if(btn){btn.style.border=_filtroMotoboyAtivo?'2px solid #1A56DB':'2px solid #E5E7EB';btn.title=_filtroMotoboyAtivo?'Mostrar todos os entregadores':'Mostrar só entregadores disponíveis';}atualizarMarcadores();}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 
