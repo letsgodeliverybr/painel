@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lets Go Delivery — Portal do Cliente</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#0f1117;--surface:#16181f;--surface2:#1e2029;--border:#2a2d3a;--accent:#1A56DB;--orange:#f97316;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--pink:#ec4899;--text:#f8fafc;--text2:#94a3b8;--text3:#475569;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+
+/* LOGIN */
+#login-screen{height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 20% 50%,#1A56DB18,transparent 60%),radial-gradient(ellipse at 80% 20%,#f9731612,transparent 50%),var(--bg);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:44px 40px;width:420px;max-width:95vw;position:relative;overflow:hidden;}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--orange));}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.login-logo-icon{width:42px;height:42px;background:var(--accent);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.login-logo h1{font-size:20px;font-weight:800;}
+.login-logo span{font-size:10px;color:var(--orange);letter-spacing:3px;display:block;font-weight:600;}
+.login-title{font-size:22px;font-weight:800;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+.form-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:16px;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;margin-bottom:16px;cursor:pointer;}
+.form-select option{background:var(--surface2);}
+.login-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.login-btn:hover{opacity:.88;}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;}
+.login-error{background:#ef444418;border:1px solid #ef444430;border-radius:8px;padding:10px 14px;font-size:13px;color:#f87171;margin-top:12px;display:none;}
+
+/* APP */
+#app{display:none;height:100vh;flex-direction:column;}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:100;}
+.topbar-logo{display:flex;align-items:center;gap:9px;margin-right:8px;}
+.topbar-logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.topbar-logo-text{font-size:14px;font-weight:800;}
+.topbar-logo-sub{font-size:9px;color:var(--orange);letter-spacing:2px;display:block;font-weight:600;}
+.topbar-divider{width:1px;height:28px;background:var(--border);margin:0 4px;}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface2);color:var(--text);}
+.tab-btn.active{background:#1A56DB18;color:var(--accent);font-weight:600;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.topbar-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text2);}
+.user-info{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.user-perfil-badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.badge-adm{background:#1A56DB20;color:#60a5fa;}
+.badge-loja{background:#f9731620;color:#fb923c;}
+.badge-suporte{background:#22c55e20;color:#22c55e;}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text2);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all .2s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+.app-body{flex:1;display:flex;overflow:hidden;}
+
+/* SIDEBAR PEDIDOS */
+.sidebar-pedidos{width:300px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sidebar-title{font-size:13px;font-weight:700;}
+.sidebar-count{background:var(--accent);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;}
+.filter-tabs{display:flex;gap:4px;}
+.filter-tab{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s;background:var(--surface2);color:var(--text2);}
+.filter-tab.active{background:var(--accent);color:#fff;}
+.pedidos-lista{flex:1;overflow-y:auto;padding:8px;}
+.pedidos-lista::-webkit-scrollbar{width:3px;}
+.pedidos-lista::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.pedido-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
+.pedido-item:hover{border-color:var(--accent);}
+.pedido-item.selected{border-color:var(--accent);background:#1A56DB10;}
+.pedido-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.pedido-num{font-size:13px;font-weight:700;}
+.p-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-disponivel{background:#1A56DB20;color:#60a5fa;}
+.b-aguardando{background:#eab30820;color:#eab308;}
+.b-em_rota{background:#1A56DB20;color:#60a5fa;}
+.b-entregue{background:#47556920;color:#94a3b8;}
+.b-fila{background:#47556920;color:#94a3b8;}
+.b-recebido{background:#ef444420;color:#f87171;}
+.b-pronto{background:#ec489920;color:#f472b6;}
+.b-a_caminho_loja{background:#eab30820;color:#eab308;}
+.b-na_loja{background:#60a5fa20;color:#60a5fa;}
+.b-chegou_cliente{background:#a855f720;color:#c084fc;}
+.b-retornando{background:#22c55e20;color:#22c55e;}
+.b-aceito{background:#8b5cf620;color:#a78bfa;}
+.b-finalizado{background:#22c55e20;color:#22c55e;}
+.pedido-end{font-size:12px;color:var(--text2);margin-bottom:5px;}
+.pedido-footer{display:flex;justify-content:space-between;}
+.pedido-val{font-size:13px;font-weight:700;color:var(--green);}
+.pedido-hora{font-size:11px;color:var(--text3);}
+.empty-lista{text-align:center;padding:48px 16px;color:var(--text3);}
+.empty-lista .ei{font-size:36px;margin-bottom:12px;}
+
+@keyframes pulse-pink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.03)}}
+.pronto-pulse{animation:pulse-pink 1.2s ease-in-out infinite;}
+
+/* MAPA */
+.mapa-container{flex:1;position:relative;overflow:hidden;}
+#map{width:100%;height:100%;}
+.mapa-stats{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:8px;}
+.mapa-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(0,0,0,.4);}
+.mapa-stat-val{font-size:15px;font-weight:800;line-height:1;}
+.mapa-stat-label{font-size:10px;color:var(--text2);}
+.mapa-refresh{position:absolute;top:12px;right:12px;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:12px;color:var(--text2);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.4);font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all .2s;}
+.mapa-refresh:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ALT PAGES */
+.alt-page{flex:1;overflow-y:auto;padding:24px;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:18px;font-weight:800;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600;}
+.stat-value{font-size:28px;font-weight:800;line-height:1;margin-bottom:4px;}
+.stat-sub{font-size:12px;color:var(--text2);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:13px;font-weight:700;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 16px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:11px 16px;border-bottom:1px solid var(--border);color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.btn-sm{padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;}
+.btn-primary-sm{background:var(--accent);color:#fff;}
+.btn-danger-sm{background:var(--red);color:#fff;}
+.btn-success-sm{background:var(--green);color:#fff;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:#00000080;z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:16px 16px 0 0;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-row.full{grid-template-columns:1fr;}
+.fi label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block;}
+.fi input,.fi select,.fi textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--accent);}
+.fi select option{background:var(--surface2);}
+.fi textarea{resize:vertical;min-height:72px;}
+.btn-modal-primary{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-modal-cancel{background:none;border:1px solid var(--border);border-radius:9px;padding:11px 18px;color:var(--text2);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+
+/* NOTIF */
+.notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:14px 18px;min-width:240px;z-index:9999;transform:translateY(120%);transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.notif.show{transform:translateY(0);}
+.notif-title{font-size:13px;font-weight:700;margin-bottom:3px;}
+.notif-msg{font-size:12px;color:var(--text2);}
+
+.leaflet-container{background:#1a1c24!important;}
+.leaflet-popup-content-wrapper{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;}
+.leaflet-popup-tip{background:var(--surface);}
+.leaflet-popup-content{margin:12px 16px;font-family:'Inter',sans-serif;font-size:13px;}
+/* DROPDOWN DE STATUS */
+.status-dropdown{position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.status-dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;transition:background .1s;border:none;background:none;width:100%;font-family:Inter,sans-serif;text-align:left;}
+.status-dropdown-item:hover{background:var(--surface2);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.badge-wrapper{position:relative;display:inline-block;}
+.nav-sidebar{position:fixed;top:0;left:-280px;width:280px;height:100vh;background:var(--surface);border-right:1px solid var(--border);z-index:500;transition:left .3s;display:flex;flex-direction:column;overflow:hidden;}
+.nav-sidebar.open{left:0;}
+.nav-overlay{position:fixed;inset:0;background:#00000060;z-index:499;display:none;}
+.nav-overlay.open{display:block;}
+.nav-sidebar-header{padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.nav-sidebar-logo{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.nav-sidebar-body{flex:1;overflow-y:auto;padding:8px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;font-family:Inter,sans-serif;text-align:left;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:#1A56DB18;color:var(--accent);font-weight:700;}
+.nav-item-icon{font-size:18px;width:24px;text-align:center;}
+.hamburger-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.hamburger-btn:hover{background:var(--surface2);}
+.b-cancelado{background:#ef444420;color:#ef4444;}
+.b-chegou_local{background:#60a5fa20;color:#60a5fa;}
+.btn-pagamento{width:100%;background:#f59e0b;color:#000;border:none;border-radius:10px;padding:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;}
+.btn-pagamento:hover{opacity:.85;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🛵</div>
+      <div><h1>Lets Go</h1><span>DELIVERY</span></div>
+    </div>
+    <div class="login-title">Portal do Cliente</div>
+    <div class="login-sub">Faça login para acessar o painel</div>
+    <label class="form-label">Perfil</label>
+    <select class="form-select" id="login-perfil">
+      <option value="adm">🔐 Administrador</option>
+      <option value="loja">🏪 Loja / Estabelecimento</option>
+      <option value="suporte">🎧 Suporte</option>
+    </select>
+    <label class="form-label">E-mail</label>
+    <input class="form-input" type="email" id="login-email" placeholder="seu@email.com"/>
+    <label class="form-label">Senha</label>
+    <input class="form-input" type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    <button class="login-btn" id="login-btn" onclick="fazerLogin()">Entrar →</button>
+    <div class="login-error" id="login-error">E-mail ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- MENU LATERAL SIDEBAR -->
+<div class="nav-overlay" id="nav-overlay" onclick="fecharNavSidebar()"></div>
+<div class="nav-sidebar" id="nav-sidebar">
+  <div class="nav-sidebar-header">
+    <div class="nav-sidebar-logo">🛵</div>
+    <div>
+      <div style="font-size:14px;font-weight:800;color:var(--text)">Lets Go</div>
+      <div style="font-size:9px;color:var(--orange);letter-spacing:2px;font-weight:600">DELIVERY</div>
+    </div>
+    <button onclick="fecharNavSidebar()" style="margin-left:auto;background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;">✕</button>
+  </div>
+  <div class="nav-sidebar-body" id="nav-sidebar-body"></div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;height:100vh;flex-direction:column;">
+  <div class="topbar">
+    <button class="hamburger-btn" onclick="abrirNavSidebar()" title="Menu">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect y="3" width="20" height="2" rx="1" fill="currentColor"/>
+        <rect y="9" width="20" height="2" rx="1" fill="currentColor"/>
+        <rect y="15" width="20" height="2" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
+    <div class="topbar-logo" style="cursor:pointer" onclick="abrirNavSidebar()">
+      <div class="topbar-logo-icon">🛵</div>
+      <div><div class="topbar-logo-text">Lets Go</div><span class="topbar-logo-sub">DELIVERY</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:14px;">
+      <button id="btn-novo-pedido" onclick="abrirModal('modal-pedido')" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
+        ➕ Novo Pedido
+      </button>
+      <div id="topbar-saldo" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:6px 12px;font-size:13px;color:var(--green);font-weight:700;">
+        <div style="font-size:13px;font-weight:700;color:#fff">R$ <span id="saldo-valor">0,00</span></div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);letter-spacing:.5px;text-align:center">Wallet</div>
+      </div>
+    </div>
+    <div class="topbar-divider" style="display:none;"></div>
+    <div id="tab-buttons" style="display:flex;align-items:center;gap:4px;overflow-x:auto;flex:1;"></div>
+    <div class="topbar-right">
+      <div class="user-info">
+        <span id="user-nome" style="font-size:12px;color:var(--text2)"></span>
+        <span class="user-perfil-badge" id="user-perfil-badge"></span>
+      </div>
+    </div>
+  </div>
+  <div class="app-body" id="app-body" style="flex:1;display:flex;overflow:hidden;"></div>
+</div>
+
+<!-- MODAL NOVO PEDIDO -->
+<div class="modal-overlay" id="modal-pedido">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ Novo Pedido</span>
+      <button class="modal-close" onclick="fecharModal('modal-pedido')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome do cliente"/></div>
+        <div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div>
+      </div>
+      <div class="form-row full"><div class="fi"><label>Endereço de entrega</label><input id="np-endereco" placeholder="Rua, número, bairro"/></div></div>
+      <div class="form-row">
+        <div class="fi"><label>Valor (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div>
+        <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="Ex: 8001"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div>
+        <div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" placeholder="4" value="4" min="1" max="20"/></div>
+      </div>
+      <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens, observações..."></textarea></div></div>
+      <div id="np-feedback" style="margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="fecharModal('modal-pedido')">Cancelar</button>
+      <button class="btn-modal-primary" onclick="criarPedido()">🚀 Criar Pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA LOJA -->
+<div class="modal-overlay" id="modal-loja">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏪 Nova Loja</span>
+      <button class="modal-close" onclick="fecharModal('modal-loja')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fi"><label>Nome da loja</label><input id="loja-nome" placeholder="Ex: Pizzaria Central"/></div>
+        <div class="fi"><label>Telefone</label><input id="loja-telefone" placeholder="(16) 3333-3333"/></div>
+      </div>
+      <div class="form-row full"><div class="fi"><label>Endereço</label><input id="loja-endereco" placeholder="Rua, número, bairro"/></div></div>
+      <div class="form-row">
+        <div class="fi"><label>E-mail de acesso</label><input id="loja-email" placeholder="loja@email.com"/></div>
+        <div class="fi"><label>Senha de acesso</label><input type="password" id="loja-senha" placeholder="Senha para login"/></div>
+      </div>
+      <div id="loja-feedback" style="margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="fecharModal('modal-loja')">Cancelar</button>
+      <button class="btn-modal-primary" onclick="criarLoja()">✅ Cadastrar Loja</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO USUÁRIO -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">👤 Novo Usuário</span>
+      <button class="modal-close" onclick="fecharModal('modal-usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fi"><label>Nome</label><input id="u-nome" placeholder="Nome completo"/></div>
+        <div class="fi"><label>Perfil</label>
+          <select id="u-perfil">
+            <option value="suporte">🎧 Suporte</option>
+            <option value="loja">🏪 Loja</option>
+            <option value="adm">🔐 ADM</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>E-mail</label><input id="u-email" placeholder="usuario@email.com"/></div>
+        <div class="fi"><label>Senha</label><input type="password" id="u-senha" placeholder="Senha de acesso"/></div>
+      </div>
+      <div class="form-row full" id="u-loja-row" style="display:none">
+        <div class="fi"><label>Loja vinculada</label>
+          <select id="u-loja-id"><option value="">Selecione a loja</option></select>
+        </div>
+      </div>
+      <div id="u-feedback" style="margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="fecharModal('modal-usuario')">Cancelar</button>
+      <button class="btn-modal-primary" onclick="criarUsuario()">✅ Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TABELA DE PREÇO -->
+<div class="modal-overlay" id="modal-tabela-preco">
+  <div class="modal" style="width:680px;max-width:98vw">
+    <div class="modal-header">
+      <span class="modal-title">💰 Tabela de Preço</span>
+      <button class="modal-close" onclick="fecharModal('modal-tabela-preco')">✕</button>
+    </div>
+    <div id="modal-tabela-body"></div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif">
+  <div class="notif-title" id="notif-title"></div>
+  <div class="notif-msg" id="notif-msg"></div>
+</div>
+
+<script>
+<script src="https://letsgodeliverybr.github.io/painel/app.js"></script>
+</body>
+</html>
