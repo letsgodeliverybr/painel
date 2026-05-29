@@ -1158,13 +1158,13 @@ function renderConfiguracaoPage(aba){
       </div>
       <div id="config-content"></div>
     </div>`;
-  const aba=abas.find(a=>a.id===_configAba);
+  const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
-      <div style="font-size:56px;margin-bottom:16px">${aba.icone}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:10px">${aba.label}</div>
+      <div style="font-size:56px;margin-bottom:16px">${abaInfo.icone}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:10px">${abaInfo.label}</div>
       <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
-      <div style="color:var(--text2);font-size:14px;line-height:1.6">${aba.desc}</div>
+      <div style="color:var(--text2);font-size:14px;line-height:1.6">${abaInfo.desc}</div>
     </div>`;
 }
 
