@@ -1042,7 +1042,7 @@ function renderMapaPage(){
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container" style="position:relative">
-      <button id="sb-toggle-tab" onclick="toggleSidebar()" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:50%;transform:translate(-100%,-50%);z-index:200;width:16px;height:52px;background:var(--sb-bg);border:1px solid var(--sb-border);border-right:none;border-radius:6px 0 0 6px;color:#6B7280;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s">◀</button>
+      <button id="sb-toggle-tab" onclick="toggleSidebar()" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:50%;transform:translate(-100%,-50%);z-index:200;width:18px;height:52px;background:#1A56DB;border:none;border-radius:0 8px 8px 0;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:2px 0 8px rgba(0,0,0,.25)">◀</button>
       <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
         <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
         <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
@@ -1078,6 +1078,8 @@ function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=do
 let _filtroLojaAtivo=false;
 function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.border=_filtroLojaAtivo?'2px solid white':'2px solid rgba(255,255,255,.3)';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
 let _filtroMotoboyAtivo=false;
+let _detalheColapsado=new Set();
+function toggleDetalheCard(id){if(_detalheColapsado.has(id))_detalheColapsado.delete(id);else _detalheColapsado.add(id);renderPedidosLista();}
 function toggleFiltroMotoboys(){_filtroMotoboyAtivo=!_filtroMotoboyAtivo;const btn=document.getElementById('btn-filtro-motoboys');if(btn){btn.style.border=_filtroMotoboyAtivo?'2px solid white':'2px solid rgba(255,255,255,.3)';btn.title=_filtroMotoboyAtivo?'Mostrar todos os entregadores':'Mostrar só entregadores disponíveis';}atualizarMarcadores();}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
@@ -1141,15 +1143,15 @@ function renderPedidosLista(){
       const sk=getStatusKey(p),isSelected=selectedPedidoId===p.id,prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const loja=allLojas.find(l=>l.id===p.loja_id);
       const lojaTag=loja?`<div class="pd-loja-tag">🏪 ${loja.nome}</div>`:'';
+      const _dcol=isSelected&&_detalheColapsado.has(p.id);
       const detalhes=isSelected?`
-        <div class="pd-detail">
+        <div class="pd-detail"${_dcol?' style="display:none"':''}>
           ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:#ec4899;margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
           ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
           ${p.gorjeta>0?`<div style="background:none;border-radius:6px;padding:6px 10px;font-size:11px;color:#475569;font-weight:500;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:#64748b;margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
           ${p.descricao?`<div style="background:#272A35;border-radius:6px;padding:7px;font-size:11px;color:#94a3b8;margin-bottom:8px">📋 ${p.descricao}</div>`:''}
           <div style="font-size:11px;color:#475569;margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
-          <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:#475569;border:1px solid #3A3D4A;border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
           <div style="margin-top:8px;background:none;border:1px solid #3A3D4A;border-radius:8px;padding:10px">
             <div style="font-size:10px;color:#475569;font-weight:700;margin-bottom:8px">🔵 PONTOS DA CORRIDA</div>
             <div style="display:flex;align-items:center;gap:8px">
@@ -1159,7 +1161,8 @@ function renderPedidosLista(){
               <span style="font-size:11px;color:#475569">pontos</span>
             </div>
           </div>
-        </div>`:'';
+        </div>
+        <div onclick="event.stopPropagation();toggleDetalheCard('${p.id}')" style="margin:${_dcol?4:8}px -10px -10px;padding:3px 0;text-align:center;border-top:1px solid #1A56DB33;border-radius:0 0 9px 9px;background:#1A56DB0d;cursor:pointer"><span style="color:#1A56DB;font-size:12px;font-weight:700">${_dcol?'▼':'▲'}</span></div>`:'';
       return `<div class="pd-card${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
         ${lojaTag}
         <div class="pd-top-row">
