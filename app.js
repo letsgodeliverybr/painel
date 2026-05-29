@@ -1192,7 +1192,6 @@ function renderPedidosLista(){
           <span class="pd-hora">${hora}</span>
         </div>
         ${detalhes}
-        <div onclick="event.stopPropagation();selecionarPedido('${p.id}')" style="position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);z-index:5;cursor:pointer;background:#1e2130;border:1px solid #3A3D4A;border-radius:8px;padding:1px 12px;font-size:11px;color:#ffffff;user-select:none;line-height:1.6">${isSelected?'▲':'▼'}</div>
       </div>`;
     }).join('');
     const safeKey=key.replace(/['"]/g,'');
