@@ -403,12 +403,118 @@ let idsProntoNotificados=new Set();
     #notif-msg   { color: var(--text2) !important; font-size: 12px !important; }
 
     /* ── LOGIN ── */
-    #login-screen { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%) !important; }
+    #login-screen {
+      background: #ffffff !important;
+    }
     .login-card {
+      background: #ffffff !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 32px rgba(0,0,0,.09) !important;
+      padding: 44px 40px !important;
+      width: 100% !important;
+      max-width: 400px !important;
+      border: 1px solid #e8ecf0 !important;
+    }
+    #login-logo-wrap {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      margin-bottom: 28px !important;
+    }
+    #login-logo-icon {
+      width: 64px !important;
+      height: 64px !important;
+      background: #1A56DB !important;
+      border-radius: 16px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 28px !important;
+      margin-bottom: 14px !important;
+      box-shadow: 0 4px 14px rgba(26,86,219,.25) !important;
+    }
+    #login-logo-text {
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      letter-spacing: -0.4px !important;
+      font-family: Inter, sans-serif !important;
+    }
+    #login-logo-sub {
+      font-size: 12px !important;
+      color: #64748b !important;
+      margin-top: 3px !important;
+      font-weight: 500 !important;
+      font-family: Inter, sans-serif !important;
+    }
+    .login-card label {
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.6px !important;
+      display: block !important;
+      margin-bottom: 5px !important;
+    }
+    .login-card input, .login-card select {
+      width: 100% !important;
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 10px !important;
+      padding: 11px 14px !important;
+      font-size: 14px !important;
+      color: #0f172a !important;
+      font-family: Inter, sans-serif !important;
+      margin-bottom: 14px !important;
+      outline: none !important;
+      transition: border-color .15s, box-shadow .15s !important;
+      box-sizing: border-box !important;
+    }
+    .login-card input:focus, .login-card select:focus {
+      border-color: #1A56DB !important;
       background: #fff !important;
-      border-radius: 24px !important;
-      box-shadow: 0 20px 60px rgba(0,0,0,.2) !important;
-      padding: 40px !important;
+      box-shadow: 0 0 0 3px rgba(26,86,219,.10) !important;
+    }
+    #login-btn {
+      width: 100% !important;
+      background: #1A56DB !important;
+      color: #fff !important;
+      border: none !important;
+      border-radius: 10px !important;
+      padding: 13px !important;
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      font-family: Inter, sans-serif !important;
+      margin-top: 6px !important;
+      transition: background .15s !important;
+      letter-spacing: -0.1px !important;
+    }
+    #login-btn:hover:not(:disabled) { background: #1648c0 !important; }
+    #login-btn:disabled { background: #93c5fd !important; cursor: default !important; }
+    #login-forgot {
+      display: block !important;
+      text-align: center !important;
+      margin-top: 18px !important;
+      font-size: 13px !important;
+      color: #1A56DB !important;
+      text-decoration: none !important;
+      cursor: pointer !important;
+      font-family: Inter, sans-serif !important;
+      background: none !important;
+      border: none !important;
+      width: 100% !important;
+      padding: 0 !important;
+    }
+    #login-forgot:hover { text-decoration: underline !important; color: #1648c0 !important; }
+    #login-error {
+      background: #fef2f2 !important;
+      border: 1px solid #fecaca !important;
+      color: #dc2626 !important;
+      border-radius: 8px !important;
+      padding: 10px 14px !important;
+      font-size: 13px !important;
+      margin-bottom: 12px !important;
     }
 
     /* ── STATUS DROPDOWN ── */
@@ -1264,6 +1370,25 @@ async function renderLojaRelatorioPage(){
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}`):[];
   document.getElementById('lr-total').textContent=pedidos.length;document.getElementById('lr-ent').textContent=pedidos.filter(p=>p.status==='finalizado'||p.status==='entregue').length;document.getElementById('lr-fat').textContent='R$'+pedidos.reduce((s,p)=>s+(p.valor||0),0).toFixed(2);
 }
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const card=document.querySelector('.login-card');
+  if(card){
+    if(!document.getElementById('login-logo-wrap')){
+      const wrap=document.createElement('div');wrap.id='login-logo-wrap';
+      wrap.innerHTML=`<div id="login-logo-icon">🛵</div><div id="login-logo-text">Let's Go Delivery</div><div id="login-logo-sub">Painel de Gestão</div>`;
+      card.insertBefore(wrap,card.firstChild);
+    }
+    if(!document.getElementById('login-forgot')){
+      const btn=document.getElementById('login-btn');
+      if(btn){
+        const link=document.createElement('button');link.id='login-forgot';link.type='button';link.textContent='Esqueci minha senha';
+        link.onclick=()=>alert('Entre em contato com o administrador para redefinir sua senha.');
+        btn.insertAdjacentElement('afterend',link);
+      }
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded',async()=>{
   const sessao=sessionStorage.getItem('lg_user');if(!sessao)return;
