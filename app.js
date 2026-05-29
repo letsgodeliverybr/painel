@@ -848,10 +848,14 @@ function renderMapaPage(){
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container">
-      <div class="mapa-stats">
-        <div class="mapa-stat"><span style="font-size:16px">🛵</span><div><div class="mapa-stat-val" id="ms-online">0</div><div class="mapa-stat-label">Online</div></div></div>
-        <div class="mapa-stat"><span style="font-size:16px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos">0</div><div class="mapa-stat-label">Pedidos</div></div></div>
-        <div class="mapa-stat"><span style="font-size:16px">🔄</span><div><div class="mapa-stat-val" id="ms-rota">0</div><div class="mapa-stat-label">Em rota</div></div></div>
+      <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;align-items:center">
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Pedidos</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🍳</span><div><div class="mapa-stat-val" id="ms-preparo" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em preparo</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🔍</span><div><div class="mapa-stat-val" id="ms-procurando" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Proc. Entregador</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🔄</span><div><div class="mapa-stat-val" id="ms-rota" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em rota</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
       </div>
       <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
       <div id="map"></div>
@@ -873,9 +877,15 @@ async function atualizarTudo(){
   await processarAutoPronto();
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
   verificarNovosProtos(allPedidos);
-  const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length,emRota=allPedidos.filter(p=>p.status==='em_rota').length;
-  const ms1=document.getElementById('ms-online'),ms2=document.getElementById('ms-pedidos'),ms3=document.getElementById('ms-rota');
-  if(ms1)ms1.textContent=online;if(ms2)ms2.textContent=allPedidos.length;if(ms3)ms3.textContent=emRota;
+  const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
+  const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
+  const procurando=allPedidos.filter(p=>getStatusKey(p)==='pronto').length;
+  const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','retornando'].includes(getStatusKey(p))).length;
+  const finalizados=allPedidos.filter(p=>['finalizado','entregue'].includes(getStatusKey(p))).length;
+  const canceladosData=await db('pedidos','GET',null,'?status=eq.cancelado&select=id&limit=500');
+  const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setVal('ms-online',online);setVal('ms-pedidos',allPedidos.length);setVal('ms-preparo',emPreparo);
+  setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizados);setVal('ms-cancelados',canceladosData.length);
   renderPedidosLista();if(map)atualizarMarcadores();
 }
 
