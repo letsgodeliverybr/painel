@@ -207,14 +207,17 @@ const _gruposColapsados=new Set();
 
     /* ── MAPA STATS ── */
     .mapa-stats {
-      background: rgba(255,255,255,.95) !important;
-      backdrop-filter: blur(12px) !important;
+      background: #ffffff !important;
       border-radius: 12px !important;
-      border: 1px solid var(--border) !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,.08) !important;
+      border: 1px solid #E5E7EB !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
     }
-    .mapa-stat-val { color: var(--accent) !important; font-weight: 800 !important; }
-    .mapa-stat-label { color: var(--text3) !important; }
+    .mapa-stat-val { color: #111827 !important; font-weight: 800 !important; }
+    .mapa-stat-label { color: #6B7280 !important; font-size: 10px !important; }
+    /* Forçar sempre tema claro na barra de stats, mesmo em dark mode */
+    html.dark .mapa-stats { background: #ffffff !important; border-color: #E5E7EB !important; box-shadow: 0 2px 8px rgba(0,0,0,.06) !important; }
+    html.dark .mapa-stat-val { color: #111827 !important; }
+    html.dark .mapa-stat-label { color: #6B7280 !important; }
     .mapa-refresh {
       background: rgba(255,255,255,.95) !important;
       color: var(--accent) !important;
