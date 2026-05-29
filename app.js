@@ -1074,7 +1074,7 @@ function renderMapaPage(){
   },100);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
-function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab)tab.textContent=min?'►':'◀';if(map)setTimeout(()=>map.invalidateSize(),220);}
+function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab){tab.textContent=min?'►':'◀';tab.style.transform=min?'translateY(-50%)':'translate(-100%,-50%)';}if(map)setTimeout(()=>map.invalidateSize(),220);}
 let _filtroLojaAtivo=false;
 function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.border=_filtroLojaAtivo?'2px solid white':'2px solid rgba(255,255,255,.3)';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
 let _filtroMotoboyAtivo=false;
