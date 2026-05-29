@@ -8,6 +8,7 @@ let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null;
 let idsProntoNotificados=new Set();
+let _sidebarBusca='';
 
 
 // ═══════════════════════════════════════════════
@@ -568,6 +569,135 @@ let idsProntoNotificados=new Set();
     /* ── PRONTO PULSE ── */
     .pronto-pulse { animation: pulse 1.5s infinite !important; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+    /* ── SIDEBAR DARK ── */
+    .sb-dark {
+      background: #0D0F14 !important;
+      border-right: 1px solid #2A2D35 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100% !important;
+      overflow: hidden !important;
+    }
+    .sb-header-dark {
+      padding: 14px 12px 10px !important;
+      border-bottom: 1px solid #2A2D35 !important;
+      background: #0D0F14 !important;
+      flex-shrink: 0 !important;
+    }
+    .sb-header-top-dark {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      margin-bottom: 10px !important;
+    }
+    .sb-title-dark {
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      color: #e2e8f0 !important;
+      flex: 1 !important;
+    }
+    .sb-badge-dark {
+      background: #1A56DB !important;
+      color: #fff !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      padding: 2px 9px !important;
+      border-radius: 20px !important;
+    }
+    .sb-search-dark {
+      width: 100% !important;
+      background: #161820 !important;
+      border: 1px solid #2A2D35 !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+      font-size: 12px !important;
+      color: #e2e8f0 !important;
+      font-family: Inter, sans-serif !important;
+      outline: none !important;
+      transition: border-color .15s !important;
+      box-sizing: border-box !important;
+    }
+    .sb-search-dark::placeholder { color: #475569 !important; }
+    .sb-search-dark:focus { border-color: #1A56DB !important; }
+    .sb-group-dark {
+      padding: 8px 12px 6px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      background: #0D0F14 !important;
+      border-bottom: 1px solid #2A2D35 !important;
+      flex-wrap: wrap !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 2 !important;
+    }
+    .sb-group-name {
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      text-transform: uppercase !important;
+      letter-spacing: .5px !important;
+      flex: 1 !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+    .sb-status-bubble {
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      padding: 2px 6px !important;
+      border-radius: 10px !important;
+      white-space: nowrap !important;
+    }
+    .pd-card {
+      background: #161820 !important;
+      border: 1px solid #2A2D35 !important;
+      border-radius: 10px !important;
+      margin: 6px 8px !important;
+      padding: 10px !important;
+      cursor: pointer !important;
+      transition: border-color .12s !important;
+    }
+    .pd-card:hover { border-color: #3b5fc0 !important; }
+    .pd-card.selected { border-color: #1A56DB !important; box-shadow: 0 0 0 2px #1A56DB33 !important; }
+    .pd-loja-tag {
+      font-size: 10px !important;
+      color: #60a5fa !important;
+      font-weight: 600 !important;
+      margin-bottom: 5px !important;
+    }
+    .pd-top-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      margin-bottom: 4px !important;
+      gap: 4px !important;
+    }
+    .pd-num {
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      color: #f1f5f9 !important;
+    }
+    .pd-actions { display: flex !important; align-items: center !important; gap: 4px !important; }
+    .pd-action-btn {
+      background: #0D0F14 !important;
+      border: 1px solid #2A2D35 !important;
+      border-radius: 6px !important;
+      width: 24px !important; height: 24px !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
+      cursor: pointer !important; font-size: 11px !important; padding: 0 !important;
+      transition: border-color .12s !important;
+    }
+    .pd-action-btn:hover { border-color: #1A56DB !important; }
+    .pd-cliente { font-size: 11px !important; color: #94a3b8 !important; font-weight: 500 !important; margin-bottom: 3px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-end { font-size: 11px !important; color: #64748b !important; margin-bottom: 5px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-footer { display: flex !important; align-items: center !important; justify-content: space-between !important; }
+    .pd-taxa { font-size: 12px !important; font-weight: 700 !important; color: #10b981 !important; }
+    .pd-hora { font-size: 10px !important; color: #475569 !important; }
+    .pd-detail { border-top: 1px solid #2A2D35 !important; margin-top: 8px !important; padding-top: 8px !important; }
+    .sb-dark .pedidos-lista { flex: 1 !important; overflow-y: auto !important; }
+    .sb-dark .empty-lista { color: #475569 !important; }
   `;
   document.head.appendChild(style);
 })();
@@ -833,19 +963,17 @@ function goTab(id){
 }
 
 function renderMapaPage(){
+  _sidebarBusca='';
   document.getElementById('app-body').innerHTML=`
-    <div class="sidebar-pedidos">
-      <div class="sidebar-header">
-        <div class="sidebar-header-top"><span class="sidebar-title">Pedidos</span><span class="sidebar-count" id="sb-count">0</span></div>
-        <div class="filter-tabs">
-          <button class="filter-tab active" onclick="setFilter('todos',this)">Todos</button>
-          <button class="filter-tab" onclick="setFilter('recebido',this)">Recebidos</button>
-          <button class="filter-tab" onclick="setFilter('pronto',this)">Prontos</button>
-          <button class="filter-tab" onclick="setFilter('em_rota',this)">Em rota</button>
-          <button class="filter-tab" onclick="setFilter('cancelado',this)">Cancelados</button>
+    <div class="sidebar-pedidos sb-dark">
+      <div class="sb-header-dark">
+        <div class="sb-header-top-dark">
+          <span class="sb-title-dark">Pedidos</span>
+          <span class="sb-badge-dark" id="sb-count">0</span>
         </div>
+        <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
       </div>
-      <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista"><div class="ei">📦</div><p>Carregando...</p></div></div>
+      <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container">
       <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
@@ -875,6 +1003,7 @@ function renderMapaPage(){
   },100);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
+function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 
 async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
@@ -898,46 +1027,80 @@ async function atualizarTudo(){
 function renderPedidosLista(){
   const lista=document.getElementById('pedidos-lista'),count=document.getElementById('sb-count');if(!lista)return;
   let filtered=filterStatus==='todos'?allPedidos:allPedidos.filter(p=>(p.status_detalhado===filterStatus)||(p.status===filterStatus));
+  if(_sidebarBusca){
+    const q=_sidebarBusca;
+    filtered=filtered.filter(p=>{
+      const loja=allLojas.find(l=>l.id===p.loja_id);
+      return (p.numero||'').toLowerCase().includes(q)||(p.endereco||'').toLowerCase().includes(q)||(p.cliente||'').toLowerCase().includes(q)||((loja?.nome||'').toLowerCase().includes(q));
+    });
+  }
   if(count)count.textContent=filtered.length;
-  if(filtered.length===0){lista.innerHTML='<div class="empty-lista"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
-  lista.innerHTML=filtered.map(p=>{
-    const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
-    const sk=getStatusKey(p),isSelected=selectedPedidoId===p.id,prontoStyle=sk==='pronto'?'class="pronto-pulse"':'';
-    const detalhes=isSelected?`
-      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-        ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--pink);margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
-        ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
-        ${p.gorjeta>0?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:6px;padding:6px 10px;font-size:11px;color:#f59e0b;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
-        ${p.distancia_km?`<div style="font-size:11px;color:var(--text3);margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
-        ${p.descricao?`<div style="background:var(--bg);border-radius:6px;padding:7px;font-size:11px;color:var(--text2);margin-bottom:8px">📋 ${p.descricao}</div>`:''}
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
-        <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
-        <div style="margin-top:8px;background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px">
-          <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">−</button>
-            <span id="pontos-${p.id}" style="color:#fff;font-weight:800;font-size:18px;min-width:30px;text-align:center">${p.pontos||4}</span>
-            <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">+</button>
-            <span style="font-size:11px;color:#888">pontos</span>
+  if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
+  const STATUS_BUBBLES=[
+    {key:'recebido',bg:'#ef444420',color:'#ef4444',label:'Recebido'},
+    {key:'pronto',bg:'#ec489920',color:'#ec4899',label:'Pronto'},
+    {key:'aceito',bg:'#8b5cf620',color:'#8b5cf6',label:'Aceito'},
+    {key:'em_rota',bg:'#1A56DB20',color:'#60a5fa',label:'Em rota'},
+    {key:'finalizado',bg:'#10b98120',color:'#10b981',label:'Finaliz.'},
+  ];
+  const grupos={};
+  filtered.forEach(p=>{
+    const key=p.loja_id||'__sem__';
+    if(!grupos[key]){const loja=allLojas.find(l=>l.id===p.loja_id);grupos[key]={nome:loja?.nome||'Sem loja',pedidos:[]};}
+    grupos[key].pedidos.push(p);
+  });
+  lista.innerHTML=Object.values(grupos).map(grupo=>{
+    const bubbles=STATUS_BUBBLES.map(sb=>{
+      const n=grupo.pedidos.filter(p=>getStatusKey(p)===sb.key).length;
+      return n?`<span class="sb-status-bubble" style="background:${sb.bg};color:${sb.color}">${n} ${sb.label}</span>`:'';
+    }).join('');
+    const cards=grupo.pedidos.map(p=>{
+      const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
+      const sk=getStatusKey(p),isSelected=selectedPedidoId===p.id,prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
+      const loja=allLojas.find(l=>l.id===p.loja_id);
+      const lojaTag=loja?`<div class="pd-loja-tag">🏪 ${loja.nome}</div>`:'';
+      const detalhes=isSelected?`
+        <div class="pd-detail">
+          ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:#ec4899;margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
+          ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
+          ${p.gorjeta>0?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:6px;padding:6px 10px;font-size:11px;color:#f59e0b;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
+          ${p.distancia_km?`<div style="font-size:11px;color:#64748b;margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
+          ${p.descricao?`<div style="background:#0D0F14;border-radius:6px;padding:7px;font-size:11px;color:#94a3b8;margin-bottom:8px">📋 ${p.descricao}</div>`:''}
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
+          <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:#475569;border:1px solid #2A2D35;border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
+          <div style="margin-top:8px;background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">−</button>
+              <span id="pontos-${p.id}" style="color:#fff;font-weight:800;font-size:18px;min-width:30px;text-align:center">${p.pontos||4}</span>
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">+</button>
+              <span style="font-size:11px;color:#475569">pontos</span>
+            </div>
+          </div>
+        </div>`:'';
+      return `<div class="pd-card${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
+        ${lojaTag}
+        <div class="pd-top-row">
+          <span class="pd-num">#${p.numero||p.id?.substring(0,6)}</span>
+          <div class="pd-actions">
+            <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
+            <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
+            <span class="badge-wrapper" id="badge-wrapper-${p.id}">
+              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:10px">${getStatusLabel(p)} ▾</span>
+            </span>
           </div>
         </div>
-      </div>`:'';
-    return `<div class="pedido-item${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
-      <div class="pedido-item-top">
-        <span class="pedido-num">#${p.numero||p.id?.substring(0,6)}</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;padding:0;">✏️</button>
-          <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;padding:0;">🛵</button>
-          <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-            <span ${prontoStyle} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none">${getStatusLabel(p)} ▾</span>
-          </span>
+        ${p.cliente?`<div class="pd-cliente">👤 ${p.cliente}</div>`:''}
+        <div class="pd-end">📍 ${p.endereco||'—'}</div>
+        <div class="pd-footer">
+          <span class="pd-taxa">R$ ${(p.taxa_entrega||p.valor||0).toFixed(2)}</span>
+          <span class="pd-hora">${hora}</span>
         </div>
-      </div>
-      <div class="pedido-end">📍 ${p.endereco||'—'}</div>
-      ${p.distancia_km?`<div style="font-size:11px;color:var(--text3)">📏 ${p.distancia_km} km</div>`:''}
-      <div class="pedido-footer"><span class="pedido-val">R$ ${(p.valor||0).toFixed(2)}</span><span class="pedido-hora">${hora}</span></div>
-      ${detalhes}
-    </div>`;
+        ${detalhes}
+      </div>`;
+    }).join('');
+    const groupHeader='<div class="sb-group-dark"><span style="font-size:13px">🏪</span><span class="sb-group-name">'+grupo.nome+'</span><div style="display:flex;gap:3px;flex-wrap:wrap">'+bubbles+'</div></div>';
+    return '<div>'+groupHeader+cards+'</div>';
   }).join('');
 }
 
