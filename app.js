@@ -1006,21 +1006,23 @@ function setFilter(status,el){filterStatus=status;document.querySelectorAll('.fi
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 
 async function atualizarTudo(){
-  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
+  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   allMotoboys=await db('entregadores','GET',null,'');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
   await processarAutoPronto();
-  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=neq.cancelado&status_detalhado=neq.cancelado');
+  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   verificarNovosProtos(allPedidos);
   const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
   const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
   const procurando=allPedidos.filter(p=>getStatusKey(p)==='pronto').length;
   const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','retornando'].includes(getStatusKey(p))).length;
-  const finalizados=allPedidos.filter(p=>['finalizado','entregue'].includes(getStatusKey(p))).length;
-  const canceladosData=await db('pedidos','GET',null,'?status=eq.cancelado&select=id&limit=500');
+  const [finalizadosData,canceladosData]=await Promise.all([
+    db('pedidos','GET',null,'?status=eq.finalizado&select=id&limit=500'),
+    db('pedidos','GET',null,'?status=eq.cancelado&select=id&limit=500'),
+  ]);
   const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   setVal('ms-online',online);setVal('ms-pedidos',allPedidos.length);setVal('ms-preparo',emPreparo);
-  setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizados);setVal('ms-cancelados',canceladosData.length);
+  setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosData.length);setVal('ms-cancelados',canceladosData.length);
   renderPedidosLista();if(map)atualizarMarcadores();
 }
 
