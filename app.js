@@ -668,6 +668,11 @@ const _gruposColapsados=new Set();
     }
     .sb-search-dark::placeholder { color: var(--sb-text3) !important; }
     .sb-search-dark:focus { border-color: #1A56DB !important; }
+    .sb-filter-tabs { display:flex !important; gap:4px !important; flex-wrap:nowrap !important; overflow-x:auto !important; padding:6px 0 2px !important; scrollbar-width:none !important; }
+    .sb-filter-tabs::-webkit-scrollbar { display:none !important; }
+    .sb-filter-tab { background:#1a1d26 !important; border:1px solid #2A2D35 !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
+    .sb-filter-tab:hover { border-color:#475569 !important; color:#94a3b8 !important; }
+    .sb-filter-tab.active { background:#1A56DB !important; border-color:#1A56DB !important; color:#fff !important; }
     .sb-group-dark {
       padding: 8px 12px 6px !important;
       display: flex !important;
@@ -1019,7 +1024,7 @@ function goTab(id){
 }
 
 function renderMapaPage(){
-  _sidebarBusca='';
+  _sidebarBusca='';filterStatus='todos';
   document.getElementById('app-body').innerHTML=`
     <div class="sidebar-pedidos sb-dark" id="sidebar-mapa">
       <div class="sb-header-dark">
@@ -1029,6 +1034,15 @@ function renderMapaPage(){
           <button onclick="toggleSidebar()" title="Minimizar" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:15px;padding:2px 6px;border-radius:4px;line-height:1;margin-left:4px">◀</button>
         </div>
         <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
+        <div class="sb-filter-tabs">
+          <button class="sb-filter-tab active" onclick="setFilter('todos',this)">Todos</button>
+          <button class="sb-filter-tab" onclick="setFilter('recebido',this)">Recebido</button>
+          <button class="sb-filter-tab" onclick="setFilter('pronto',this)">Pronto</button>
+          <button class="sb-filter-tab" onclick="setFilter('aceito',this)">Aceito</button>
+          <button class="sb-filter-tab" onclick="setFilter('em_rota',this)">Em rota</button>
+          <button class="sb-filter-tab" onclick="setFilter('retornando',this)">Retornando</button>
+          <button class="sb-filter-tab" onclick="setFilter('cancelado',this)">Cancelado</button>
+        </div>
       </div>
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
@@ -1060,7 +1074,7 @@ function renderMapaPage(){
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
   },100);
 }
-function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
+function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),btn=document.getElementById('sb-reopen-btn');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(btn)btn.style.display=min?'flex':'none';if(map)setTimeout(()=>map.invalidateSize(),220);}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
