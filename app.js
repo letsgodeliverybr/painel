@@ -1705,6 +1705,18 @@ document.addEventListener('DOMContentLoaded',async()=>{
 // AUTOCOMPLETE DE ENDEREÇO
 // ═══════════════════════════════════════════════
 let _autocompleteTimer=null;
+function _fmtEndNominatim(res){
+  const a=res.address||{};
+  const road=a.road||a.pedestrian||a.footway||a.street||a.path||'';
+  const num=a.house_number||'';
+  const bairro=a.suburb||a.neighbourhood||a.city_district||a.quarter||a.village||'';
+  const cidade=a.city||a.town||a.municipality||'';
+  const partes=[];
+  if(road)partes.push(num?`${road}, ${num}`:road);
+  if(bairro)partes.push(bairro);
+  if(cidade)partes.push(cidade);
+  return partes.length?partes.join(' - '):res.display_name.split(',').slice(0,4).join(',').trim();
+}
 function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   const input=document.getElementById(inputId);if(!input)return;
   let dropdown=document.getElementById(inputId+'-suggestions');
@@ -1718,12 +1730,11 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
         const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5&addressdetails=1`,{headers:{'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'}});
         const results=await r.json();
         if(!results.length){dropdown.style.display='none';return;}
-        dropdown.innerHTML=results.map(res=>`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${res.display_name.replace(/"/g,'')}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${res.display_name.split(',').slice(0,3).join(',')}</div>`).join('');
+        dropdown.innerHTML=results.map(res=>{const lbl=_fmtEndNominatim(res);return`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${lbl.replace(/"/g,"'")}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${lbl}</div>`;}).join('');
         dropdown.querySelectorAll('div').forEach(item=>{
           item.addEventListener('click',()=>{
             const lat=parseFloat(item.dataset.lat),lng=parseFloat(item.dataset.lng);
-            const label=item.dataset.label.split(',').slice(0,3).join(',').trim();
-            input.value=label;dropdown.style.display='none';
+            input.value=item.dataset.label;dropdown.style.display='none';
             if(latId&&document.getElementById(latId))document.getElementById(latId).value=lat.toFixed(6);
             if(lngId&&document.getElementById(lngId))document.getElementById(lngId).value=lng.toFixed(6);
             const fb=feedbackId?document.getElementById(feedbackId):null;
