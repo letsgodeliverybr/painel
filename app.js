@@ -620,8 +620,8 @@ const _gruposColapsados=new Set();
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 538px !important;
-      min-width: 538px !important;
+      width: 400px !important;
+      min-width: 400px !important;
       flex-shrink: 0 !important;
       transition: width .2s ease, min-width .2s ease !important;
     }
