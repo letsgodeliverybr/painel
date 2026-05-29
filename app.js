@@ -620,8 +620,8 @@ const _gruposColapsados=new Set();
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 400px !important;
-      min-width: 400px !important;
+      width: 420px !important;
+      min-width: 420px !important;
       flex-shrink: 0 !important;
       transition: width .2s ease, min-width .2s ease !important;
     }
@@ -1038,7 +1038,6 @@ function renderMapaPage(){
         <div class="sb-header-top-dark">
           <span class="sb-title-dark">Pedidos</span>
           <span class="sb-badge-dark" id="sb-count">0</span>
-          <button onclick="toggleSidebar()" title="Minimizar" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:15px;padding:2px 6px;border-radius:4px;line-height:1;margin-left:4px">◀</button>
         </div>
         <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
         <div class="sb-filter-tabs">
@@ -1054,7 +1053,7 @@ function renderMapaPage(){
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container" style="position:relative">
-      <button id="sb-reopen-btn" onclick="toggleSidebar()" title="Abrir pedidos" style="display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:1000;background:#1E2028;border:1px solid #1A56DB;color:#e2e8f0;border-radius:10px;padding:10px 8px;cursor:pointer;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.5);writing-mode:vertical-rl;letter-spacing:1px;font-weight:600">▶ Pedidos</button>
+      <button id="sb-toggle-tab" onclick="toggleSidebar()" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:50%;transform:translate(-100%,-50%);z-index:200;width:16px;height:52px;background:var(--sb-bg);border:1px solid var(--sb-border);border-right:none;border-radius:6px 0 0 6px;color:#6B7280;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s">◀</button>
       <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
         <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
         <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
@@ -1082,7 +1081,7 @@ function renderMapaPage(){
   },100);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
-function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),btn=document.getElementById('sb-reopen-btn');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(btn)btn.style.display=min?'flex':'none';if(map)setTimeout(()=>map.invalidateSize(),220);}
+function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab)tab.textContent=min?'►':'◀';if(map)setTimeout(()=>map.invalidateSize(),220);}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 
