@@ -617,8 +617,8 @@ const _gruposColapsados=new Set();
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 340px !important;
-      min-width: 340px !important;
+      width: 420px !important;
+      min-width: 420px !important;
       flex-shrink: 0 !important;
       transition: width .2s ease, min-width .2s ease !important;
     }
@@ -692,9 +692,6 @@ const _gruposColapsados=new Set();
       text-transform: uppercase !important;
       letter-spacing: .5px !important;
       flex: 1 !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
     }
     .sb-status-bubble {
       width: 22px !important;
