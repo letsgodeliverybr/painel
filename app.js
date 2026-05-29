@@ -899,7 +899,8 @@ async function calcularTaxaAuto(){
   const lojaSelect=document.getElementById('np-loja-id');
   const endereco=document.getElementById('np-endereco')?.value?.trim();
   const fb=document.getElementById('np-endereco-feedback');
-  if(!lojaSelect?.value||!endereco||endereco.length<6)return;
+  if(!endereco||endereco.length<6)return;
+  if(!lojaSelect?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
   const lojaOpt=lojaSelect.options[lojaSelect.selectedIndex];
   const lojaLat=parseFloat(lojaOpt.dataset.lat),lojaLng=parseFloat(lojaOpt.dataset.lng);
   if(!lojaLat||!lojaLng){if(fb)fb.innerHTML='<span style="color:#f59e0b">⚠️ Loja sem coordenadas GPS</span>';return;}
@@ -1711,10 +1712,9 @@ function _fmtEndNominatim(res){
   const num=a.house_number||'';
   const bairro=a.suburb||a.neighbourhood||a.city_district||a.quarter||a.village||'';
   const cidade=a.city||a.town||a.municipality||'';
-  const partes=[];
-  if(road)partes.push(num?`${road}, ${num}`:road);
-  if(bairro)partes.push(bairro);
-  if(cidade)partes.push(cidade);
+  const rua=road?(num?`${road}, ${num}`:road):'';
+  const localidade=[bairro,cidade].filter(Boolean).join(', ');
+  const partes=[rua,localidade].filter(Boolean);
   return partes.length?partes.join(' - '):res.display_name.split(',').slice(0,4).join(',').trim();
 }
 function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
