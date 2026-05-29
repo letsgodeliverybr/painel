@@ -1126,8 +1126,6 @@ function renderPedidosLista(){
     {key:'chegou_local',color:'#8B5CF6',label:'No local'},
     {key:'em_rota',color:'#1A56DB',label:'Em rota'},
     {key:'retornando',color:'#10B981',label:'Retornando'},
-    {key:'finalizado',color:'#10B981',label:'Finalizado'},
-    {key:'cancelado',color:'#EF4444',label:'Cancelado'},
   ];
   const grupos={};
   filtered.forEach(p=>{
