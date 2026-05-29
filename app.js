@@ -848,14 +848,20 @@ function renderMapaPage(){
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container">
-      <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;align-items:center">
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Pedidos</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🍳</span><div><div class="mapa-stat-val" id="ms-preparo" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em preparo</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🔍</span><div><div class="mapa-stat-val" id="ms-procurando" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Proc. Entregador</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">🔄</span><div><div class="mapa-stat-val" id="ms-rota" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em rota</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 8px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
+      <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Pedidos</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🍳</span><div><div class="mapa-stat-val" id="ms-preparo" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em preparo</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🔍</span><div><div class="mapa-stat-val" id="ms-procurando" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Proc. Entregador</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🔄</span><div><div class="mapa-stat-val" id="ms-rota" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em rota</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
       </div>
       <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
       <div id="map"></div>
