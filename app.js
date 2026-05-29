@@ -932,10 +932,11 @@ async function calcularTaxaAuto(){
 }
 
 const TODOS_STATUS=[
-  {key:'recebido',label:'Recebido',cor:'#ef4444'},{key:'pronto',label:'Pronto',cor:'#F97316'},
-  {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'No local',cor:'#8B5CF6'},
-  {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'retornando',label:'Retornando',cor:'#10B981'},
-  {key:'finalizado',label:'Finalizado',cor:'#10B981'},{key:'cancelado',label:'Cancelado',cor:'#ef4444'},
+  {key:'recebido',label:'Recebido',cor:'#EF4444'},{key:'pronto',label:'Pronto',cor:'#EC4899'},
+  {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'Chegou no local',cor:'#38BDF8'},
+  {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'chegou_destino',label:'Chegou no destino',cor:'#7C3AED'},
+  {key:'retornando',label:'Retornando',cor:'#10B981'},{key:'finalizado',label:'Finalizado',cor:'#10B981'},
+  {key:'cancelado',label:'Cancelado',cor:'#EF4444'},
 ];
 let _dropdownAberto=null;
 function abrirDropdownStatus(event,pedidoId){
@@ -952,7 +953,8 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
-  if(novoStatus==='em_rota')update.em_rota_em=agora;if(novoStatus==='retornando')update.retornando_em=agora;
+  if(novoStatus==='chegou_local')update.chegou_local_em=agora;if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='chegou_destino')update.chegou_destino_em=agora;if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
@@ -983,8 +985,8 @@ async function alterarPontos(pedidoId,delta){
   await logAcao('alterar_pontos',{pedido_id:pedidoId,pontos:novosPontos});p.pontos=novosPontos;
 }
 
-const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'No local',em_rota:'Em rota',retornando:'Retornando',finalizado:'Finalizado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila'};
-const STATUS_CORES={recebido:'#ef4444',pronto:'#F97316',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
+const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila'};
+const STATUS_CORES={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',cancelado:'#EF4444',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
@@ -1064,7 +1066,9 @@ function renderMapaPage(){
           <button class="sb-filter-tab" data-status="recebido" onclick="setFilter('recebido',this)">Recebido</button>
           <button class="sb-filter-tab" data-status="pronto" onclick="setFilter('pronto',this)">Pronto</button>
           <button class="sb-filter-tab" data-status="aceito" onclick="setFilter('aceito',this)">Aceito</button>
+          <button class="sb-filter-tab" data-status="chegou_local" onclick="setFilter('chegou_local',this)">No local</button>
           <button class="sb-filter-tab" data-status="em_rota" onclick="setFilter('em_rota',this)">Em rota</button>
+          <button class="sb-filter-tab" data-status="chegou_destino" onclick="setFilter('chegou_destino',this)">No destino</button>
           <button class="sb-filter-tab" data-status="retornando" onclick="setFilter('retornando',this)">Retornando</button>
           <button class="sb-filter-tab" data-status="cancelado" onclick="setFilter('cancelado',this)">Cancelado</button>
         </div>
@@ -1114,7 +1118,7 @@ async function atualizarTudo(){
   const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
   const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
   const procurando=allPedidos.filter(p=>getStatusKey(p)==='pronto').length;
-  const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','retornando'].includes(getStatusKey(p))).length;
+  const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','chegou_destino','retornando'].includes(getStatusKey(p))).length;
   const [finalizadosData,canceladosData]=await Promise.all([
     db('pedidos','GET',null,'?status=eq.finalizado&select=id&limit=500'),
     db('pedidos','GET',null,'?status=eq.cancelado&select=id&limit=500'),
@@ -1138,11 +1142,12 @@ function renderPedidosLista(){
   if(count)count.textContent=filtered.length;
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
   const STATUS_BUBBLES=[
-    {key:'recebido',color:'#6B7280',label:'Recebido'},
-    {key:'pronto',color:'#F97316',label:'Pronto'},
+    {key:'recebido',color:'#EF4444',label:'Recebido'},
+    {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
-    {key:'chegou_local',color:'#8B5CF6',label:'No local'},
+    {key:'chegou_local',color:'#38BDF8',label:'Chegou no local'},
     {key:'em_rota',color:'#1A56DB',label:'Em rota'},
+    {key:'chegou_destino',color:'#7C3AED',label:'Chegou no destino'},
     {key:'retornando',color:'#10B981',label:'Retornando'},
   ];
   const grupos={};
@@ -1538,7 +1543,7 @@ async function carregarRelatorio(){
   document.getElementById('r-lojas').textContent=lojas.length;
   document.getElementById('r-usuarios').textContent=usuarios.length;
   const sc={};pedidos.forEach(p=>{const s=getStatusKey(p);sc[s]=(sc[s]||0)+1;});
-  const total=pedidos.length||1;const colors={recebido:'#ef4444',pronto:'#ec4899',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',entregue:'#475569',cancelado:'#ef4444'};
+  const total=pedidos.length||1;const colors={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',entregue:'#475569',cancelado:'#EF4444'};
   document.getElementById('status-bars').innerHTML=pedidos.length===0?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido no período</div>':Object.entries(sc).map(([s,n])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${STATUS_LABEL[s]||s}</span><span style="font-weight:700">${n}</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${colors[s]||'#475569'};height:100%;width:${(n/total*100).toFixed(1)}%;border-radius:4px"></div></div></div>`).join('');
 }
 
