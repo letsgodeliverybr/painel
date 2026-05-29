@@ -45,22 +45,22 @@ const _gruposColapsados=new Set();
     }
 
     html.dark {
-      --bg: #0D0F14;
-      --surface: #161820;
-      --surface2: #1e2130;
-      --border: #2A2D35;
+      --bg: #1E2028;
+      --surface: #272A35;
+      --surface2: #2E3140;
+      --border: #3A3D4A;
       --text: #e2e8f0;
       --text2: #94a3b8;
       --text3: #475569;
       --accent: #818cf8;
       --accent2: #6366f1;
-      --sb-bg: #0D0F14;
-      --sb-card: #161820;
-      --sb-border: #2A2D35;
+      --sb-bg: #1E2028;
+      --sb-card: #272A35;
+      --sb-border: #3A3D4A;
       --sb-text: #e2e8f0;
       --sb-text2: #94a3b8;
       --sb-text3: #475569;
-      --sb-search-bg: #161820;
+      --sb-search-bg: #272A35;
     }
     html.dark .topbar { background: var(--surface) !important; }
     html.dark .card,
@@ -670,7 +670,7 @@ const _gruposColapsados=new Set();
     .sb-search-dark:focus { border-color: #1A56DB !important; }
     .sb-filter-tabs { display:flex !important; gap:4px !important; flex-wrap:nowrap !important; overflow-x:auto !important; padding:6px 0 2px !important; scrollbar-width:none !important; }
     .sb-filter-tabs::-webkit-scrollbar { display:none !important; }
-    .sb-filter-tab { background:#1a1d26 !important; border:1px solid #2A2D35 !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
+    .sb-filter-tab { background:#272A35 !important; border:1px solid #3A3D4A !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
     .sb-filter-tab:hover { border-color:#475569 !important; color:#94a3b8 !important; }
     .sb-filter-tab.active { background:#1A56DB !important; border-color:#1A56DB !important; color:#fff !important; }
     .sb-group-dark {
@@ -1051,7 +1051,7 @@ function renderMapaPage(){
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
     </div>
     <div class="mapa-container" style="position:relative">
-      <button id="sb-reopen-btn" onclick="toggleSidebar()" title="Abrir pedidos" style="display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:1000;background:#0D0F14;border:1px solid #1A56DB;color:#e2e8f0;border-radius:10px;padding:10px 8px;cursor:pointer;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.5);writing-mode:vertical-rl;letter-spacing:1px;font-weight:600">▶ Pedidos</button>
+      <button id="sb-reopen-btn" onclick="toggleSidebar()" title="Abrir pedidos" style="display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:1000;background:#1E2028;border:1px solid #1A56DB;color:#e2e8f0;border-radius:10px;padding:10px 8px;cursor:pointer;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.5);writing-mode:vertical-rl;letter-spacing:1px;font-weight:600">▶ Pedidos</button>
       <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
         <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
         <div style="width:1px;height:28px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
@@ -1149,9 +1149,9 @@ function renderPedidosLista(){
           ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
           ${p.gorjeta>0?`<div style="background:#1A56DB;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff;font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:#64748b;margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
-          ${p.descricao?`<div style="background:#0D0F14;border-radius:6px;padding:7px;font-size:11px;color:#94a3b8;margin-bottom:8px">📋 ${p.descricao}</div>`:''}
+          ${p.descricao?`<div style="background:#272A35;border-radius:6px;padding:7px;font-size:11px;color:#94a3b8;margin-bottom:8px">📋 ${p.descricao}</div>`:''}
           <div style="font-size:11px;color:#475569;margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
-          <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:#475569;border:1px solid #2A2D35;border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
+          <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:#475569;border:1px solid #3A3D4A;border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
           <div style="margin-top:8px;background:#1A56DB18;border:1px solid #1A56DB55;border-radius:8px;padding:10px">
             <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
             <div style="display:flex;align-items:center;gap:8px">
