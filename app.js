@@ -1147,17 +1147,17 @@ function renderPedidosLista(){
         <div class="pd-detail">
           ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:#ec4899;margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
           ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
-          ${p.gorjeta>0?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:6px;padding:6px 10px;font-size:11px;color:#f59e0b;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
+          ${p.gorjeta>0?`<div style="background:#1A56DB;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff;font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:#64748b;margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
           ${p.descricao?`<div style="background:#0D0F14;border-radius:6px;padding:7px;font-size:11px;color:#94a3b8;margin-bottom:8px">📋 ${p.descricao}</div>`:''}
           <div style="font-size:11px;color:#475569;margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
           <button onclick="event.stopPropagation();fecharDetalhe()" style="width:100%;background:none;color:#475569;border:1px solid #2A2D35;border-radius:8px;padding:7px;font-family:Inter,sans-serif;font-size:11px;cursor:pointer">Fechar</button>
-          <div style="margin-top:8px;background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px">
-            <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
+          <div style="margin-top:8px;background:#1A56DB18;border:1px solid #1A56DB55;border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
             <div style="display:flex;align-items:center;gap:8px">
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">−</button>
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:#1A56DB30;border:1px solid #1A56DB;color:#60a5fa;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">−</button>
               <span id="pontos-${p.id}" style="color:#fff;font-weight:800;font-size:18px;min-width:30px;text-align:center">${p.pontos||4}</span>
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:#f59e0b20;border:1px solid #f59e0b;color:#f59e0b;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">+</button>
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:#1A56DB30;border:1px solid #1A56DB;color:#60a5fa;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">+</button>
               <span style="font-size:11px;color:#475569">pontos</span>
             </div>
           </div>
