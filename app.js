@@ -90,15 +90,16 @@ const _gruposColapsados=new Set();
       box-shadow: 0 1px 20px rgba(99,102,241,.08) !important;
       backdrop-filter: blur(12px) !important;
     }
-    .topbar-logo-text { color: var(--text) !important; }
-    .topbar-logo-sub  { color: var(--accent) !important; }
+    .topbar-logo-text { color: #1A56DB !important; }
+    .topbar-logo-sub  { color: #1A56DB !important; }
+    .topbar-logo-icon { background: #1A56DB !important; }
     .user-nome        { color: var(--text2) !important; }
 
     /* ── BOTÃO NOVO PEDIDO ── */
     #btn-novo-pedido, .btn-novo-pedido {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+      background: #1A56DB !important;
       border: none !important;
-      box-shadow: 0 4px 14px rgba(99,102,241,.35) !important;
+      box-shadow: 0 4px 14px rgba(26,86,219,.35) !important;
       border-radius: 10px !important;
       font-weight: 600 !important;
       color: #fff !important;
@@ -106,12 +107,14 @@ const _gruposColapsados=new Set();
 
     /* ── SALDO TOPBAR ── */
     #topbar-saldo {
-      background: linear-gradient(135deg,#10b981,#059669) !important;
+      background: rgba(255,255,255,.08) !important;
       border-radius: 10px !important;
       color: #fff !important;
       font-weight: 700 !important;
-      padding: 6px 14px !important;
-      border: none !important;
+      padding: 5px 12px !important;
+      border: 1px solid rgba(255,255,255,.15) !important;
+      text-align: center !important;
+      line-height: 1.2 !important;
     }
 
     /* ── APP BODY ── */
