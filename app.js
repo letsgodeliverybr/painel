@@ -697,11 +697,18 @@ const _gruposColapsados=new Set();
       white-space: nowrap !important;
     }
     .sb-status-bubble {
+      width: 22px !important;
+      height: 22px !important;
+      border-radius: 50% !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
       font-size: 10px !important;
       font-weight: 700 !important;
-      padding: 2px 6px !important;
-      border-radius: 10px !important;
-      white-space: nowrap !important;
+      color: #fff !important;
+      flex-shrink: 0 !important;
+      cursor: default !important;
+      position: relative !important;
     }
     .pd-card {
       background: var(--sb-card) !important;
@@ -1113,13 +1120,14 @@ function renderPedidosLista(){
   if(count)count.textContent=filtered.length;
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
   const STATUS_BUBBLES=[
-    {key:'recebido',bg:'#ef444420',color:'#ef4444',label:'Recebido'},
-    {key:'pronto',bg:'#ec489920',color:'#ec4899',label:'Pronto'},
-    {key:'aceito',bg:'#F59E0B20',color:'#F59E0B',label:'Aceito'},
-    {key:'chegou_local',bg:'#8B5CF620',color:'#8B5CF6',label:'No local'},
-    {key:'em_rota',bg:'#1A56DB20',color:'#60a5fa',label:'Em rota'},
-    {key:'retornando',bg:'#10B98120',color:'#10B981',label:'Retornando'},
-    {key:'finalizado',bg:'#10B98120',color:'#10B981',label:'Finaliz.'},
+    {key:'recebido',color:'#6B7280',label:'Recebido'},
+    {key:'pronto',color:'#F97316',label:'Pronto'},
+    {key:'aceito',color:'#F59E0B',label:'Aceito'},
+    {key:'chegou_local',color:'#8B5CF6',label:'No local'},
+    {key:'em_rota',color:'#1A56DB',label:'Em rota'},
+    {key:'retornando',color:'#10B981',label:'Retornando'},
+    {key:'finalizado',color:'#10B981',label:'Finalizado'},
+    {key:'cancelado',color:'#EF4444',label:'Cancelado'},
   ];
   const grupos={};
   filtered.forEach(p=>{
@@ -1131,7 +1139,7 @@ function renderPedidosLista(){
     const colapsado=_gruposColapsados.has(key);
     const bubbles=STATUS_BUBBLES.map(sb=>{
       const n=grupo.pedidos.filter(p=>getStatusKey(p)===sb.key).length;
-      return n?`<span class="sb-status-bubble" style="background:${sb.bg};color:${sb.color}">${n} ${sb.label}</span>`:'';
+      return n?`<span class="sb-status-bubble" style="background:${sb.color}" title="${sb.label}">${n}</span>`:'';
     }).join('');
     const cards=grupo.pedidos.map(p=>{
       const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
