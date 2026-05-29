@@ -673,9 +673,23 @@ const _gruposColapsados=new Set();
     .sb-search-dark:focus { border-color: #1A56DB !important; }
     .sb-filter-tabs { display:flex !important; gap:4px !important; flex-wrap:nowrap !important; overflow-x:auto !important; padding:6px 0 2px !important; scrollbar-width:none !important; }
     .sb-filter-tabs::-webkit-scrollbar { display:none !important; }
-    .sb-filter-tab { background:#272A35 !important; border:1px solid #3A3D4A !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
-    .sb-filter-tab:hover { border-color:#475569 !important; color:#94a3b8 !important; }
-    .sb-filter-tab.active { background:#1A56DB !important; border-color:#1A56DB !important; color:#fff !important; }
+    .sb-filter-tab { background:transparent !important; border:1px solid #3A3D4A !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
+    .sb-filter-tab:hover { opacity:.75 !important; }
+    .sb-filter-tab.active { color:#fff !important; }
+    .sb-filter-tab[data-status="todos"]       { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
+    .sb-filter-tab[data-status="recebido"]    { color:#EF4444 !important; border-color:rgba(239,68,68,.4) !important; }
+    .sb-filter-tab[data-status="pronto"]      { color:#EC4899 !important; border-color:rgba(236,72,153,.4) !important; }
+    .sb-filter-tab[data-status="aceito"]      { color:#F59E0B !important; border-color:rgba(245,158,11,.4) !important; }
+    .sb-filter-tab[data-status="em_rota"]     { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
+    .sb-filter-tab[data-status="retornando"]  { color:#8B5CF6 !important; border-color:rgba(139,92,246,.4) !important; }
+    .sb-filter-tab[data-status="cancelado"]   { color:#DC2626 !important; border-color:rgba(220,38,38,.4) !important; }
+    .sb-filter-tab[data-status="todos"].active      { background:#1A56DB !important; border-color:#1A56DB !important; }
+    .sb-filter-tab[data-status="recebido"].active   { background:#EF4444 !important; border-color:#EF4444 !important; }
+    .sb-filter-tab[data-status="pronto"].active     { background:#EC4899 !important; border-color:#EC4899 !important; }
+    .sb-filter-tab[data-status="aceito"].active     { background:#F59E0B !important; border-color:#F59E0B !important; }
+    .sb-filter-tab[data-status="em_rota"].active    { background:#1A56DB !important; border-color:#1A56DB !important; }
+    .sb-filter-tab[data-status="retornando"].active { background:#8B5CF6 !important; border-color:#8B5CF6 !important; }
+    .sb-filter-tab[data-status="cancelado"].active  { background:#DC2626 !important; border-color:#DC2626 !important; }
     .sb-group-dark {
       padding: 8px 12px 6px !important;
       display: flex !important;
@@ -1041,13 +1055,13 @@ function renderMapaPage(){
         </div>
         <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
         <div class="sb-filter-tabs">
-          <button class="sb-filter-tab active" onclick="setFilter('todos',this)">Todos</button>
-          <button class="sb-filter-tab" onclick="setFilter('recebido',this)">Recebido</button>
-          <button class="sb-filter-tab" onclick="setFilter('pronto',this)">Pronto</button>
-          <button class="sb-filter-tab" onclick="setFilter('aceito',this)">Aceito</button>
-          <button class="sb-filter-tab" onclick="setFilter('em_rota',this)">Em rota</button>
-          <button class="sb-filter-tab" onclick="setFilter('retornando',this)">Retornando</button>
-          <button class="sb-filter-tab" onclick="setFilter('cancelado',this)">Cancelado</button>
+          <button class="sb-filter-tab active" data-status="todos" onclick="setFilter('todos',this)">Todos</button>
+          <button class="sb-filter-tab" data-status="recebido" onclick="setFilter('recebido',this)">Recebido</button>
+          <button class="sb-filter-tab" data-status="pronto" onclick="setFilter('pronto',this)">Pronto</button>
+          <button class="sb-filter-tab" data-status="aceito" onclick="setFilter('aceito',this)">Aceito</button>
+          <button class="sb-filter-tab" data-status="em_rota" onclick="setFilter('em_rota',this)">Em rota</button>
+          <button class="sb-filter-tab" data-status="retornando" onclick="setFilter('retornando',this)">Retornando</button>
+          <button class="sb-filter-tab" data-status="cancelado" onclick="setFilter('cancelado',this)">Cancelado</button>
         </div>
       </div>
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
