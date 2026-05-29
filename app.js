@@ -666,7 +666,7 @@ function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
 
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 let _navAtivo='';
@@ -722,7 +722,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'novo-pedido':renderNovoPedidoPage,'loja-pedidos':renderLojaPedidosPage,'loja-mapa':renderLojaMapaPage,'loja-relatorio':renderLojaRelatorioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'loja-pedidos':renderLojaPedidosPage,'loja-mapa':renderLojaMapaPage,'loja-relatorio':renderLojaRelatorioPage};
   if(pages[id])pages[id]();
 }
 
@@ -1139,6 +1139,33 @@ async function renderLogsPage(){
   const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
   tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${l.created_at?new Date(l.created_at).toLocaleString('pt-BR'):'—'}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
+}
+
+let _configAba='cliente';
+function renderConfiguracaoPage(aba){
+  _configAba=aba||_configAba||'cliente';
+  const abas=[
+    {id:'cliente',       icon:'👤', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
+    {id:'integracao',    icon:'🔗', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
+    {id:'open-delivery', icon:'🚀', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
+    {id:'operacao',      icon:'🛠️', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
+  ];
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header"><div class="page-title">⚙️ Configuração</div></div>
+      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
+        ${abas.map(a=>`<button onclick="renderConfiguracaoPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_configAba===a.id?'var(--accent)':'transparent'};color:${_configAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+      </div>
+      <div id="config-content"></div>
+    </div>`;
+  const aba=abas.find(a=>a.id===_configAba);
+  document.getElementById('config-content').innerHTML=`
+    <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
+      <div style="font-size:56px;margin-bottom:16px">${aba.icone}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:10px">${aba.label}</div>
+      <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
+      <div style="color:var(--text2);font-size:14px;line-height:1.6">${aba.desc}</div>
+    </div>`;
 }
 
 let _tabAba='cobranca';
