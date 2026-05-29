@@ -1013,9 +1013,10 @@ async function fazerLogin(){
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
   _carregarSaldoTopbar();
+  if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
 }
 function logout(){
-  clearInterval(realtimeInterval);sessionStorage.removeItem('lg_user');
+  clearInterval(realtimeInterval);pararRoteirizacao();sessionStorage.removeItem('lg_user');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -1699,8 +1700,181 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
     renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido');_carregarSaldoTopbar();},150);
+    if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
   }catch(e){sessionStorage.removeItem('lg_user');}
 });
+
+// ═══════════════════════════════════════════════
+// ROTEIRIZAÇÃO DE PEDIDOS
+// ═══════════════════════════════════════════════
+let _rotasInterval=null,_dobrarRaioInterval=null;
+let _filaDespacho=[],_processandoFila=false;
+
+async function logDespacho(acao,dados={}){
+  try{await db('logs_despacho','POST',{acao,dados,created_at:new Date().toISOString()});}catch{}
+}
+
+function _comTimeout(fn,ms=10000){
+  return Promise.race([fn(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);
+}
+
+async function _adquirirEntregador(id){
+  try{
+    const ok=await db('entregadores','GET',null,`?id=eq.${id}&em_processo=eq.false&disponivel=eq.true`);
+    if(!ok||!ok.length)return false;
+    await db('entregadores','PATCH',{em_processo:true},`?id=eq.${id}`);
+    return true;
+  }catch{return false;}
+}
+
+async function _liberarEntregador(id){
+  if(!id)return;
+  try{await db('entregadores','PATCH',{em_processo:false},`?id=eq.${id}`);}catch{}
+}
+
+async function _buscarEntregador(lat,lng,raio,excluir=[]){
+  const lista=await db('entregadores','GET',null,'?disponivel=eq.true&em_processo=eq.false&latitude=not.is.null');
+  if(!lista||!lista.length)return null;
+  return lista
+    .filter(e=>e.latitude&&e.longitude&&!excluir.includes(e.id))
+    .map(e=>({...e,_dist:calcularDistancia(lat,lng,e.latitude,e.longitude)}))
+    .filter(e=>e._dist<=raio)
+    .sort((a,b)=>a._dist-b._dist)[0]||null;
+}
+
+function _agruparPorProximidade(pedidos){
+  const grupos=[],usados=new Set();
+  for(let i=0;i<pedidos.length;i++){
+    if(usados.has(i))continue;
+    const g=[pedidos[i]];usados.add(i);
+    for(let j=i+1;j<pedidos.length&&g.length<3;j++){
+      if(usados.has(j))continue;
+      if(g.every(x=>calcularDistancia(x.latitude,x.longitude,pedidos[j].latitude,pedidos[j].longitude)<=4.5)){
+        g.push(pedidos[j]);usados.add(j);
+      }
+    }
+    if(g.length>=2)grupos.push(g);
+  }
+  return grupos;
+}
+
+async function _despacharRota(lojaId,grupo,loja){
+  let entId=null;
+  try{
+    const pedidoIds=grupo.map(p=>p.id);
+    const agora=new Date().toISOString();
+    const ent=await _buscarEntregador(loja.latitude,loja.longitude,2);
+    if(ent){
+      if(await _adquirirEntregador(ent.id))entId=ent.id;
+      else await logDespacho('entregador_ocupado',{entregador_id:ent.id});
+    }
+    const res=await db('rotas','POST',{
+      loja_id:lojaId,pedido_ids:pedidoIds,status:'aguardando',
+      entregador_id:entId,raio_atual:2,tentativas_entregador:entId?1:0,
+      created_at:agora,updated_at:agora
+    });
+    const rota=Array.isArray(res)?res[0]:res;
+    if(!rota?.id){await _liberarEntregador(entId);entId=null;return;}
+    await logDespacho('criou_rota',{rota_id:rota.id,loja_id:lojaId,pedido_ids:pedidoIds});
+    if(entId){
+      await logDespacho('tentou_entregador',{rota_id:rota.id,entregador_id:entId,raio:2});
+      await db('entregadores','PATCH',{notificacao_rota:rota.id,em_processo:false},`?id=eq.${entId}`);
+      entId=null;
+    }
+  }finally{
+    if(entId)_liberarEntregador(entId).catch(()=>{});
+  }
+}
+
+async function _processarFila(){
+  if(_processandoFila)return;
+  _processandoFila=true;
+  while(_filaDespacho.length>0){
+    const fn=_filaDespacho.shift();
+    try{await _comTimeout(fn,10000);}
+    catch(e){if(e.message==='timeout')await logDespacho('timeout',{erro:'10s'});}
+  }
+  _processandoFila=false;
+}
+
+async function verificarRotas(){
+  if(!currentUser||(currentPerfil!=='adm'&&currentPerfil!=='suporte'))return;
+  try{
+    const pedidos=await db('pedidos','GET',null,'?status=eq.recebido&latitude=not.is.null&select=id,loja_id,latitude,longitude');
+    if(!pedidos||pedidos.length<2)return;
+    const rotasAtivas=await db('rotas','GET',null,'?status=in.(aguardando,disponivel)&select=pedido_ids');
+    const emRota=new Set((rotasAtivas||[]).flatMap(r=>Array.isArray(r.pedido_ids)?r.pedido_ids:[]));
+    const livres=pedidos.filter(p=>!emRota.has(p.id)&&p.loja_id&&p.latitude&&p.longitude);
+    const porLoja={};
+    for(const p of livres){if(!porLoja[p.loja_id])porLoja[p.loja_id]=[];porLoja[p.loja_id].push(p);}
+    for(const[lojaId,lista] of Object.entries(porLoja)){
+      if(lista.length<2)continue;
+      const lojas=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,latitude,longitude`);
+      const loja=lojas?.[0];
+      if(!loja?.latitude||!loja?.longitude)continue;
+      for(const grupo of _agruparPorProximidade(lista)){
+        _filaDespacho.push(()=>_despacharRota(lojaId,grupo,loja));
+      }
+    }
+    _processarFila();
+  }catch(e){console.warn('[verificarRotas]',e);}
+}
+
+async function dobrarRaio(){
+  if(!currentUser||(currentPerfil!=='adm'&&currentPerfil!=='suporte'))return;
+  try{
+    const limite=new Date(Date.now()-60000).toISOString();
+    const rotas=await db('rotas','GET',null,`?status=eq.aguardando&created_at=lt.${limite}`);
+    if(!rotas||!rotas.length)return;
+    for(const rota of rotas){
+      _filaDespacho.push(async()=>{
+        const tentativas=rota.tentativas_entregador||0;
+        const raioAtual=rota.raio_atual||2;
+        if(raioAtual>=32||tentativas>=5){
+          await db('rotas','PATCH',{status:'disponivel',updated_at:new Date().toISOString()},`?id=eq.${rota.id}`);
+          await logDespacho('foi_para_disponiveis',{rota_id:rota.id,tentativas,raio:raioAtual});
+          return;
+        }
+        const novoRaio=raioAtual*2;
+        const lojas=await db('lojas','GET',null,`?id=eq.${rota.loja_id}&select=id,latitude,longitude`);
+        const loja=lojas?.[0];
+        let novoEntId=null;
+        if(loja?.latitude&&loja?.longitude){
+          const excluir=rota.entregador_id?[rota.entregador_id]:[];
+          const ent=await _buscarEntregador(loja.latitude,loja.longitude,novoRaio,excluir);
+          if(ent){
+            if(await _adquirirEntregador(ent.id))novoEntId=ent.id;
+            else await logDespacho('entregador_ocupado',{rota_id:rota.id,entregador_id:ent.id});
+          }
+        }
+        await logDespacho('raio_dobrado',{rota_id:rota.id,raio_anterior:raioAtual,novo_raio:novoRaio,entregador_id:novoEntId});
+        await db('rotas','PATCH',{
+          raio_atual:novoRaio,
+          entregador_id:novoEntId||rota.entregador_id,
+          tentativas_entregador:tentativas+1,
+          updated_at:new Date().toISOString()
+        },`?id=eq.${rota.id}`);
+        if(novoEntId){
+          await logDespacho('tentou_entregador',{rota_id:rota.id,entregador_id:novoEntId,raio:novoRaio});
+          await db('entregadores','PATCH',{notificacao_rota:rota.id,em_processo:false},`?id=eq.${novoEntId}`);
+        }
+      });
+    }
+    _processarFila();
+  }catch(e){console.warn('[dobrarRaio]',e);}
+}
+
+function iniciarRoteirizacao(){
+  pararRoteirizacao();
+  verificarRotas();dobrarRaio();
+  _rotasInterval=setInterval(verificarRotas,30000);
+  _dobrarRaioInterval=setInterval(dobrarRaio,60000);
+}
+
+function pararRoteirizacao(){
+  clearInterval(_rotasInterval);clearInterval(_dobrarRaioInterval);
+  _rotasInterval=null;_dobrarRaioInterval=null;_filaDespacho=[];
+}
 
 // ═══════════════════════════════════════════════
 // AUTOCOMPLETE DE ENDEREÇO
