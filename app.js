@@ -741,7 +741,7 @@ const _gruposColapsados=new Set();
       gap: 4px !important;
     }
     .pd-num {
-      font-size: 13px !important;
+      font-size: 18px !important;
       font-weight: 800 !important;
       color: var(--sb-text) !important;
     }
@@ -756,11 +756,11 @@ const _gruposColapsados=new Set();
       transition: border-color .12s !important;
     }
     .pd-action-btn:hover { border-color: #1A56DB !important; }
-    .pd-cliente { font-size: 11px !important; color: var(--sb-text2) !important; font-weight: 500 !important; margin-bottom: 3px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-    .pd-end { font-size: 11px !important; color: var(--sb-text3) !important; margin-bottom: 5px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-cliente { font-size: 14px !important; color: var(--sb-text2) !important; font-weight: 500 !important; margin-bottom: 3px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-end { font-size: 14px !important; color: var(--sb-text3) !important; margin-bottom: 5px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
     .pd-footer { display: flex !important; align-items: center !important; justify-content: space-between !important; }
-    .pd-taxa { font-size: 12px !important; font-weight: 700 !important; color: #10b981 !important; }
-    .pd-hora { font-size: 10px !important; color: var(--sb-text3) !important; }
+    .pd-taxa { font-size: 14px !important; font-weight: 700 !important; color: #10b981 !important; }
+    .pd-hora { font-size: 13px !important; color: var(--sb-text3) !important; }
     .pd-detail { border-top: 1px solid var(--sb-border) !important; margin-top: 8px !important; padding-top: 8px !important; }
     .sb-dark .pedidos-lista { flex: 1 !important; overflow-y: auto !important; }
     .sb-dark .empty-lista { color: var(--sb-text3) !important; }
@@ -1181,7 +1181,7 @@ function renderPedidosLista(){
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
             <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:10px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${getStatusLabel(p)} ▾</span>
+              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:14px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${getStatusLabel(p)} ▾</span>
             </span>
           </div>
         </div>
