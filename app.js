@@ -194,10 +194,10 @@ const _gruposColapsados=new Set();
     }
     .b-recebido    { background:#fee2e2 !important; color:#dc2626 !important; }
     .b-pronto      { background:#fce7f3 !important; color:#db2777 !important; }
-    .b-aceito      { background:#ede9fe !important; color:#7c3aed !important; }
-    .b-chegou_local{ background:#dbeafe !important; color:#2563eb !important; }
+    .b-aceito      { background:#fef9c3 !important; color:#b45309 !important; }
+    .b-chegou_local{ background:#ede9fe !important; color:#7c3aed !important; }
     .b-em_rota     { background:#dbeafe !important; color:#1d4ed8 !important; }
-    .b-retornando  { background:#fef3c7 !important; color:#d97706 !important; }
+    .b-retornando  { background:#d1fae5 !important; color:#059669 !important; }
     .b-finalizado  { background:#d1fae5 !important; color:#059669 !important; }
     .b-cancelado   { background:#fee2e2 !important; color:#dc2626 !important; }
     .b-disponivel  { background:#dbeafe !important; color:#2563eb !important; }
@@ -907,9 +907,9 @@ async function calcularTaxaAuto(){
 
 const TODOS_STATUS=[
   {key:'recebido',label:'Recebido',cor:'#ef4444'},{key:'pronto',label:'Pronto',cor:'#ec4899'},
-  {key:'aceito',label:'Aceito',cor:'#8b5cf6'},{key:'chegou_local',label:'No local',cor:'#60a5fa'},
-  {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'retornando',label:'Retornando',cor:'#f59e0b'},
-  {key:'finalizado',label:'Finalizado',cor:'#22c55e'},{key:'cancelado',label:'Cancelado',cor:'#ef4444'},
+  {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'No local',cor:'#8B5CF6'},
+  {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'retornando',label:'Retornando',cor:'#10B981'},
+  {key:'finalizado',label:'Finalizado',cor:'#10B981'},{key:'cancelado',label:'Cancelado',cor:'#ef4444'},
 ];
 let _dropdownAberto=null;
 function abrirDropdownStatus(event,pedidoId){
@@ -958,7 +958,7 @@ async function alterarPontos(pedidoId,delta){
 }
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'No local',em_rota:'Em rota',retornando:'Retornando',finalizado:'Finalizado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila'};
-const STATUS_CORES={recebido:'#ef4444',pronto:'#ec4899',aceito:'#8b5cf6',chegou_local:'#60a5fa',em_rota:'#1A56DB',retornando:'#f59e0b',finalizado:'#22c55e',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
+const STATUS_CORES={recebido:'#ef4444',pronto:'#ec4899',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
@@ -1115,9 +1115,11 @@ function renderPedidosLista(){
   const STATUS_BUBBLES=[
     {key:'recebido',bg:'#ef444420',color:'#ef4444',label:'Recebido'},
     {key:'pronto',bg:'#ec489920',color:'#ec4899',label:'Pronto'},
-    {key:'aceito',bg:'#8b5cf620',color:'#8b5cf6',label:'Aceito'},
+    {key:'aceito',bg:'#F59E0B20',color:'#F59E0B',label:'Aceito'},
+    {key:'chegou_local',bg:'#8B5CF620',color:'#8B5CF6',label:'No local'},
     {key:'em_rota',bg:'#1A56DB20',color:'#60a5fa',label:'Em rota'},
-    {key:'finalizado',bg:'#10b98120',color:'#10b981',label:'Finaliz.'},
+    {key:'retornando',bg:'#10B98120',color:'#10B981',label:'Retornando'},
+    {key:'finalizado',bg:'#10B98120',color:'#10B981',label:'Finaliz.'},
   ];
   const grupos={};
   filtered.forEach(p=>{
@@ -1512,7 +1514,7 @@ async function carregarRelatorio(){
   document.getElementById('r-lojas').textContent=lojas.length;
   document.getElementById('r-usuarios').textContent=usuarios.length;
   const sc={};pedidos.forEach(p=>{const s=getStatusKey(p);sc[s]=(sc[s]||0)+1;});
-  const total=pedidos.length||1;const colors={recebido:'#ef4444',pronto:'#ec4899',aceito:'#8b5cf6',em_rota:'#1A56DB',finalizado:'#22c55e',entregue:'#475569',cancelado:'#ef4444'};
+  const total=pedidos.length||1;const colors={recebido:'#ef4444',pronto:'#ec4899',aceito:'#F59E0B',chegou_local:'#8B5CF6',em_rota:'#1A56DB',retornando:'#10B981',finalizado:'#10B981',entregue:'#475569',cancelado:'#ef4444'};
   document.getElementById('status-bars').innerHTML=pedidos.length===0?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido no período</div>':Object.entries(sc).map(([s,n])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${STATUS_LABEL[s]||s}</span><span style="font-weight:700">${n}</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${colors[s]||'#475569'};height:100%;width:${(n/total*100).toFixed(1)}%;border-radius:4px"></div></div></div>`).join('');
 }
 
