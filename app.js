@@ -192,14 +192,15 @@ const _gruposColapsados=new Set();
       font-size: 11px !important;
       font-weight: 600 !important;
     }
-    .b-recebido    { background:#fee2e2 !important; color:#dc2626 !important; }
-    .b-pronto      { background:#F97316 !important; color:#fff !important; }
-    .b-aceito      { background:#fef9c3 !important; color:#b45309 !important; }
-    .b-chegou_local{ background:#ede9fe !important; color:#7c3aed !important; }
-    .b-em_rota     { background:#dbeafe !important; color:#1d4ed8 !important; }
-    .b-retornando  { background:#d1fae5 !important; color:#059669 !important; }
-    .b-finalizado  { background:#d1fae5 !important; color:#059669 !important; }
-    .b-cancelado   { background:#fee2e2 !important; color:#dc2626 !important; }
+    .b-recebido        { background:#fee2e2 !important; color:#EF4444 !important; }
+    .b-pronto          { background:#fce7f3 !important; color:#EC4899 !important; }
+    .b-aceito          { background:#fef9c3 !important; color:#F59E0B !important; }
+    .b-chegou_local    { background:#e0f2fe !important; color:#0369a1 !important; }
+    .b-em_rota         { background:#dbeafe !important; color:#1A56DB !important; }
+    .b-chegou_destino  { background:#ede9fe !important; color:#7C3AED !important; }
+    .b-retornando      { background:#d1fae5 !important; color:#059669 !important; }
+    .b-finalizado      { background:#d1fae5 !important; color:#059669 !important; }
+    .b-cancelado       { background:#fee2e2 !important; color:#EF4444 !important; }
     .b-disponivel  { background:#dbeafe !important; color:#2563eb !important; }
     .b-fila        { background:#f1f5f9 !important; color:#64748b !important; }
     .b-aguardando  { background:#fef3c7 !important; color:#d97706 !important; }
@@ -676,20 +677,24 @@ const _gruposColapsados=new Set();
     .sb-filter-tab { background:transparent !important; border:1px solid #3A3D4A !important; color:#64748b !important; border-radius:6px !important; padding:4px 10px !important; font-size:11px !important; font-weight:600 !important; cursor:pointer !important; white-space:nowrap !important; font-family:Inter,sans-serif !important; transition:all .15s !important; }
     .sb-filter-tab:hover { opacity:.75 !important; }
     .sb-filter-tab.active { color:#fff !important; }
-    .sb-filter-tab[data-status="todos"]       { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
-    .sb-filter-tab[data-status="recebido"]    { color:#EF4444 !important; border-color:rgba(239,68,68,.4) !important; }
-    .sb-filter-tab[data-status="pronto"]      { color:#EC4899 !important; border-color:rgba(236,72,153,.4) !important; }
-    .sb-filter-tab[data-status="aceito"]      { color:#F59E0B !important; border-color:rgba(245,158,11,.4) !important; }
-    .sb-filter-tab[data-status="em_rota"]     { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
-    .sb-filter-tab[data-status="retornando"]  { color:#8B5CF6 !important; border-color:rgba(139,92,246,.4) !important; }
-    .sb-filter-tab[data-status="cancelado"]   { color:#DC2626 !important; border-color:rgba(220,38,38,.4) !important; }
-    .sb-filter-tab[data-status="todos"].active      { background:#1A56DB !important; border-color:#1A56DB !important; }
-    .sb-filter-tab[data-status="recebido"].active   { background:#EF4444 !important; border-color:#EF4444 !important; }
-    .sb-filter-tab[data-status="pronto"].active     { background:#EC4899 !important; border-color:#EC4899 !important; }
-    .sb-filter-tab[data-status="aceito"].active     { background:#F59E0B !important; border-color:#F59E0B !important; }
-    .sb-filter-tab[data-status="em_rota"].active    { background:#1A56DB !important; border-color:#1A56DB !important; }
-    .sb-filter-tab[data-status="retornando"].active { background:#8B5CF6 !important; border-color:#8B5CF6 !important; }
-    .sb-filter-tab[data-status="cancelado"].active  { background:#DC2626 !important; border-color:#DC2626 !important; }
+    .sb-filter-tab[data-status="todos"]            { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
+    .sb-filter-tab[data-status="recebido"]         { color:#EF4444 !important; border-color:rgba(239,68,68,.4) !important; }
+    .sb-filter-tab[data-status="pronto"]           { color:#EC4899 !important; border-color:rgba(236,72,153,.4) !important; }
+    .sb-filter-tab[data-status="aceito"]           { color:#F59E0B !important; border-color:rgba(245,158,11,.4) !important; }
+    .sb-filter-tab[data-status="chegou_local"]     { color:#38BDF8 !important; border-color:rgba(56,189,248,.4) !important; }
+    .sb-filter-tab[data-status="em_rota"]          { color:#1A56DB !important; border-color:rgba(26,86,219,.4) !important; }
+    .sb-filter-tab[data-status="chegou_destino"]   { color:#7C3AED !important; border-color:rgba(124,58,237,.4) !important; }
+    .sb-filter-tab[data-status="retornando"]       { color:#10B981 !important; border-color:rgba(16,185,129,.4) !important; }
+    .sb-filter-tab[data-status="cancelado"]        { color:#EF4444 !important; border-color:rgba(239,68,68,.4) !important; }
+    .sb-filter-tab[data-status="todos"].active           { background:#1A56DB !important; border-color:#1A56DB !important; }
+    .sb-filter-tab[data-status="recebido"].active        { background:#EF4444 !important; border-color:#EF4444 !important; }
+    .sb-filter-tab[data-status="pronto"].active          { background:#EC4899 !important; border-color:#EC4899 !important; }
+    .sb-filter-tab[data-status="aceito"].active          { background:#F59E0B !important; border-color:#F59E0B !important; }
+    .sb-filter-tab[data-status="chegou_local"].active    { background:#38BDF8 !important; border-color:#38BDF8 !important; }
+    .sb-filter-tab[data-status="em_rota"].active         { background:#1A56DB !important; border-color:#1A56DB !important; }
+    .sb-filter-tab[data-status="chegou_destino"].active  { background:#7C3AED !important; border-color:#7C3AED !important; }
+    .sb-filter-tab[data-status="retornando"].active      { background:#10B981 !important; border-color:#10B981 !important; }
+    .sb-filter-tab[data-status="cancelado"].active       { background:#EF4444 !important; border-color:#EF4444 !important; }
     .sb-group-dark {
       padding: 8px 12px 6px !important;
       display: flex !important;
@@ -1207,7 +1212,7 @@ function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));
   motoboyMarkers={};pedidoMarkers={};lojaMarkers={};
   allLojas.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:`<span style="font-size:22px;line-height:1;text-shadow:0 0 4px #1A56DB,0 0 8px #1A56DB;display:block">🏪</span>`,iconSize:[28,28],iconAnchor:[14,14],className:''});lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>🏪 ${l.nome}</b><br>${l.endereco||'—'}`);});
-  allMotoboys.forEach(e=>{const lat=e.lat||e.latitude,lng=e.lng||e.longitude;if(!lat||!lng)return;const cor=e.status==='ocupado'?'#f97316':e.disponivel?'#22c55e':'#475569';const nome=(e.nome||'').split(' ')[0]||'Moto';const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:${cor};width:36px;height:36px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(0,0,0,.5)">🛵</div><div style="background:${cor};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap">${nome}</div></div>`,iconSize:[60,52],iconAnchor:[30,52],className:''});motoboyMarkers[e.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>${e.nome||'Motoboy'}</b><br>Status: ${e.status||'—'}`);});
+  allMotoboys.forEach(e=>{const lat=e.lat||e.latitude,lng=e.lng||e.longitude;if(!lat||!lng)return;const cor=e.status==='ocupado'?'#f97316':e.disponivel?'#22c55e':'#475569';const nome=(e.nome||'').split(' ')[0]||'Moto';const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><span style="font-size:22px;line-height:1;text-shadow:0 0 4px ${cor},0 0 8px ${cor};display:block">🛵</span><div style="background:${cor};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.4)">${nome}</div></div>`,iconSize:[50,42],iconAnchor:[25,42],className:''});motoboyMarkers[e.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>${e.nome||'Motoboy'}</b><br>Status: ${e.status||'—'}`);});
   allPedidos.forEach(p=>{if(!p.latitude||!p.longitude)return;const cor=getStatusCor(p),num=p.numero_loja||p.numero||p.id?.substring(0,4);const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:${cor};color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">#${num}</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${cor}"></div></div>`,iconSize:[50,30],iconAnchor:[25,30],className:''});pedidoMarkers[p.id]=L.marker([p.latitude,p.longitude],{icon}).addTo(map).bindPopup(`<b>#${num}</b><br>${p.endereco||'—'}<br>R$ ${(p.valor||0).toFixed(2)}`);});
 }
 
