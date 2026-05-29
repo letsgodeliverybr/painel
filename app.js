@@ -9,6 +9,7 @@ let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null;
 let idsProntoNotificados=new Set();
 let _sidebarBusca='';
+const _gruposColapsados=new Set();
 
 
 // ═══════════════════════════════════════════════
@@ -1004,6 +1005,7 @@ function renderMapaPage(){
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
+function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 
 async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
@@ -1051,7 +1053,8 @@ function renderPedidosLista(){
     if(!grupos[key]){const loja=allLojas.find(l=>l.id===p.loja_id);grupos[key]={nome:loja?.nome||'Sem loja',pedidos:[]};}
     grupos[key].pedidos.push(p);
   });
-  lista.innerHTML=Object.values(grupos).map(grupo=>{
+  lista.innerHTML=Object.entries(grupos).map(([key,grupo])=>{
+    const colapsado=_gruposColapsados.has(key);
     const bubbles=STATUS_BUBBLES.map(sb=>{
       const n=grupo.pedidos.filter(p=>getStatusKey(p)===sb.key).length;
       return n?`<span class="sb-status-bubble" style="background:${sb.bg};color:${sb.color}">${n} ${sb.label}</span>`:'';
@@ -1101,8 +1104,9 @@ function renderPedidosLista(){
         ${detalhes}
       </div>`;
     }).join('');
-    const groupHeader='<div class="sb-group-dark"><span style="font-size:13px">🏪</span><span class="sb-group-name">'+grupo.nome+'</span><div style="display:flex;gap:3px;flex-wrap:wrap">'+bubbles+'</div></div>';
-    return '<div>'+groupHeader+cards+'</div>';
+    const safeKey=key.replace(/['"]/g,'');
+    const groupHeader='<div class="sb-group-dark" onclick="toggleGrupo(\''+safeKey+'\')" style="cursor:pointer"><span style="font-size:13px">🏪</span><span class="sb-group-name">'+grupo.nome+'</span><div style="display:flex;gap:3px;flex-wrap:wrap;flex:1">'+bubbles+'</div><span style="color:#475569;font-size:11px;flex-shrink:0;margin-left:4px">'+(colapsado?'▲':'▼')+'</span></div>';
+    return '<div>'+groupHeader+'<div id="grupo-cards-'+safeKey+'" style="'+(colapsado?'display:none':'')+'">'+cards+'</div></div>';
   }).join('');
 }
 
