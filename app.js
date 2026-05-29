@@ -1093,6 +1093,7 @@ function renderMapaPage(){
         <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
       </div>
       <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
+      <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="position:absolute;bottom:32px;left:12px;z-index:1000;background:rgba(30,32,40,.85);border:1px solid #3A3D4A;color:#fff;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:background .15s">🏪</button>
       <div id="map"></div>
     </div>`;
   setTimeout(()=>{
@@ -1105,6 +1106,8 @@ function renderMapaPage(){
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab)tab.textContent=min?'►':'◀';if(map)setTimeout(()=>map.invalidateSize(),220);}
+let _filtroLojaAtivo=false;
+function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.background=_filtroLojaAtivo?'#1A56DB':'rgba(30,32,40,.85)';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 
@@ -1216,7 +1219,8 @@ function renderPedidosLista(){
 function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));
   motoboyMarkers={};pedidoMarkers={};lojaMarkers={};
-  allLojas.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:`<span style="font-size:22px;line-height:1;text-shadow:0 0 4px #1A56DB,0 0 8px #1A56DB;display:block">🏪</span>`,iconSize:[28,28],iconAnchor:[14,14],className:''});lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>🏪 ${l.nome}</b><br>${l.endereco||'—'}`);});
+  const lojasVisiveis=_filtroLojaAtivo?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
+  lojasVisiveis.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:14px;height:14px;background:#1A56DB;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #1A56DB;margin-top:-1px"></div></div>`,iconSize:[14,20],iconAnchor:[7,20],className:''});lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>🏪 ${l.nome}</b><br>${l.endereco||'—'}`);});
   allMotoboys.forEach(e=>{const lat=e.lat||e.latitude,lng=e.lng||e.longitude;if(!lat||!lng)return;const cor=e.status==='ocupado'?'#f97316':e.disponivel?'#22c55e':'#475569';const nome=(e.nome||'').split(' ')[0]||'Moto';const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><span style="font-size:22px;line-height:1;text-shadow:0 0 4px ${cor},0 0 8px ${cor};display:block">🛵</span><div style="background:${cor};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.4)">${nome}</div></div>`,iconSize:[50,42],iconAnchor:[25,42],className:''});motoboyMarkers[e.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>${e.nome||'Motoboy'}</b><br>Status: ${e.status||'—'}`);});
   allPedidos.forEach(p=>{if(!p.latitude||!p.longitude)return;const cor=getStatusCor(p),num=p.numero_loja||p.numero||p.id?.substring(0,4);const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:${cor};color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">#${num}</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${cor}"></div></div>`,iconSize:[50,30],iconAnchor:[25,30],className:''});pedidoMarkers[p.id]=L.marker([p.latitude,p.longitude],{icon}).addTo(map).bindPopup(`<b>#${num}</b><br>${p.endereco||'—'}<br>R$ ${(p.valor||0).toFixed(2)}`);});
 }
