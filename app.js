@@ -717,8 +717,9 @@ const _gruposColapsados=new Set();
       border: 1px solid var(--sb-border) !important;
       border-radius: 10px !important;
       margin: 6px 8px !important;
-      padding: 10px !important;
+      padding: 10px 10px 4px !important;
       cursor: pointer !important;
+      position: relative !important;
       transition: border-color .12s !important;
     }
     .pd-card:hover { border-color: #3b5fc0 !important; }
@@ -1149,7 +1150,6 @@ function renderPedidosLista(){
       const sk=getStatusKey(p),isSelected=selectedPedidoId===p.id,prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const loja=allLojas.find(l=>l.id===p.loja_id);
       const lojaTag=loja?`<div class="pd-loja-tag">🏪 ${loja.nome}</div>`:'';
-      const _dcol=isSelected&&_detalheColapsado.has(p.id);
       const detalhes=isSelected?`
         <div class="pd-detail"${_dcol?' style="display:none"':''}>
           ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:#ec4899;margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
@@ -1167,8 +1167,7 @@ function renderPedidosLista(){
               <span style="font-size:11px;color:#475569">pontos</span>
             </div>
           </div>
-        </div>
-        <div onclick="event.stopPropagation();toggleDetalheCard('${p.id}')" style="margin:0 -10px -10px;padding:4px 0;text-align:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 980 980" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,980) scale(0.1,-0.1)" fill="#94a3b8" stroke="none"><path d="M4250 7352 c-75 -25 -96 -37 -153 -91 -54 -50 -90 -101 -115 -165 -15 -37 -17 -141 -22 -1076 l-5 -1035 -93 183 c-106 206 -149 259 -254 311 -261 129 -562 -29 -607 -319 -12 -71 -3 -153 22 -211 19 -43 278 -569 735 -1491 339 -685 363 -731 416 -783 37 -37 81 -68 133 -93 l78 -37 769 -3 c830 -3 826 -3 935 51 58 28 153 116 184 170 58 99 67 148 67 378 l0 211 166 357 c91 196 178 390 192 431 l27 75 3 598 c3 514 1 606 -12 658 -30 115 -98 198 -205 247 -47 22 -70 27 -146 27 -82 0 -96 -3 -158 -33 -38 -19 -69 -32 -71 -30 -1 1 -17 26 -35 55 -44 70 -100 119 -180 157 -62 29 -73 31 -176 31 -104 0 -114 -2 -175 -32 -36 -18 -74 -39 -86 -48 -20 -15 -22 -13 -57 43 -96 156 -273 234 -446 198 -40 -9 -93 -27 -116 -41 -24 -14 -46 -25 -49 -25 -3 0 -6 213 -6 474 0 280 -4 495 -10 527 -26 136 -112 249 -237 311 -59 29 -77 33z"/></g></svg></div>`:'';
+        </div>`:'';
       return `<div class="pd-card${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
         ${lojaTag}
         <div class="pd-top-row">
@@ -1188,6 +1187,7 @@ function renderPedidosLista(){
           <span class="pd-hora">${hora}</span>
         </div>
         ${detalhes}
+        <div onclick="event.stopPropagation();selecionarPedido('${p.id}')" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);z-index:5;cursor:pointer;line-height:0"><svg width="24" height="24" viewBox="0 0 980 980" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,980) scale(0.1,-0.1)" fill="#ffffff" stroke="none"><path d="M4250 7352 c-75 -25 -96 -37 -153 -91 -54 -50 -90 -101 -115 -165 -15 -37 -17 -141 -22 -1076 l-5 -1035 -93 183 c-106 206 -149 259 -254 311 -261 129 -562 -29 -607 -319 -12 -71 -3 -153 22 -211 19 -43 278 -569 735 -1491 339 -685 363 -731 416 -783 37 -37 81 -68 133 -93 l78 -37 769 -3 c830 -3 826 -3 935 51 58 28 153 116 184 170 58 99 67 148 67 378 l0 211 166 357 c91 196 178 390 192 431 l27 75 3 598 c3 514 1 606 -12 658 -30 115 -98 198 -205 247 -47 22 -70 27 -146 27 -82 0 -96 -3 -158 -33 -38 -19 -69 -32 -71 -30 -1 1 -17 26 -35 55 -44 70 -100 119 -180 157 -62 29 -73 31 -176 31 -104 0 -114 -2 -175 -32 -36 -18 -74 -39 -86 -48 -20 -15 -22 -13 -57 43 -96 156 -273 234 -446 198 -40 -9 -93 -27 -116 -41 -24 -14 -46 -25 -49 -25 -3 0 -6 213 -6 474 0 280 -4 495 -10 527 -26 136 -112 249 -237 311 -59 29 -77 33z"/></g></svg></div>
       </div>`;
     }).join('');
     const safeKey=key.replace(/['"]/g,'');
