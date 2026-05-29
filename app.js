@@ -871,7 +871,7 @@ function renderMapaPage(){
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
-    atualizarTudo();realtimeInterval=setInterval(atualizarTudo,10000);
+    atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
   },100);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
