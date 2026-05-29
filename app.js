@@ -941,8 +941,8 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
-  if(novoStatus==='chegou_local')update.chegou_local_em=agora;if(novoStatus==='em_rota')update.em_rota_em=agora;
-  if(novoStatus==='chegou_destino')update.chegou_destino_em=agora;if(novoStatus==='retornando')update.retornando_em=agora;
+  if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
