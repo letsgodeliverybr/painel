@@ -1052,6 +1052,39 @@ function abrirDropdownStatus(event,pedidoId){
   setTimeout(()=>document.addEventListener('click',fecharDropdownStatus,{once:true}),10);
 }
 function fecharDropdownStatus(){const el=document.getElementById('status-dropdown-atual');if(el)el.remove();_dropdownAberto=null;}
+
+function abrirDropdownStatusTabela(event,pedidoId){
+  event.stopPropagation();fecharDropdownStatus();
+  const rect=event.currentTarget.getBoundingClientRect();
+  const dropdown=document.createElement('div');
+  dropdown.className='status-dropdown';dropdown.id='status-dropdown-atual';
+  dropdown.style.cssText=`position:fixed;top:${rect.bottom+4}px;left:${rect.left}px;z-index:9999;min-width:180px`;
+  dropdown.innerHTML=TODOS_STATUS.map(s=>`<button class="status-dropdown-item" onclick="event.stopPropagation();alterarStatusPedidoTabela('${pedidoId}','${s.key}')"><span class="status-dot" style="background:${s.cor}"></span><span style="color:${s.cor}">${s.label}</span></button>`).join('');
+  document.body.appendChild(dropdown);_dropdownAberto=pedidoId;
+  setTimeout(()=>document.addEventListener('click',fecharDropdownStatus,{once:true}),10);
+}
+
+async function alterarStatusPedidoTabela(pedidoId,novoStatus){
+  fecharDropdownStatus();
+  const agora=new Date().toISOString();
+  const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
+  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='aceito')update.aceito_em=agora;
+  if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='retornando')update.retornando_em=agora;
+  if(novoStatus==='finalizado')update.finalizado_em=agora;
+  if(novoStatus==='recebido')update.recebido_em=agora;
+  if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
+  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  // Atualiza in-memory sem nova requisição
+  const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
+  if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
+  const ai=allPedidos.findIndex(p=>p.id===pedidoId);
+  if(ai>=0)Object.assign(allPedidos[ai],update);
+  renderTabelaMapa();
+  renderPedidosLista();
+}
+
 async function alterarStatusPedido(pedidoId,novoStatus){
   fecharDropdownStatus();
   const agora=new Date().toISOString();
@@ -1322,7 +1355,7 @@ function renderTabelaMapa(){
       ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
-      ${TD(`<span class="p-badge b-${sk}" style="font-size:12px;padding:4px 12px;font-weight:700">${getStatusLabel(p)}</span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${getStatusLabel(p)} ▾</span>`,'',rowBg)}
       ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
       ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
       ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
