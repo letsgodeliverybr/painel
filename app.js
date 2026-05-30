@@ -1154,6 +1154,7 @@ function renderPedidosLista(){
       return n?`<span class="sb-status-bubble" style="background:${sb.color}" title="${sb.label}">${n}</span>`:'';
     }).join('');
     const cards=grupo.pedidos.map(p=>{
+      console.log('[pedido]',JSON.stringify(p));
       const horaC=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
       const horaU=p.updated_at&&p.updated_at!==p.created_at?` (🔄 ${new Date(p.updated_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})})`:'';
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
