@@ -1514,7 +1514,7 @@ function renderPedidosLista(){
       </div>`;
     }).join('');
     const safeKey=key.replace(/['"]/g,'');
-    const groupHeader='<div class="sb-group-dark" onclick="toggleGrupo(\''+safeKey+'\')" style="cursor:pointer"><span style="font-size:13px">🏪</span><span class="sb-group-name">'+grupo.nome+'</span><div style="display:flex;gap:3px;flex-wrap:wrap;flex:1">'+bubbles+'</div><span style="color:#475569;font-size:11px;flex-shrink:0;margin-left:4px">'+(colapsado?'▲':'▼')+'</span></div>';
+    const groupHeader='<div class="sb-group-dark" onclick="toggleGrupo(\''+safeKey+'\')" style="cursor:pointer;background:#1a3a5c !important"><span style="font-size:13px">🏪</span><span class="sb-group-name">'+grupo.nome+'</span><div style="display:flex;gap:3px;flex-wrap:wrap;flex:1">'+bubbles+'</div><span style="color:#FFFFFF !important;font-size:11px;flex-shrink:0;margin-left:4px">'+(colapsado?'▲':'▼')+'</span></div>';
     return '<div>'+groupHeader+'<div id="grupo-cards-'+safeKey+'" style="'+(colapsado?'display:none':'')+'">'+cards+'</div></div>';
   }).join('');
   const footer=document.getElementById('sidebar-disparar-footer');
