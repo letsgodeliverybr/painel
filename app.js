@@ -13,6 +13,25 @@ const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
+
+const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
+let _faixasPagamento=[];
+
+function _calcTaxaMotoboy(p){
+  const km=parseFloat(p.distancia_km)||0;
+  if(!km||!_faixasPagamento.length){
+    // fallback: valor já salvo no banco
+    return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
+  }
+  // faixas já ordenadas por km_ate asc — pega a primeira onde km <= km_ate
+  const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate));
+  if(!faixa)return null;
+  const temRetorno=!!(p.retorno||p.com_retorno);
+  let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
+  if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
+  valor+=(parseFloat(p.gorjeta)||0);
+  return Math.round(valor*100)/100;
+}
 let _precoDinTimers={};
 
 
@@ -1289,6 +1308,7 @@ function renderTabelaMapa(){
     const entId=p.motoboy_id||p.entregador_id;
     const ent=allMotoboys.find(e=>e.id===entId);
     const taxaCobrada=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.preco_dinamico)||0)+(parseFloat(p.gorjeta)||0);
+    const taxaMotoboy=_calcTaxaMotoboy(p);
     const endereco=p.endereco_entrega||p.endereco||'—';
     const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
     const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
@@ -1299,7 +1319,7 @@ function renderTabelaMapa(){
       ${TD(loja?.nome||'—','',rowBg)}
       ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${endereco}</span>`,'',rowBg)}
       ${TD(ent?.nome||`<span style="color:#aaa">—</span>`,'',rowBg)}
-      ${TD(`<span style="font-weight:700;color:#059669">${fmtR$(p.taxa_entrega)}</span>`,'',rowBg)}
+      ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
       ${TD(`<span class="p-badge b-${sk}" style="font-size:12px;padding:4px 12px;font-weight:700">${getStatusLabel(p)}</span>`,'',rowBg)}
@@ -1401,6 +1421,7 @@ async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   allMotoboys=await db('entregadores','GET',null,'');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
+  if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   await processarAutoPronto();
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   verificarNovosProtos(allPedidos);
@@ -1479,6 +1500,7 @@ function renderPedidosLista(){
           ${sk==='retornando'?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:var(--sb-text);font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
           ${p.gorjeta>0?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;color:var(--sb-text2);font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
+          ${(()=>{const tm=_calcTaxaMotoboy(p);return tm!==null?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;background:#dcfce7;color:#059669;font-weight:700;margin-bottom:6px;display:inline-block">🛵 Taxa motoboy: R$ ${tm.toFixed(2)}</div>`:'';})()}
           ${p.descricao?`<div style="background:var(--surface2);border-radius:6px;padding:7px;font-size:11px;color:var(--sb-text2);margin-bottom:8px">📋 ${p.descricao}</div>`:''}
           <div style="font-size:11px;color:var(--sb-text3);margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
           <div style="margin-top:8px;border:1px solid var(--sb-border);border-radius:8px;padding:10px">
@@ -1599,8 +1621,12 @@ async function abrirAlocarMotoboy(pedidoId){
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
-  await db('pedidos','PATCH',{motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:new Date().toISOString(),updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
-  await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome});
+  const _p=allPedidos.find(x=>x.id===pedidoId);
+  const taxaMotoboy=_p?_calcTaxaMotoboy(_p):null;
+  const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:new Date().toISOString(),updated_at:new Date().toISOString()};
+  if(taxaMotoboy!==null) _patch.taxa_entrega_motoboy=taxaMotoboy;
+  await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
+  await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');await atualizarTudo();
 }
