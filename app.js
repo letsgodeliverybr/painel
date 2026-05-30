@@ -1291,12 +1291,24 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');await atualizarTudo();
 }
 
+function _parsearEnderecoNumerado(val){
+  const m=val.match(/^(.+?)[,\s]+(\d+)/);
+  if(!m)return null;
+  return{street:encodeURIComponent(`${m[2].trim()} ${m[1].trim()}`),raw:val};
+}
 async function geocodificarEndereco(endereco){
+  const NOM='https://nominatim.openstreetmap.org/search';
+  const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
   try{
-    const query=encodeURIComponent(endereco+', Ribeirão Preto, SP, Brasil');
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,{headers:{'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'}});
-    const data=await r.json();
-    if(data&&data.length>0)return{lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon),display:data[0].display_name};
+    const p=_parsearEnderecoNumerado(endereco);
+    if(p){
+      const r=await fetch(`${NOM}?street=${p.street}&city=Ribeir%C3%A3o+Preto&country=Brazil&format=json&limit=1&addressdetails=1`,{headers:HDR});
+      const d=await r.json();
+      if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
+    }
+    const r2=await fetch(`${NOM}?q=${encodeURIComponent(endereco+', Ribeirão Preto, SP, Brasil')}&format=json&limit=1`,{headers:HDR});
+    const d2=await r2.json();
+    if(d2?.length)return{lat:parseFloat(d2[0].lat),lng:parseFloat(d2[0].lon),display:d2[0].display_name};
   }catch(e){}
   return null;
 }
@@ -2028,11 +2040,25 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
     if(val.length<4){dropdown.style.display='none';return;}
     if(!/\d/.test(val)){dropdown.style.display='none';const _acFb=feedbackId?document.getElementById(feedbackId):null;if(_acFb)_acFb.innerHTML='<span style="color:var(--text3);font-size:11px">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
     _autocompleteTimer=setTimeout(async()=>{
+      const _acFb=feedbackId?document.getElementById(feedbackId):null;
       try{
-        const query=encodeURIComponent(val+', Ribeirão Preto, SP, Brasil');
-        const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5&addressdetails=1`,{headers:{'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'}});
-        const results=await r.json();
-        if(!results.length){dropdown.style.display='none';return;}
+        const NOM='https://nominatim.openstreetmap.org/search';
+        const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
+        const p=_parsearEnderecoNumerado(val);
+        let results=[];
+        if(p){
+          const r=await fetch(`${NOM}?street=${p.street}&city=Ribeir%C3%A3o+Preto&country=Brazil&format=json&limit=5&addressdetails=1`,{headers:HDR});
+          results=await r.json();
+        }
+        if(!results.length){
+          const r2=await fetch(`${NOM}?q=${encodeURIComponent(val+', Ribeirão Preto, SP, Brasil')}&format=json&limit=5&addressdetails=1`,{headers:HDR});
+          results=await r2.json();
+        }
+        if(!results.length){
+          dropdown.style.display='none';
+          if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Número não encontrado, tente outro endereço</span>';
+          return;
+        }
         dropdown.innerHTML=results.map(res=>{const lbl=_fmtEndNominatim(res);return`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${lbl.replace(/"/g,"'")}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${lbl}</div>`;}).join('');
         dropdown.querySelectorAll('div').forEach(item=>{
           item.addEventListener('click',()=>{
