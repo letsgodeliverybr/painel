@@ -788,6 +788,16 @@ async function db(table,method='GET',body=null,filters=''){
   }catch{return[];}
 }
 
+async function dbPatch(table,body,filter){
+  const url=`${SB_URL}/rest/v1/${table}${filter}`;
+  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
+  try{
+    const r=await fetch(url,{method:'PATCH',headers:h,body:JSON.stringify(body)});
+    if(!r.ok){const msg=await r.text();console.error(`PATCH ${table} ${r.status}:`,msg);return null;}
+    const t=await r.text();return t?JSON.parse(t):[];
+  }catch(e){console.error(`PATCH ${table} exception:`,e);return null;}
+}
+
 async function logAcao(acao,detalhes={}){
   if(!currentUser)return;
   await db('logs_acoes','POST',{usuario_id:currentUser.id,acao,detalhes});
@@ -1269,7 +1279,9 @@ function abrirEditarPedido(pedidoId){
 async function salvarEdicaoPedido(pedidoId){
   const fb=document.getElementById('ep-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const update={cliente:document.getElementById('ep-cliente')?.value||'',telefone:document.getElementById('ep-telefone')?.value||'',endereco:document.getElementById('ep-endereco')?.value||'',valor:parseFloat(document.getElementById('ep-valor')?.value)||0,taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,numero:document.getElementById('ep-numero')?.value||'',descricao:document.getElementById('ep-descricao')?.value||'',updated_at:new Date().toISOString()};
-  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);await logAcao('editar_pedido',{pedido_id:pedidoId});
+  const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
+  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
+  await logAcao('editar_pedido',{pedido_id:pedidoId});
   if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido atualizado!','');
   setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1200);
 }
@@ -1431,8 +1443,9 @@ async function salvarEdicaoEntregador(entId){
   const fb=document.getElementById('ee-feedback');
   const update={nome:document.getElementById('ee-nome')?.value||'',email:document.getElementById('ee-email')?.value||'',cpf:document.getElementById('ee-cpf')?.value||'',telefone:document.getElementById('ee-telefone')?.value||'',disponivel:document.getElementById('ee-disponivel')?.value==='true',updated_at:new Date().toISOString()};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
-  const res=await db('entregadores','PATCH',update,`?id=eq.${entId}`);
-  if(fb)fb.innerHTML=res!==null?'<span style="color:#22c55e">✅ Salvo com sucesso!</span>':'<span style="color:#ef4444">Erro ao salvar.</span>';
+  const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
 }
 
@@ -1495,8 +1508,9 @@ async function salvarEdicaoUsuario(userId){
   const fb=document.getElementById('eu-feedback');
   const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null,updated_at:new Date().toISOString()};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
-  const res=await db('usuarios_painel','PATCH',update,`?id=eq.${userId}`);
-  if(fb)fb.innerHTML=res!==null?'<span style="color:#22c55e">✅ Salvo com sucesso!</span>':'<span style="color:#ef4444">Erro ao salvar.</span>';
+  const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar usuário','','var(--red)');return;}
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Usuário atualizado!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-usuario')?.classList.remove('open');renderCadastrosPage('usuarios');},1200);
 }
 
@@ -1611,7 +1625,9 @@ async function salvarEdicaoLoja(lojaId){
   const lat=parseFloat(document.getElementById('el-lat')?.value)||null,lng=parseFloat(document.getElementById('el-lng')?.value)||null;
   const update={nome:document.getElementById('el-nome')?.value||'',telefone:document.getElementById('el-telefone')?.value||'',endereco:document.getElementById('el-endereco')?.value||'',email:document.getElementById('el-email')?.value||'',ativo:document.getElementById('el-ativo')?.value==='true',latitude:lat,longitude:lng,updated_at:new Date().toISOString()};
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">Nome obrigatório.</div>';return;}
-  await db('lojas','PATCH',update,`?id=eq.${lojaId}`);await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
+  const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
+  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
+  await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
   if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');renderLojasPage();},1200);
 }
@@ -1788,9 +1804,11 @@ function editarFaixa(faixaId,tabelaId,tabelaNome,tipo,de,ate,sem,com){
 }
 async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
   const fb=document.getElementById('ef-feedback');
-  fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
-  await db('tabelas_preco_faixas','PATCH',{km_de:parseFloat(document.getElementById('ef-de').value)||0,km_ate:parseFloat(document.getElementById('ef-ate').value)||0,valor_sem_retorno:parseFloat(document.getElementById('ef-sem').value)||0,valor_com_retorno:parseFloat(document.getElementById('ef-com').value)||0},`?id=eq.${faixaId}`);
-  showNotif('✅ Atualizado!','');verFaixas(tabelaId,tabelaNome,tipo);
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  const update={km_de:parseFloat(document.getElementById('ef-de').value)||0,km_ate:parseFloat(document.getElementById('ef-ate').value)||0,valor_sem_retorno:parseFloat(document.getElementById('ef-sem').value)||0,valor_com_retorno:parseFloat(document.getElementById('ef-com').value)||0};
+  const res=await dbPatch('tabelas_preco_faixas',update,`?id=eq.${faixaId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:12px">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar faixa','','var(--red)');return;}
+  showNotif('✅ Faixa atualizada!','');verFaixas(tabelaId,tabelaNome,tipo);
 }
 async function excluirTabela(id){if(!confirm('Excluir tabela e faixas?'))return;await db('tabelas_preco_faixas','DELETE',null,`?tabela_id=eq.${id}`);await db('tabelas_preco','DELETE',null,`?id=eq.${id}`);showNotif('🗑️ Excluída','','var(--red)');carregarTabelasPreco();}
 
