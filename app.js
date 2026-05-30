@@ -1754,7 +1754,7 @@ async function _renderEntregadoresTab(el){
       ?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
-        <td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td>
+        <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
         <td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td>
@@ -1794,6 +1794,23 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
     badge.onclick=()=>_toggleDisponivelEntregador(id,novoValor);
   }
   showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+}
+
+async function _toggleStatusEntregador(id, statusAtual){
+  const bloqueando=statusAtual!=='bloqueado';
+  const badge=document.getElementById('badge-status-'+id);
+  if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
+  const payload=bloqueando
+    ?{status:'bloqueado',aprovado:false,disponivel:false,updated_at:new Date().toISOString()}
+    :{status:'ativo',aprovado:true,disponivel:true,updated_at:new Date().toISOString()};
+  const res=await dbPatch('entregadores',payload,`?id=eq.${id}`);
+  if(res===null){
+    showNotif('❌ Erro ao atualizar status','','var(--red)');
+    if(badge){badge.textContent=statusAtual==='bloqueado'?'🚫 Bloqueado':'✅ Disponível';badge.style.background=statusAtual==='bloqueado'?'#EF4444':'#10B981';badge.style.cursor='pointer';badge.onclick=()=>_toggleStatusEntregador(id,statusAtual);}
+    return;
+  }
+  showNotif(bloqueando?'🚫 Entregador bloqueado':'✅ Entregador desbloqueado','','var(--green)');
+  setTimeout(()=>renderCadastrosPage('entregadores'),600);
 }
 
 async function _aprovarEntregador(id){
