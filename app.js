@@ -1030,6 +1030,18 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   await atualizarTudo();
 }
 
+async function marcarPedidoPronto(pedidoId, statusAtual){
+  if(statusAtual==='pronto')return;
+  const btn=document.getElementById('btn-pronto-'+pedidoId);
+  if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
+  const agora=new Date().toISOString();
+  await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${pedidoId}`);
+  idsProntoNotificados.delete(pedidoId);
+  tocarSomPronto();
+  showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');
+  await atualizarTudo();
+}
+
 async function _carregarSaldoTopbar(){
   try{
     const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
@@ -1466,6 +1478,7 @@ function renderPedidosLista(){
           <div class="pd-actions">
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
+            ${sk!=='finalizado'&&sk!=='cancelado'?`<button id="btn-pronto-${p.id}" onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como Pronto" style="width:28px;height:28px;border-radius:50%;border:none;cursor:${sk==='pronto'?'default':'pointer'};background:${sk==='pronto'?'#EC4899':'#6B7280'};color:#fff;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s">✓</button>`:''}
             <span class="badge-wrapper" id="badge-wrapper-${p.id}">
               <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${getStatusLabel(p)} ▾</span>
             </span>
