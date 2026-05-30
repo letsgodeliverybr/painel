@@ -1399,10 +1399,38 @@ async function _renderClientesTab(el){
 }
 
 async function _renderEntregadoresTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th><th>Ações</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-entregadores');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td><td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
+}
+
+async function abrirEditarEntregador(entId){
+  const arr=await db('entregadores','GET',null,`?id=eq.${entId}`);
+  const e=Array.isArray(arr)?arr[0]:arr;if(!e)return;
+  let modal=document.getElementById('modal-editar-entregador');
+  if(!modal){modal=document.createElement('div');modal.id='modal-editar-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ee-nome" value="${(e.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>CPF</label><input id="ee-cpf" value="${(e.cpf||'').replace(/"/g,'&quot;')}" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ee-email" type="email" value="${(e.email||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>Telefone</label><input id="ee-telefone" value="${(e.telefone||'').replace(/"/g,'&quot;')}" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Disponibilidade</label><select id="ee-disponivel" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"><option value="true" ${e.disponivel?'selected':''}>Disponível</option><option value="false" ${!e.disponivel?'selected':''}>Indisponível</option></select></div><div class="fi" style="display:flex;align-items:flex-end"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div></div><div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">💾 Salvar</button></div></div>`;
+  modal.classList.add('open');
+}
+
+async function salvarEdicaoEntregador(entId){
+  const fb=document.getElementById('ee-feedback');
+  const update={nome:document.getElementById('ee-nome')?.value||'',email:document.getElementById('ee-email')?.value||'',cpf:document.getElementById('ee-cpf')?.value||'',telefone:document.getElementById('ee-telefone')?.value||'',disponivel:document.getElementById('ee-disponivel')?.value==='true',updated_at:new Date().toISOString()};
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=await db('entregadores','PATCH',update,`?id=eq.${entId}`);
+  if(fb)fb.innerHTML=res!==null?'<span style="color:#22c55e">✅ Salvo com sucesso!</span>':'<span style="color:#ef4444">Erro ao salvar.</span>';
+  setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
+}
+
+async function redefinirSenhaEntregador(email){
+  const fb=document.getElementById('ee-feedback');
+  if(!email){if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail não informado.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Enviando e-mail…</span>';
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
+    if(fb)fb.innerHTML=r.ok?'<span style="color:#22c55e">✅ E-mail de redefinição enviado!</span>':'<span style="color:#ef4444">Erro ao enviar e-mail.</span>';
+  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
 }
 
 async function _renderUsuariosTab(el){
