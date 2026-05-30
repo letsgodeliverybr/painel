@@ -1157,6 +1157,8 @@ function renderPedidosLista(){
       const lojaTag=loja?`<div class="pd-loja-tag">🏪 ${loja.nome}</div>`:'';
       const detalhes=isSelected?`
         <div class="pd-detail">
+          ${loja?`<div style="font-size:12px;color:#94a3b8;margin-bottom:${loja.telefone?2:6}px">🏪 <span style="color:#e2e8f0;font-weight:600">${loja.nome}</span></div>`:''}
+          ${loja?.telefone?`<div style="font-size:12px;color:#94a3b8;margin-bottom:6px">📞 <a href="tel:${loja.telefone}" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${loja.telefone}</a></div>`:''}
           ${p.codigo_confirmacao?`<div style="background:#ec489910;border:1px solid #ec489930;border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:#ec4899;margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:#fff">${p.codigo_confirmacao}</div></div>`:''}
           ${sk==='retornando'?`<div style="background:#f59e0b10;border:1px solid #f59e0b40;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
           ${p.gorjeta>0?`<div style="background:none;border-radius:6px;padding:6px 10px;font-size:11px;color:#1A56DB;font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
@@ -1172,6 +1174,7 @@ function renderPedidosLista(){
               <span style="font-size:11px;color:#475569">pontos</span>
             </div>
           </div>
+          <button disabled title="Em breve - Integração" onclick="event.stopPropagation()" style="margin-top:10px;width:100%;background:#2a2d3a;color:#475569;border:1px solid #3A3D4A;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.7">🛵 Atribuir Entregador</button>
         </div>`:'';
       return `<div class="pd-card${isSelected?' selected':''}" onclick="selecionarPedido('${p.id}')">
         ${lojaTag}
