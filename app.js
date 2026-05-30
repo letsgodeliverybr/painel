@@ -1495,7 +1495,7 @@ async function abrirEditarEntregador(entId){
 
 async function salvarEdicaoEntregador(entId){
   const fb=document.getElementById('ee-feedback');
-  const update={nome:document.getElementById('ee-nome')?.value||'',email:document.getElementById('ee-email')?.value||'',cpf:document.getElementById('ee-cpf')?.value||'',telefone:document.getElementById('ee-telefone')?.value||'',disponivel:document.getElementById('ee-disponivel')?.value==='true',updated_at:new Date().toISOString()};
+  const update={nome:document.getElementById('ee-nome')?.value||'',cpf:document.getElementById('ee-cpf')?.value||'',telefone:document.getElementById('ee-telefone')?.value||'',disponivel:document.getElementById('ee-disponivel')?.value==='true',updated_at:new Date().toISOString()};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
