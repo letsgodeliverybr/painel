@@ -1156,7 +1156,7 @@ function renderMapaPage(){
       <div class="sb-header-dark">
         <div class="sb-header-top-dark">
           <span class="sb-title-dark">Pedidos</span>
-          <span class="sb-badge-dark" id="sb-count">0</span>
+          <div id="sb-status-bubbles" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center"></div>
         </div>
         <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
       </div>
@@ -1420,7 +1420,7 @@ async function atualizarTudo(){
 }
 
 function renderPedidosLista(){
-  const lista=document.getElementById('pedidos-lista'),count=document.getElementById('sb-count');if(!lista)return;
+  const lista=document.getElementById('pedidos-lista');if(!lista)return;
   let filtered=filterStatus==='todos'?allPedidos:allPedidos.filter(p=>(p.status_detalhado===filterStatus)||(p.status===filterStatus));
   if(_sidebarBusca){
     const q=_sidebarBusca;
@@ -1429,7 +1429,18 @@ function renderPedidosLista(){
       return (p.numero||'').toLowerCase().includes(q)||(p.endereco||'').toLowerCase().includes(q)||(p.cliente||'').toLowerCase().includes(q)||((loja?.nome||'').toLowerCase().includes(q));
     });
   }
-  if(count)count.textContent=filtered.length;
+  const _SB_HEADER=[
+    {key:'recebido',color:'#EF4444'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
+    {key:'chegou_local',color:'#38BDF8'},{key:'em_rota',color:'#1A56DB'},
+    {key:'chegou_destino',color:'#7C3AED'},{key:'retornando',color:'#10B981'},
+  ];
+  const bubblesEl=document.getElementById('sb-status-bubbles');
+  if(bubblesEl){
+    bubblesEl.innerHTML=_SB_HEADER.map(sb=>{
+      const n=allPedidos.filter(p=>getStatusKey(p)===sb.key).length;
+      return n?`<span style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
+    }).join('');
+  }
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
   const STATUS_BUBBLES=[
     {key:'recebido',color:'#EF4444',label:'Recebido'},
