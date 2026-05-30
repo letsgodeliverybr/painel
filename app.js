@@ -1447,7 +1447,7 @@ function renderPedidosLista(){
     const cards=grupo.pedidos.map(p=>{
       console.log('[pedido]',JSON.stringify(p));
       const horaC=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
-      const horaU=p.updated_at&&p.updated_at!==p.created_at?` (🔄 ${new Date(p.updated_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})})`:'';
+      const horaU=p.updated_at&&p.updated_at!==p.created_at?` (${new Date(p.updated_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})})`:'';
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const loja=allLojas.find(l=>l.id===p.loja_id);
       const clienteNome=p.cliente_nome||p.nome_cliente||p.cliente||'';
@@ -1474,7 +1474,7 @@ function renderPedidosLista(){
         </div>`:'';
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:11px;color:var(--sb-text3)">📅 ${horaC}${horaU}</span>
+          <span style="font-size:11px;color:var(--sb-text3)">${horaC}${horaU}</span>
           <div class="pd-actions">
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
