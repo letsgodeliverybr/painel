@@ -900,6 +900,7 @@ async function calcularTaxaAuto(){
   const endereco=document.getElementById('np-endereco')?.value?.trim();
   const fb=document.getElementById('np-endereco-feedback');
   if(!endereco||endereco.length<6)return;
+  if(!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
   if(!lojaSelect?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
   const lojaOpt=lojaSelect.options[lojaSelect.selectedIndex];
   const lojaLat=parseFloat(lojaOpt.dataset.lat),lojaLng=parseFloat(lojaOpt.dataset.lng);
@@ -1531,6 +1532,7 @@ async function abrirEditarLoja(lojaId){
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
   if(!endereco){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha o endereço primeiro</span>';return;}
+  if(!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Buscando...</span>';
   const geo=await geocodificarEndereco(endereco);
   if(geo){document.getElementById('el-lat').value=geo.lat.toFixed(6);document.getElementById('el-lng').value=geo.lng.toFixed(6);if(fb)fb.innerHTML=`<span style="color:var(--green)">✅ ${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)}</span>`;}
@@ -1968,6 +1970,7 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   input.addEventListener('input',()=>{
     clearTimeout(_autocompleteTimer);const val=input.value.trim();
     if(val.length<4){dropdown.style.display='none';return;}
+    if(!/\d/.test(val)){dropdown.style.display='none';const _acFb=feedbackId?document.getElementById(feedbackId):null;if(_acFb)_acFb.innerHTML='<span style="color:var(--text3);font-size:11px">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
     _autocompleteTimer=setTimeout(async()=>{
       try{
         const query=encodeURIComponent(val+', Ribeirão Preto, SP, Brasil');
