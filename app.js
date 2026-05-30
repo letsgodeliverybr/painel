@@ -805,10 +805,17 @@ async function db(table,method='GET',body=null,filters=''){
   const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''};
   try{
     const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):null});
-    if(!r.ok)return[];
+    if(!r.ok){
+      const errBody=await r.text().catch(()=>'');
+      console.error(`[db] ERRO ${r.status} ${r.statusText} | ${method} ${url}`,errBody);
+      return[];
+    }
     const t=await r.text();
     return t?JSON.parse(t):[];
-  }catch{return[];}
+  }catch(e){
+    console.error(`[db] EXCEPTION | ${method} ${url}`,e);
+    return[];
+  }
 }
 
 async function dbPatch(table,body,filter){
@@ -1656,9 +1663,11 @@ async function _renderClientesTab(el){
 
 async function _renderEntregadoresTab(el){
   const _entQuery='?order=created_at.desc';
-  console.log('[entregadores] URL →', `${SB_URL}/rest/v1/entregadores${_entQuery}`);
+  const _entUrl=`${SB_URL}/rest/v1/entregadores${_entQuery}`;
+  console.log('[entregadores] chamando db() | URL →', _entUrl);
+  console.log('[entregadores] SB_KEY usado →', SB_KEY);
   const data=await db('entregadores','GET',null,_entQuery);
-  console.log('[entregadores] resultado →', data);
+  console.log('[entregadores] resultado bruto →', JSON.stringify(data));
   console.log(`[entregadores] filtro="${_entFiltro}" | total=${data.length}`,data.map(e=>({id:e.id?.substring(0,8),nome:e.nome,aprovado:e.aprovado,status_cadastro:e.status_cadastro})));
   const contEmAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
   const badge=contEmAnalise>0?`<span style="background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;vertical-align:middle">${contEmAnalise}</span>`:'';
