@@ -1737,9 +1737,9 @@ async function _renderEntregadoresTab(el){
     ${btnFiltro('pendentes','⏳ Pendentes')}`;
 
   let filtered;
-  if(_entFiltro==='aprovados') filtered=data.filter(e=>e.aprovado===true||e.status_cadastro==='aprovado');
+  if(_entFiltro==='aprovados') filtered=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
   else if(_entFiltro==='em_analise') filtered=data.filter(e=>e.status_cadastro==='em_analise');
-  else if(_entFiltro==='pendentes') filtered=data.filter(e=>e.status==='bloqueado'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
+  else if(_entFiltro==='pendentes') filtered=data.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
   else filtered=data;
 
   let theadHtml,tbodyHtml;
@@ -1815,7 +1815,7 @@ async function _toggleStatusEntregador(id, statusAtual){
   if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
   const payload=bloqueando
     ?{status:'bloqueado',aprovado:false,disponivel:false,updated_at:new Date().toISOString()}
-    :{status:'ativo',aprovado:true,disponivel:true,updated_at:new Date().toISOString()};
+    :{status:'ativo',aprovado:true,disponivel:false,updated_at:new Date().toISOString()};
   const res=await dbPatch('entregadores',payload,`?id=eq.${id}`);
   if(res===null){
     showNotif('❌ Erro ao atualizar status','','var(--red)');
