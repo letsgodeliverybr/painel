@@ -273,6 +273,7 @@ let _precoDinTimers={};
       font-size: 11px !important;
       font-weight: 600 !important;
     }
+    .b-agendado        { background:#fff7ed !important; color:#f97316 !important; }
     .b-recebido        { background:#fee2e2 !important; color:#EF4444 !important; }
     .b-pronto          { background:#EC4899 !important; color:#ffffff !important; }
     .b-aceito          { background:#fef9c3 !important; color:#F59E0B !important; }
@@ -990,12 +991,58 @@ async function abrirModal(id){
         <div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div>
         <div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div>
         <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div>
+        <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-coleta-toggle').click()">
+          <input type="checkbox" id="np-coleta-toggle" onchange="_toggleColetaExterna()" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">📦 Coleta em outro endereço</span>
+        </div>
+        <div id="np-coleta-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
+          <div class="form-row full">
+            <div class="fi"><label>Endereço de coleta</label><input id="np-endereco-coleta" placeholder="Rua, número, bairro" autocomplete="off"/></div>
+          </div>
+          <div id="np-coleta-feedback" style="font-size:11px;margin:2px 0 4px;min-height:14px"></div>
+          <div class="form-row">
+            <div class="fi"><label>Contato na coleta</label><input id="np-contato-coleta" placeholder="Nome do contato"/></div>
+            <div class="fi"><label>Telefone da coleta</label><input id="np-telefone-coleta" placeholder="(16) 99999-9999"/></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-agendar-toggle').click()">
+          <input type="checkbox" id="np-agendar-toggle" onchange="_toggleAgendamento()" style="width:16px;height:16px;cursor:pointer;accent-color:#f97316"/>
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">⏰ Agendar pedido</span>
+        </div>
+        <div id="np-agendar-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
+          <div class="form-row full">
+            <div class="fi"><label>Data e hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
+          </div>
+        </div>
         <div id="np-feedback" style="margin-top:4px"></div>`;
       iniciarAutocompleteEndereco('np-endereco','','','np-endereco-feedback');
     },80);
   }
 }
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
+
+function _toggleColetaExterna(){
+  const on=document.getElementById('np-coleta-toggle')?.checked;
+  const campos=document.getElementById('np-coleta-campos');
+  if(campos)campos.style.display=on?'block':'none';
+  if(on){
+    const inp=document.getElementById('np-endereco-coleta');
+    if(inp&&!inp.dataset.autocomplete){inp.dataset.autocomplete='1';iniciarAutocompleteEndereco('np-endereco-coleta','','','np-coleta-feedback');}
+  }
+}
+function _toggleAgendamento(){
+  const on=document.getElementById('np-agendar-toggle')?.checked;
+  const campos=document.getElementById('np-agendar-campos');
+  if(campos)campos.style.display=on?'block':'none';
+  if(on){
+    const inp=document.getElementById('np-agendado-para');
+    if(inp&&!inp.value){
+      const d=new Date();d.setMinutes(d.getMinutes()+30);
+      inp.value=d.toISOString().slice(0,16);
+    }
+  }
+}
 
 // Funções para cálculo automático de taxa
 let _taxaTimer=null;
@@ -1033,6 +1080,7 @@ async function calcularTaxaAuto(){
 }
 
 const TODOS_STATUS=[
+  {key:'agendado',label:'Agendado',cor:'#f97316'},
   {key:'recebido',label:'Recebido',cor:'#EF4444'},{key:'pronto',label:'Pronto',cor:'#EC4899'},
   {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'Chegou no local',cor:'#38BDF8'},
   {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'chegou_destino',label:'Chegou no destino',cor:'#7C3AED'},
@@ -1131,8 +1179,8 @@ async function alterarPontos(pedidoId,delta){
   await logAcao('alterar_pontos',{pedido_id:pedidoId,pontos:novosPontos});p.pontos=novosPontos;
 }
 
-const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila'};
-const STATUS_CORES={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',cancelado:'#EF4444',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569'};
+const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
+const STATUS_CORES={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',cancelado:'#EF4444',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569',agendado:'#f97316'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
@@ -1286,7 +1334,20 @@ function renderMapaPage(){
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
+    setInterval(_verificarAgendados,60000);
   },100);
+}
+
+async function _verificarAgendados(){
+  const agora=new Date().toISOString();
+  const vencidos=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${agora}`);
+  for(const p of vencidos){
+    await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`);
+    idsProntoNotificados.delete(p.id);
+    tocarSomPronto();
+    showNotif(`🔔 Pedido #${p.numero||p.id.substring(0,6)} — Agendamento ativado!`,'','var(--pink)');
+  }
+  if(vencidos.length) atualizarTudo();
 }
 // ─── TABELA DE PEDIDOS ABAIXO DO MAPA ───────────────────────────────────────
 
@@ -1352,7 +1413,7 @@ function renderTabelaMapa(){
       ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
-      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${getStatusLabel(p)} ▾</span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${getStatusLabel(p)}${sk==='agendado'&&p.agendado_para?' ⏰'+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''} ▾</span>`,'',rowBg)}
       ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
       ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
       ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
@@ -1528,6 +1589,7 @@ function renderPedidosLista(){
           ${loja?.telefone?`<div style="font-size:12px;color:var(--sb-text3);margin-bottom:6px">📞 <a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${loja.telefone}</a></div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--sb-text3);margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
           ${sk==='retornando'?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:var(--sb-text);font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
+          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block">⏰ Agendado ${new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
           ${p.gorjeta>0?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;color:var(--sb-text2);font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
           ${(()=>{const tm=_calcTaxaMotoboy(p);return tm!==null?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;background:#dcfce7;color:#059669;font-weight:700;margin-bottom:6px;display:inline-block">🛵 Taxa motoboy: R$ ${tm.toFixed(2)}</div>`:'';})()}
@@ -1545,7 +1607,10 @@ function renderPedidosLista(){
         </div>`:'';
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:11px;color:var(--sb-text3)">${horaC}${horaU}</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--sb-text3)">${horaC}${horaU}</span>
+            ${p.agendado_para&&sk==='agendado'?`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">⏰ ${new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>`:''}
+          </div>
           <div class="pd-actions">
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
@@ -1708,8 +1773,15 @@ async function criarPedido(){
   const gorjeta=parseFloat((document.getElementById('np-gorjeta')||{}).value)||0;
   const pontos=parseInt((document.getElementById('np-pontos')||{}).value)||4;
   const lojaIdSel=document.getElementById('np-loja-id')?.value||null;
+  const coletaOn=document.getElementById('np-coleta-toggle')?.checked;
+  const enderecoColeta=coletaOn?(document.getElementById('np-endereco-coleta')?.value||''):'';
+  const contatoColeta=coletaOn?(document.getElementById('np-contato-coleta')?.value||''):'';
+  const telefoneColeta=coletaOn?(document.getElementById('np-telefone-coleta')?.value||''):'';
+  const agendarOn=document.getElementById('np-agendar-toggle')?.checked;
+  const agendadoParaVal=agendarOn?document.getElementById('np-agendado-para')?.value:null;
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   if(currentPerfil==='adm'&&!lojaIdSel){showNotif('Erro','Selecione a loja','var(--red)');return;}
+  if(agendarOn&&!agendadoParaVal){showNotif('Erro','Informe data/hora do agendamento','var(--red)');return;}
   const fb=document.getElementById('np-feedback');
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando endereço...</div>';
   const geo=await geocodificarEndereco(endereco);
@@ -1720,12 +1792,18 @@ async function criarPedido(){
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:'recebido',status_detalhado:'recebido',origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,gorjeta,pontos,distancia_km:distKm,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const statusInicial=agendarOn?'agendado':'recebido';
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,gorjeta,pontos,distancia_km:distKm,recebido_em:agendarOn?null:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
+  if(contatoColeta)pedido.contato_coleta=contatoColeta;
+  if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
+  if(agendarOn&&agendadoParaVal)pedido.agendado_para=new Date(agendadoParaVal).toISOString();
   const result=await db('pedidos','POST',pedido);
-  await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId});
+  await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
-    if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ⏱ Pronto em 60s${gorjeta>0?' • 🎁 Gorjeta: R$ '+gorjeta.toFixed(2):''}</span></div>`;
-    showNotif('Pedido criado!','Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
+    const msgExtra=agendarOn?`⏰ ${new Date(agendadoParaVal).toLocaleString('pt-BR')}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
+    if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
+    showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
   }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao criar pedido.</div>';}
 }
 
