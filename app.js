@@ -1115,12 +1115,12 @@ function renderMapaPage(){
         </div>
         <div id="map"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;height:300px;background:var(--surface);border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap">📋 Pedidos do dia</span>
-          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;width:160px;font-family:Inter,sans-serif"/>
-          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
-          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif">
+      <div id="tabela-mapa-section" style="flex-shrink:0;height:300px;background:#FFFFFF !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:#F9FAFB !important;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:#111827 !important;white-space:nowrap">📋 Pedidos do dia</span>
+          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
+          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
+          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif">
             <option value="">Todos status</option>
             <option value="recebido">Recebido</option>
             <option value="pronto">Pronto</option>
@@ -1132,35 +1132,35 @@ function renderMapaPage(){
             <option value="finalizado">Finalizado</option>
             <option value="cancelado">Cancelado</option>
           </select>
-          <input id="tf-data" type="date" value="${new Date().toISOString().slice(0,10)}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif"/>
+          <input id="tf-data" type="date" value="${new Date().toISOString().slice(0,10)}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"/>
         </div>
-        <div style="flex:1;overflow:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:Inter,sans-serif">
-            <thead style="position:sticky;top:0;z-index:2">
-              <tr style="background:var(--surface2)">
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Status</th>
-                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
-                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
+        <div style="flex:1;overflow:auto;background:#FFFFFF !important">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:Inter,sans-serif;background:#FFFFFF !important">
+            <thead style="position:sticky;top:0;z-index:2;background:#F9FAFB !important">
+              <tr style="background:#F9FAFB !important">
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Status</th>
+                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
+                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
               </tr>
             </thead>
             <tbody id="tabela-mapa-body">
-              <tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">Carregando...</td></tr>
+              <tr><td colspan="12" style="text-align:center;padding:20px;color:#111827 !important">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0">
-          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);font-family:Inter,sans-serif">← Ant</button>
-          <span id="tabela-mapa-pag" style="font-size:11px;color:var(--text3);flex:1;text-align:center">—</span>
-          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);font-family:Inter,sans-serif">Próx →</button>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:#FFFFFF !important;flex-shrink:0">
+          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#FFFFFF !important;color:#111827 !important;font-family:Inter,sans-serif">← Ant</button>
+          <span id="tabela-mapa-pag" style="font-size:11px;color:#111827 !important;flex:1;text-align:center">—</span>
+          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#FFFFFF !important;color:#111827 !important;font-family:Inter,sans-serif">Próx →</button>
         </div>
       </div>
     </div>`;
@@ -1215,7 +1215,7 @@ function renderTabelaMapa(){
   if(_tabelaPagina>=pagTotal)_tabelaPagina=pagTotal-1;
   const slice=filtered.slice(_tabelaPagina*20,(_tabelaPagina+1)*20);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='')=>`<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);${extra}">${s}</td>`;
+  const TD=(s,extra='')=>`<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:#111827 !important;background:#FFFFFF !important;${extra}">${s}</td>`;
   const rows=slice.map(p=>{
     const sk=getStatusKey(p);
     const loja=allLojas.find(l=>l.id===p.loja_id);
