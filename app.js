@@ -1751,7 +1751,7 @@ async function _renderEntregadoresTab(el){
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
         <td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td>
-        <td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td>
+        <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
         <td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td>
         <td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td>
@@ -1772,6 +1772,25 @@ async function _renderEntregadoresTab(el){
 }
 
 function _entSetFiltro(filtro){_entFiltro=filtro;renderCadastrosPage('entregadores');}
+
+async function _toggleDisponivelEntregador(id,atualDisponivel){
+  const novoValor=!atualDisponivel;
+  const badge=document.getElementById('badge-disp-'+id);
+  if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
+  const res=await dbPatch('entregadores',{disponivel:novoValor,updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(res===null){
+    showNotif('❌ Erro ao atualizar disponibilidade','','var(--red)');
+    if(badge){badge.textContent=atualDisponivel?'Online':'Offline';badge.style.background=atualDisponivel?'#10B981':'#6B7280';badge.style.cursor='pointer';badge.onclick=()=>_toggleDisponivelEntregador(id,atualDisponivel);}
+    return;
+  }
+  if(badge){
+    badge.textContent=novoValor?'Online':'Offline';
+    badge.style.background=novoValor?'#10B981':'#6B7280';
+    badge.style.cursor='pointer';
+    badge.onclick=()=>_toggleDisponivelEntregador(id,novoValor);
+  }
+  showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+}
 
 async function _aprovarEntregador(id){
   const res=await dbPatch('entregadores',{aprovado:true,status_cadastro:'aprovado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
