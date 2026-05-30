@@ -1500,14 +1500,14 @@ async function abrirEditarEntregador(entId){
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',e.nome)),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
-${row2(fi('E-mail',`<input value="${(e.email||'').replace(/"/g,'&quot;')}" readonly style="background:var(--surface2);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:not-allowed"/>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
+${row2(fi('E-mail',`<input value="${(e.email||'').replace(/"/g,'&quot;')}" readonly style="background:var(--surface2);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:not-allowed"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Para alterar o email entre em contato com o suporte</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
 ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
-${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento,'Apto, Bloco...')))}
+${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
 ${row2(fi('Disponibilidade',sel('ee-disponivel',e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
 ${sec('🛵 Dados do Veículo')}
-${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa,'ABC-1234')))}
+${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa_veiculo,'ABC-1234')))}
 ${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
 ${row2(fi('CNH',inp('ee-cnh',e.cnh)),fi('CNPJ',inp('ee-cnpj',e.cnpj,'00.000.000/0000-00')))}
 ${sec('💰 Dados de Pagamento')}
@@ -1525,9 +1525,9 @@ async function salvarEdicaoEntregador(entId){
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
     rg:g('ee-rg'),data_nascimento:g('ee-nascimento')||null,
     cep:g('ee-cep'),bairro:g('ee-bairro'),logradouro:g('ee-logradouro'),
-    numero_endereco:g('ee-end-numero'),complemento:g('ee-complemento'),
+    numero_endereco:g('ee-end-numero'),complemento_end:g('ee-complemento'),
     disponivel:document.getElementById('ee-disponivel')?.value==='true',
-    modal_veiculo:g('ee-modal'),placa:g('ee-placa'),
+    modal_veiculo:g('ee-modal'),placa_veiculo:g('ee-placa'),
     modelo_veiculo:g('ee-modelo-veiculo'),cor_veiculo:g('ee-cor-veiculo'),
     cnh:g('ee-cnh'),cnpj:g('ee-cnpj'),
     tipo_pagamento:g('ee-tipo-pagamento'),banco:g('ee-banco'),
@@ -1535,10 +1535,11 @@ async function salvarEdicaoEntregador(entId){
     maquina_cartao:document.getElementById('ee-maquina-cartao')?.checked||false,
     updated_at:new Date().toISOString()
   };
+  console.log('[salvarEdicaoEntregador] campos enviados ao banco:', update);
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
-  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado!',update.nome);
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado com sucesso!','','var(--green)');
   setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
 }
 
