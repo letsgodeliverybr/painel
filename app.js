@@ -1304,23 +1304,33 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
 }
 
 function _parsearEnderecoNumerado(val){
-  const m=val.match(/^(.+?)[,\s]+(\d+)/);
+  // Aceita "Rua X, 101" ou "Rua X 101 Bairro"
+  const m=val.match(/^(.+?)[,\s]+(\d+)(.*)/);
   if(!m)return null;
-  return{street:encodeURIComponent(`${m[2].trim()} ${m[1].trim()}`),raw:val};
+  const rua=m[1].trim(),numero=m[2].trim(),resto=m[3].replace(/^[,\s]+/,'').trim();
+  // Query: "101 Rua X, Ribeirão Preto, Brazil" — número primeiro para geocodificação exata
+  const q=encodeURIComponent(`${numero} ${rua}, Ribeirão Preto, Brazil`);
+  return{numero,rua,resto,q};
+}
+function _labelComNumero(res,numero){
+  const a=res.address||{};
+  const road=a.road||a.pedestrian||a.footway||a.street||a.path||'';
+  const num=a.house_number||numero||'';
+  const bairro=a.suburb||a.neighbourhood||a.city_district||a.quarter||a.village||'';
+  const cidade=a.city||a.town||a.municipality||'';
+  const rua=road?(num?`${road}, ${num}`:road):'';
+  const local=[bairro,cidade].filter(Boolean).join(', ');
+  return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
 async function geocodificarEndereco(endereco){
   const NOM='https://nominatim.openstreetmap.org/search';
   const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
   try{
     const p=_parsearEnderecoNumerado(endereco);
-    if(p){
-      const r=await fetch(`${NOM}?street=${p.street}&city=Ribeir%C3%A3o+Preto&country=Brazil&format=json&limit=1&addressdetails=1`,{headers:HDR});
-      const d=await r.json();
-      if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
-    }
-    const r2=await fetch(`${NOM}?q=${encodeURIComponent(endereco+', Ribeirão Preto, SP, Brasil')}&format=json&limit=1`,{headers:HDR});
-    const d2=await r2.json();
-    if(d2?.length)return{lat:parseFloat(d2[0].lat),lng:parseFloat(d2[0].lon),display:d2[0].display_name};
+    const q=p?p.q:encodeURIComponent(endereco+', Ribeirão Preto, Brazil');
+    const r=await fetch(`${NOM}?q=${q}&format=json&limit=1&addressdetails=1`,{headers:HDR});
+    const d=await r.json();
+    if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:_labelComNumero(d[0],p?.numero)};
   }catch(e){}
   return null;
 }
@@ -2063,21 +2073,18 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
         const NOM='https://nominatim.openstreetmap.org/search';
         const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
         const p=_parsearEnderecoNumerado(val);
+        const q=p?p.q:encodeURIComponent(val+', Ribeirão Preto, Brazil');
         let results=[];
-        if(p){
-          const r=await fetch(`${NOM}?street=${p.street}&city=Ribeir%C3%A3o+Preto&country=Brazil&format=json&limit=5&addressdetails=1`,{headers:HDR});
+        try{
+          const r=await fetch(`${NOM}?q=${q}&format=json&limit=5&addressdetails=1`,{headers:HDR});
           results=await r.json();
-        }
-        if(!results.length){
-          const r2=await fetch(`${NOM}?q=${encodeURIComponent(val+', Ribeirão Preto, SP, Brasil')}&format=json&limit=5&addressdetails=1`,{headers:HDR});
-          results=await r2.json();
-        }
+        }catch{}
         if(!results.length){
           dropdown.style.display='none';
           if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Número não encontrado, tente outro endereço</span>';
           return;
         }
-        dropdown.innerHTML=results.map(res=>{const lbl=_fmtEndNominatim(res);return`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${lbl.replace(/"/g,"'")}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${lbl}</div>`;}).join('');
+        dropdown.innerHTML=results.map(res=>{const lbl=_labelComNumero(res,p?.numero);return`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${lbl.replace(/"/g,"'")}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${lbl}</div>`;}).join('');
         dropdown.querySelectorAll('div').forEach(item=>{
           item.addEventListener('click',()=>{
             const lat=parseFloat(item.dataset.lat),lng=parseFloat(item.dataset.lng);
