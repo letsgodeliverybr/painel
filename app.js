@@ -1893,6 +1893,11 @@ async function criarNovoEntregador(){
   const cpf=document.getElementById('ne-cpf')?.value?.trim(),telefone=document.getElementById('ne-telefone')?.value?.trim(),disponivel=document.getElementById('ne-disponivel')?.value==='true';
   if(!nome||!email||!senha){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha nome, e-mail e senha.</span>';return;}
   if(senha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Senha mínima de 6 caracteres.</span>';return;}
+  if(cpf&&!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF inválido. Use o formato 000.000.000-00.</span>';return;}
+  if(cpf){
+    const cpfExiste=await db('entregadores','GET',null,`?cpf=eq.${encodeURIComponent(cpf)}&limit=1`);
+    if(cpfExiste.length>0){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF já cadastrado no sistema.</span>';return;}
+  }
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Criando conta…</span>';
   try{
     const authRes=await fetch(`${SB_URL}/auth/v1/signup`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
