@@ -1160,9 +1160,9 @@ function renderMapaPage(){
         </div>
         <div id="map"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;height:300px;background:#FFFFFF !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:#F9FAFB !important;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;color:#111827 !important;white-space:nowrap">📋 Pedidos do dia</span>
+      <div id="tabela-mapa-section" style="flex-shrink:0;height:420px;min-height:300px;background:#FFFFFF !important;border-top:2px solid #dee2e6;display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #dee2e6;background:#f8f9fa !important;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:#1a3a5c !important;white-space:nowrap">📋 Pedidos do dia</span>
           <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
           <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
           <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif">
@@ -1179,26 +1179,27 @@ function renderMapaPage(){
           </select>
           <input id="tf-data" type="date" value="${new Date().toISOString().slice(0,10)}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"/>
         </div>
-        <div style="flex:1;overflow:auto;background:#FFFFFF !important">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:Inter,sans-serif;background:#FFFFFF !important">
-            <thead style="position:sticky;top:0;z-index:2;background:#F9FAFB !important">
-              <tr style="background:#F9FAFB !important">
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Status</th>
-                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
-                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
-                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:#111827 !important;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
+        <div style="flex:1;overflow:auto;background:#FFFFFF !important;min-height:300px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#FFFFFF !important;border:1px solid #dee2e6">
+            <thead style="position:sticky;top:0;z-index:2;background:#1a3a5c !important">
+              <tr style="background:#1a3a5c !important">
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Hora</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Status</th>
+                <th style="padding:8px 12px;text-align:center;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
+                <th style="padding:8px 12px;text-align:center;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
+                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
               </tr>
             </thead>
             <tbody id="tabela-mapa-body">
-              <tr><td colspan="12" style="text-align:center;padding:20px;color:#111827 !important">Carregando...</td></tr>
+              <tr><td colspan="13" style="text-align:center;padding:20px;color:#333 !important">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1260,8 +1261,9 @@ function renderTabelaMapa(){
   if(_tabelaPagina>=pagTotal)_tabelaPagina=pagTotal-1;
   const slice=filtered.slice(_tabelaPagina*20,(_tabelaPagina+1)*20);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='')=>`<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:#111827 !important;background:#FFFFFF !important;${extra}">${s}</td>`;
-  const rows=slice.map(p=>{
+  const TD=(s,extra='',bg='')=>`<td style="padding:8px 12px;border-bottom:1px solid #dee2e6;border-right:1px solid #dee2e6;color:#333 !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
+  const rows=slice.map((p,i)=>{
+    const rowBg=i%2===0?'#FFFFFF':'#f8f9fa';
     const sk=getStatusKey(p);
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
@@ -1269,26 +1271,28 @@ function renderTabelaMapa(){
     const taxaCobrada=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.preco_dinamico)||0)+(parseFloat(p.gorjeta)||0);
     const endereco=p.endereco_entrega||p.endereco||'—';
     const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
-    return `<tr style="cursor:pointer" onclick="_irParaPedido('${p.id}')">
-      ${TD(`<span style="font-weight:700;color:var(--accent)">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap')}
-      ${TD(p.nome_cliente||p.cliente||'—')}
-      ${TD(loja?.nome||'—')}
-      ${TD(`<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${endereco}</span>`)}
-      ${TD(ent?.nome||`<span style="color:var(--text3)">—</span>`)}
-      ${TD(`<span style="font-weight:700;color:#059669">${fmtR$(p.taxa_entrega)}</span>`)}
-      ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`)}
-      ${TD(p.forma_pagamento||p.onde_cobrar||'—')}
-      ${TD(`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`)}
-      ${TD(`${logoOk} 👤`,'text-align:center')}
-      ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center')}
+    const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
+    return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
+      ${TD(`<span style="font-weight:700;color:#1a3a5c">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
+      ${TD(`<span style="font-weight:600;color:#555;white-space:nowrap">${hora}</span>`,'',rowBg)}
+      ${TD(p.nome_cliente||p.cliente||'—','',rowBg)}
+      ${TD(loja?.nome||'—','',rowBg)}
+      ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${endereco}</span>`,'',rowBg)}
+      ${TD(ent?.nome||`<span style="color:#aaa">—</span>`,'',rowBg)}
+      ${TD(`<span style="font-weight:700;color:#059669">${fmtR$(p.taxa_entrega)}</span>`,'',rowBg)}
+      ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
+      ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
+      ${TD(`<span class="p-badge b-${sk}" style="font-size:12px;padding:4px 12px;font-weight:700">${getStatusLabel(p)}</span>`,'',rowBg)}
+      ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
+      ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
       ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
-        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Editar">✏️</button>
-        <button onclick="event.stopPropagation();_localizarPedidoMapa('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Localizar">📍</button>
-        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Configurações">⚙️</button>
-      </span>`,'white-space:nowrap')}
+        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Editar">✏️</button>
+        <button onclick="event.stopPropagation();_localizarPedidoMapa('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Localizar">📍</button>
+        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Configurações">⚙️</button>
+      </span>`,'white-space:nowrap',rowBg)}
     </tr>`;
   }).join('');
-  el.innerHTML=rows||`<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`;
+  el.innerHTML=rows||`<tr><td colspan="13" style="text-align:center;padding:20px;color:#999">Nenhum pedido encontrado</td></tr>`;
   const pInfo=document.getElementById('tabela-mapa-pag');
   if(pInfo)pInfo.textContent=`Página ${_tabelaPagina+1} de ${pagTotal} (${total} pedido${total!==1?'s':''})`;
   const btnPrev=document.getElementById('tabela-mapa-prev');
