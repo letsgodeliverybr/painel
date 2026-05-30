@@ -1413,7 +1413,7 @@ function renderTabelaMapa(){
       ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
-      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${getStatusLabel(p)}${sk==='agendado'&&p.agendado_para?' ⏰'+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''} ▾</span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):getStatusLabel(p)} ▾</span>`,'',rowBg)}
       ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
       ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
       ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
@@ -1616,7 +1616,7 @@ function renderPedidosLista(){
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
             ${sk!=='finalizado'&&sk!=='cancelado'?`<button id="btn-pronto-${p.id}" onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como Pronto" style="width:28px;height:28px;border-radius:50%;border:none;cursor:${sk==='pronto'?'default':'pointer'};background:${sk==='pronto'?'#EC4899':'#6B7280'};color:#fff;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s">✓</button>`:''}
             <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${getStatusLabel(p)} ▾</span>
+              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):getStatusLabel(p)} ▾</span>
             </span>
           </div>
         </div>
