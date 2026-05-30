@@ -1491,13 +1491,50 @@ async function abrirEditarEntregador(entId){
   const e=Array.isArray(arr)?arr[0]:arr;if(!e)return;
   let modal=document.getElementById('modal-editar-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ee-nome" value="${(e.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>CPF</label><input id="ee-cpf" value="${(e.cpf||'').replace(/"/g,'&quot;')}" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ee-email" type="email" value="${(e.email||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>Telefone</label><input id="ee-telefone" value="${(e.telefone||'').replace(/"/g,'&quot;')}" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Disponibilidade</label><select id="ee-disponivel" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"><option value="true" ${e.disponivel?'selected':''}>Disponível</option><option value="false" ${!e.disponivel?'selected':''}>Indisponível</option></select></div><div class="fi" style="display:flex;align-items:flex-end"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div></div><div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">💾 Salvar</button></div></div>`;
+  const sel=(id,val,opts)=>`<select id="${id}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px">${opts.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  const inp=(id,val,ph='',type='text',extra='')=>`<input id="${id}" type="${type}" value="${(val||'').toString().replace(/"/g,'&quot;')}" placeholder="${ph}" ${extra} style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/>`;
+  const sec=(title)=>`<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px;margin-top:4px">${title}</div>`;
+  const row2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
+  const row1=(a)=>`<div class="form-row full">${a}</div>`;
+  const fi=(label,content)=>`<div class="fi"><label>${label}</label>${content}</div>`;
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+${sec('👤 Dados Pessoais')}
+${row2(fi('Nome completo',inp('ee-nome',e.nome)),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
+${row2(fi('E-mail',`<input value="${(e.email||'').replace(/"/g,'&quot;')}" readonly style="background:var(--surface2);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:not-allowed"/>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
+${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
+${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
+${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
+${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento,'Apto, Bloco...')))}
+${row2(fi('Disponibilidade',sel('ee-disponivel',e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${sec('🛵 Dados do Veículo')}
+${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa,'ABC-1234')))}
+${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
+${row2(fi('CNH',inp('ee-cnh',e.cnh)),fi('CNPJ',inp('ee-cnpj',e.cnpj,'00.000.000/0000-00')))}
+${sec('💰 Dados de Pagamento')}
+${row2(fi('Tipo de pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
+${row2(fi('Tipo chave PIX',sel('ee-tipo-pix',e.tipo_chave_pix,[['cpf','CPF'],['cnpj','CNPJ'],['email','Email'],['telefone','Telefone'],['aleatoria','Aleatória']])),fi('Chave PIX',inp('ee-chave-pix',e.chave_pix)))}
+${row1(`<div class="fi"><label>Máquina de cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui máquina de cartão</span></label></div>`)}
+<div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">💾 Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
 async function salvarEdicaoEntregador(entId){
   const fb=document.getElementById('ee-feedback');
-  const update={nome:document.getElementById('ee-nome')?.value||'',cpf:document.getElementById('ee-cpf')?.value||'',telefone:document.getElementById('ee-telefone')?.value||'',disponivel:document.getElementById('ee-disponivel')?.value==='true',updated_at:new Date().toISOString()};
+  const g=(id)=>document.getElementById(id)?.value||'';
+  const update={
+    nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
+    rg:g('ee-rg'),data_nascimento:g('ee-nascimento')||null,
+    cep:g('ee-cep'),bairro:g('ee-bairro'),logradouro:g('ee-logradouro'),
+    numero_endereco:g('ee-end-numero'),complemento:g('ee-complemento'),
+    disponivel:document.getElementById('ee-disponivel')?.value==='true',
+    modal_veiculo:g('ee-modal'),placa:g('ee-placa'),
+    modelo_veiculo:g('ee-modelo-veiculo'),cor_veiculo:g('ee-cor-veiculo'),
+    cnh:g('ee-cnh'),cnpj:g('ee-cnpj'),
+    tipo_pagamento:g('ee-tipo-pagamento'),banco:g('ee-banco'),
+    tipo_chave_pix:g('ee-tipo-pix'),chave_pix:g('ee-chave-pix'),
+    maquina_cartao:document.getElementById('ee-maquina-cartao')?.checked||false,
+    updated_at:new Date().toISOString()
+  };
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
