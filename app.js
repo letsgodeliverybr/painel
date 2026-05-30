@@ -13,6 +13,7 @@ const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
+let _precoDinTimers={};
 
 
 // ═══════════════════════════════════════════════
@@ -2015,27 +2016,79 @@ async function _renderPrecificacaoTab(el){
 
 function _renderPrecoDinamicoTab(el,tipo){
   const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
-  const cor=tipo==='cliente'?'var(--accent)':'#10b981';
   el.innerHTML=`
-    <div class="card" style="max-width:480px">
+    <div class="card" style="max-width:520px">
       <div class="card-header"><span class="card-title">📈 Preço Dinâmico — ${label}</span></div>
       <div style="padding:20px">
         <p style="color:var(--text2);font-size:13px;margin-bottom:16px">
           ${tipo==='cliente'?'Valor fixo extra somado à taxa cobrada da loja em todos os pedidos.':'Valor fixo extra somado ao pagamento do entregador em todos os pedidos.'}
+          <br><span style="font-size:12px;color:var(--text3)">Após salvar com valor &gt; 0, o preço dinâmico é desativado automaticamente em 120 minutos.</span>
         </p>
-        <div class="fi" style="margin-bottom:16px">
+        <div class="fi" style="margin-bottom:8px">
           <label>Valor extra (R$)</label>
-          <input type="number" id="preco-din-valor-${tipo}" step="0.01" placeholder="0.00" style="max-width:200px"/>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <input type="number" id="preco-din-valor-${tipo}" step="0.01" placeholder="0.00" style="max-width:160px"/>
+            <div id="preco-din-barra-wrap-${tipo}" style="flex:1;min-width:160px;display:none">
+              <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden;margin-bottom:4px">
+                <div id="preco-din-barra-${tipo}" style="height:100%;border-radius:6px;width:100%;background:#10b981;transition:width 1s linear"></div>
+              </div>
+              <div id="preco-din-timer-${tipo}" style="font-size:12px;font-weight:600;color:#10b981"></div>
+            </div>
+          </div>
         </div>
         <div id="preco-din-feedback-${tipo}" style="margin-bottom:12px;font-size:12px"></div>
         <button class="btn-modal-primary" onclick="salvarPrecoDinamico('${tipo}')">💾 Salvar</button>
       </div>
     </div>`;
-  // Carrega valor atual
-  db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`).then(data=>{
+  // Carrega valor atual e timestamp de ativação
+  Promise.all([
+    db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`),
+    db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}_ativado_em`)
+  ]).then(([dataValor,dataAtivado])=>{
     const input=document.getElementById(`preco-din-valor-${tipo}`);
-    if(input&&data&&data[0])input.value=parseFloat(data[0].valor||0).toFixed(2);
+    const valor=parseFloat(dataValor[0]?.valor||0);
+    if(input)input.value=valor.toFixed(2);
+    if(valor>0&&dataAtivado[0]?.valor)_iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
   });
+}
+
+function _iniciarBarraPrecoDin(tipo,ativadoEm){
+  if(_precoDinTimers[tipo])clearInterval(_precoDinTimers[tipo]);
+  const DURACAO=120*60*1000;
+  const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
+  const barra=document.getElementById(`preco-din-barra-${tipo}`);
+  const timerEl=document.getElementById(`preco-din-timer-${tipo}`);
+  const tick=()=>{
+    const restante=ativadoEm.getTime()+DURACAO-Date.now();
+    if(restante<=0){
+      clearInterval(_precoDinTimers[tipo]);
+      delete _precoDinTimers[tipo];
+      if(wrap)wrap.style.display='none';
+      _desativarPrecoDinamico(tipo);
+      return;
+    }
+    const pct=(restante/DURACAO)*100;
+    const cor=restante>60*60000?'#10b981':restante>30*60000?'#f59e0b':'#ef4444';
+    if(wrap)wrap.style.display='block';
+    if(barra){barra.style.width=pct+'%';barra.style.background=cor;}
+    if(timerEl){
+      const h=Math.floor(restante/3600000);
+      const m=Math.floor((restante%3600000)/60000);
+      const s=Math.floor((restante%60000)/1000);
+      timerEl.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} restantes`;
+      timerEl.style.color=cor;
+    }
+  };
+  tick();
+  _precoDinTimers[tipo]=setInterval(tick,1000);
+}
+
+async function _desativarPrecoDinamico(tipo){
+  const input=document.getElementById(`preco-din-valor-${tipo}`);
+  if(input)input.value='0.00';
+  const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
+  if(existing&&existing.length>0)await db('configuracoes','PATCH',{valor:'0',updated_at:new Date().toISOString()},`?chave=eq.preco_dinamico_${tipo}`);
+  showNotif('⏰ Preço dinâmico desativado automaticamente','','var(--text2)');
 }
 
 async function salvarPrecoDinamico(tipo){
@@ -2043,12 +2096,29 @@ async function salvarPrecoDinamico(tipo){
   const fb=document.getElementById(`preco-din-feedback-${tipo}`);
   const valor=parseFloat(input?.value)||0;
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
-  // Upsert na tabela configuracoes
+  const agora=new Date().toISOString();
+  // Upsert valor
   const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
   if(existing&&existing.length>0){
-    await db('configuracoes','PATCH',{valor:String(valor),updated_at:new Date().toISOString()},`?chave=eq.preco_dinamico_${tipo}`);
+    await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.preco_dinamico_${tipo}`);
   }else{
-    await db('configuracoes','POST',{chave:`preco_dinamico_${tipo}`,valor:String(valor),created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    await db('configuracoes','POST',{chave:`preco_dinamico_${tipo}`,valor:String(valor),created_at:agora,updated_at:agora});
+  }
+  // Upsert timestamp de ativação (somente quando ligando)
+  if(valor>0){
+    const chaveTs=`preco_dinamico_${tipo}_ativado_em`;
+    const existingTs=await db('configuracoes','GET',null,`?chave=eq.${chaveTs}`);
+    if(existingTs&&existingTs.length>0){
+      await db('configuracoes','PATCH',{valor:agora,updated_at:agora},`?chave=eq.${chaveTs}`);
+    }else{
+      await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
+    }
+    _iniciarBarraPrecoDin(tipo,new Date(agora));
+  }else{
+    // Desligando manualmente
+    if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
+    const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
+    if(wrap)wrap.style.display='none';
   }
   if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
   showNotif('✅ Preço dinâmico salvo!','');
