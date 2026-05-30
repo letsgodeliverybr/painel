@@ -18,14 +18,11 @@ const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 let _faixasPagamento=[];
 
 function _calcTaxaMotoboy(p){
-  const km=parseFloat(p.distancia_km)||0;
-  if(!km||!_faixasPagamento.length){
-    // fallback: valor já salvo no banco
-    return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
-  }
-  // faixas já ordenadas por km_ate asc — pega a primeira onde km <= km_ate
-  const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate));
-  if(!faixa)return null;
+  if(!_faixasPagamento.length) return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
+  // distancia_km=0 ou null → usar 1km como padrão para cálculo da faixa
+  const km=parseFloat(p.distancia_km)||1;
+  const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate))||_faixasPagamento[0];
+  if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
   if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
@@ -1340,7 +1337,7 @@ function renderTabelaMapa(){
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
     const ent=allMotoboys.find(e=>e.id===entId);
-    const taxaCobrada=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.preco_dinamico)||0)+(parseFloat(p.gorjeta)||0);
+    const taxaCobrada=parseFloat(p.taxa_entrega)||0;
     const taxaMotoboy=_calcTaxaMotoboy(p);
     const endereco=p.endereco_entrega||p.endereco||'—';
     const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
