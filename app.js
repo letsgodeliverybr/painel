@@ -686,8 +686,8 @@ let _precoDinTimers={};
 
     /* ── SIDEBAR (tema-aware) ── */
     .sb-dark {
-      background: var(--sb-bg) !important;
-      border-right: 1px solid var(--sb-border) !important;
+      background: #FFFFFF !important;
+      border-right: 1px solid #dee2e6 !important;
       display: flex !important;
       flex-direction: column !important;
       height: 100% !important;
@@ -704,8 +704,8 @@ let _precoDinTimers={};
     }
     .sb-header-dark {
       padding: 14px 12px 10px !important;
-      border-bottom: 1px solid var(--sb-border) !important;
-      background: var(--sb-bg) !important;
+      border-bottom: 1px solid #dee2e6 !important;
+      background: #FFFFFF !important;
       flex-shrink: 0 !important;
     }
     .sb-header-top-dark {
@@ -717,7 +717,7 @@ let _precoDinTimers={};
     .sb-title-dark {
       font-size: 14px !important;
       font-weight: 700 !important;
-      color: var(--sb-text) !important;
+      color: #333333 !important;
       flex: 1 !important;
     }
     .sb-badge-dark {
@@ -730,26 +730,26 @@ let _precoDinTimers={};
     }
     .sb-search-dark {
       width: 100% !important;
-      background: var(--sb-search-bg) !important;
-      border: 1px solid var(--sb-border) !important;
+      background: #f8f9fa !important;
+      border: 1px solid #dee2e6 !important;
       border-radius: 8px !important;
       padding: 8px 12px !important;
       font-size: 12px !important;
-      color: var(--sb-text) !important;
+      color: #333333 !important;
       font-family: Inter, sans-serif !important;
       outline: none !important;
       transition: border-color .15s !important;
       box-sizing: border-box !important;
     }
-    .sb-search-dark::placeholder { color: var(--sb-text3) !important; }
+    .sb-search-dark::placeholder { color: #999999 !important; }
     .sb-search-dark:focus { border-color: #1A56DB !important; }
     .sb-group-dark {
       padding: 8px 12px 6px !important;
       display: flex !important;
       align-items: center !important;
       gap: 7px !important;
-      background: var(--sb-bg) !important;
-      border-bottom: 1px solid var(--sb-border) !important;
+      background: #1a3a5c !important;
+      border-bottom: 1px solid rgba(255,255,255,.12) !important;
       flex-wrap: wrap !important;
       position: sticky !important;
       top: 0 !important;
@@ -758,7 +758,7 @@ let _precoDinTimers={};
     .sb-group-name {
       font-size: 11px !important;
       font-weight: 700 !important;
-      color: var(--sb-text2) !important;
+      color: #FFFFFF !important;
       text-transform: uppercase !important;
       letter-spacing: .5px !important;
       flex: 1 !important;
@@ -778,8 +778,8 @@ let _precoDinTimers={};
       position: relative !important;
     }
     .pd-card {
-      background: var(--sb-card) !important;
-      border: 1px solid var(--sb-border) !important;
+      background: #FFFFFF !important;
+      border: 1px solid #dee2e6 !important;
       border-radius: 10px !important;
       margin: 6px 8px !important;
       padding: 10px 10px 4px !important;
@@ -805,12 +805,12 @@ let _precoDinTimers={};
     .pd-num {
       font-size: 18px !important;
       font-weight: 800 !important;
-      color: var(--sb-text) !important;
+      color: #1a3a5c !important;
     }
     .pd-actions { display: flex !important; align-items: center !important; gap: 4px !important; }
     .pd-action-btn {
-      background: var(--sb-bg) !important;
-      border: 1px solid var(--sb-border) !important;
+      background: #f8f9fa !important;
+      border: 1px solid #dee2e6 !important;
       border-radius: 6px !important;
       width: 24px !important; height: 24px !important;
       display: flex !important; align-items: center !important; justify-content: center !important;
@@ -818,14 +818,31 @@ let _precoDinTimers={};
       transition: border-color .12s !important;
     }
     .pd-action-btn:hover { border-color: #1A56DB !important; }
-    .pd-cliente { font-size: 14px !important; color: var(--sb-text2) !important; font-weight: 500 !important; margin-bottom: 3px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-    .pd-end { font-size: 14px !important; color: var(--sb-text3) !important; margin-bottom: 5px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-cliente { font-size: 14px !important; color: #333333 !important; font-weight: 500 !important; margin-bottom: 3px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .pd-end { font-size: 14px !important; color: #666666 !important; margin-bottom: 5px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
     .pd-footer { display: flex !important; align-items: center !important; justify-content: space-between !important; }
     .pd-taxa { font-size: 14px !important; font-weight: 700 !important; color: #10b981 !important; }
-    .pd-hora { font-size: 13px !important; color: var(--sb-text3) !important; }
-    .pd-detail { border-top: 1px solid var(--sb-border) !important; margin-top: 8px !important; padding-top: 8px !important; }
+    .pd-hora { font-size: 13px !important; color: #888888 !important; }
+    .pd-detail { border-top: 1px solid #dee2e6 !important; margin-top: 8px !important; padding-top: 8px !important; }
     .sb-dark .pedidos-lista { flex: 1 !important; overflow-y: auto !important; }
-    .sb-dark .empty-lista { color: var(--sb-text3) !important; }
+    .sb-dark .empty-lista { color: #888888 !important; }
+    /* forçar tema claro na sidebar mesmo em dark mode */
+    html.dark .sb-dark, html.dark .sb-header-dark, html.dark .pd-card { background: #FFFFFF !important; }
+    html.dark .sb-dark { border-right-color: #dee2e6 !important; }
+    html.dark .sb-group-dark { background: #1a3a5c !important; }
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) .sb-dark, :root:not(.light) .sb-header-dark, :root:not(.light) .pd-card { background: #FFFFFF !important; }
+      :root:not(.light) .sb-dark { border-right-color: #dee2e6 !important; }
+      :root:not(.light) .sb-group-dark { background: #1a3a5c !important; }
+    }
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .mapa-container { height: 250px !important; flex-shrink: 0 !important; }
+      #tabela-mapa-section { min-height: auto !important; max-height: 60vh !important; }
+      #tabela-mapa-section > div:nth-child(2) { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+      #tabela-mapa-section table td, #tabela-mapa-section table th { font-size: 11px !important; padding: 6px 8px !important; }
+      .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 100 !important; top: 0 !important; bottom: 0 !important; }
+    }
   `;
   document.head.appendChild(style);
 })();
@@ -1149,7 +1166,7 @@ function renderMapaPage(){
       </div>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-      <div class="mapa-container" style="position:relative;flex:1;min-height:200px">
+      <div class="mapa-container" style="position:relative;height:50vh;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center;background:#ffffff !important;color:#111827 !important">
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
@@ -1171,9 +1188,9 @@ function renderMapaPage(){
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar só entregadores disponíveis" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🏪</button>
         </div>
-        <div id="map"></div>
+        <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;height:420px;min-height:300px;background:#FFFFFF !important;border-top:2px solid #dee2e6;display:flex;flex-direction:column;overflow:hidden">
+      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:#FFFFFF !important;border-top:2px solid #dee2e6;display:flex;flex-direction:column;overflow:hidden">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #dee2e6;background:#f8f9fa !important;flex-shrink:0;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:700;color:#1a3a5c !important;white-space:nowrap">📋 Pedidos do dia</span>
           <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
