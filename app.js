@@ -630,14 +630,14 @@ const _gruposColapsados=new Set();
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 420px !important;
-      min-width: 420px !important;
+      width: 420px;
+      min-width: 420px;
       flex-shrink: 0 !important;
-      transition: width .2s ease, min-width .2s ease !important;
+      transition: width 0.3s ease, min-width 0.3s ease;
     }
     .sb-dark.sb-minimized {
-      width: 0 !important;
-      min-width: 0 !important;
+      width: 0;
+      min-width: 0;
       border: none !important;
     }
     .sb-header-dark {
@@ -1068,7 +1068,7 @@ function renderMapaPage(){
       </div>
     </div>
     <div class="mapa-container" style="position:relative">
-      <div id="sb-toggle-tab" onclick="toggleSidebar()" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:50%;transform:translate(-100%,-50%);z-index:200;cursor:pointer;padding:6px 3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 980 980" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,980) scale(0.1,-0.1)" fill="#64748b" stroke="none"><path d="M4250 7352 c-75 -25 -96 -37 -153 -91 -54 -50 -90 -101 -115 -165 -15 -37 -17 -141 -22 -1076 l-5 -1035 -93 183 c-106 206 -149 259 -254 311 -261 129 -562 -29 -607 -319 -12 -71 -3 -153 22 -211 19 -43 278 -569 735 -1491 339 -685 363 -731 416 -783 37 -37 81 -68 133 -93 l78 -37 769 -3 c830 -3 826 -3 935 51 58 28 153 116 184 170 58 99 67 148 67 378 l0 211 166 357 c91 196 178 390 192 431 l27 75 3 598 c3 514 1 606 -12 658 -30 115 -98 198 -205 247 -47 22 -70 27 -146 27 -82 0 -96 -3 -158 -33 -38 -19 -69 -32 -71 -30 -1 1 -17 26 -35 55 -44 70 -100 119 -180 157 -62 29 -73 31 -176 31 -104 0 -114 -2 -175 -32 -36 -18 -74 -39 -86 -48 -20 -15 -22 -13 -57 43 -96 156 -273 234 -446 198 -40 -9 -93 -27 -116 -41 -24 -14 -46 -25 -49 -25 -3 0 -6 213 -6 474 0 280 -4 495 -10 527 -26 136 -112 249 -237 311 -59 29 -77 33z"/></g></svg></div>
+      <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
       <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center;background:#ffffff !important;color:#111827 !important">
         <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
         <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
@@ -1091,6 +1091,7 @@ function renderMapaPage(){
       </div>
       <div id="map"></div>
     </div>`;
+  iniciarDragSidebar();
   setTimeout(()=>{
     if(map){map.remove();map=null;}
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
@@ -1099,8 +1100,51 @@ function renderMapaPage(){
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
   },100);
 }
+function iniciarDragSidebar(){
+  const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
+  if(!sb||!tab)return;
+  const SB_W=420,SNAP=80;
+  let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
+  // Handle de arrasto (faixa de 8px na borda direita da sidebar)
+  const handle=document.createElement('div');
+  handle.style.cssText='position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:20;touch-action:none';
+  sb.style.position='relative';sb.appendChild(handle);
+  function isMin(){return sb.classList.contains('sb-minimized');}
+  function snapTo(minimize){
+    sb.style.transition='width 0.3s ease,min-width 0.3s ease';
+    sb.style.width='';sb.style.minWidth='';
+    toggleSidebar(minimize);
+  }
+  function startDrag(x,isTab){
+    dragging=true;fromTab=isTab;startX=x;_wasMin=isMin();
+    sb.style.transition='none';document.body.style.userSelect='none';
+    if(isTab&&_wasMin){sb.classList.remove('sb-minimized');startW=0;}
+    else startW=sb.offsetWidth;
+  }
+  function moveDrag(x){
+    if(!dragging)return;
+    const newW=Math.max(0,Math.min(SB_W,startW+(x-startX)));
+    sb.style.width=newW+'px';sb.style.minWidth=newW+'px';
+    if(tab)tab.style.transform=newW>24?'translateX(-100%)':'translateX(0)';
+  }
+  function endDrag(x){
+    if(!dragging)return;
+    dragging=false;document.body.style.userSelect='';
+    const delta=Math.abs(x-startX);
+    if(delta<8){snapTo(fromTab?!_wasMin:_wasMin);}
+    else{snapTo((parseFloat(sb.style.width)||0)<SB_W-SNAP);}
+  }
+  handle.addEventListener('mousedown',e=>{e.preventDefault();startDrag(e.clientX,false);});
+  handle.addEventListener('touchstart',e=>startDrag(e.touches[0].clientX,false),{passive:true});
+  tab.addEventListener('mousedown',e=>{e.preventDefault();startDrag(e.clientX,true);});
+  tab.addEventListener('touchstart',e=>startDrag(e.touches[0].clientX,true),{passive:true});
+  document.addEventListener('mousemove',e=>{if(dragging)moveDrag(e.clientX);});
+  document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDrag(e.touches[0].clientX);}},{passive:false});
+  document.addEventListener('mouseup',e=>{if(dragging)endDrag(e.clientX);});
+  document.addEventListener('touchend',e=>{if(dragging)endDrag(e.changedTouches[0].clientX);});
+}
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
-function toggleSidebar(){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');if(!sb)return;const min=sb.classList.toggle('sb-minimized');if(tab){tab.style.transform=min?'translateY(-50%)':'translate(-100%,-50%)';}if(map)setTimeout(()=>map.invalidateSize(),220);}
+function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
 let _filtroLojaAtivo=false;
 function toggleFiltroLojas(){_filtroLojaAtivo=!_filtroLojaAtivo;const btn=document.getElementById('btn-filtro-lojas');if(btn){btn.style.border=_filtroLojaAtivo?'2px solid #1A56DB':'2px solid #E5E7EB';btn.title=_filtroLojaAtivo?'Mostrar todas as lojas':'Filtrar lojas com pedidos ativos';}atualizarMarcadores();}
 let _filtroMotoboyAtivo=false;
