@@ -1700,9 +1700,41 @@ async function abrirEditarLoja(lojaId){
   const data=await db('lojas','GET',null,`?id=eq.${lojaId}`);const l=data[0];if(!l)return;
   let modal=document.getElementById('modal-editar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${l.nome}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="el-nome" value="${l.nome||''}"/></div><div class="fi"><label>Telefone</label><input id="el-telefone" value="${l.telefone||''}"/></div></div><div class="form-row full"><div class="fi"><label>Endereço</label><input id="el-endereco" value="${l.endereco||''}" placeholder="Rua, número, bairro" autocomplete="off"/></div></div><div class="form-row"><div class="fi"><label>E-mail acesso</label><input id="el-email" value="${l.email||''}"/></div><div class="fi"><label>Status</label><select id="el-ativo" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"><option value="true" ${l.ativo?'selected':''}>Ativa</option><option value="false" ${!l.ativo?'selected':''}>Inativa</option></select></div></div><div style="background:#1A56DB10;border:1px solid #1A56DB40;border-radius:10px;padding:14px;margin-top:4px"><div style="font-size:11px;color:#1A56DB;font-weight:700;margin-bottom:10px">📍 COORDENADAS GPS (obrigatório para validação de 35m)</div><div class="form-row"><div class="fi"><label>Latitude</label><input type="number" id="el-lat" step="0.000001" value="${l.latitude||''}" placeholder="-21.1775"/></div><div class="fi"><label>Longitude</label><input type="number" id="el-lng" step="0.000001" value="${l.longitude||''}" placeholder="-47.8103"/></div></div><button onclick="geocodificarLoja()" style="background:#1A56DB20;color:#1A56DB;border:1px solid #1A56DB50;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-top:4px">🔍 Buscar coordenadas pelo endereço</button><div id="el-geo-feedback" style="margin-top:6px;font-size:12px"></div></div><div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoLoja('${lojaId}')">💾 Salvar</button></div></div>`;
+  const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
+  const is=ss+';box-sizing:border-box';
+  const v=(x)=>(x||'').toString().replace(/"/g,'&quot;');
+  const inp=(id,val,ph='',type='text')=>`<input id="${id}" type="${type}" value="${v(val)}" placeholder="${ph}" style="${is}"/>`;
+  const sel=(id,val,opts)=>`<select id="${id}" style="${ss}">${opts.map(([ov,ol])=>`<option value="${ov}"${val===ov?' selected':''}>${ol}</option>`).join('')}</select>`;
+  const sec=(t)=>`<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px;margin-top:4px">${t}</div>`;
+  const fi=(lbl,content)=>`<div class="fi"><label>${lbl}</label>${content}</div>`;
+  const r2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
+  const r1=(a)=>`<div class="form-row full">${a}</div>`;
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
+${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
+${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}"/>`))}
+${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
+${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
+${r2(fi('Telefone',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('Celular',inp('el-celular',l.celular,'(16) 99999-9999')))}
+${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
+${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${sec('📍 Coordenadas GPS')}
+<div style="background:#1A56DB10;border:1px solid #1A56DB40;border-radius:10px;padding:14px">
+${r2(fi('Latitude',`<input type="number" id="el-lat" step="0.000001" value="${v(l.latitude)}" placeholder="-21.1775" style="${is}"/>`),fi('Longitude',`<input type="number" id="el-lng" step="0.000001" value="${v(l.longitude)}" placeholder="-47.8103" style="${is}"/>`))}
+<button onclick="geocodificarLoja()" style="background:#1A56DB20;color:#1A56DB;border:1px solid #1A56DB50;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-top:4px">🔍 Buscar coordenadas pelo endereço</button>
+<div id="el-geo-feedback" style="margin-top:6px;font-size:12px"></div></div>
+<div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
+}
+async function resetSenhaLoja(email){
+  const fb=document.getElementById('el-feedback');
+  if(!email){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">E-mail não informado.</div>';return;}
+  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Enviando e-mail…</div>';
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
+    if(fb)fb.innerHTML=r.ok?'<div style="color:#22c55e;font-size:13px">✅ E-mail de redefinição enviado!</div>':'<div style="color:#ef4444;font-size:13px">Erro ao enviar e-mail.</div>';
+  }catch{if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Erro de conexão.</div>';}
 }
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
@@ -1715,13 +1747,24 @@ async function geocodificarLoja(){
 }
 async function salvarEdicaoLoja(lojaId){
   const fb=document.getElementById('el-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
-  const lat=parseFloat(document.getElementById('el-lat')?.value)||null,lng=parseFloat(document.getElementById('el-lng')?.value)||null;
-  const update={nome:document.getElementById('el-nome')?.value||'',telefone:document.getElementById('el-telefone')?.value||'',endereco:document.getElementById('el-endereco')?.value||'',email:document.getElementById('el-email')?.value||'',ativo:document.getElementById('el-ativo')?.value==='true',latitude:lat,longitude:lng,updated_at:new Date().toISOString()};
-  if(!update.nome){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">Nome obrigatório.</div>';return;}
+  const g=(id)=>document.getElementById(id)?.value||'';
+  const lat=parseFloat(g('el-lat'))||null,lng=parseFloat(g('el-lng'))||null;
+  const pj=g('el-pessoa-juridica');
+  const update={
+    nome:g('el-nome'),razao_social:g('el-razao-social'),
+    inscricao_estadual:g('el-insc-estadual'),inscricao_municipal:g('el-insc-municipal'),
+    endereco:g('el-endereco'),cep:g('el-cep'),complemento:g('el-complemento'),
+    tipo_cliente:g('el-tipo-cliente')||null,responsavel:g('el-responsavel'),
+    telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
+    pessoa_juridica:pj===''?null:pj==='true',
+    ativo:g('el-ativo')==='true',latitude:lat,longitude:lng,
+    updated_at:new Date().toISOString()
+  };
+  if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
   const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
-  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
+  if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
   await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
-  if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
+  if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');renderLojasPage();},1200);
 }
 async function criarLoja(){
