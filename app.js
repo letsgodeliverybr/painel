@@ -2601,9 +2601,29 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
     renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido');_carregarSaldoTopbar();},150);
-    if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
+    if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
   }catch(e){sessionStorage.removeItem('lg_user');}
 });
+
+// ═══════════════════════════════════════════════
+// SCHEDULER — libera pedidos agendados a cada 60s
+// ═══════════════════════════════════════════════
+let _schedulerInterval=null;
+async function _runScheduler(){
+  try{
+    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
+    if(!agendados.length)return;
+    const agora=new Date().toISOString();
+    await Promise.all(agendados.map(p=>db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`)));
+    console.log(`[scheduler] ${agendados.length} pedido(s) liberado(s) para entrega`);
+    atualizarTudo();
+  }catch(e){console.error('[scheduler]',e);}
+}
+function iniciarScheduler(){
+  if(_schedulerInterval)return;
+  _runScheduler();
+  _schedulerInterval=setInterval(_runScheduler,60000);
+}
 
 // ═══════════════════════════════════════════════
 // ROTEIRIZAÇÃO DE PEDIDOS
