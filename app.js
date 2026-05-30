@@ -10,6 +10,8 @@ let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedido
 let idsProntoNotificados=new Set();
 let _sidebarBusca='';
 const _gruposColapsados=new Set();
+let _tabelaPedidosDia=[],_tabelaPagina=0;
+let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 
 
 // ═══════════════════════════════════════════════
@@ -45,22 +47,42 @@ const _gruposColapsados=new Set();
     }
 
     html.dark {
-      --bg: #1E2028;
-      --surface: #272A35;
-      --surface2: #2E3140;
-      --border: #3A3D4A;
-      --text: #e2e8f0;
-      --text2: #94a3b8;
-      --text3: #475569;
+      --bg: #1E1E1E;
+      --surface: #2A2A2A;
+      --surface2: #242424;
+      --border: #3A3A3A;
+      --text: #FFFFFF;
+      --text2: #ABABAB;
+      --text3: #6B6B6B;
       --accent: #818cf8;
       --accent2: #6366f1;
-      --sb-bg: #1E2028;
-      --sb-card: #272A35;
-      --sb-border: #3A3D4A;
-      --sb-text: #e2e8f0;
-      --sb-text2: #94a3b8;
-      --sb-text3: #475569;
-      --sb-search-bg: #272A35;
+      --sb-bg: #1E1E1E;
+      --sb-card: #2A2A2A;
+      --sb-border: #3A3A3A;
+      --sb-text: #FFFFFF;
+      --sb-text2: #ABABAB;
+      --sb-text3: #6B6B6B;
+      --sb-search-bg: #242424;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) {
+        --bg: #1E1E1E;
+        --surface: #2A2A2A;
+        --surface2: #242424;
+        --border: #3A3A3A;
+        --text: #FFFFFF;
+        --text2: #ABABAB;
+        --text3: #6B6B6B;
+        --accent: #818cf8;
+        --accent2: #6366f1;
+        --sb-bg: #1E1E1E;
+        --sb-card: #2A2A2A;
+        --sb-border: #3A3A3A;
+        --sb-text: #FFFFFF;
+        --sb-text2: #ABABAB;
+        --sb-text3: #6B6B6B;
+        --sb-search-bg: #242424;
+      }
     }
     html.dark .topbar { background: var(--surface) !important; }
     html.dark .card,
@@ -1067,29 +1089,79 @@ function renderMapaPage(){
         <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">🛵 Disparar Rota (0 pedidos) ++</button>
       </div>
     </div>
-    <div class="mapa-container" style="position:relative">
-      <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-      <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center;background:#ffffff !important;color:#111827 !important">
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Pedidos</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🍳</span><div><div class="mapa-stat-val" id="ms-preparo" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em preparo</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🔍</span><div><div class="mapa-stat-val" id="ms-procurando" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Proc. Entregador</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🔄</span><div><div class="mapa-stat-val" id="ms-rota" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em rota</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
-        <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-        <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div class="mapa-container" style="position:relative;flex:1;min-height:200px">
+        <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center;background:#ffffff !important;color:#111827 !important">
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🛵</span><div><div class="mapa-stat-val" id="ms-online" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Online</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Pedidos</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🍳</span><div><div class="mapa-stat-val" id="ms-preparo" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em preparo</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🔍</span><div><div class="mapa-stat-val" id="ms-procurando" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Proc. Entregador</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">🔄</span><div><div class="mapa-stat-val" id="ms-rota" style="font-size:15px">0</div><div class="mapa-stat-label" style="font-size:10px">Em rota</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
+          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
+        </div>
+        <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
+        <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
+          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar só entregadores disponíveis" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🪖</button>
+          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🏪</button>
+        </div>
+        <div id="map"></div>
       </div>
-      <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
-      <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
-        <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar só entregadores disponíveis" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🪖</button>
-        <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Filtrar lojas com pedidos ativos" style="background:#ffffff;border:2px solid #E5E7EB;color:#1A56DB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:border .15s">🏪</button>
+      <div id="tabela-mapa-section" style="flex-shrink:0;height:300px;background:var(--surface);border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap">📋 Pedidos do dia</span>
+          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;width:160px;font-family:Inter,sans-serif"/>
+          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
+          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif">
+            <option value="">Todos status</option>
+            <option value="recebido">Recebido</option>
+            <option value="pronto">Pronto</option>
+            <option value="aceito">Aceito</option>
+            <option value="chegou_local">Chegou no local</option>
+            <option value="em_rota">Em rota</option>
+            <option value="chegou_destino">Chegou no destino</option>
+            <option value="retornando">Retornando</option>
+            <option value="finalizado">Finalizado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input id="tf-data" type="date" value="${new Date().toISOString().slice(0,10)}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-family:Inter,sans-serif"/>
+        </div>
+        <div style="flex:1;overflow:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:Inter,sans-serif">
+            <thead style="position:sticky;top:0;z-index:2">
+              <tr style="background:var(--surface2)">
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Status</th>
+                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
+                <th style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-mapa-body">
+              <tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0">
+          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);font-family:Inter,sans-serif">← Ant</button>
+          <span id="tabela-mapa-pag" style="font-size:11px;color:var(--text3);flex:1;text-align:center">—</span>
+          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);font-family:Inter,sans-serif">Próx →</button>
+        </div>
       </div>
-      <div id="map"></div>
     </div>`;
   iniciarDragSidebar();
   setTimeout(()=>{
@@ -1100,6 +1172,107 @@ function renderMapaPage(){
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
   },100);
 }
+// ─── TABELA DE PEDIDOS ABAIXO DO MAPA ───────────────────────────────────────
+
+async function carregarTabelaMapa(){
+  if(!document.getElementById('tabela-mapa-body'))return;
+  const dataInput=document.getElementById('tf-data');
+  const dataVal=dataInput?.value||new Date().toISOString().slice(0,10);
+  _tabelaFiltros.data=dataVal;
+  const inicio=new Date(dataVal+'T00:00:00');
+  const fim=new Date(dataVal+'T23:59:59.999');
+  _tabelaPedidosDia=await db('pedidos','GET',null,
+    `?created_at=gte.${inicio.toISOString()}&created_at=lte.${fim.toISOString()}&order=created_at.desc&limit=500`
+  );
+  renderTabelaMapa();
+}
+
+function renderTabelaMapa(){
+  const el=document.getElementById('tabela-mapa-body');
+  if(!el)return;
+  const selEnt=document.getElementById('tf-entregador');
+  if(selEnt){
+    const curVal=selEnt.value;
+    selEnt.innerHTML='<option value="">Todos entregadores</option>'+
+      allMotoboys.map(e=>`<option value="${e.id}"${curVal===e.id?' selected':''}>${e.nome||e.id.substring(0,8)}</option>`).join('');
+  }
+  const busca=(_tabelaFiltros.busca||'').toLowerCase();
+  const filtEnt=_tabelaFiltros.entregador;
+  const filtSt=_tabelaFiltros.status;
+  let filtered=_tabelaPedidosDia.filter(p=>{
+    if(busca&&!(
+      (p.nome_cliente||p.cliente||'').toLowerCase().includes(busca)||
+      String(p.numero||'').includes(busca)
+    ))return false;
+    const entId=p.motoboy_id||p.entregador_id;
+    if(filtEnt&&entId!==filtEnt)return false;
+    if(filtSt&&getStatusKey(p)!==filtSt)return false;
+    return true;
+  });
+  const total=filtered.length;
+  const pagTotal=Math.max(1,Math.ceil(total/20));
+  if(_tabelaPagina>=pagTotal)_tabelaPagina=pagTotal-1;
+  const slice=filtered.slice(_tabelaPagina*20,(_tabelaPagina+1)*20);
+  const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
+  const TD=(s,extra='')=>`<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);${extra}">${s}</td>`;
+  const rows=slice.map(p=>{
+    const sk=getStatusKey(p);
+    const loja=allLojas.find(l=>l.id===p.loja_id);
+    const entId=p.motoboy_id||p.entregador_id;
+    const ent=allMotoboys.find(e=>e.id===entId);
+    const taxaCobrada=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.preco_dinamico)||0)+(parseFloat(p.gorjeta)||0);
+    const endereco=p.endereco_entrega||p.endereco||'—';
+    const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
+    return `<tr style="cursor:pointer" onclick="_irParaPedido('${p.id}')">
+      ${TD(`<span style="font-weight:700;color:var(--accent)">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap')}
+      ${TD(p.nome_cliente||p.cliente||'—')}
+      ${TD(loja?.nome||'—')}
+      ${TD(`<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${endereco}</span>`)}
+      ${TD(ent?.nome||`<span style="color:var(--text3)">—</span>`)}
+      ${TD(`<span style="font-weight:700;color:#059669">${fmtR$(p.taxa_entrega)}</span>`)}
+      ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`)}
+      ${TD(p.forma_pagamento||p.onde_cobrar||'—')}
+      ${TD(`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`)}
+      ${TD(`${logoOk} 👤`,'text-align:center')}
+      ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center')}
+      ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
+        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Editar">✏️</button>
+        <button onclick="event.stopPropagation();_localizarPedidoMapa('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Localizar">📍</button>
+        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Configurações">⚙️</button>
+      </span>`,'white-space:nowrap')}
+    </tr>`;
+  }).join('');
+  el.innerHTML=rows||`<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`;
+  const pInfo=document.getElementById('tabela-mapa-pag');
+  if(pInfo)pInfo.textContent=`Página ${_tabelaPagina+1} de ${pagTotal} (${total} pedido${total!==1?'s':''})`;
+  const btnPrev=document.getElementById('tabela-mapa-prev');
+  const btnNext=document.getElementById('tabela-mapa-next');
+  if(btnPrev)btnPrev.disabled=_tabelaPagina===0;
+  if(btnNext)btnNext.disabled=_tabelaPagina>=pagTotal-1;
+}
+
+function _tabelaFiltrar(){
+  _tabelaPagina=0;
+  _tabelaFiltros.busca=document.getElementById('tf-busca')?.value||'';
+  _tabelaFiltros.entregador=document.getElementById('tf-entregador')?.value||'';
+  _tabelaFiltros.status=document.getElementById('tf-status')?.value||'';
+  renderTabelaMapa();
+}
+
+function _tabelaMudarData(){_tabelaPagina=0;carregarTabelaMapa();}
+
+function _tabelaIrPagina(delta){
+  _tabelaPagina+=delta;
+  renderTabelaMapa();
+}
+
+function _localizarPedidoMapa(id){
+  const p=allPedidos.find(x=>x.id===id)||_tabelaPedidosDia.find(x=>x.id===id);
+  if(map&&p&&p.latitude&&p.longitude)map.setView([p.latitude,p.longitude],16,{animate:true});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
@@ -1173,6 +1346,7 @@ async function atualizarTudo(){
   setVal('ms-online',online);setVal('ms-pedidos',allPedidos.length);setVal('ms-preparo',emPreparo);
   setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosData.length);setVal('ms-cancelados',canceladosData.length);
   renderPedidosLista();if(map)atualizarMarcadores();
+  carregarTabelaMapa();
 }
 
 function renderPedidosLista(){
