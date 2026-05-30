@@ -12,6 +12,7 @@ let _sidebarBusca='';
 const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
+let _entFiltro='todos';
 
 
 // ═══════════════════════════════════════════════
@@ -1654,10 +1655,108 @@ async function _renderClientesTab(el){
 }
 
 async function _renderEntregadoresTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo Entregador</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th><th>Ações</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
-  const data=await db('entregadores','GET',null,'?order=updated_at.desc');
-  const tbody=document.getElementById('tbody-entregadores');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td><td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
+  const data=await db('entregadores','GET',null,'?order=created_at.desc');
+  const contEmAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
+  const badge=contEmAnalise>0?`<span style="background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;vertical-align:middle">${contEmAnalise}</span>`:'';
+  const btnFiltro=(id,label)=>{
+    const ativo=_entFiltro===id;
+    return `<button onclick="_entSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}</button>`;
+  };
+  const filtroBtns=`
+    ${btnFiltro('todos','Todos')}
+    ${btnFiltro('aprovados','✅ Aprovados')}
+    <button onclick="_entSetFiltro('em_analise')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${_entFiltro==='em_analise'?'#1A56DB':'var(--border)'};background:${_entFiltro==='em_analise'?'#1A56DB':'var(--surface2)'};color:${_entFiltro==='em_analise'?'#fff':'var(--text2)'}">🔍 Em Análise${badge}</button>
+    ${btnFiltro('pendentes','⏳ Pendentes')}`;
+
+  let filtered;
+  if(_entFiltro==='aprovados') filtered=data.filter(e=>e.aprovado===true||e.status_cadastro==='aprovado');
+  else if(_entFiltro==='em_analise') filtered=data.filter(e=>e.status_cadastro==='em_analise');
+  else if(_entFiltro==='pendentes') filtered=data.filter(e=>!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente'));
+  else filtered=data;
+
+  let theadHtml,tbodyHtml;
+  if(_entFiltro==='em_analise'){
+    theadHtml='<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>PIX</th><th>Data cadastro</th><th>Ações</th></tr>';
+    tbodyHtml=filtered.length===0
+      ?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
+      :filtered.map(e=>`<tr>
+        <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
+        <td>${e.telefone||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${e.cpf||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${[e.modal_veiculo,e.modelo_veiculo].filter(Boolean).join(' ')||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${e.placa_veiculo||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${e.chave_pix||'—'}</td>
+        <td style="font-size:12px;color:var(--text3)">${e.created_at?new Date(e.created_at).toLocaleDateString('pt-BR'):'—'}</td>
+        <td style="white-space:nowrap">
+          <button onclick="_aprovarEntregador('${e.id}')" style="background:#10b981;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-right:5px">✅ Aprovar</button>
+          <button onclick="_reprovarEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:#ef4444;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">❌ Reprovar</button>
+        </td>
+      </tr>`).join('');
+  } else {
+    const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'fila');
+    theadHtml='<tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>Atualizado</th><th>Ações</th></tr>';
+    tbodyHtml=filtered.length===0
+      ?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
+      :filtered.map(e=>`<tr>
+        <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
+        <td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td>
+        <td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td>
+        <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
+        <td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td>
+        <td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td>
+      </tr>`).join('');
+  }
+
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${filtroBtns}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
+        <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
+      </div>
+    </div>
+    <div class="card"><div style="overflow-x:auto">
+      <table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>
+    </div></div>`;
+}
+
+function _entSetFiltro(filtro){_entFiltro=filtro;renderCadastrosPage('entregadores');}
+
+async function _aprovarEntregador(id){
+  const res=await dbPatch('entregadores',{aprovado:true,status_cadastro:'aprovado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(res===null){showNotif('❌ Erro ao aprovar','','var(--red)');return;}
+  showNotif('✅ Entregador aprovado!','','var(--green)');
+  renderCadastrosPage('entregadores');
+}
+
+function _reprovarEntregador(id,nome){
+  let modal=document.getElementById('modal-reprovar-ent');
+  if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-ent';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">❌ Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
+      <div class="fi"><label>Motivo</label><textarea id="rep-motivo" placeholder="Ex: Documentação incompleta, CNH inválida..." style="min-height:80px;resize:vertical"></textarea></div>
+      <div id="rep-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">Cancelar</button>
+      <button onclick="_confirmarReprovacao('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">❌ Confirmar</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+
+async function _confirmarReprovacao(id){
+  const motivo=document.getElementById('rep-motivo')?.value?.trim()||'';
+  const fb=document.getElementById('rep-feedback');
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=await dbPatch('entregadores',{aprovado:false,status_cadastro:'reprovado',motivo_reprovacao:motivo,updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  document.getElementById('modal-reprovar-ent')?.classList.remove('open');
+  showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
+  renderCadastrosPage('entregadores');
 }
 
 async function abrirEditarEntregador(entId){
