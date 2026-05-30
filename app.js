@@ -1687,19 +1687,89 @@ function destacarMarcador(id){
 }
 
 function abrirEditarPedido(pedidoId){
-  const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(!p)return;
   let modal=document.getElementById('modal-editar-pedido');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-pedido';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row full"><div class="fi"><label>Cliente</label><input id="ep-cliente" value="${p.cliente||''}"/></div></div><div class="form-row full"><div class="fi"><label>Endereço</label><input id="ep-endereco" value="${p.endereco||''}"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div><div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div></div><div class="form-row"><div class="fi"><label>Gorjeta (R$)</label><input type="number" id="ep-gorjeta" value="${p.gorjeta||0}" step="0.50"/></div><div class="fi"><label>Nº Pedido</label><input id="ep-numero" value="${p.numero||''}"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="ep-descricao">${p.descricao||''}</textarea></div></div><div id="ep-feedback" style="margin-top:4px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoPedido('${pedidoId}')">💾 Salvar</button></div></div>`;
+  const temColeta=!!(p.endereco_coleta||p.contato_coleta||p.telefone_coleta);
+  const temAgend=!!(p.agendado_para);
+  const agendVal=temAgend?new Date(p.agendado_para).toISOString().slice(0,16):'';
+  const esc=v=>(v||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
+<div class="form-row">
+  <div class="fi"><label>Nº Pedido</label><input id="ep-numero" value="${esc(p.numero)}"/></div>
+  <div class="fi"><label>Cliente</label><input id="ep-cliente" value="${esc(p.cliente||p.nome_cliente)}"/></div>
+</div>
+<div class="form-row">
+  <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
+  <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
+</div>
+<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><input id="ep-endereco" value="${esc(p.endereco)}"/></div></div>
+<div class="form-row">
+  <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
+  <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
+</div>
+<div class="form-row">
+  <div class="fi"><label>Gorjeta (R$)</label><input type="number" id="ep-gorjeta" value="${p.gorjeta||0}" step="0.50"/></div>
+</div>
+<div class="form-row full"><div class="fi"><label>Observações</label><textarea id="ep-descricao">${esc(p.descricao)}</textarea></div></div>
+<div style="border-top:1px solid var(--border);margin:12px 0 10px;padding-top:10px">
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);font-weight:600">
+    <input type="checkbox" id="ep-coleta-toggle" ${temColeta?'checked':''} onchange="_epToggleColeta()" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
+    📦 Coleta em outro endereço
+  </label>
+  <div id="ep-coleta-campos" style="display:${temColeta?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
+    <div class="form-row full"><div class="fi"><label>Endereço de coleta</label><input id="ep-endereco-coleta" value="${esc(p.endereco_coleta)}" placeholder="Rua, número, bairro"/></div></div>
+    <div class="form-row">
+      <div class="fi"><label>Contato na coleta</label><input id="ep-contato-coleta" value="${esc(p.contato_coleta)}" placeholder="Nome"/></div>
+      <div class="fi"><label>Telefone da coleta</label><input id="ep-telefone-coleta" value="${esc(p.telefone_coleta)}" placeholder="(16) 99999-9999"/></div>
+    </div>
+  </div>
+</div>
+<div style="border-top:1px solid var(--border);margin:0 0 10px;padding-top:10px">
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);font-weight:600">
+    <input type="checkbox" id="ep-agendar-toggle" ${temAgend?'checked':''} onchange="_epToggleAgendar()" style="width:16px;height:16px;cursor:pointer;accent-color:#f97316"/>
+    ⏰ Agendar pedido
+  </label>
+  <div id="ep-agendar-campos" style="display:${temAgend?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
+    <div class="form-row full"><div class="fi"><label>Data e hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
+  </div>
+</div>
+<div id="ep-feedback" style="margin-top:4px"></div>
+</div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
+}
+function _epToggleColeta(){
+  const on=document.getElementById('ep-coleta-toggle')?.checked;
+  const c=document.getElementById('ep-coleta-campos');if(c)c.style.display=on?'block':'none';
+}
+function _epToggleAgendar(){
+  const on=document.getElementById('ep-agendar-toggle')?.checked;
+  const c=document.getElementById('ep-agendar-campos');if(c)c.style.display=on?'block':'none';
+  if(on){const inp=document.getElementById('ep-agendado-para');if(inp&&!inp.value){const d=new Date();d.setMinutes(d.getMinutes()+30);inp.value=d.toISOString().slice(0,16);}}
 }
 async function salvarEdicaoPedido(pedidoId){
   const fb=document.getElementById('ep-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
-  // Campos confirmados na tabela pedidos (telefone NÃO existe na tabela)
-  const update={cliente:document.getElementById('ep-cliente')?.value||'',endereco:document.getElementById('ep-endereco')?.value||'',valor:parseFloat(document.getElementById('ep-valor')?.value)||0,taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,numero:document.getElementById('ep-numero')?.value||'',descricao:document.getElementById('ep-descricao')?.value||'',updated_at:new Date().toISOString()};
-  console.log('[salvarEdicaoPedido] payload →', JSON.stringify(update));
+  const coletaOn=document.getElementById('ep-coleta-toggle')?.checked;
+  const agendarOn=document.getElementById('ep-agendar-toggle')?.checked;
+  const agendadoParaVal=agendarOn?document.getElementById('ep-agendado-para')?.value:null;
+  const update={
+    cliente:document.getElementById('ep-cliente')?.value||'',
+    endereco:document.getElementById('ep-endereco')?.value||'',
+    valor:parseFloat(document.getElementById('ep-valor')?.value)||0,
+    taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,
+    gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,
+    numero:document.getElementById('ep-numero')?.value||'',
+    descricao:document.getElementById('ep-descricao')?.value||'',
+    telefone:document.getElementById('ep-telefone')?.value||null,
+    endereco_coleta:coletaOn?(document.getElementById('ep-endereco-coleta')?.value||null):null,
+    contato_coleta:coletaOn?(document.getElementById('ep-contato-coleta')?.value||null):null,
+    telefone_coleta:coletaOn?(document.getElementById('ep-telefone-coleta')?.value||null):null,
+    agendado_para:agendarOn&&agendadoParaVal?new Date(agendadoParaVal).toISOString():null,
+    updated_at:new Date().toISOString(),
+  };
+  if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
-  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
+  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
   await logAcao('editar_pedido',{pedido_id:pedidoId});
   if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido atualizado!','');
   setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1200);
