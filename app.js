@@ -1400,7 +1400,7 @@ async function _renderClientesTab(el){
 }
 
 async function _renderEntregadoresTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th><th>Ações</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo Entregador</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th><th>Ações</th></tr></thead><tbody id="tbody-entregadores"></tbody></table></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-entregadores');if(!tbody)return;
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td><td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
@@ -1434,12 +1434,68 @@ async function redefinirSenhaEntregador(email){
   }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
 }
 
+function abrirNovoEntregador(){
+  const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
+  let modal=document.getElementById('modal-novo-entregador');
+  if(!modal){modal=document.createElement('div');modal.id='modal-novo-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">➕ Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">🚀 Criar</button></div></div>`;
+  modal.classList.add('open');
+}
+
+async function criarNovoEntregador(){
+  const fb=document.getElementById('ne-feedback');
+  const nome=document.getElementById('ne-nome')?.value?.trim(),email=document.getElementById('ne-email')?.value?.trim(),senha=document.getElementById('ne-senha')?.value;
+  const cpf=document.getElementById('ne-cpf')?.value?.trim(),telefone=document.getElementById('ne-telefone')?.value?.trim(),disponivel=document.getElementById('ne-disponivel')?.value==='true';
+  if(!nome||!email||!senha){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha nome, e-mail e senha.</span>';return;}
+  if(senha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Senha mínima de 6 caracteres.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Criando conta…</span>';
+  try{
+    const authRes=await fetch(`${SB_URL}/auth/v1/signup`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
+    const authData=await authRes.json();
+    if(!authRes.ok||!authData.user?.id){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${authData.error_description||authData.msg||'Verifique o e-mail.'}</span>`;return;}
+    await db('entregadores','POST',{nome,email,cpf,telefone,disponivel,status:'livre',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador criado!</span>';
+    setTimeout(()=>{document.getElementById('modal-novo-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
+  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
+}
+
 async function _renderUsuariosTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleString('pt-BR'):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleString('pt-BR'):'—'}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;}).join('');
+}
+
+async function abrirEditarUsuario(userId){
+  const arr=await db('usuarios_painel','GET',null,`?id=eq.${userId}`);
+  const u=Array.isArray(arr)?arr[0]:arr;if(!u)return;
+  const lojas=await db('lojas','GET',null,'');
+  const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
+  let modal=document.getElementById('modal-editar-usuario');
+  if(!modal){modal=document.createElement('div');modal.id='modal-editar-usuario';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const lojaOpts='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="email" value="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="display:flex;align-items:flex-end"><button onclick="redefinirSenhaUsuario('${(u.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
+  modal.classList.add('open');
+}
+
+async function salvarEdicaoUsuario(userId){
+  const fb=document.getElementById('eu-feedback');
+  const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null,updated_at:new Date().toISOString()};
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=await db('usuarios_painel','PATCH',update,`?id=eq.${userId}`);
+  if(fb)fb.innerHTML=res!==null?'<span style="color:#22c55e">✅ Salvo com sucesso!</span>':'<span style="color:#ef4444">Erro ao salvar.</span>';
+  setTimeout(()=>{document.getElementById('modal-editar-usuario')?.classList.remove('open');renderCadastrosPage('usuarios');},1200);
+}
+
+async function redefinirSenhaUsuario(email){
+  const fb=document.getElementById('eu-feedback');
+  if(!email){if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail não informado.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Enviando e-mail…</span>';
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
+    if(fb)fb.innerHTML=r.ok?'<span style="color:#22c55e">✅ E-mail de redefinição enviado!</span>':'<span style="color:#ef4444">Erro ao enviar e-mail.</span>';
+  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
 }
 
 async function _renderPrecificacaoTab(el){
