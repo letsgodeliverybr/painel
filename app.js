@@ -1722,7 +1722,7 @@ async function _renderEntregadoresTab(el){
   let filtered;
   if(_entFiltro==='aprovados') filtered=data.filter(e=>e.aprovado===true||e.status_cadastro==='aprovado');
   else if(_entFiltro==='em_analise') filtered=data.filter(e=>e.status_cadastro==='em_analise');
-  else if(_entFiltro==='pendentes') filtered=data.filter(e=>!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente'));
+  else if(_entFiltro==='pendentes') filtered=data.filter(e=>e.status==='bloqueado'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
   else filtered=data;
 
   let theadHtml,tbodyHtml;
@@ -1829,7 +1829,7 @@ ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
-${row2(fi('Disponibilidade',sel('ee-disponivel',e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
 ${sec('🛵 Dados do Veículo')}
 ${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa_veiculo,'ABC-1234')))}
 ${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
@@ -1845,12 +1845,13 @@ ${row1(`<div class="fi"><label>Máquina de cartão</label><label style="display:
 async function salvarEdicaoEntregador(entId){
   const fb=document.getElementById('ee-feedback');
   const g=(id)=>document.getElementById(id)?.value||'';
+  const dispVal=document.getElementById('ee-disponivel')?.value;
   const update={
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
     rg:g('ee-rg'),data_nascimento:g('ee-nascimento')||null,
     cep:g('ee-cep'),bairro:g('ee-bairro'),logradouro:g('ee-logradouro'),
     numero_endereco:g('ee-end-numero'),complemento_end:g('ee-complemento'),
-    disponivel:document.getElementById('ee-disponivel')?.value==='true',
+    disponivel:dispVal==='true',
     modal_veiculo:g('ee-modal'),placa_veiculo:g('ee-placa'),
     modelo_veiculo:g('ee-modelo-veiculo'),cor_veiculo:g('ee-cor-veiculo'),
     cnh:g('ee-cnh'),cnpj:g('ee-cnpj'),
@@ -1859,6 +1860,7 @@ async function salvarEdicaoEntregador(entId){
     maquina_cartao:document.getElementById('ee-maquina-cartao')?.checked||false,
     updated_at:new Date().toISOString()
   };
+  if(dispVal==='bloqueado'){update.status='bloqueado';update.aprovado=false;update.disponivel=false;}
   console.log('[salvarEdicaoEntregador] campos enviados ao banco:', update);
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);

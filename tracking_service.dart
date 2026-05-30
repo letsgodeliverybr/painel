@@ -41,8 +41,21 @@ class TrackingService {
     } catch (_) {}
   }
 
-  /// Marca motoboy como online/disponível e inicia envio de localização
+  /// Marca motoboy como online/disponível e inicia envio de localização.
+  ///
+  /// Lança [Exception] se o entregador estiver bloqueado — o chamador deve
+  /// capturar e exibir [exception.message] ao usuário.
   static Future<void> ficarOnline(String entregadorId) async {
+    final rows = await _supabase
+        .from('entregadores')
+        .select('status')
+        .eq('id', entregadorId)
+        .limit(1);
+    if (rows.isNotEmpty && rows[0]['status'] == 'bloqueado') {
+      throw Exception(
+        'Sua conta foi bloqueada. Entre em contato com o suporte.',
+      );
+    }
     final pos = await LocationService.getCurrentPosition();
     try {
       await _supabase.from('entregadores').update({
