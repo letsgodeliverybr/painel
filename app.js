@@ -859,13 +859,17 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .pd-detail { border-top: 1px solid #dee2e6 !important; margin-top: 8px !important; padding-top: 8px !important; }
     .sb-dark .pedidos-lista { flex: 1 !important; overflow-y: auto !important; }
     .sb-dark .empty-lista { color: #888888 !important; }
-    /* forçar tema claro na sidebar mesmo em dark mode */
-    html.dark .sb-dark, html.dark .sb-header-dark, html.dark .pd-card { background: #FFFFFF !important; }
-    html.dark .sb-dark { border-right-color: #dee2e6 !important; }
+    /* ── SIDEBAR + CARD DARK MODE ── */
+    html.dark .sb-dark { background: #1E1E1E !important; border-right-color: #3A3A3A !important; }
+    html.dark .sb-header-dark { background: #1E1E1E !important; border-bottom-color: #3A3A3A !important; }
+    html.dark .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+    html.dark .pd-card:hover { border-color: #6366f1 !important; }
     html.dark .sb-group-dark { background: #1a3a5c !important; }
     @media (prefers-color-scheme: dark) {
-      :root:not(.light) .sb-dark, :root:not(.light) .sb-header-dark, :root:not(.light) .pd-card { background: #FFFFFF !important; }
-      :root:not(.light) .sb-dark { border-right-color: #dee2e6 !important; }
+      :root:not(.light) .sb-dark { background: #1E1E1E !important; border-right-color: #3A3A3A !important; }
+      :root:not(.light) .sb-header-dark { background: #1E1E1E !important; border-bottom-color: #3A3A3A !important; }
+      :root:not(.light) .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .pd-card:hover { border-color: #6366f1 !important; }
       :root:not(.light) .sb-group-dark { background: #1a3a5c !important; }
     }
     /* ── MOBILE ── */
@@ -880,13 +884,14 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
   document.head.appendChild(style);
 })();
 
-if(window.matchMedia('(prefers-color-scheme: dark)').matches){
-  document.documentElement.classList.add('dark');
-}
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
-  if(e.matches)document.documentElement.classList.add('dark');
-  else document.documentElement.classList.remove('dark');
-});
+(function(){
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');
+  if(mq.matches)document.documentElement.classList.add('dark');
+  mq.addEventListener('change',e=>{
+    if(e.matches)document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  });
+})();
 
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
@@ -1695,50 +1700,54 @@ function renderPedidosLista(){
       const telefone=p.telefone||p.telefone_cliente||'';
       const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
       const txMoto=_calcTaxaMotoboy(p);
-      // Square color: ifood=red, resto=blue
       const squareBg=p.origem==='ifood'?'#EA1D2C':'#1A56DB';
-      // Progress bar percentage
-      const _pctMap={recebido:12,pronto:12,aceito:37,chegou_local:37,em_rota:62,chegou_destino:62,retornando:95,finalizado:100};
-      const progPct=_pctMap[sk]||0;
-      // ETA
+      // progress: mapa de status → etapa completada (0-3)
+      const _stepMap={recebido:0,pronto:0,aceito:1,chegou_local:1,em_rota:2,chegou_destino:2,retornando:3,finalizado:3};
+      const stepDone=_stepMap[sk]??0;
+      const _dot=(i)=>{const done=i<=stepDone;return`<div style="width:14px;height:14px;border-radius:50%;background:${done?'#1A56DB':'var(--sb-border)'};border:2px solid ${done?'#1A56DB':'var(--sb-text3)'};flex-shrink:0"></div>`;};
+      const _line=(i)=>`<div style="flex:1;height:2px;background:${i<stepDone?'#1A56DB':'var(--sb-border)'};margin:0 2px"></div>`;
+      const _labels=['Criado','Coletado','A caminho','Entregue'];
+      const progressBar=`<div style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;margin-bottom:4px">${_dot(0)}${_line(0)}${_dot(1)}${_line(1)}${_dot(2)}${_line(2)}${_dot(3)}</div>
+        <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
+      </div>`;
       const previsaoMs=new Date(p.created_at).getTime()+45*60*1000;
       const restanteMin=Math.round((previsaoMs-Date.now())/60000);
-      // Motoboy initials
       const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
-      // Items
       const itens=Array.isArray(p.itens)?p.itens:[];
+      const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
       const expandido=isExpanded?`
         <div style="margin-top:10px;border-top:1px solid var(--sb-border);padding-top:10px">
-          ${itens.length?`<div style="margin-bottom:10px">
-            <div style="font-size:10px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📦 Itens do Pedido</div>
+          ${itens.length?`<div style="margin-bottom:12px">${_sec('📦 Itens do Pedido')}
             ${itens.map(it=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--sb-border)"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>`).join('')}
-            ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0;margin-top:2px"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
+            ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
             ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}</div>`:''}
           </div>`:''}
-          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
-          ${motoboy?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:700;color:var(--sb-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${motoboy.nome||'—'}</div>
-              ${motoboy.telefone?`<a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#25D366;font-weight:600;text-decoration:none">📱 WhatsApp</a>`:''}
-            </div>
-            <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.7;flex-shrink:0">
-              ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
-              ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Taxa R$ ${txMoto.toFixed(2)}</div>`:''}
-              ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
+          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
+          <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('👤 Cliente')}
+            ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
+            ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📱 ${telefone}</a></div>`:''}
+            ${p.endereco_entrega||p.endereco?`<div style="font-size:11px;color:var(--sb-text2)">📍 ${p.endereco_entrega||p.endereco}</div>`:''}
+            ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
+          </div>
+          ${motoboy?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🛵 Entregador')}
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:var(--sb-text)">${motoboy.nome||'—'}</div>
+                ${motoboy.telefone?`<a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#25D366;font-weight:600;text-decoration:none">📱 WhatsApp</a>`:''}
+              </div>
+              <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
+                ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
+                ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Taxa R$ ${txMoto.toFixed(2)}</div>`:''}
+                ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
+              </div>
             </div>
           </div>`:''}
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--sb-text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">
-              <span>Criado</span><span>Coletado</span><span>A caminho</span><span>Entregue</span>
-            </div>
-            <div style="height:5px;background:var(--sb-border);border-radius:4px;overflow:hidden">
-              <div style="height:100%;width:${progPct}%;background:#1A56DB;border-radius:4px;transition:width .4s"></div>
-            </div>
-          </div>
+          ${progressBar}
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:10px">
             <span style="color:var(--sb-text3)">⏱ Previsão ${formatarHora(new Date(previsaoMs).toISOString())}</span>
-            <span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min restantes':'Atrasado'}</span>
+            <span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min':'Atrasado'}</span>
           </div>
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -1755,9 +1764,13 @@ function renderPedidosLista(){
             </div>
           </div>
         </div>`:'';
+      // ── CARD FECHADO ──────────────────────────────────────────────
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;gap:10px;align-items:flex-start">
-          <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)" style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:28px;transition:background .15s;user-select:none">${isSel?'<span style="color:#fff;font-size:24px;font-weight:900">✓</span>':'<span>🛵</span>'}</div>
+          <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
+            style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:28px;transition:background .15s;user-select:none;color:#fff">
+            ${isSel?'<span style="font-size:22px;font-weight:900">✓</span>':'<span>🛵</span>'}
+          </div>
           <div style="flex:1;min-width:0;overflow:hidden">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
               <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
