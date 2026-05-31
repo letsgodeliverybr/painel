@@ -1435,12 +1435,12 @@ function renderMapaPage(){
         </div>
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:#FFFFFF !important;border-top:2px solid #dee2e6;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #dee2e6;background:#f8f9fa !important;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;color:#1a3a5c !important;white-space:nowrap">📋 Pedidos do dia</span>
-          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
-          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
-          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif">
+      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface) !important;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:var(--text) !important;white-space:nowrap">📋 Pedidos do dia</span>
+          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
+          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
+          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif">
             <option value="">Todos status</option>
             <option value="recebido">Recebido</option>
             <option value="pronto">Pronto</option>
@@ -1452,10 +1452,10 @@ function renderMapaPage(){
             <option value="finalizado">Finalizado</option>
             <option value="cancelado">Cancelado</option>
           </select>
-          <input id="tf-data" type="date" value="${_dataHojeBrasilia()}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"/>
+          <input id="tf-data" type="date" value="${_dataHojeBrasilia()}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif"/>
         </div>
-        <div style="flex:1;overflow:auto;background:#FFFFFF !important;min-height:300px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#FFFFFF !important;border:1px solid #dee2e6">
+        <div style="flex:1;overflow:auto;background:var(--bg) !important;min-height:300px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:var(--bg) !important;border:1px solid var(--border)">
             <thead style="position:sticky;top:0;z-index:2;background:#1a3a5c !important">
               <tr style="background:#1a3a5c !important">
                 <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
@@ -1478,10 +1478,10 @@ function renderMapaPage(){
             </tbody>
           </table>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:#FFFFFF !important;flex-shrink:0">
-          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#FFFFFF !important;color:#111827 !important;font-family:Inter,sans-serif">← Ant</button>
-          <span id="tabela-mapa-pag" style="font-size:11px;color:#111827 !important;flex:1;text-align:center">—</span>
-          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:#FFFFFF !important;color:#111827 !important;font-family:Inter,sans-serif">Próx →</button>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface) !important;flex-shrink:0">
+          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2) !important;color:var(--text) !important;font-family:Inter,sans-serif">← Ant</button>
+          <span id="tabela-mapa-pag" style="font-size:11px;color:var(--text2) !important;flex:1;text-align:center">—</span>
+          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2) !important;color:var(--text) !important;font-family:Inter,sans-serif">Próx →</button>
         </div>
       </div>
     </div>`;
