@@ -1766,7 +1766,7 @@ function renderPedidosLista(){
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
           <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('👤 Cliente')}
             ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
-            ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📱 ${telefone}</a></div>`:''}
+            ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${telefone}</a></div>`:''}
             ${p.endereco_entrega||p.endereco?`<div style="font-size:11px;color:var(--sb-text2)">📍 ${p.endereco_entrega||p.endereco}</div>`:''}
             ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
           </div>
@@ -1775,7 +1775,7 @@ function renderPedidosLista(){
               <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:13px;font-weight:700;color:var(--sb-text)">${motoboy.nome||'—'}</div>
-                ${motoboy.telefone?`<a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#25D366;font-weight:600;text-decoration:none">📱 WhatsApp</a>`:''}
+                ${motoboy.telefone?`<div style="font-size:11px;color:var(--sb-text2)">${motoboy.telefone}</div>`:''}
               </div>
               <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
                 ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
@@ -1794,15 +1794,6 @@ function renderPedidosLista(){
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
             <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
           </div>
-          <div style="border:1px solid var(--sb-border);border-radius:8px;padding:8px">
-            <div style="font-size:9px;color:var(--sb-text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⭐ Pontos da corrida</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:700">−</button>
-              <span id="pontos-${p.id}" style="color:var(--sb-text);font-weight:800;font-size:16px;min-width:28px;text-align:center">${p.pontos||4}</span>
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:700">+</button>
-              <span style="font-size:11px;color:var(--sb-text3)">pontos</span>
-            </div>
-          </div>
         </div>`:'';
       // ── CARD FECHADO ──────────────────────────────────────────────
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
@@ -1820,11 +1811,12 @@ function renderPedidosLista(){
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
                 <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar">🛵</button>
-                <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:11px;padding:2px 7px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
+                <span id="badge-wrapper-${p.id}" style="position:relative">
+                  <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:11px;padding:2px 7px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
+                </span>
               </div>
             </div>
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
-            ${telefone?`<div style="font-size:12px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📱 ${telefone}</a></div>`:''}
             <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
           </div>
         </div>
