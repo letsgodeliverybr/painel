@@ -1888,6 +1888,7 @@ function destacarMarcador(id){
 
 function abrirEditarPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(!p)return;
+  _epRetornoAtivo=!!(p.com_retorno);
   let modal=document.getElementById('modal-editar-pedido');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-pedido';modal.className='modal-overlay';document.body.appendChild(modal);}
   const temColeta=!!(p.endereco_coleta||p.contato_coleta||p.telefone_coleta);
@@ -1910,6 +1911,12 @@ function abrirEditarPedido(pedidoId){
 </div>
 <div class="form-row">
   <div class="fi"><label>Gorjeta (R$)</label><input type="number" id="ep-gorjeta" value="${p.gorjeta||0}" step="0.50"/></div>
+  <div class="fi"><label>Retorno</label>
+    <div id="ep-retorno-btn" onclick="_epToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:${p.com_retorno?'#1A56DB':'#3a3a3a'};transition:background .15s;user-select:none">
+      <span style="font-size:16px">${p.com_retorno?'↩':'—'}</span>
+      <span id="ep-retorno-lbl" style="font-size:13px;font-weight:600;color:${p.com_retorno?'#ffffff':'#888888'}">${p.com_retorno?'Com retorno':'Sem retorno'}</span>
+    </div>
+  </div>
 </div>
 <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="ep-descricao">${esc(p.descricao)}</textarea></div></div>
 <div style="border-top:1px solid var(--border);margin:12px 0 10px;padding-top:10px">
@@ -1938,6 +1945,14 @@ function abrirEditarPedido(pedidoId){
 </div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
 }
+let _epRetornoAtivo=false;
+function _epToggleRetorno(){
+  _epRetornoAtivo=!_epRetornoAtivo;
+  const btn=document.getElementById('ep-retorno-btn');
+  const lbl=document.getElementById('ep-retorno-lbl');
+  if(btn)btn.style.background=_epRetornoAtivo?'#1A56DB':'#3a3a3a';
+  if(lbl){lbl.textContent=_epRetornoAtivo?'Com retorno':'Sem retorno';lbl.style.color=_epRetornoAtivo?'#fff':'#888888';}
+}
 function _epToggleColeta(){
   const on=document.getElementById('ep-coleta-toggle')?.checked;
   const c=document.getElementById('ep-coleta-campos');if(c)c.style.display=on?'block':'none';
@@ -1958,6 +1973,7 @@ async function salvarEdicaoPedido(pedidoId){
     valor:parseFloat(document.getElementById('ep-valor')?.value)||0,
     taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,
     gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,
+    com_retorno:_epRetornoAtivo,
     numero:document.getElementById('ep-numero')?.value||'',
     descricao:document.getElementById('ep-descricao')?.value||'',
     telefone:document.getElementById('ep-telefone')?.value||null,
