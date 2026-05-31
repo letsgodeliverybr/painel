@@ -880,6 +880,46 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       #tabela-mapa-section table td, #tabela-mapa-section table th { font-size: 11px !important; padding: 6px 8px !important; }
       .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 100 !important; top: 0 !important; bottom: 0 !important; }
     }
+    /* ── DARK MODE GLOBAL OVERRIDES ── */
+    html.dark body, html.dark #app, html.dark #app-body { background: #1E1E1E !important; color: #ffffff !important; }
+    html.dark .sidebar, html.dark #sidebar, html.dark .sidebar-pedidos, html.dark .sb-dark { background: #2D2D2D !important; }
+    html.dark .card, html.dark .stat-card, html.dark .pedido-card, html.dark .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+    html.dark table { background: #1E1E1E !important; }
+    html.dark thead, html.dark thead tr { background: #252525 !important; }
+    html.dark tbody tr { background: #1E1E1E !important; }
+    html.dark td, html.dark th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+    html.dark tr:nth-child(even) td { background: #252525 !important; }
+    html.dark tr:hover td { background: #333333 !important; }
+    html.dark input, html.dark select, html.dark textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+    html.dark .modal-content, html.dark .modal { background: #2D2D2D !important; color: #ffffff !important; }
+    html.dark .modal-header { background: #252525 !important; }
+    html.dark .modal-footer { background: #252525 !important; }
+    html.dark .alt-page, html.dark .page-header { background: #1E1E1E !important; }
+    html.dark .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .nav-item { color: #BBBBBB !important; }
+    html.dark .nav-item:hover { background: #2D2D2D !important; color: #ffffff !important; }
+    html.dark .nav-item.active { background: #2D2D2D !important; color: #818cf8 !important; }
+    html.dark .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+    html.dark .btn-modal-cancel { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+    html.dark .fi label { color: #888888 !important; }
+    html.dark .page-title { color: #818cf8 !important; -webkit-text-fill-color: #818cf8 !important; }
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) body, :root:not(.light) #app, :root:not(.light) #app-body { background: #1E1E1E !important; color: #ffffff !important; }
+      :root:not(.light) .sidebar, :root:not(.light) #sidebar, :root:not(.light) .sidebar-pedidos, :root:not(.light) .sb-dark { background: #2D2D2D !important; }
+      :root:not(.light) .card, :root:not(.light) .stat-card, :root:not(.light) .pedido-card, :root:not(.light) .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      :root:not(.light) table { background: #1E1E1E !important; }
+      :root:not(.light) thead, :root:not(.light) thead tr { background: #252525 !important; }
+      :root:not(.light) td, :root:not(.light) th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+      :root:not(.light) tr:nth-child(even) td { background: #252525 !important; }
+      :root:not(.light) tr:hover td { background: #333333 !important; }
+      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .modal-content, :root:not(.light) .modal { background: #2D2D2D !important; color: #ffffff !important; }
+      :root:not(.light) .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .alt-page { background: #1E1E1E !important; }
+    }
   `;
   document.head.appendChild(style);
 })();
