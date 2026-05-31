@@ -77,92 +77,96 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     }
 
     html.dark {
-      --bg: #2D2D2D;
+      --bg: #1E1E1E;
       --surface: #2D2D2D;
-      --surface2: #333333;
-      --border: #4A4A4A;
+      --surface2: #2D2D2D;
+      --border: #3A3A3A;
       --text: #FFFFFF;
       --text2: #BBBBBB;
       --text3: #888888;
       --accent: #818cf8;
       --accent2: #6366f1;
-      --sb-bg: #2D2D2D;
-      --sb-card: #383838;
-      --sb-border: #4A4A4A;
+      --sb-bg: #1E1E1E;
+      --sb-card: #2D2D2D;
+      --sb-border: #3A3A3A;
       --sb-text: #FFFFFF;
       --sb-text2: #BBBBBB;
       --sb-text3: #888888;
-      --sb-search-bg: #333333;
+      --sb-search-bg: #2D2D2D;
     }
     @media (prefers-color-scheme: dark) {
       :root:not(.light) {
-        --bg: #2D2D2D;
+        --bg: #1E1E1E;
         --surface: #2D2D2D;
-        --surface2: #333333;
-        --border: #4A4A4A;
+        --surface2: #2D2D2D;
+        --border: #3A3A3A;
         --text: #FFFFFF;
         --text2: #BBBBBB;
         --text3: #888888;
         --accent: #818cf8;
         --accent2: #6366f1;
-        --sb-bg: #2D2D2D;
-        --sb-card: #383838;
-        --sb-border: #4A4A4A;
+        --sb-bg: #1E1E1E;
+        --sb-card: #2D2D2D;
+        --sb-border: #3A3A3A;
         --sb-text: #FFFFFF;
         --sb-text2: #BBBBBB;
         --sb-text3: #888888;
-        --sb-search-bg: #333333;
+        --sb-search-bg: #2D2D2D;
       }
     }
     /* ── DARK MODE OVERRIDES ── */
-    html.dark .topbar { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-    html.dark .sidebar-pedidos { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-    html.dark .sidebar-header { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-    html.dark .pedido-item { background: #383838 !important; border-color: #4A4A4A !important; }
-    html.dark .pedido-item:hover { background: #404040 !important; border-color: #6366f1 !important; }
-    html.dark .pedido-item.selected { background: #444444 !important; border-color: #6366f1 !important; }
+    html.dark .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+    html.dark .pedido-item:hover { background: #333333 !important; border-color: #6366f1 !important; }
+    html.dark .pedido-item.selected { background: #383838 !important; border-color: #6366f1 !important; }
     html.dark .card,
-    html.dark .stat-card { background: #383838 !important; border-color: #4A4A4A !important; }
-    html.dark .modal { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-    html.dark .modal-header { background: #333333 !important; border-color: #4A4A4A !important; }
-    html.dark .modal-footer { background: #333333 !important; border-color: #4A4A4A !important; }
-    html.dark .modal-close { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-    html.dark thead tr { background: #333333 !important; }
-    html.dark th { color: #BBBBBB !important; border-color: #4A4A4A !important; }
-    html.dark td { color: #BBBBBB !important; border-color: #4A4A4A !important; }
-    html.dark tr:hover td { background: #444444 !important; }
-    html.dark tbody tr:nth-child(even) td { background: #383838 !important; }
-    html.dark input, html.dark select, html.dark textarea { background: #383838 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-    html.dark .fi input, html.dark .fi select, html.dark .fi textarea { background: #383838 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-    html.dark .btn-sm { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-    html.dark .btn-modal-cancel { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-    html.dark #nav-sidebar { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-    html.dark ::-webkit-scrollbar-thumb { background: #555555 !important; }
-    html.dark ::-webkit-scrollbar-thumb:hover { background: #666666 !important; }
+    html.dark .stat-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+    html.dark .modal { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+    html.dark .modal-header { background: #252525 !important; border-color: #3A3A3A !important; }
+    html.dark .modal-footer { background: #252525 !important; border-color: #3A3A3A !important; }
+    html.dark .modal-close { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+    html.dark thead tr { background: #252525 !important; }
+    html.dark th { color: #BBBBBB !important; border-color: #3A3A3A !important; }
+    html.dark td { color: #BBBBBB !important; border-color: #3A3A3A !important; }
+    html.dark tr:hover td { background: #333333 !important; }
+    html.dark tbody tr:nth-child(even) td { background: #2D2D2D !important; }
+    html.dark input, html.dark select, html.dark textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+    html.dark .fi input, html.dark .fi select, html.dark .fi textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+    html.dark .btn-sm { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+    html.dark .btn-modal-cancel { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+    html.dark #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark #app-body { background: #1E1E1E !important; }
+    html.dark .alt-page { background: #1E1E1E !important; }
+    html.dark ::-webkit-scrollbar-thumb { background: #4A4A4A !important; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: #555555 !important; }
     /* ── DARK MODE OVERRIDES (prefers-color-scheme) ── */
     @media (prefers-color-scheme: dark) {
-      :root:not(.light) .topbar { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .sidebar-pedidos { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .sidebar-header { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .pedido-item { background: #383838 !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .pedido-item:hover { background: #404040 !important; border-color: #6366f1 !important; }
-      :root:not(.light) .pedido-item.selected { background: #444444 !important; border-color: #6366f1 !important; }
+      :root:not(.light) .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .pedido-item:hover { background: #333333 !important; border-color: #6366f1 !important; }
+      :root:not(.light) .pedido-item.selected { background: #383838 !important; border-color: #6366f1 !important; }
       :root:not(.light) .card,
-      :root:not(.light) .stat-card { background: #383838 !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .modal { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .modal-header { background: #333333 !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .modal-footer { background: #333333 !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .modal-close { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-      :root:not(.light) thead tr { background: #333333 !important; }
-      :root:not(.light) th { color: #BBBBBB !important; border-color: #4A4A4A !important; }
-      :root:not(.light) td { color: #BBBBBB !important; border-color: #4A4A4A !important; }
-      :root:not(.light) tr:hover td { background: #444444 !important; }
-      :root:not(.light) tbody tr:nth-child(even) td { background: #383838 !important; }
-      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #383838 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .btn-sm { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-      :root:not(.light) .btn-modal-cancel { background: #444444 !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
-      :root:not(.light) #nav-sidebar { background: #2D2D2D !important; border-color: #4A4A4A !important; }
-      :root:not(.light) ::-webkit-scrollbar-thumb { background: #555555 !important; }
+      :root:not(.light) .stat-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .modal { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .modal-header { background: #252525 !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .modal-footer { background: #252525 !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .modal-close { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+      :root:not(.light) thead tr { background: #252525 !important; }
+      :root:not(.light) th { color: #BBBBBB !important; border-color: #3A3A3A !important; }
+      :root:not(.light) td { color: #BBBBBB !important; border-color: #3A3A3A !important; }
+      :root:not(.light) tr:hover td { background: #333333 !important; }
+      :root:not(.light) tbody tr:nth-child(even) td { background: #2D2D2D !important; }
+      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .btn-sm { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .btn-modal-cancel { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
+      :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) #app-body { background: #1E1E1E !important; }
+      :root:not(.light) .alt-page { background: #1E1E1E !important; }
+      :root:not(.light) ::-webkit-scrollbar-thumb { background: #4A4A4A !important; }
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -944,6 +948,23 @@ async function processarAutoPronto(){
   }
 }
 
+async function processarPontosAutomaticos(){
+  const agora=Date.now();
+  const prontos=allPedidos.filter(p=>(p.status_detalhado==='pronto'||p.status==='pronto')&&p.created_at);
+  for(const p of prontos){
+    const minutos=(agora-new Date(p.created_at).getTime())/60000;
+    let novosPontos=null;
+    if(minutos>=40)novosPontos=754;
+    else if(minutos>=25)novosPontos=354;
+    else if(minutos>=10)novosPontos=54;
+    if(novosPontos!==null&&(p.pontos||4)!==novosPontos){
+      await db('pedidos','PATCH',{pontos:novosPontos,updated_at:new Date().toISOString()},`?id=eq.${p.id}`);
+      const el=document.getElementById(`pontos-${p.id}`);if(el)el.textContent=novosPontos;
+      p.pontos=novosPontos;
+    }
+  }
+}
+
 function verificarNovosProtos(pedidos){
   pedidos.forEach(p=>{
     if((p.status_detalhado==='pronto'||p.status==='pronto')&&!idsProntoNotificados.has(p.id)){
@@ -1196,6 +1217,84 @@ function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
 
+function abrirInfoPedido(pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  if(!p)return;
+  const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
+  const sk=p.status_detalhado||p.status||'';
+  const cor=STATUS_CORES[sk]||'#1A56DB';
+  const previsaoMs=new Date(p.created_at).getTime()+45*60*1000;
+  const restanteMs=previsaoMs-Date.now();
+  const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
+  const txMoto=_calcTaxaMotoboy(p);
+  const stepsDone=(s)=>['aceito','chegou_local','em_rota','chegou_destino','retornando','finalizado'].includes(s);
+  const stepsA=(s)=>['em_rota','chegou_destino','retornando','finalizado'].includes(s);
+  const stepsF=(s)=>['finalizado'].includes(s);
+  const step=(done,label)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+    <div style="width:28px;height:28px;border-radius:50%;background:${done?'#10b981':'var(--surface2)'};border:2px solid ${done?'#10b981':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${done?'#fff':'var(--text3)'}">
+      ${done?'✓':'○'}
+    </div>
+    <span style="font-size:10px;color:${done?'#10b981':'var(--text3)'};font-weight:${done?700:400};white-space:nowrap">${label}</span>
+  </div>`;
+  const stepLine=(done)=>`<div style="flex:1;height:2px;background:${done?'#10b981':'var(--border)'};margin-top:13px;max-width:40px"></div>`;
+  const itens=Array.isArray(p.itens)?p.itens:[];
+  const linkRastreio=`${window.location.origin}${window.location.pathname}?rastrear=${p.id}`;
+  let modal=document.getElementById('modal-info-pedido');
+  if(!modal){modal=document.createElement('div');modal.id='modal-info-pedido';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:520px;width:95%">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="modal-title">#${p.numero||pedidoId.substring(0,6)}</span>
+        <span class="p-badge b-${sk}" style="background:${cor}20;color:${cor}">${STATUS_LABEL[sk]||sk}</span>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal-info-pedido').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:80vh;overflow-y:auto;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:16px">
+        <div><div style="font-size:11px;color:var(--text3);font-weight:600">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+        <div style="font-size:12px;font-weight:700;color:${restanteMs>0?'#10b981':'#ef4444'}">${restanteTxt}</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
+        ${step(true,'Criado')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
+      </div>
+      ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens do Pedido</div>
+        <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
+          ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border)"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span></div>`).join('')}
+          ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:8px 12px;font-weight:700"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
+        </div>
+      </div>`:''}
+      ${p.forma_pagamento?`<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">💳 <strong>Pagamento:</strong> ${p.forma_pagamento}</div>`:''}
+      <div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👤 Cliente</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px">
+          ${p.nome_cliente||p.cliente?`<div style="font-size:14px;font-weight:600;color:var(--text)">${p.nome_cliente||p.cliente}</div>`:''}
+          ${p.telefone?`<div style="font-size:13px;color:var(--text2)">📞 <a href="https://wa.me/55${p.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600">${p.telefone}</a></div>`:''}
+          ${p.endereco||p.endereco_entrega?`<div style="font-size:13px;color:var(--text2)">📍 ${p.endereco_entrega||p.endereco}</div>`:''}
+          ${p.observacoes?`<div style="font-size:12px;color:var(--text3);background:var(--surface);border-radius:6px;padding:6px 8px">💬 ${p.observacoes}</div>`:''}
+        </div>
+      </div>
+      ${motoboy?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🛵 Entregador</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${motoboy.foto?`<img src="${motoboy.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:'🛵'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;color:var(--text)">${motoboy.nome||'—'}</div>
+            ${motoboy.telefone?`<div style="font-size:12px;color:var(--text2)"><a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600">${motoboy.telefone}</a></div>`:''}
+            <div style="display:flex;gap:12px;margin-top:4px;font-size:12px;color:var(--text3)">
+              ${p.distancia_km?`<span>📏 ${p.distancia_km}km</span>`:''}
+              ${txMoto!==null?`<span style="color:#10b981;font-weight:700">R$ ${txMoto.toFixed(2)}</span>`:''}
+              ${p.gorjeta>0?`<span style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</span>`:''}
+            </div>
+          </div>
+        </div>
+      </div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
+        <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar link de rastreio</button>
+      </div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
@@ -1350,6 +1449,7 @@ function renderMapaPage(){
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     setInterval(_verificarAgendados,60000);
+    setInterval(processarPontosAutomaticos,60000);
   },100);
 }
 
@@ -1625,6 +1725,7 @@ function renderPedidosLista(){
             ${p.agendado_para&&sk==='agendado'?`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">⏰ ${formatarHora(p.agendado_para)}</span>`:''}
           </div>
           <div class="pd-actions">
+            <button class="pd-action-btn" onclick="event.stopPropagation();abrirInfoPedido('${p.id}')" title="Informações">ℹ️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
             ${sk!=='finalizado'&&sk!=='cancelado'?`<button id="btn-pronto-${p.id}" onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como Pronto" style="width:28px;height:28px;border-radius:50%;border:none;cursor:${sk==='pronto'?'default':'pointer'};background:${sk==='pronto'?'#EC4899':'#6B7280'};color:#fff;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s">✓</button>`:''}
