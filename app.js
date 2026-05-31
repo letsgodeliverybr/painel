@@ -919,6 +919,18 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
       :root:not(.light) .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
       :root:not(.light) .alt-page { background: #1E1E1E !important; }
+      /* ── sem dependência de classe: sobrescrevem inline !important ── */
+      body { background: #1E1E1E !important; color: #fff !important; }
+      #app, #app-body, .alt-page { background: #1E1E1E !important; }
+      .card, .stat-card, .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
+      table, thead, tbody { background: #1E1E1E !important; }
+      tr { background: transparent !important; }
+      td, th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+      input, select, textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
+      [class*="modal"] { background: #2D2D2D !important; color: #ffffff !important; }
+      .mapa-stats, .mapa-stat { background: #2D2D2D !important; color: #ffffff !important; }
+      .mapa-stat-val { color: #ffffff !important; }
+      .mapa-stat-label { color: #aaaaaa !important; }
     }
   `;
   document.head.appendChild(style);
@@ -1423,10 +1435,10 @@ function renderMapaPage(){
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
       <div class="mapa-container" style="position:relative;height:50vh;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center;background:#ffffff !important;color:#111827 !important">
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
           <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#ffffff !important;color:#111827 !important"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
         </div>
         <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
