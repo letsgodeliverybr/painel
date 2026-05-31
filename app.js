@@ -8,6 +8,7 @@ let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null,_pedidosSelecionados=new Set();
 let idsProntoNotificados=new Set();
+let _saquesPendentesCount=0;
 let _sidebarBusca='';
 const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
@@ -30,6 +31,17 @@ function _calcTaxaMotoboy(p){
   return Math.round(valor*100)/100;
 }
 let _precoDinTimers={};
+
+// ── BRASÍLIA TIMEZONE HELPERS ──
+const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(new Date(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
+const formatarHora=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
+const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
+const formatarData=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
+const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
+const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
+const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
+const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);
 
 
 // ═══════════════════════════════════════════════
@@ -1038,8 +1050,7 @@ function _toggleAgendamento(){
   if(on){
     const inp=document.getElementById('np-agendado-para');
     if(inp&&!inp.value){
-      const d=new Date();d.setMinutes(d.getMinutes()+30);
-      inp.value=d.toISOString().slice(0,16);
+      inp.value=_defaultAgendadoBrasilia(30);
     }
   }
 }
@@ -1193,7 +1204,10 @@ function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
-  body.innerHTML=items.map(item=>`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span></button>`).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px"><button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
+  body.innerHTML=items.map(item=>{
+    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:'';
+    return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
+  }).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px"><button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
 }
 function abrirNavSidebar(){renderNavSidebar(_navAtivo);document.getElementById('nav-sidebar').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}
 function fecharNavSidebar(){document.getElementById('nav-sidebar').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}
@@ -1219,6 +1233,7 @@ async function fazerLogin(){
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
   _carregarSaldoTopbar();
+  if(currentPerfil==='adm')_carregarBadgeSaques();
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
 }
 function logout(){
@@ -1294,7 +1309,7 @@ function renderMapaPage(){
             <option value="finalizado">Finalizado</option>
             <option value="cancelado">Cancelado</option>
           </select>
-          <input id="tf-data" type="date" value="${new Date().toISOString().slice(0,10)}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"/>
+          <input id="tf-data" type="date" value="${_dataHojeBrasilia()}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:#FFFFFF !important;color:#111827 !important;outline:none;font-family:Inter,sans-serif"/>
         </div>
         <div style="flex:1;overflow:auto;background:#FFFFFF !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#FFFFFF !important;border:1px solid #dee2e6">
@@ -1354,12 +1369,10 @@ async function _verificarAgendados(){
 async function carregarTabelaMapa(){
   if(!document.getElementById('tabela-mapa-body'))return;
   const dataInput=document.getElementById('tf-data');
-  const dataVal=dataInput?.value||new Date().toISOString().slice(0,10);
+  const dataVal=dataInput?.value||_dataHojeBrasilia();
   _tabelaFiltros.data=dataVal;
-  const inicio=new Date(dataVal+'T00:00:00');
-  const fim=new Date(dataVal+'T23:59:59.999');
   _tabelaPedidosDia=await db('pedidos','GET',null,
-    `?created_at=gte.${inicio.toISOString()}&created_at=lte.${fim.toISOString()}&order=created_at.desc&limit=500`
+    `?created_at=gte.${_inicioDiaBrasilia(dataVal)}&created_at=lte.${_fimDiaBrasilia(dataVal)}&order=created_at.desc&limit=500`
   );
   renderTabelaMapa();
 }
@@ -1402,7 +1415,7 @@ function renderTabelaMapa(){
     const taxaMotoboy=_calcTaxaMotoboy(p);
     const endereco=p.endereco_entrega||p.endereco||'—';
     const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
-    const hora=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
+    const hora=p.created_at?formatarHora(p.created_at):'—';
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#1a3a5c">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:600;color:#555;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -1413,7 +1426,7 @@ function renderTabelaMapa(){
       ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
-      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):getStatusLabel(p)} ▾</span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>`,'',rowBg)}
       ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
       ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
       ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
@@ -1577,8 +1590,8 @@ function renderPedidosLista(){
     }).join('');
     const cards=grupo.pedidos.map(p=>{
       console.log('[pedido]',JSON.stringify(p));
-      const horaC=p.created_at?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
-      const horaU=p.updated_at&&p.updated_at!==p.created_at?` (${new Date(p.updated_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})})`:'';
+      const horaC=p.created_at?formatarHora(p.created_at):'—';
+      const horaU=p.updated_at&&p.updated_at!==p.created_at?` (${formatarHora(p.updated_at)})`:'';
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const loja=allLojas.find(l=>l.id===p.loja_id);
       const clienteNome=p.cliente_nome||p.nome_cliente||p.cliente||'';
@@ -1589,12 +1602,12 @@ function renderPedidosLista(){
           ${loja?.telefone?`<div style="font-size:12px;color:var(--sb-text3);margin-bottom:6px">📞 <a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${loja.telefone}</a></div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--sb-text3);margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
           ${sk==='retornando'?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:var(--sb-text);font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
-          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block">⏰ Agendado ${new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
+          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
           ${p.gorjeta>0?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;color:var(--sb-text2);font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
           ${p.distancia_km?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
           ${(()=>{const tm=_calcTaxaMotoboy(p);return tm!==null?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;background:#dcfce7;color:#059669;font-weight:700;margin-bottom:6px;display:inline-block">🛵 Taxa motoboy: R$ ${tm.toFixed(2)}</div>`:'';})()}
           ${p.descricao?`<div style="background:var(--surface2);border-radius:6px;padding:7px;font-size:11px;color:var(--sb-text2);margin-bottom:8px">📋 ${p.descricao}</div>`:''}
-          <div style="font-size:11px;color:var(--sb-text3);margin-bottom:8px">Criado: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</div>
+          <div style="font-size:11px;color:var(--sb-text3);margin-bottom:8px">Criado: ${p.created_at?formatarDataHora(p.created_at):'—'}</div>
           <div style="margin-top:8px;border:1px solid var(--sb-border);border-radius:8px;padding:10px">
             <div style="font-size:10px;color:var(--sb-text3);font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
             <div style="display:flex;align-items:center;gap:8px">
@@ -1609,14 +1622,14 @@ function renderPedidosLista(){
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-size:11px;color:var(--sb-text3)">${horaC}${horaU}</span>
-            ${p.agendado_para&&sk==='agendado'?`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">⏰ ${new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>`:''}
+            ${p.agendado_para&&sk==='agendado'?`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">⏰ ${formatarHora(p.agendado_para)}</span>`:''}
           </div>
           <div class="pd-actions">
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
             <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
             ${sk!=='finalizado'&&sk!=='cancelado'?`<button id="btn-pronto-${p.id}" onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como Pronto" style="width:28px;height:28px;border-radius:50%;border:none;cursor:${sk==='pronto'?'default':'pointer'};background:${sk==='pronto'?'#EC4899':'#6B7280'};color:#fff;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s">✓</button>`:''}
             <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+new Date(p.agendado_para).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):getStatusLabel(p)} ▾</span>
+              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
             </span>
           </div>
         </div>
@@ -1692,7 +1705,7 @@ function abrirEditarPedido(pedidoId){
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-pedido';modal.className='modal-overlay';document.body.appendChild(modal);}
   const temColeta=!!(p.endereco_coleta||p.contato_coleta||p.telefone_coleta);
   const temAgend=!!(p.agendado_para);
-  const agendVal=temAgend?new Date(p.agendado_para).toISOString().slice(0,16):'';
+  const agendVal=temAgend?_agendadoInputBrasilia(p.agendado_para):'';
   const esc=v=>(v||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
 <div class="form-row">
@@ -1745,7 +1758,7 @@ function _epToggleColeta(){
 function _epToggleAgendar(){
   const on=document.getElementById('ep-agendar-toggle')?.checked;
   const c=document.getElementById('ep-agendar-campos');if(c)c.style.display=on?'block':'none';
-  if(on){const inp=document.getElementById('ep-agendado-para');if(inp&&!inp.value){const d=new Date();d.setMinutes(d.getMinutes()+30);inp.value=d.toISOString().slice(0,16);}}
+  if(on){const inp=document.getElementById('ep-agendado-para');if(inp&&!inp.value){inp.value=_defaultAgendadoBrasilia(30);}}
 }
 async function salvarEdicaoPedido(pedidoId){
   const fb=document.getElementById('ep-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
@@ -1871,7 +1884,7 @@ async function criarPedido(){
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
-    const msgExtra=agendarOn?`⏰ ${new Date(agendadoParaVal).toLocaleString('pt-BR')}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
+    const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
     if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
     showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
   }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao criar pedido.</div>';}
@@ -1977,7 +1990,7 @@ async function _renderEntregadoresTab(el){
         <td style="font-size:12px;color:var(--text2)">${[e.modal_veiculo,e.modelo_veiculo].filter(Boolean).join(' ')||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${e.placa_veiculo||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${e.chave_pix||'—'}</td>
-        <td style="font-size:12px;color:var(--text3)">${e.created_at?new Date(e.created_at).toLocaleDateString('pt-BR'):'—'}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatarData(e.created_at)}</td>
         <td style="white-space:nowrap">
           <button onclick="_aprovarEntregador('${e.id}')" style="background:#10b981;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-right:5px">✅ Aprovar</button>
           <button onclick="_reprovarEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:#ef4444;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">❌ Reprovar</button>
@@ -1993,7 +2006,7 @@ async function _renderEntregadoresTab(el){
         <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
-        <td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
         <td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td>
       </tr>`).join('');
   }
@@ -2190,7 +2203,7 @@ async function _renderUsuariosTab(el){
   const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleString('pt-BR'):'—'}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;}).join('');
 }
 
 async function abrirEditarUsuario(userId){
@@ -2357,13 +2370,13 @@ async function renderPedidosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th><th>Data</th></tr></thead><tbody id="tbody-pedidos"></tbody></table></div></div></div>`;
   const pedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=100');
   const tbody=document.getElementById('tbody-pedidos');if(!tbody)return;
-  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>{const sk=getStatusKey(p);return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td><td style="font-size:12px;color:var(--text3)">${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>{const sk=getStatusKey(p);return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-moto');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${e.updated_at?new Date(e.updated_at).toLocaleString('pt-BR'):'—'}</td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td></tr>`).join('');
 }
 
 async function renderLojasPage(){
@@ -2482,7 +2495,7 @@ async function criarUsuario(){
 }
 
 async function renderRelatoriosPage(){
-  const hoje=new Date().toISOString().split('T')[0];
+  const hoje=_dataHojeBrasilia();
   const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
   const opcoesLojas='<option value="">Todas as lojas</option>'+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
@@ -2493,8 +2506,8 @@ async function renderRelatoriosPage(){
 async function carregarRelatorio(){
   const de=document.getElementById('r-de')?.value,ate=document.getElementById('r-ate')?.value,lojaId=document.getElementById('r-loja')?.value;
   let filtro='?order=created_at.desc';
-  if(de)filtro+=`&created_at=gte.${de}T00:00:00`;
-  if(ate)filtro+=`&created_at=lte.${ate}T23:59:59`;
+  if(de)filtro+=`&created_at=gte.${_inicioDiaBrasilia(de)}`;
+  if(ate)filtro+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
   if(lojaId)filtro+=`&loja_id=eq.${lojaId}`;
   const [pedidos,motoboys,lojas,usuarios]=await Promise.all([db('pedidos','GET',null,filtro),db('entregadores','GET',null,''),db('lojas','GET',null,''),db('usuarios_painel','GET',null,'')]);
   document.getElementById('r-total').textContent=pedidos.length;
@@ -2512,35 +2525,175 @@ async function renderLogsPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📋 Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
   const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
-  tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${l.created_at?new Date(l.created_at).toLocaleString('pt-BR'):'—'}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
 }
 
-let _financeiroAba='faturamento';
-function renderFinanceiroPage(aba){
-  _financeiroAba=aba||_financeiroAba||'faturamento';
+let _financeiroAba='saques-pendentes';
+let _histFiltroStatus='';
+let _histFiltroEntregador='';
+let _histSaquesData=[];
+
+async function _carregarBadgeSaques(){
+  const r=await db('saques','GET',null,'?select=id&status=eq.pendente');
+  _saquesPendentesCount=Array.isArray(r)?r.length:0;
+  renderNavSidebar(_navAtivo);
+}
+
+async function renderFinanceiroPage(aba){
+  _financeiroAba=aba||_financeiroAba||'saques-pendentes';
   const abas=[
-    {id:'faturamento',        icon:'📊', label:'Faturamento',             desc:'Visão consolidada do faturamento por período, loja e entregador.'},
-    {id:'credito',            icon:'💳', label:'Crédito',                 desc:'Gestão de créditos, bonificações e saldo de clientes e parceiros.'},
-    {id:'contas-receber',     icon:'⬇️', label:'Contas a Receber',        desc:'Controle de valores a receber de lojas e clientes.'},
-    {id:'contas-pagar',       icon:'⬆️', label:'Contas a Pagar',          desc:'Controle de valores a pagar a fornecedores e parceiros.'},
-    {id:'repasse-entregadores',icon:'🛵',label:'Repasse dos Entregadores', desc:'Cálculo e registro dos repasses financeiros aos entregadores por período.'},
+    {id:'saques-pendentes',icon:'⏳',label:'Saques Pendentes'},
+    {id:'historico',icon:'📜',label:'Histórico de Saques'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+        <div class="stat-card"><div class="stat-label">💰 Total Pago (Semana)</div><div class="stat-value" id="fin-total-semana" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">⏳ Total Pendente</div><div class="stat-value" id="fin-total-pendente" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">📋 Saques Pendentes</div><div class="stat-value" id="fin-qtd-pendente" style="font-size:22px">—</div></div>
+      </div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
       </div>
-      <div id="financeiro-content"></div>
+      <div id="financeiro-content"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div>`;
-  const abaInfo=abas.find(a=>a.id===_financeiroAba);
-  document.getElementById('financeiro-content').innerHTML=`
-    <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
-      <div style="font-size:56px;margin-bottom:16px">${abaInfo.icon}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:10px">${abaInfo.label}</div>
-      <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
-      <div style="color:var(--text2);font-size:14px;line-height:1.6">${abaInfo.desc}</div>
-    </div>`;
+  _carregarResumoFinanceiro();
+  if(_financeiroAba==='saques-pendentes')_renderSaquesPendentes();
+  else _renderHistoricoSaques();
+}
+
+async function _carregarResumoFinanceiro(){
+  const hojeBrStr=_dataHojeBrasilia();
+  const hojeBrParts=hojeBrStr.split('-').map(Number);
+  const hojeBrUtc=new Date(Date.UTC(hojeBrParts[0],hojeBrParts[1]-1,hojeBrParts[2]));
+  const dow=hojeBrUtc.getUTCDay();
+  const diff=dow===0?6:dow-1;
+  hojeBrUtc.setUTCDate(hojeBrUtc.getUTCDate()-diff);
+  const startSemanaISO=_inicioDiaBrasilia(hojeBrUtc.toISOString().slice(0,10));
+  const [pendentes,pagosSemana]=await Promise.all([
+    db('saques','GET',null,'?select=valor&status=eq.pendente'),
+    db('saques','GET',null,`?select=valor&status=eq.pago&updated_at=gte.${startSemanaISO}`),
+  ]);
+  const qtd=Array.isArray(pendentes)?pendentes.length:0;
+  const totalPend=Array.isArray(pendentes)?pendentes.reduce((s,r)=>s+(parseFloat(r.valor)||0),0):0;
+  const totalSem=Array.isArray(pagosSemana)?pagosSemana.reduce((s,r)=>s+(parseFloat(r.valor)||0),0):0;
+  _saquesPendentesCount=qtd;
+  renderNavSidebar(_navAtivo);
+  const e1=document.getElementById('fin-total-semana');
+  const e2=document.getElementById('fin-total-pendente');
+  const e3=document.getElementById('fin-qtd-pendente');
+  if(e1)e1.textContent=`R$ ${totalSem.toFixed(2)}`;
+  if(e2)e2.textContent=`R$ ${totalPend.toFixed(2)}`;
+  if(e3)e3.textContent=qtd;
+}
+
+async function _renderSaquesPendentes(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
+  if(!saques||!saques.length){
+    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
+    <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+    <tbody>${saques.map(s=>{
+      const ent=s.entregadores||{};
+      const data=formatarDataHora(s.created_at);
+      return`<tr id="saque-row-${s.id}">
+        <td>${data}</td>
+        <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+        <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
+        <td>${ent.tipo_chave_pix||'—'}</td>
+        <td>${ent.banco||'—'}</td>
+        <td><div style="display:flex;gap:6px">
+          <button onclick="pagarSaque('${s.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">✅ Pagar</button>
+          <button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
+}
+
+async function pagarSaque(id){
+  const res=await dbPatch('saques',{status:'pago',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(!res){showNotif('Erro','Não foi possível processar o pagamento','var(--red)');return;}
+  document.getElementById(`saque-row-${id}`)?.remove();
+  _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
+  renderNavSidebar(_navAtivo);
+  showNotif('✅ Saque pago!','Saque marcado como pago com sucesso');
+  _carregarResumoFinanceiro();
+}
+
+async function recusarSaque(id){
+  const res=await dbPatch('saques',{status:'recusado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
+  document.getElementById(`saque-row-${id}`)?.remove();
+  _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
+  renderNavSidebar(_navAtivo);
+  showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
+  _carregarResumoFinanceiro();
+}
+
+async function _renderHistoricoSaques(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  _histFiltroStatus='';_histFiltroEntregador='';
+  el.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <select id="hist-filtro-status" onchange="_aplicarFiltroHistorico()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;outline:none">
+      <option value="">Todos os status</option>
+      <option value="pago">✅ Pago</option>
+      <option value="recusado">❌ Recusado</option>
+    </select>
+    <select id="hist-filtro-ent" onchange="_aplicarFiltroHistorico()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;outline:none">
+      <option value="">Todos os entregadores</option>
+    </select>
+    <div style="margin-left:auto;font-size:13px;color:var(--text2)">Total pago: <strong id="hist-total-pago" style="color:#10b981">R$ 0,00</strong></div>
+  </div>
+  <div class="card"><div style="overflow-x:auto"><table>
+    <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Status</th><th>Banco</th></tr></thead>
+    <tbody id="tbody-historico-saques"><tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Carregando...</td></tr></tbody>
+  </table></div></div>`;
+  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=in.(pago,recusado)&order=created_at.desc');
+  _histSaquesData=Array.isArray(saques)?saques:[];
+  const nomes=[...new Set(_histSaquesData.map(s=>s.entregadores?.nome).filter(Boolean))];
+  const selEnt=document.getElementById('hist-filtro-ent');
+  if(selEnt)nomes.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selEnt.appendChild(o);});
+  _renderHistoricoTabela();
+}
+
+function _aplicarFiltroHistorico(){
+  _histFiltroStatus=document.getElementById('hist-filtro-status')?.value||'';
+  _histFiltroEntregador=document.getElementById('hist-filtro-ent')?.value||'';
+  _renderHistoricoTabela();
+}
+
+function _renderHistoricoTabela(){
+  const tbody=document.getElementById('tbody-historico-saques');if(!tbody)return;
+  let filtered=_histSaquesData.filter(s=>{
+    if(_histFiltroStatus&&s.status!==_histFiltroStatus)return false;
+    if(_histFiltroEntregador&&s.entregadores?.nome!==_histFiltroEntregador)return false;
+    return true;
+  });
+  const totalPago=filtered.filter(s=>s.status==='pago').reduce((sum,s)=>sum+(parseFloat(s.valor)||0),0);
+  const elTotal=document.getElementById('hist-total-pago');
+  if(elTotal)elTotal.textContent=`R$ ${totalPago.toFixed(2).replace('.',',')}`;
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum resultado encontrado</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(s=>{
+    const ent=s.entregadores||{};
+    const data=s.created_at?new Date(s.created_at).toLocaleString('pt-BR'):'—';
+    const badge=s.status==='pago'
+      ?`<span style="background:#d1fae5;color:#059669;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
+      :`<span style="background:#fee2e2;color:#ef4444;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
+    return`<tr>
+      <td>${data}</td>
+      <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
+      <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+      <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
+      <td>${badge}</td>
+      <td>${ent.banco||'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 let _configAba='cliente';
