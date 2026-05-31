@@ -880,14 +880,13 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
   document.head.appendChild(style);
 })();
 
-(function iniciarTemaDoSistema(){
-  function aplicarTema(dark){
-    document.documentElement.classList.toggle('dark',dark);
-  }
-  const mq=window.matchMedia('(prefers-color-scheme: dark)');
-  aplicarTema(mq.matches);
-  mq.addEventListener('change',e=>aplicarTema(e.matches));
-})();
+if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+  document.documentElement.classList.add('dark');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
+  if(e.matches)document.documentElement.classList.add('dark');
+  else document.documentElement.classList.remove('dark');
+});
 
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
@@ -2896,6 +2895,9 @@ async function renderLojaRelatorioPage(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+    document.documentElement.classList.add('dark');
+  }
   const card=document.querySelector('.login-card');
   if(card){
     if(!document.getElementById('login-logo-wrap')){
