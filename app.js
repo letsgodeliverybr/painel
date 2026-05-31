@@ -1619,6 +1619,7 @@ function toggleDetalheCard(id){if(_detalheColapsado.has(id))_detalheColapsado.de
 function toggleFiltroMotoboys(){_filtroMotoboyAtivo=!_filtroMotoboyAtivo;const btn=document.getElementById('btn-filtro-motoboys');if(btn){btn.style.border=_filtroMotoboyAtivo?'2px solid #1A56DB':'2px solid #E5E7EB';btn.title=_filtroMotoboyAtivo?'Mostrar todos os entregadores':'Mostrar só entregadores disponíveis';}atualizarMarcadores();}
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
+function _copiarRastreio(id){const url=window.location.origin+window.location.pathname+'?rastrear='+id;navigator.clipboard.writeText(url).then(()=>showNotif('✅ Link copiado!',''));}
 
 async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
@@ -1688,60 +1689,93 @@ function renderPedidosLista(){
       return n?`<span class="sb-status-bubble" style="background:${sb.color}" title="${sb.label}">${n}</span>`:'';
     }).join('');
     const cards=grupo.pedidos.map(p=>{
-      console.log('[pedido]',JSON.stringify(p));
       const horaC=p.created_at?formatarHora(p.created_at):'—';
-      const horaU=p.updated_at&&p.updated_at!==p.created_at?` (${formatarHora(p.updated_at)})`:'';
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
-      const loja=allLojas.find(l=>l.id===p.loja_id);
       const clienteNome=p.cliente_nome||p.nome_cliente||p.cliente||'';
-      const motoLogo=`<div onclick="toggleSelecaoPedido('${p.id}',event)" style="width:42px;height:42px;background:${isSel?'#0a3080':'#1A56DB'};border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:${isSel?'20px':'22px'};color:white;font-weight:900;transition:background .15s">${isSel?'✓':'🛵'}</div>`;
-      const detalhes=isExpanded?`
-        <div class="pd-detail">
-          ${loja?`<div style="font-size:12px;color:var(--sb-text3);margin-bottom:${loja.telefone?2:6}px">🏪 <span style="color:var(--sb-text);font-weight:600">${loja.nome}</span></div>`:''}
-          ${loja?.telefone?`<div style="font-size:12px;color:var(--sb-text3);margin-bottom:6px">📞 <a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${loja.telefone}</a></div>`:''}
-          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--sb-text3);margin-bottom:4px;font-weight:700">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:24px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
-          ${sk==='retornando'?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:10px;margin-bottom:8px;text-align:center"><div style="font-size:11px;color:var(--sb-text);font-weight:700;margin-bottom:4px">⚠️ MOTOBOY RETORNANDO</div></div><button class="btn-pagamento" onclick="event.stopPropagation();confirmarPagamento('${p.id}')">💰 Pagamento Entregue</button>`:''}
-          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
-          ${p.gorjeta>0?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;color:var(--sb-text2);font-weight:600;margin-bottom:6px">🎁 Gorjeta: R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
-          ${p.distancia_km?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:4px">📏 ${p.distancia_km} km</div>`:''}
-          ${(()=>{const tm=_calcTaxaMotoboy(p);return tm!==null?`<div style="border-radius:6px;padding:6px 10px;font-size:11px;background:#dcfce7;color:#059669;font-weight:700;margin-bottom:6px;display:inline-block">🛵 Taxa motoboy: R$ ${tm.toFixed(2)}</div>`:'';})()}
-          ${p.descricao?`<div style="background:var(--surface2);border-radius:6px;padding:7px;font-size:11px;color:var(--sb-text2);margin-bottom:8px">📋 ${p.descricao}</div>`:''}
-          <div style="font-size:11px;color:var(--sb-text3);margin-bottom:8px">Criado: ${p.created_at?formatarDataHora(p.created_at):'—'}</div>
-          <div style="margin-top:8px;border:1px solid var(--sb-border);border-radius:8px;padding:10px">
-            <div style="font-size:10px;color:var(--sb-text3);font-weight:700;margin-bottom:8px">⭐ PONTOS DA CORRIDA</div>
+      const telefone=p.telefone||p.telefone_cliente||'';
+      const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
+      const txMoto=_calcTaxaMotoboy(p);
+      // Square color: ifood=red, resto=blue
+      const squareBg=p.origem==='ifood'?'#EA1D2C':'#1A56DB';
+      // Progress bar percentage
+      const _pctMap={recebido:12,pronto:12,aceito:37,chegou_local:37,em_rota:62,chegou_destino:62,retornando:95,finalizado:100};
+      const progPct=_pctMap[sk]||0;
+      // ETA
+      const previsaoMs=new Date(p.created_at).getTime()+45*60*1000;
+      const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+      // Motoboy initials
+      const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
+      // Items
+      const itens=Array.isArray(p.itens)?p.itens:[];
+      const expandido=isExpanded?`
+        <div style="margin-top:10px;border-top:1px solid var(--sb-border);padding-top:10px">
+          ${itens.length?`<div style="margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📦 Itens do Pedido</div>
+            ${itens.map(it=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--sb-border)"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>`).join('')}
+            ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0;margin-top:2px"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
+            ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}</div>`:''}
+          </div>`:''}
+          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO DE CONFIRMAÇÃO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
+          ${motoboy?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--sb-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${motoboy.nome||'—'}</div>
+              ${motoboy.telefone?`<a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#25D366;font-weight:600;text-decoration:none">📱 WhatsApp</a>`:''}
+            </div>
+            <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.7;flex-shrink:0">
+              ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
+              ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Taxa R$ ${txMoto.toFixed(2)}</div>`:''}
+              ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
+            </div>
+          </div>`:''}
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--sb-text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">
+              <span>Criado</span><span>Coletado</span><span>A caminho</span><span>Entregue</span>
+            </div>
+            <div style="height:5px;background:var(--sb-border);border-radius:4px;overflow:hidden">
+              <div style="height:100%;width:${progPct}%;background:#1A56DB;border-radius:4px;transition:width .4s"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:10px">
+            <span style="color:var(--sb-text3)">⏱ Previsão ${formatarHora(new Date(previsaoMs).toISOString())}</span>
+            <span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min restantes':'Atrasado'}</span>
+          </div>
+          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
+            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
+          </div>
+          <div style="border:1px solid var(--sb-border);border-radius:8px;padding:8px">
+            <div style="font-size:9px;color:var(--sb-text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⭐ Pontos da corrida</div>
             <div style="display:flex;align-items:center;gap:8px">
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">−</button>
-              <span id="pontos-${p.id}" style="color:var(--sb-text);font-weight:800;font-size:18px;min-width:30px;text-align:center">${p.pontos||4}</span>
-              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700">+</button>
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',-1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:700">−</button>
+              <span id="pontos-${p.id}" style="color:var(--sb-text);font-weight:800;font-size:16px;min-width:28px;text-align:center">${p.pontos||4}</span>
+              <button onclick="event.stopPropagation();alterarPontos('${p.id}',1)" style="background:none;border:1px solid var(--sb-border);color:var(--sb-text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:700">+</button>
               <span style="font-size:11px;color:var(--sb-text3)">pontos</span>
             </div>
           </div>
         </div>`:'';
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--sb-text3)">${horaC}${horaU}</span>
-            ${p.agendado_para&&sk==='agendado'?`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">⏰ ${formatarHora(p.agendado_para)}</span>`:''}
-          </div>
-          <div class="pd-actions">
-            <button class="pd-action-btn" onclick="event.stopPropagation();abrirInfoPedido('${p.id}')" title="Informações">ℹ️</button>
-            <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
-            <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar motoboy">🛵</button>
-            ${sk!=='finalizado'&&sk!=='cancelado'?`<button id="btn-pronto-${p.id}" onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como Pronto" style="width:28px;height:28px;border-radius:50%;border:none;cursor:${sk==='pronto'?'default':'pointer'};background:${sk==='pronto'?'#EC4899':'#6B7280'};color:#fff;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s">✓</button>`:''}
-            <span class="badge-wrapper" id="badge-wrapper-${p.id}">
-              <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:13px;padding:3px 8px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
-            </span>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
-          ${motoLogo}
-          <div style="overflow:hidden;min-width:0">
-            <div style="font-size:18px;font-weight:800;color:var(--sb-text);line-height:1.1">#${p.numero||p.id?.substring(0,6)}</div>
-            ${clienteNome?`<div style="font-size:15px;color:var(--sb-text2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${clienteNome}</div>`:''}
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)" style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:28px;transition:background .15s;user-select:none">${isSel?'<span style="color:#fff;font-size:24px;font-weight:900">✓</span>':'<span>🛵</span>'}</div>
+          <div style="flex:1;min-width:0;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
+              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                <span style="font-size:15px;font-weight:800;color:var(--sb-text)">#${p.numero||p.id?.substring(0,6)}</span>
+                <span style="font-size:11px;color:var(--sb-text3)">${horaC}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+                <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
+                <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar">🛵</button>
+                <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:11px;padding:2px 7px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
+              </div>
+            </div>
+            ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
+            ${telefone?`<div style="font-size:12px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📱 ${telefone}</a></div>`:''}
+            <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
           </div>
         </div>
-        <div style="font-size:13px;color:var(--sb-text2);margin-left:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">📍 ${p.endereco||'—'}</div>
-        ${detalhes}
+        ${expandido}
       </div>`;
     }).join('');
     const safeKey=key.replace(/['"]/g,'');
