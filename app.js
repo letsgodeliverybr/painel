@@ -28,18 +28,29 @@ let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
+const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 let _faixasPagamento=[];
+let _faixasCobranca=[];
 
 function _calcTaxaMotoboy(p){
   if(!_faixasPagamento.length) return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
-  // distancia_km=0 ou null → usar 1km como padrão para cálculo da faixa
   const km=parseFloat(p.distancia_km)||1;
-  const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate))||_faixasPagamento[0];
+  const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate))||_faixasPagamento[_faixasPagamento.length-1];
   if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
   if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
   valor+=(parseFloat(p.gorjeta)||0);
+  return Math.round(valor*100)/100;
+}
+function _calcTaxaLoja(p){
+  if(!_faixasCobranca.length) return parseFloat(p.taxa_entrega)||0;
+  const km=parseFloat(p.distancia_km)||1;
+  const faixa=_faixasCobranca.find(f=>km<=parseFloat(f.km_ate))||_faixasCobranca[_faixasCobranca.length-1];
+  if(!faixa) return parseFloat(p.taxa_entrega)||0;
+  const temRetorno=!!(p.retorno||p.com_retorno);
+  let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
+  if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
   return Math.round(valor*100)/100;
 }
 let _precoDinTimers={};
@@ -1600,7 +1611,7 @@ function _buildTabelaRows(filtered,from){
     const ent=allMotoboys.find(e=>e.id===entId);
     const hora=p.created_at?formatarHora(p.created_at):'—';
     const endereco=p.endereco_entrega||p.endereco||'—';
-    const taxaMotoboy=_calcTaxaMotoboy(p);const taxaCobrada=parseFloat(p.taxa_entrega)||0;
+    const taxaMotoboy=_calcTaxaMotoboy(p);const taxaCobrada=_calcTaxaLoja(p);
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -1767,6 +1778,7 @@ async function atualizarTudo(){
   allMotoboys=await db('entregadores','GET',null,'');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
+  if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   verificarNovosProtos(allPedidos);
@@ -1854,6 +1866,7 @@ function renderPedidosLista(){
       const telefone=p.telefone||p.telefone_cliente||'';
       const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
       const txMoto=_calcTaxaMotoboy(p);
+      const txLoja=_calcTaxaLoja(p);
       const squareBg=p.origem==='ifood'?'#EA1D2C':'#1A56DB';
       // progress: mapa de status → etapa completada (0-3)
       const _stepMap={recebido:0,pronto:0,aceito:1,chegou_local:1,em_rota:2,chegou_destino:2,retornando:3,finalizado:3};
@@ -1893,7 +1906,8 @@ function renderPedidosLista(){
               </div>
               <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
                 ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
-                ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Taxa R$ ${txMoto.toFixed(2)}</div>`:''}
+                ${txLoja>0?`<div style="color:#60a5fa;font-weight:700">Loja R$ ${txLoja.toFixed(2)}</div>`:''}
+                ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Moto R$ ${txMoto.toFixed(2)}</div>`:''}
                 ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
               </div>
             </div>
@@ -1980,7 +1994,7 @@ function atualizarMarcadores(){
   const motoboysFiltrados=_estadoMotoboys===2?[]:_estadoMotoboys===1?allMotoboys.filter(e=>e.disponivel&&!allPedidos.some(p=>(p.motoboy_id===e.id||p.entregador_id===e.id)&&_statusAtivos.includes(p.status_detalhado||p.status))):allMotoboys;
   motoboysFiltrados.forEach(e=>{const lat=e.lat||e.latitude,lng=e.lng||e.longitude;if(!lat||!lng)return;const temAtivo=allPedidos.some(p=>(p.motoboy_id===e.id||p.entregador_id===e.id)&&_statusAtivos.includes(p.status_detalhado||p.status));const cor=temAtivo?'#EF4444':e.disponivel?'#10B981':'#475569';const corViseira=temAtivo?'#991b1b':e.disponivel?'#065f46':'#1f2937';const nome=(e.nome||'').split(' ')[0]||'Moto';const svgHelmet=`<svg width="48" height="48" viewBox="0 0 248 243" xmlns="http://www.w3.org/2000/svg"><circle cx="124" cy="121" r="118" fill="none" stroke="white" stroke-width="2"/><g transform="translate(0,243) scale(0.1,-0.1)" stroke="none"><path fill="${cor}" d="M1375 2020 c322 -78 591 -300 702 -578 19 -48 41 -100 48 -117 22 -51 62 -195 85 -305 12 -58 35 -153 51 -213 46 -167 46 -175 0 -316 -49 -147 -105 -251 -183 -334 l-57 -61 -113 38 c-62 21 -189 67 -283 101 -149 55 -254 88 -440 140 -27 8 -97 24 -155 35 -58 11 -135 27 -172 35 -36 8 -139 18 -227 23 -175 9 -193 15 -205 73 -5 28 -33 86 -133 280 -146 281 -162 550 -48 788 25 51 55 106 66 123 19 26 20 33 9 71 -24 86 -24 84 7 90 15 2 117 28 226 56 327 84 428 101 592 97 100 -3 166 -10 230 -26z"/><path fill="${corViseira}" d="M836 1426 c-150 -65 -39 -337 188 -460 353 -192 863 -329 1121 -301 l67 7 -7 36 c-27 154 -119 530 -133 544 -4 4 -70 12 -147 18 -267 20 -557 62 -711 101 -43 11 -105 27 -137 35 -86 22 -212 32 -241 20z"/></g></svg>`;const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center">${svgHelmet}<div style="background:rgba(0,0,0,0.55);color:white;font-size:10px;font-weight:700;padding:1px 4px;border-radius:4px;margin-top:2px;white-space:nowrap">${nome}</div></div>`,iconSize:[64,64],iconAnchor:[32,64],className:''});const _statusAtivosPop=['aceito','chegou_local','chegou_destino','em_rota','retornando'];const _ped=allPedidos.filter(p=>(p.motoboy_id===e.id||p.entregador_id===e.id)&&_statusAtivosPop.includes(p.status_detalhado||p.status));const _badges=_ped.map(p=>`<span onclick="map.closePopup();_irParaPedido('${p.id}')" style="display:inline-block;background:${getStatusCor(p)};color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;margin:2px 2px 0 0">#${p.numero||p.id?.substring(0,6)}</span>`).join('');const _cpfPopup=e.cpf?`<div style="font-size:11px;color:#374151;margin-bottom:4px">🪪 ${e.cpf}</div>`:'';const _telPopup=e.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:${_ped.length?8:4}px">📞 <a href="https://wa.me/55${e.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${e.telefone}</a></div>`:'';const _popupHtml=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:180px;max-width:260px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">${e.nome||'Motoboy'}</div>${_cpfPopup}${_telPopup}${_ped.length?`<div style="display:flex;flex-wrap:wrap;gap:4px">${_badges}</div>`:''}</div>`;motoboyMarkers[e.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_popupHtml,{maxWidth:280});});
   allPedidos.forEach(p=>{if(!p.latitude||!p.longitude)return;const cor=getStatusCor(p),num=p.numero_loja||p.numero||p.id?.substring(0,4);const icon=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:${cor};color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">#${num}</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${cor}"></div></div>`,iconSize:[50,30],iconAnchor:[25,30],className:''});const _lojaPopupNome=allLojas.find(l=>l.id===p.loja_id)?.nome||'';
-pedidoMarkers[p.id]=L.marker([p.latitude,p.longitude],{icon}).addTo(map).bindPopup(`<div style="font-family:Inter,sans-serif;min-width:160px"><b style="font-size:13px">#${num}</b>${_lojaPopupNome?` <span style="font-size:11px;color:#6b7280">· ${_lojaPopupNome}</span>`:''}<br><span style="font-size:11px;color:#374151">${p.endereco||'—'}</span><br><span style="color:#10b981;font-weight:700">Taxa: R$ ${(parseFloat(p.taxa_entrega)||0).toFixed(2)}</span>${p.valor?` · Valor: R$ ${parseFloat(p.valor).toFixed(2)}`:''}`);});
+pedidoMarkers[p.id]=L.marker([p.latitude,p.longitude],{icon}).addTo(map).bindPopup(`<div style="font-family:Inter,sans-serif;min-width:160px"><b style="font-size:13px">#${num}</b>${_lojaPopupNome?` <span style="font-size:11px;color:#6b7280">· ${_lojaPopupNome}</span>`:''}<br><span style="font-size:11px;color:#374151">${p.endereco||'—'}</span><br><span style="color:#10b981;font-weight:700">Taxa: R$ ${_calcTaxaLoja(p).toFixed(2)}</span>${p.valor?` · Valor: R$ ${parseFloat(p.valor).toFixed(2)}`:''}`);});
 }
 
 function selecionarPedido(id){selectedPedidoId=selectedPedidoId===id?null:id;renderPedidosLista();if(selectedPedidoId){const p=allPedidos.find(x=>x.id===selectedPedidoId);if(map&&p&&p.latitude&&p.longitude)map.setView([p.latitude,p.longitude],15,{animate:true});}}
@@ -2107,22 +2121,16 @@ async function salvarEdicaoPedido(pedidoId){
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
   await logAcao('editar_pedido',{pedido_id:pedidoId});
-  // Recalcular taxa_entrega pela tabela de cobrança após atualizar com_retorno
-  const _TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
+  // Recalcular taxa_entrega localmente usando _calcTaxaLoja
   const pedidoAtual=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
-  const distKm=parseFloat(pedidoAtual?.distancia_km)||1;
-  const faixasC=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${_TABELA_COBRANCA_ID}&order=km_ate.asc`);
-  if(faixasC.length){
-    const faixa=faixasC.find(f=>distKm<=parseFloat(f.km_ate))||faixasC[faixasC.length-1];
-    const novaTaxa=Math.round((_epRetornoAtivo?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno))*100)/100;
+  const pedidoMerge={...(pedidoAtual||{}), ...update};
+  const novaTaxa=_calcTaxaLoja(pedidoMerge);
+  if(novaTaxa>0){
     await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
-    const merged={...update,taxa_entrega:novaTaxa};
-    const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],merged);
-    const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],merged);
-  }else{
-    const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],update);
-    const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
+    update.taxa_entrega=novaTaxa;
   }
+  const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],update);
+  const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
   renderPedidosLista();renderTabelaMapa();
   if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido atualizado!','');
   setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1500);
