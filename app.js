@@ -1487,8 +1487,8 @@ function renderMapaPage(){
         <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">🛵 Disparar Rota (0 pedidos) ++</button>
       </div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-      <div class="mapa-container" style="position:relative;height:35vh;flex-shrink:0;overflow:hidden">
+    <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
+      <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:200px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
@@ -1502,7 +1502,8 @@ function renderMapaPage(){
         </div>
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:35vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+      <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
+      <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
         <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
           <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
@@ -1510,7 +1511,7 @@ function renderMapaPage(){
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
-          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
+          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
@@ -1528,6 +1529,7 @@ function renderMapaPage(){
       </div>
     </div>`;
   iniciarDragSidebar();
+  _iniciarResizeMapa();
   setTimeout(()=>{
     if(map){map.remove();map=null;}
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
@@ -1637,6 +1639,32 @@ function _tabelaIrPagina(){}
 function _localizarPedidoMapa(id){
   const p=allPedidos.find(x=>x.id===id)||_tabelaPedidosDia.find(x=>x.id===id);
   if(map&&p&&p.latitude&&p.longitude)map.setView([p.latitude,p.longitude],16,{animate:true});
+}
+
+function _iniciarResizeMapa(){
+  const handle=document.getElementById('mapa-resize-handle');
+  const mapaWrap=document.getElementById('mapa-container-wrap');
+  if(!handle||!mapaWrap)return;
+  let dragging=false,startY=0,startH=0;
+  const MIN_H=80,MAX_H=600;
+  handle.addEventListener('mousedown',e=>{
+    dragging=true;startY=e.clientY;startH=mapaWrap.offsetHeight;
+    document.body.style.userSelect='none';document.body.style.cursor='ns-resize';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const newH=Math.max(MIN_H,Math.min(MAX_H,startH+(e.clientY-startY)));
+    mapaWrap.style.height=newH+'px';
+    if(map)map.invalidateSize();
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!dragging)return;
+    dragging=false;document.body.style.userSelect='';document.body.style.cursor='';
+    if(map)map.invalidateSize();
+  });
+  handle.addEventListener('touchstart',e=>{dragging=true;startY=e.touches[0].clientY;startH=mapaWrap.offsetHeight;},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!dragging)return;const newH=Math.max(MIN_H,Math.min(MAX_H,startH+(e.touches[0].clientY-startY)));mapaWrap.style.height=newH+'px';if(map)map.invalidateSize();},{passive:true});
+  document.addEventListener('touchend',()=>{dragging=false;if(map)map.invalidateSize();});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
