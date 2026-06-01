@@ -1374,7 +1374,10 @@ async function _carregarSaldoTopbar(){
 }
 
 async function confirmarPagamento(pedidoId){
-  await db('pedidos','PATCH',{pagamento_confirmado:true,pagamento_confirmado_em:new Date().toISOString(),status:'finalizado',status_detalhado:'finalizado',finalizado_em:new Date().toISOString(),updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
+  const _p=allPedidos.find(x=>x.id===pedidoId);
+  const patch={pagamento_confirmado:true,pagamento_confirmado_em:new Date().toISOString(),status:'finalizado',status_detalhado:'finalizado',finalizado_em:new Date().toISOString(),updated_at:new Date().toISOString()};
+  if(_p&&(_p.motoboy_id||_p.entregador_id)&&_p.taxa_entrega_motoboy==null)patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0);
+  await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
   await logAcao('pagamento_confirmado',{pedido_id:pedidoId});
   showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');await atualizarTudo();
 }
@@ -2179,9 +2182,8 @@ async function abrirAlocarMotoboy(pedidoId){
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
   const _p=allPedidos.find(x=>x.id===pedidoId);
-  const taxaMotoboy=_p?_calcTaxaMotoboy(_p):null;
-  const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:new Date().toISOString(),updated_at:new Date().toISOString()};
-  if(taxaMotoboy!==null) _patch.taxa_entrega_motoboy=taxaMotoboy;
+  const taxaMotoboy=_p?(_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0)):0;
+  const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:new Date().toISOString(),updated_at:new Date().toISOString(),taxa_entrega_motoboy:taxaMotoboy};
   await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
@@ -3018,14 +3020,14 @@ async function _buscarPagamentos(){
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,entregadores]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy`),
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco')
   ]);
   _gpResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
-    _gpResultados[eid].total+=parseFloat(p.taxa_entrega_motoboy)||0;
+    _gpResultados[eid].total+=p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
     _gpResultados[eid].qtd++;
   });
   const rows=Object.values(_gpResultados);
