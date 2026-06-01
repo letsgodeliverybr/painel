@@ -2209,16 +2209,27 @@ function _labelComNumero(res,numero){
   const local=[bairro,cidade].filter(Boolean).join(', ');
   return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
-async function geocodificarEndereco(endereco){
+async function geocodificarEndereco(endereco,cidade='Ribeirão Preto',estado='SP'){
   const NOM='https://nominatim.openstreetmap.org/search';
   const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
-  try{
-    const p=_parsearEnderecoNumerado(endereco);
-    const q=p?p.q:encodeURIComponent(endereco+', Ribeirão Preto, Brazil');
-    const r=await fetch(`${NOM}?q=${q}&format=json&limit=1&addressdetails=1`,{headers:HDR});
-    const d=await r.json();
-    if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:_labelComNumero(d[0],p?.numero)};
-  }catch(e){}
+  const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
+  const base=_norm(endereco);
+  const p=_parsearEnderecoNumerado(base);
+  const queries=p?[
+    encodeURIComponent(`${p.numero} ${p.rua}, ${cidade}, ${estado}, Brazil`),
+    encodeURIComponent(`${p.rua}, ${cidade}, ${estado}, Brazil`),
+    encodeURIComponent(`${base}, ${cidade}, Brazil`),
+  ]:[
+    encodeURIComponent(`${base}, ${cidade}, ${estado}, Brazil`),
+    encodeURIComponent(`${base}, ${cidade}, Brazil`),
+  ];
+  for(const q of queries){
+    try{
+      const r=await fetch(`${NOM}?q=${q}&format=json&limit=1&addressdetails=1&countrycodes=br`,{headers:HDR});
+      const d=await r.json();
+      if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:_labelComNumero(d[0],p?.numero)};
+    }catch(e){}
+  }
   return null;
 }
 function calcularDistancia(lat1,lon1,lat2,lon2){
@@ -3790,13 +3801,24 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
       try{
         const NOM='https://nominatim.openstreetmap.org/search';
         const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
-        const p=_parsearEnderecoNumerado(val);
-        const q=p?p.q:encodeURIComponent(val+', Ribeirão Preto, Brazil');
+        const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
+        const base=_norm(val);
+        const p=_parsearEnderecoNumerado(base);
+        const q1=p
+          ?encodeURIComponent(`${p.numero} ${p.rua}, Ribeirão Preto, SP, Brazil`)
+          :encodeURIComponent(`${base}, Ribeirão Preto, SP, Brazil`);
         let results=[];
         try{
-          const r=await fetch(`${NOM}?q=${q}&format=json&limit=5&addressdetails=1`,{headers:HDR});
+          const r=await fetch(`${NOM}?q=${q1}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
           results=await r.json();
         }catch{}
+        if(!results.length&&p){
+          try{
+            const q2=encodeURIComponent(`${p.rua}, Ribeirão Preto, SP, Brazil`);
+            const r=await fetch(`${NOM}?q=${q2}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
+            results=await r.json();
+          }catch{}
+        }
         if(!results.length){
           dropdown.style.display='none';
           if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Número não encontrado, tente outro endereço</span>';
