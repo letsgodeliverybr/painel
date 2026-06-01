@@ -3217,11 +3217,13 @@ async function recusarSaque(id){
 }
 
 // ── GERAR COBRANÇA ──
+let _gcHistoricoOffset=0;
+const _gcHistoricoPageSize=20;
 function _renderGerarCobranca(){
   const el=document.getElementById('financeiro-content');if(!el)return;
   const hoje=_dataHojeBrasilia();
   el.innerHTML=`
-    <div class="card"><div style="padding:20px">
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
           <input type="date" id="gc-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
@@ -3230,8 +3232,47 @@ function _renderGerarCobranca(){
         <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="gc-lista"></div>
+    </div></div>
+    <div class="card"><div style="padding:16px 20px 8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">🏪 Cobranças Geradas</div>
+      <div id="gc-historico"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div></div>`;
+  _gcHistoricoOffset=0;
+  _carregarHistoricoCobrancas(false);
 }
+
+async function _carregarHistoricoCobrancas(append){
+  const el=document.getElementById('gc-historico');if(!el)return;
+  const rows=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=eq.pendente&order=created_at.desc&limit=${_gcHistoricoPageSize}&offset=${_gcHistoricoOffset}`);
+  const data=Array.isArray(rows)?rows:[];
+  if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
+  const html=data.map(c=>`<tr>
+    <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
+    <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+    <td>${c.qtd_pedidos??'—'}</td>
+    <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+    <td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td>
+  </tr>`).join('');
+  if(append){
+    const tbody=el.querySelector('tbody');
+    if(tbody)tbody.insertAdjacentHTML('beforeend',html);
+  }else{
+    el.innerHTML=`<div style="overflow-x:auto;max-height:400px;overflow-y:auto"><table style="width:100%">
+      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th></tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+    ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
+  }
+  _gcHistoricoOffset+=data.length;
+  if(append){
+    if(data.length===_gcHistoricoPageSize&&!el.querySelector('button[onclick="_gcCarregarMais()"]'))
+      el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>');
+    else if(data.length<_gcHistoricoPageSize)
+      el.querySelector('button[onclick="_gcCarregarMais()"]')?.parentElement?.remove();
+  }
+}
+
+function _gcCarregarMais(){_carregarHistoricoCobrancas(true);}
 
 async function _buscarCobrancas(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
@@ -3284,7 +3325,9 @@ async function _gerarCobranca(){
     if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
   }
   showNotif(`✅ ${ok} cobrança(s) gerada(s)!`,'');
-  _buscarCobrancas();
+  _gcHistoricoOffset=0;
+  _carregarHistoricoCobrancas(false);
+  document.getElementById('gc-lista').innerHTML='';
 }
 
 // ── APROVAR COBRANÇAS ──
