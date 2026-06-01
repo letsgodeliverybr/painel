@@ -1201,7 +1201,7 @@ async function _criarEntregaRapida(){
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const fb=document.getElementById('tabela-mapa-pag')||null;
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
   const result=await db('pedidos','POST',pedido);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
@@ -2254,7 +2254,7 @@ async function criarPedido(){
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,recebido_em:agendarOn?null:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
