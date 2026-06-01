@@ -1146,10 +1146,12 @@ let _npLojasData=[];
 let _criarRetornoAtivo=false;
 function _criarEntregaRapidaToggle(){
   _criarRetornoAtivo=!_criarRetornoAtivo;
-  const btn=document.getElementById('cr-retorno-btn');
+  const track=document.getElementById('cr-retorno-track');
+  const thumb=document.getElementById('cr-retorno-thumb');
   const lbl=document.getElementById('cr-retorno-lbl');
-  if(btn)btn.style.background=_criarRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_criarRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_criarRetornoAtivo?'#fff':'#888';}
+  if(track){track.style.background=_criarRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_criarRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
+  if(thumb){thumb.style.left=_criarRetornoAtivo?'19px':'1px';thumb.style.background=_criarRetornoAtivo?'#fff':'#666';}
+  if(lbl){lbl.textContent=_criarRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_criarRetornoAtivo?'#1A56DB':'#888';}
 }
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
@@ -1508,7 +1510,7 @@ function renderMapaPage(){
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
-          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#3a3a3a;border:1px solid #444;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s"><span id="cr-retorno-lbl" style="color:#888">Sem ret</span></div>
+          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
