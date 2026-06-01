@@ -4,6 +4,11 @@
 const SB_URL='https://astbkmpegcmqljltmdpx.supabase.co';
 const SB_KEY='sb_publishable_8ocBGGO6EM8GYlg-6HBdmQ_LA6VDL9O';
 
+function corStatus(status){
+  const cores={'agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
+  return cores[status]||'#6b7280';
+}
+
 let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null,_pedidosSelecionados=new Set();
@@ -1266,7 +1271,6 @@ async function alterarPontos(pedidoId,delta){
 }
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
-const corStatus=(s)=>({agendado:'#ef4444',recebido:'#ef4444',cancelado:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',chegou_no_local:'#06b6d4',chegou_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a'}[s]||'#6b7280');
 const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
