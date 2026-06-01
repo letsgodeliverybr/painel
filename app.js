@@ -1957,8 +1957,12 @@ function renderPedidosLista(){
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;gap:10px;align-items:flex-start">
           <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
-            style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:28px;transition:background .15s;user-select:none;color:#fff">
-            ${isSel?'<span style="font-size:22px;font-weight:900">✓</span>':'<span>🛵</span>'}
+            style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;user-select:none;color:#fff;padding:4px;gap:3px;overflow:hidden">
+            ${isSel?'<span style="font-size:22px;font-weight:900">✓</span>':
+              `<span style="font-size:20px">🛵</span>
+              ${loja?.telefone?`<span style="font-size:9px;color:rgba(255,255,255,.85);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58px;text-align:center">${loja.telefone}</span>`:''}
+              ${motoboy?.nome?`<a href="https://wa.me/55${(motoboy.telefone||'').replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:9px;color:#4ade80;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58px;text-align:center;text-decoration:none">${motoboy.nome.split(' ')[0]}</a>`:''}`
+            }
           </div>
           <div style="flex:1;min-width:0;overflow:hidden">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
@@ -1976,7 +1980,7 @@ function renderPedidosLista(){
               </div>
             </div>
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
-            <div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${p.endereco?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${(p.endereco).slice(0,45)}${p.endereco.length>45?'…':''}</a>`:'—'}</div>
+            <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
           </div>
         </div>
         ${expandido}
