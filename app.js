@@ -966,7 +966,8 @@ document.documentElement.classList.add('dark');
 
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
-  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''};
+  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'};
+  if(method==='POST'||method==='PATCH')h['Prefer']='return=representation';
   try{
     const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):null});
     if(!r.ok){
@@ -2874,7 +2875,7 @@ async function renderUsuariosPage(){
   const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleString('pt-BR'):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?formatarDataHora(u.created_at)}</td></tr>`;}).join('');
 }
 async function abrirModalUsuario(){
   const lojas=await db('lojas','GET',null,'');const sel=document.getElementById('u-loja-id');
@@ -2927,10 +2928,12 @@ async function renderLogsPage(){
   tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
 }
 
-let _financeiroAba='saques-pendentes';
+let _financeiroAba='gerar-pagamento';
 let _histFiltroStatus='';
 let _histFiltroEntregador='';
 let _histSaquesData=[];
+let _gpResultados={};
+let _gcResultados={};
 
 async function _carregarBadgeSaques(){
   const r=await db('saques','GET',null,'?select=id&status=eq.pendente');
@@ -2939,10 +2942,12 @@ async function _carregarBadgeSaques(){
 }
 
 async function renderFinanceiroPage(aba){
-  _financeiroAba=aba||_financeiroAba||'saques-pendentes';
+  _financeiroAba=aba||_financeiroAba||'gerar-pagamento';
   const abas=[
-    {id:'saques-pendentes',icon:'⏳',label:'Saques Pendentes'},
-    {id:'historico',icon:'📜',label:'Histórico de Saques'},
+    {id:'gerar-pagamento',icon:'💳',label:'Gerar Pagamento'},
+    {id:'aprovar-saques',icon:'✅',label:'Aprovar Saques'},
+    {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobrança'},
+    {id:'aprovar-cobrancas',icon:'💰',label:'Aprovar Cobranças'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -2958,8 +2963,10 @@ async function renderFinanceiroPage(aba){
       <div id="financeiro-content"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div>`;
   _carregarResumoFinanceiro();
-  if(_financeiroAba==='saques-pendentes')_renderSaquesPendentes();
-  else _renderHistoricoSaques();
+  if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
+  else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
+  else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
+  else _renderAprovarCobrancas();
 }
 
 async function _carregarResumoFinanceiro(){
@@ -2987,41 +2994,120 @@ async function _carregarResumoFinanceiro(){
   if(e3)e3.textContent=qtd;
 }
 
-async function _renderSaquesPendentes(){
+// ── GERAR PAGAMENTO ──
+function _renderGerarPagamento(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  const hoje=_dataHojeBrasilia();
+  el.innerHTML=`
+    <div class="card"><div style="padding:20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+          <input type="date" id="gp-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+          <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <button onclick="_buscarPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      </div>
+      <div id="gp-lista"></div>
+    </div></div>`;
+}
+
+async function _buscarPagamentos(){
+  const inicio=document.getElementById('gp-data-inicio')?.value;
+  const fim=document.getElementById('gp-data-fim')?.value;
+  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const lista=document.getElementById('gp-lista');
+  if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const [pedidos,entregadores]=await Promise.all([
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy`),
+    db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco')
+  ]);
+  _gpResultados={};
+  (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
+    const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
+    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
+    _gpResultados[eid].total+=parseFloat(p.taxa_entrega_motoboy)||0;
+    _gpResultados[eid].qtd++;
+  });
+  const rows=Object.values(_gpResultados);
+  if(!lista)return;
+  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com pedidos finalizados no período</div></div>`;return;}
+  lista.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💳 Gerar Pagamento</button>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Total a Pagar</th><th>Chave PIX</th><th>Tipo PIX</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td><input type="checkbox" class="gp-cb" value="${r.entregador.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-weight:600;color:var(--text)">${r.entregador.nome||'—'}</td>
+        <td>${r.qtd}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${r.total.toFixed(2)}</td>
+        <td style="font-family:monospace;font-size:12px">${r.entregador.chave_pix||'—'}</td>
+        <td>${r.entregador.tipo_chave_pix||'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+function _gpToggleAll(checked){document.querySelectorAll('.gp-cb').forEach(cb=>cb.checked=checked);}
+
+async function _gerarPagamento(){
+  const selecionados=[...document.querySelectorAll('.gp-cb:checked')].map(cb=>cb.value);
+  if(!selecionados.length){showNotif('Atenção','Selecione ao menos um entregador','var(--yellow)');return;}
+  const agora=new Date().toISOString();let ok=0;
+  for(const eid of selecionados){
+    const r=_gpResultados[eid];if(!r)continue;
+    const valor=Math.round(r.total*100)/100;
+    const res=await db('saques','POST',{entregador_id:eid,valor,status:'pendente',created_at:agora,updated_at:agora});
+    if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
+  }
+  showNotif(`✅ ${ok} pagamento(s) gerado(s)!`,'');
+  _saquesPendentesCount+=ok;renderNavSidebar(_navAtivo);
+  _carregarResumoFinanceiro();
+  _buscarPagamentos();
+}
+
+// ── APROVAR SAQUES ──
+async function _renderAprovarSaques(){
   const el=document.getElementById('financeiro-content');if(!el)return;
   const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
   if(!saques||!saques.length){
     el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div>`;
     return;
   }
-  el.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
-    <tbody>${saques.map(s=>{
-      const ent=s.entregadores||{};
-      const data=formatarDataHora(s.created_at);
-      return`<tr id="saque-row-${s.id}">
-        <td>${data}</td>
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
+    </div>
+    <div class="card"><div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <tbody>${saques.map(s=>{const ent=s.entregadores||{};return`<tr id="saque-row-${s.id}">
+        <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
         <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
         <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
         <td>${ent.tipo_chave_pix||'—'}</td>
         <td>${ent.banco||'—'}</td>
-        <td><div style="display:flex;gap:6px">
-          <button onclick="pagarSaque('${s.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">✅ Pagar</button>
-          <button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button>
-        </div></td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div></div>`;
+        <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+      </tr>`;}).join('')}</tbody>
+    </table></div></div>`;
 }
 
-async function pagarSaque(id){
-  const res=await dbPatch('saques',{status:'pago',updated_at:new Date().toISOString()},`?id=eq.${id}`);
-  if(!res){showNotif('Erro','Não foi possível processar o pagamento','var(--red)');return;}
-  document.getElementById(`saque-row-${id}`)?.remove();
-  _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
+function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>cb.checked=checked);}
+
+async function _aprovarSaquesSelecionados(){
+  const ids=[...document.querySelectorAll('.as-cb:checked')].map(cb=>cb.value);
+  if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
+  const agora=new Date().toISOString();let ok=0;
+  for(const id of ids){
+    const res=await dbPatch('saques',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+    if(res!==null){document.getElementById(`saque-row-${id}`)?.remove();ok++;}
+  }
+  _saquesPendentesCount=Math.max(0,_saquesPendentesCount-ok);
   renderNavSidebar(_navAtivo);
-  showNotif('✅ Saque pago!','Saque marcado como pago com sucesso');
+  showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
   _carregarResumoFinanceiro();
 }
 
@@ -3035,64 +3121,123 @@ async function recusarSaque(id){
   _carregarResumoFinanceiro();
 }
 
-async function _renderHistoricoSaques(){
+// ── GERAR COBRANÇA ──
+function _renderGerarCobranca(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  _histFiltroStatus='';_histFiltroEntregador='';
-  el.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-    <select id="hist-filtro-status" onchange="_aplicarFiltroHistorico()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;outline:none">
-      <option value="">Todos os status</option>
-      <option value="pago">✅ Pago</option>
-      <option value="recusado">❌ Recusado</option>
-    </select>
-    <select id="hist-filtro-ent" onchange="_aplicarFiltroHistorico()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;outline:none">
-      <option value="">Todos os entregadores</option>
-    </select>
-    <div style="margin-left:auto;font-size:13px;color:var(--text2)">Total pago: <strong id="hist-total-pago" style="color:#10b981">R$ 0,00</strong></div>
-  </div>
-  <div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Status</th><th>Banco</th></tr></thead>
-    <tbody id="tbody-historico-saques"><tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Carregando...</td></tr></tbody>
-  </table></div></div>`;
-  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=in.(pago,recusado)&order=created_at.desc');
-  _histSaquesData=Array.isArray(saques)?saques:[];
-  const nomes=[...new Set(_histSaquesData.map(s=>s.entregadores?.nome).filter(Boolean))];
-  const selEnt=document.getElementById('hist-filtro-ent');
-  if(selEnt)nomes.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selEnt.appendChild(o);});
-  _renderHistoricoTabela();
+  const hoje=_dataHojeBrasilia();
+  el.innerHTML=`
+    <div class="card"><div style="padding:20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+          <input type="date" id="gc-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+          <input type="date" id="gc-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      </div>
+      <div id="gc-lista"></div>
+    </div></div>`;
 }
 
-function _aplicarFiltroHistorico(){
-  _histFiltroStatus=document.getElementById('hist-filtro-status')?.value||'';
-  _histFiltroEntregador=document.getElementById('hist-filtro-ent')?.value||'';
-  _renderHistoricoTabela();
-}
-
-function _renderHistoricoTabela(){
-  const tbody=document.getElementById('tbody-historico-saques');if(!tbody)return;
-  let filtered=_histSaquesData.filter(s=>{
-    if(_histFiltroStatus&&s.status!==_histFiltroStatus)return false;
-    if(_histFiltroEntregador&&s.entregadores?.nome!==_histFiltroEntregador)return false;
-    return true;
+async function _buscarCobrancas(){
+  const inicio=document.getElementById('gc-data-inicio')?.value;
+  const fim=document.getElementById('gc-data-fim')?.value;
+  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const lista=document.getElementById('gc-lista');
+  if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const [pedidos,lojas]=await Promise.all([
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=loja_id,taxa_entrega`),
+    db('lojas','GET',null,'?select=id,nome')
+  ]);
+  _gcResultados={};
+  (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
+    const lid=p.loja_id;if(!lid)return;
+    if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
+    _gcResultados[lid].total+=parseFloat(p.taxa_entrega)||0;
+    _gcResultados[lid].qtd++;
   });
-  const totalPago=filtered.filter(s=>s.status==='pago').reduce((sum,s)=>sum+(parseFloat(s.valor)||0),0);
-  const elTotal=document.getElementById('hist-total-pago');
-  if(elTotal)elTotal.textContent=`R$ ${totalPago.toFixed(2).replace('.',',')}`;
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum resultado encontrado</td></tr>`;return;}
-  tbody.innerHTML=filtered.map(s=>{
-    const ent=s.entregadores||{};
-    const data=s.created_at?new Date(s.created_at).toLocaleString('pt-BR'):'—';
-    const badge=s.status==='pago'
-      ?`<span style="background:#d1fae5;color:#059669;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
-      :`<span style="background:#fee2e2;color:#ef4444;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
-    return`<tr>
-      <td>${data}</td>
-      <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
-      <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
-      <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
-      <td>${badge}</td>
-      <td>${ent.banco||'—'}</td>
-    </tr>`;
-  }).join('');
+  const rows=Object.values(_gcResultados);
+  if(!lista)return;
+  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma loja com pedidos finalizados no período</div></div>`;return;}
+  lista.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gc-sel-all" onchange="_gcToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
+      <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🏪 Gerar Cobrança</button>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
+        <td>${r.qtd}</td>
+        <td style="font-weight:700;color:#1A56DB">R$ ${r.total.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+function _gcToggleAll(checked){document.querySelectorAll('.gc-cb').forEach(cb=>cb.checked=checked);}
+
+async function _gerarCobranca(){
+  const inicio=document.getElementById('gc-data-inicio')?.value;
+  const fim=document.getElementById('gc-data-fim')?.value;
+  const selecionadas=[...document.querySelectorAll('.gc-cb:checked')].map(cb=>cb.value);
+  if(!selecionadas.length){showNotif('Atenção','Selecione ao menos uma loja','var(--yellow)');return;}
+  const agora=new Date().toISOString();let ok=0;
+  for(const lid of selecionadas){
+    const r=_gcResultados[lid];if(!r)continue;
+    const valor=Math.round(r.total*100)/100;
+    const res=await db('cobrancas_lojas','POST',{loja_id:lid,valor_total:valor,status:'pendente',data_inicio:inicio,data_fim:fim,qtd_pedidos:r.qtd,created_at:agora,updated_at:agora});
+    if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
+  }
+  showNotif(`✅ ${ok} cobrança(s) gerada(s)!`,'');
+  _buscarCobrancas();
+}
+
+// ── APROVAR COBRANÇAS ──
+async function _renderAprovarCobrancas(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div>';
+  const cobrancas=await db('cobrancas_lojas','GET',null,'?select=*,lojas(nome)&status=eq.pendente&order=created_at.desc');
+  if(!cobrancas||!cobrancas.length){
+    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhuma cobrança pendente</div></div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
+      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Marcar como Pago</button>
+    </div>
+    <div class="card"><div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
+      <tbody>${cobrancas.map(c=>{const loja=c.lojas||{};return`<tr id="cob-row-${c.id}">
+        <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+        <td>${c.qtd_pedidos||'—'}</td>
+        <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
+        <td><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+      </tr>`;}).join('')}</tbody>
+    </table></div></div>`;
+}
+
+function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>cb.checked=checked);}
+
+async function _aprovarCobrancasSelecionadas(){
+  const ids=[...document.querySelectorAll('.ac-cb:checked')].map(cb=>cb.value);
+  if(!ids.length){showNotif('Atenção','Selecione ao menos uma cobrança','var(--yellow)');return;}
+  const agora=new Date().toISOString();let ok=0;
+  for(const id of ids){
+    const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+    if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
+  }
+  showNotif(`✅ ${ok} cobrança(s) marcada(s) como pago!`,'');
+}
+
+async function recusarCobranca(id){
+  const res=await dbPatch('cobrancas_lojas',{status:'recusado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(!res){showNotif('Erro','Não foi possível recusar a cobrança','var(--red)');return;}
+  document.getElementById(`cob-row-${id}`)?.remove();
+  showNotif('❌ Cobrança recusada','','var(--red)');
 }
 
 let _configAba='cliente';
