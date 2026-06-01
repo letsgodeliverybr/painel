@@ -552,16 +552,16 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
 
     /* ── LOGIN ── */
     #login-screen {
-      background: #ffffff !important;
+      background: #1E1E1E !important;
     }
     .login-card {
-      background: #ffffff !important;
-      border-radius: 16px !important;
-      box-shadow: 0 4px 32px rgba(0,0,0,.09) !important;
+      background: #2D2D2D !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4) !important;
       padding: 44px 40px !important;
       width: 100% !important;
       max-width: 400px !important;
-      border: 1px solid #e8ecf0 !important;
+      border: 0.5px solid #3A3A3A !important;
     }
     #login-logo-wrap {
       display: flex !important;
@@ -579,18 +579,18 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       justify-content: center !important;
       font-size: 28px !important;
       margin-bottom: 14px !important;
-      box-shadow: 0 4px 14px rgba(26,86,219,.25) !important;
+      box-shadow: 0 4px 14px rgba(26,86,219,.35) !important;
     }
     #login-logo-text {
       font-size: 22px !important;
       font-weight: 800 !important;
-      color: #0f172a !important;
+      color: #ffffff !important;
       letter-spacing: -0.4px !important;
       font-family: Inter, sans-serif !important;
     }
     #login-logo-sub {
       font-size: 12px !important;
-      color: #64748b !important;
+      color: #aaaaaa !important;
       margin-top: 3px !important;
       font-weight: 500 !important;
       font-family: Inter, sans-serif !important;
@@ -598,7 +598,7 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .login-card label {
       font-size: 11px !important;
       font-weight: 700 !important;
-      color: #94a3b8 !important;
+      color: #aaaaaa !important;
       text-transform: uppercase !important;
       letter-spacing: 0.6px !important;
       display: block !important;
@@ -606,22 +606,22 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     }
     .login-card input, .login-card select {
       width: 100% !important;
-      background: #f8fafc !important;
-      border: 1.5px solid #e2e8f0 !important;
+      background: #1E1E1E !important;
+      border: 1.5px solid #3A3A3A !important;
       border-radius: 10px !important;
       padding: 11px 14px !important;
       font-size: 14px !important;
-      color: #0f172a !important;
+      color: #ffffff !important;
       font-family: Inter, sans-serif !important;
       margin-bottom: 14px !important;
       outline: none !important;
       transition: border-color .15s, box-shadow .15s !important;
       box-sizing: border-box !important;
     }
+    .login-card input::placeholder { color: #555555 !important; }
     .login-card input:focus, .login-card select:focus {
       border-color: #1A56DB !important;
-      background: #fff !important;
-      box-shadow: 0 0 0 3px rgba(26,86,219,.10) !important;
+      box-shadow: 0 0 0 3px rgba(26,86,219,.20) !important;
     }
     #login-btn {
       width: 100% !important;
@@ -639,13 +639,13 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       letter-spacing: -0.1px !important;
     }
     #login-btn:hover:not(:disabled) { background: #1648c0 !important; }
-    #login-btn:disabled { background: #93c5fd !important; cursor: default !important; }
+    #login-btn:disabled { background: #1A56DB66 !important; cursor: default !important; }
     #login-forgot {
       display: block !important;
       text-align: center !important;
       margin-top: 18px !important;
       font-size: 13px !important;
-      color: #1A56DB !important;
+      color: #aaaaaa !important;
       text-decoration: none !important;
       cursor: pointer !important;
       font-family: Inter, sans-serif !important;
@@ -654,11 +654,11 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       width: 100% !important;
       padding: 0 !important;
     }
-    #login-forgot:hover { text-decoration: underline !important; color: #1648c0 !important; }
+    #login-forgot:hover { text-decoration: underline !important; color: #ffffff !important; }
     #login-error {
-      background: #fef2f2 !important;
-      border: 1px solid #fecaca !important;
-      color: #dc2626 !important;
+      background: #ef444420 !important;
+      border: 1px solid #ef444455 !important;
+      color: #f87171 !important;
       border-radius: 8px !important;
       padding: 10px 14px !important;
       font-size: 13px !important;
