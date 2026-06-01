@@ -3111,7 +3111,7 @@ async function _buscarPagamentos(){
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
-    db('saques','GET',null,`?status=in.(pendente,pago)&data_inicio=eq.${inicio}&data_fim=eq.${fim}&select=entregador_id`)
+    db('saques','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=entregador_id`)
   ]);
   // Entregadores que já têm pagamento gerado (pendente ou pago) no período — excluir da lista
   const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
@@ -3172,22 +3172,45 @@ async function _gerarPagamento(){
 
 // ── APROVAR SAQUES ──
 let _saquesPendentesMap={};
-async function _renderAprovarSaques(){
+function _renderAprovarSaques(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
+  const hoje=_dataHojeBrasilia();
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+          <input type="date" id="as-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+          <input type="date" id="as-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <button onclick="_buscarSaques()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      </div>
+      <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
+    </div></div>
+    <div id="as-historico-wrap"></div>`;
+  _buscarSaques();
+}
+
+async function _buscarSaques(){
+  const inicio=document.getElementById('as-data-inicio')?.value;
+  const fim=document.getElementById('as-data-fim')?.value;
+  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const pendWrap=document.getElementById('as-pendentes-wrap');
+  if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const saques=await db('saques','GET',null,`?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.asc`);
   _saquesPendentesMap={};
   (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
+  if(!pendWrap)return;
   if(!saques||!saques.length){
-    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div><div id="as-historico-wrap"></div>`;
-    _renderHistoricoAprovarSaques();
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque pendente no período</div></div>`;
+    _renderHistoricoAprovarSaques(inicio,fim);
     return;
   }
-  el.innerHTML=`
+  pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
       <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
     </div>
-    <div class="card" style="margin-bottom:20px"><div style="overflow-x:auto"><table>
+    <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
       <tbody>${saques.map(s=>{const ent=s.entregadores||{};return`<tr id="saque-row-${s.id}">
         <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
@@ -3199,15 +3222,17 @@ async function _renderAprovarSaques(){
         <td>${ent.banco||'—'}</td>
         <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
-    </table></div></div>
-    <div id="as-historico-wrap"></div>`;
-  _renderHistoricoAprovarSaques();
+    </table></div>`;
+  _renderHistoricoAprovarSaques(inicio,fim);
 }
 
-async function _renderHistoricoAprovarSaques(){
+async function _renderHistoricoAprovarSaques(inicio,fim){
   const wrap=document.getElementById('as-historico-wrap');
   if(!wrap)return;
-  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30');
+  const qs=(inicio&&fim)
+    ?`?select=*,entregadores(nome)&status=in.(pago,recusado)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=updated_at.desc&limit=50`
+    :`?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30`;
+  const hist=await db('saques','GET',null,qs);
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
@@ -3254,10 +3279,8 @@ async function _aprovarSaquesSelecionados(){
   renderNavSidebar(_navAtivo);
   showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
   _carregarResumoFinanceiro();
-  // Se não há mais linhas pendentes na tabela, recarrega a tela para exibir estado vazio + histórico
-  const restantes=document.querySelectorAll('.as-cb').length;
-  if(restantes===0)_renderAprovarSaques();
-  else _renderHistoricoAprovarSaques();
+  // Recarrega os saques do período atual preservando os filtros de data
+  _buscarSaques();
 }
 
 async function recusarSaque(id){
@@ -3272,10 +3295,8 @@ async function recusarSaque(id){
   console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
-  // Se não há mais linhas pendentes, recarrega para exibir estado vazio + histórico
-  const restantes=document.querySelectorAll('.as-cb').length;
-  if(restantes===0)_renderAprovarSaques();
-  else _renderHistoricoAprovarSaques();
+  // Recarrega os saques do período atual preservando os filtros de data
+  _buscarSaques();
 }
 
 // ── GERAR COBRANÇA ──
@@ -3393,20 +3414,43 @@ async function _gerarCobranca(){
 }
 
 // ── APROVAR COBRANÇAS ──
-async function _renderAprovarCobrancas(){
+function _renderAprovarCobrancas(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div>';
-  const cobrancas=await db('cobrancas_lojas','GET',null,'?select=*,lojas(nome)&status=eq.pendente&order=created_at.desc');
+  const hoje=_dataHojeBrasilia();
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+          <input type="date" id="ac-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+          <input type="date" id="ac-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+        <button onclick="_buscarCobrancasPendentes()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      </div>
+      <div id="ac-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
+    </div></div>
+    <div id="ac-historico-wrap"></div>`;
+  _buscarCobrancasPendentes();
+}
+
+async function _buscarCobrancasPendentes(){
+  const inicio=document.getElementById('ac-data-inicio')?.value;
+  const fim=document.getElementById('ac-data-fim')?.value;
+  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const pendWrap=document.getElementById('ac-pendentes-wrap');
+  if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const cobrancas=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.desc`);
+  if(!pendWrap)return;
   if(!cobrancas||!cobrancas.length){
-    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhuma cobrança pendente</div></div>`;
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma cobrança pendente no período</div></div>`;
+    _renderHistoricoCobrancas(inicio,fim);
     return;
   }
-  el.innerHTML=`
+  pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
       <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Marcar como Pago</button>
     </div>
-    <div class="card"><div style="overflow-x:auto"><table>
+    <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
       <tbody>${cobrancas.map(c=>{const loja=c.lojas||{};return`<tr id="cob-row-${c.id}">
         <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
@@ -3417,7 +3461,32 @@ async function _renderAprovarCobrancas(){
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
         <td><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
-    </table></div></div>`;
+    </table></div>`;
+  _renderHistoricoCobrancas(inicio,fim);
+}
+
+async function _renderHistoricoCobrancas(inicio,fim){
+  const wrap=document.getElementById('ac-historico-wrap');
+  if(!wrap)return;
+  const qs=(inicio&&fim)
+    ?`?select=*,lojas(nome)&status=in.(pago,recusado)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=updated_at.desc&limit=50`
+    :`?select=*,lojas(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30`;
+  const hist=await db('cobrancas_lojas','GET',null,qs);
+  if(!hist||!hist.length){wrap.innerHTML='';return;}
+  const badge=c=>c.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
+  wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Cobranças</div>
+    <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
+      <thead><tr><th>Data</th><th>Loja</th><th>Período</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>${hist.map(c=>`<tr>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
+        <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+        <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+        <td>${badge(c)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div></div>`;
 }
 
 function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>cb.checked=checked);}
@@ -3431,6 +3500,7 @@ async function _aprovarCobrancasSelecionadas(){
     if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
   }
   showNotif(`✅ ${ok} cobrança(s) marcada(s) como pago!`,'');
+  _buscarCobrancasPendentes();
 }
 
 async function recusarCobranca(id){
@@ -3438,6 +3508,7 @@ async function recusarCobranca(id){
   if(!res){showNotif('Erro','Não foi possível recusar a cobrança','var(--red)');return;}
   document.getElementById(`cob-row-${id}`)?.remove();
   showNotif('❌ Cobrança recusada','','var(--red)');
+  _buscarCobrancasPendentes();
 }
 
 let _configAba='cliente';
