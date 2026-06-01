@@ -936,14 +936,7 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
   document.head.appendChild(style);
 })();
 
-(function(){
-  const mq=window.matchMedia('(prefers-color-scheme: dark)');
-  if(mq.matches)document.documentElement.classList.add('dark');
-  mq.addEventListener('change',e=>{
-    if(e.matches)document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  });
-})();
+document.documentElement.classList.add('dark');
 
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
@@ -1268,7 +1261,7 @@ async function alterarPontos(pedidoId,delta){
 }
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
-const STATUS_CORES={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',cancelado:'#EF4444',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569',agendado:'#f97316'};
+const STATUS_CORES={recebido:'#e91e8c',pronto:'#e91e8c',aceito:'#eab308',chegou_local:'#06b6d4',em_rota:'#7c3aed',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#e91e8c',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569',agendado:'#e91e8c'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
@@ -1448,45 +1441,19 @@ function renderMapaPage(){
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface) !important;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;color:var(--text) !important;white-space:nowrap">📋 Pedidos do dia</span>
-          <input id="tf-busca" placeholder="Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;width:160px;font-family:Inter,sans-serif"/>
-          <select id="tf-entregador" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif"><option value="">Todos entregadores</option></select>
-          <select id="tf-status" onchange="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif">
-            <option value="">Todos status</option>
-            <option value="recebido">Recebido</option>
-            <option value="pronto">Pronto</option>
-            <option value="aceito">Aceito</option>
-            <option value="chegou_local">Chegou no local</option>
-            <option value="em_rota">Em rota</option>
-            <option value="chegou_destino">Chegou no destino</option>
-            <option value="retornando">Retornando</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
-          <input id="tf-data" type="date" value="${_dataHojeBrasilia()}" onchange="_tabelaMudarData()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface2) !important;color:var(--text) !important;outline:none;font-family:Inter,sans-serif"/>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
+          <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:7px;font-size:12px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
+          <input id="tf-busca" placeholder="🔍 Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid #3A3A3A;border-radius:7px;font-size:12px;background:#1E1E1E !important;color:#DDD !important;outline:none;min-width:180px;flex:1;font-family:Inter,sans-serif"/>
         </div>
-        <div style="flex:1;overflow:auto;background:var(--bg) !important;min-height:300px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:var(--bg) !important;border:1px solid var(--border)">
-            <thead style="position:sticky;top:0;z-index:2;background:#1a3a5c !important">
-              <tr style="background:#1a3a5c !important">
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Nº</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Hora</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Cliente</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Coleta</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Entrega</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Entregador</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Motoboy</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Taxa Cobrada</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Onde Cobrar</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Status</th>
-                <th style="padding:8px 12px;text-align:center;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Logística</th>
-                <th style="padding:8px 12px;text-align:center;border-bottom:2px solid #dee2e6;border-right:1px solid #2a4a6c;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Infos</th>
-                <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dee2e6;color:#FFFFFF !important;font-size:12px;text-transform:uppercase;letter-spacing:.5px">Ações</th>
+        <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
+            <thead style="position:sticky;top:0;z-index:2;background:#3A3A3A !important">
+              <tr style="background:#3A3A3A !important">
+                ${['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística'].map((h,i)=>`<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody id="tabela-mapa-body">
-              <tr><td colspan="13" style="text-align:center;padding:20px;color:#333 !important">Carregando...</td></tr>
+              <tr><td colspan="11" style="text-align:center;padding:20px;color:#999 !important">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1506,6 +1473,7 @@ function renderMapaPage(){
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     setInterval(_verificarAgendados,60000);
     setInterval(processarPontosAutomaticos,60000);
+    iniciarRealtimeSupabase();
   },100);
 }
 
@@ -1536,12 +1504,6 @@ async function carregarTabelaMapa(){
 function renderTabelaMapa(){
   const el=document.getElementById('tabela-mapa-body');
   if(!el)return;
-  const selEnt=document.getElementById('tf-entregador');
-  if(selEnt){
-    const curVal=selEnt.value;
-    selEnt.innerHTML='<option value="">Todos entregadores</option>'+
-      allMotoboys.map(e=>`<option value="${e.id}"${curVal===e.id?' selected':''}>${e.nome||e.id.substring(0,8)}</option>`).join('');
-  }
   const busca=(_tabelaFiltros.busca||'').toLowerCase();
   const filtEnt=_tabelaFiltros.entregador;
   const filtSt=_tabelaFiltros.status;
@@ -1560,10 +1522,11 @@ function renderTabelaMapa(){
   if(_tabelaPagina>=pagTotal)_tabelaPagina=pagTotal-1;
   const slice=filtered.slice(_tabelaPagina*20,(_tabelaPagina+1)*20);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='',bg='')=>`<td style="padding:8px 12px;border-bottom:1px solid #dee2e6;border-right:1px solid #dee2e6;color:#333 !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
+  const TD=(s,extra='',bg='')=>`<td style="padding:8px 12px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
   const rows=slice.map((p,i)=>{
-    const rowBg=i%2===0?'#FFFFFF':'#f8f9fa';
+    const rowBg=i%2===0?'#2D2D2D':'#333333';
     const sk=getStatusKey(p);
+    const badgeCor=STATUS_CORES[sk]||'#888';
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
     const ent=allMotoboys.find(e=>e.id===entId);
@@ -1573,26 +1536,20 @@ function renderTabelaMapa(){
     const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
     const hora=p.created_at?formatarHora(p.created_at):'—';
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
-      ${TD(`<span style="font-weight:700;color:#1a3a5c">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
-      ${TD(`<span style="font-weight:600;color:#555;white-space:nowrap">${hora}</span>`,'',rowBg)}
-      ${TD(p.nome_cliente||p.cliente||'—','',rowBg)}
-      ${TD(loja?.nome||'—','',rowBg)}
-      ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${endereco}</span>`,'',rowBg)}
-      ${TD(ent?.nome||`<span style="color:#aaa">—</span>`,'',rowBg)}
-      ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#059669">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#aaa;font-size:11px">—</span>`,'',rowBg)}
-      ${TD(`<span style="font-weight:700;color:#1A56DB">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
-      ${TD(p.forma_pagamento||p.onde_cobrar||'—','',rowBg)}
-      ${TD(`<span id="tabela-badge-${p.id}" class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="font-size:12px;padding:4px 12px;font-weight:700;cursor:pointer;user-select:none">${sk==='agendado'&&p.agendado_para?'⏰ Agendado '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>`,'',rowBg)}
-      ${TD(`${logoOk} 👤`,'text-align:center',rowBg)}
-      ${TD(`<button onclick="event.stopPropagation();_irParaPedido('${p.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="Destacar no painel">ℹ️</button>`,'text-align:center',rowBg)}
-      ${TD(`<span style="display:inline-flex;gap:3px;align-items:center">
-        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Editar">✏️</button>
-        <button onclick="event.stopPropagation();_localizarPedidoMapa('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Localizar">📍</button>
-        <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" style="background:none;border:1px solid #dee2e6;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center" title="Configurações">⚙️</button>
-      </span>`,'white-space:nowrap',rowBg)}
+      ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
+      ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
+      ${TD(`<span style="color:#DDD">${p.nome_cliente||p.cliente||'—'}</span>`,'',rowBg)}
+      ${TD(`<span style="color:#BBB;font-size:12px">${loja?.nome||'—'}</span>`,'',rowBg)}
+      ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;color:#DDD">${endereco}</span>`,'',rowBg)}
+      ${TD(`<span style="color:#DDD">${ent?.nome||'<span style="color:#555">—</span>'}</span>`,'',rowBg)}
+      ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg)}
+      ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
+      ${TD(`<span style="color:#BBB">${p.forma_pagamento||p.onde_cobrar||'—'}</span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;user-select:none;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:9px">▾</span></span>`,'',rowBg)}
+      ${TD(`${logoOk}`,'text-align:center',rowBg)}
     </tr>`;
   }).join('');
-  el.innerHTML=rows||`<tr><td colspan="13" style="text-align:center;padding:20px;color:#999">Nenhum pedido encontrado</td></tr>`;
+  el.innerHTML=rows||`<tr><td colspan="11" style="text-align:center;padding:20px;color:#555">Nenhum pedido encontrado</td></tr>`;
   const pInfo=document.getElementById('tabela-mapa-pag');
   if(pInfo)pInfo.textContent=`Página ${_tabelaPagina+1} de ${pagTotal} (${total} pedido${total!==1?'s':''})`;
   const btnPrev=document.getElementById('tabela-mapa-prev');
@@ -1604,8 +1561,8 @@ function renderTabelaMapa(){
 function _tabelaFiltrar(){
   _tabelaPagina=0;
   _tabelaFiltros.busca=document.getElementById('tf-busca')?.value||'';
-  _tabelaFiltros.entregador=document.getElementById('tf-entregador')?.value||'';
-  _tabelaFiltros.status=document.getElementById('tf-status')?.value||'';
+  _tabelaFiltros.entregador='';
+  _tabelaFiltros.status='';
   renderTabelaMapa();
 }
 
@@ -1699,6 +1656,23 @@ async function atualizarTudo(){
   setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosData.length);setVal('ms-cancelados',canceladosData.length);
   renderPedidosLista();if(map)atualizarMarcadores();
   carregarTabelaMapa();
+}
+
+let _wsRealtime=null,_wsHeartbeat=null,_wsReconTimer=null;
+function iniciarRealtimeSupabase(){
+  if(_wsRealtime){try{_wsRealtime.close();}catch(_){} _wsRealtime=null;}
+  clearInterval(_wsHeartbeat);clearTimeout(_wsReconTimer);
+  const wsUrl=SB_URL.replace('https://','wss://')+'/realtime/v1/websocket?apikey='+SB_KEY+'&vsn=1.0.0';
+  try{_wsRealtime=new WebSocket(wsUrl);}catch(e){return;}
+  _wsRealtime.onopen=()=>{
+    _wsRealtime.send(JSON.stringify({topic:'realtime:public:pedidos',event:'phx_join',payload:{config:{broadcast:{self:false},presence:{key:''},postgres_changes:[{event:'INSERT',schema:'public',table:'pedidos'},{event:'UPDATE',schema:'public',table:'pedidos'}]}},ref:'1',join_ref:'1'}));
+    _wsHeartbeat=setInterval(()=>{if(_wsRealtime?.readyState===1)_wsRealtime.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));},30000);
+  };
+  _wsRealtime.onmessage=e=>{
+    try{const m=JSON.parse(e.data);if(m.event==='postgres_changes'||m.payload?.data?.type==='INSERT'||m.payload?.data?.type==='UPDATE')atualizarTudo();}catch(_){}
+  };
+  _wsRealtime.onclose=()=>{clearInterval(_wsHeartbeat);_wsReconTimer=setTimeout(iniciarRealtimeSupabase,5000);};
+  _wsRealtime.onerror=()=>{try{_wsRealtime.close();}catch(_){}};
 }
 
 function renderPedidosLista(){
@@ -1821,10 +1795,11 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3)">${horaC}</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
-                <button class="pd-action-btn" onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar">✏️</button>
-                <button class="pd-action-btn" onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar">🛵</button>
+                <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#BBB;padding:0">✏</button>
+                <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#BBB;padding:0">👤</button>
+                ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:${sk==='pronto'?'#e91e8c':'#BBB'};padding:0">✓</button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
-                  <span ${prontoAnim} class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="cursor:pointer;user-select:none;font-size:11px;padding:2px 7px${sk==='pronto'?';background:#EC4899 !important;color:#fff !important':''}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} ▾</span>
+                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;background:${STATUS_CORES[sk]+'22'};color:${STATUS_CORES[sk]||'#888'};border:1px solid ${STATUS_CORES[sk]+'55'}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>
                 </span>
               </div>
             </div>
