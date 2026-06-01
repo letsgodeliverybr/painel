@@ -739,8 +739,8 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 340px;
-      min-width: 340px;
+      width: 420px;
+      min-width: 420px;
       flex-shrink: 0 !important;
       transition: width 0.3s ease, min-width 0.3s ease;
     }
@@ -1592,7 +1592,7 @@ function _localizarPedidoMapa(id){
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
-  const SB_W=340,SNAP=80;
+  const SB_W=420,SNAP=80;
   let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
   // Handle de arrasto (faixa de 8px na borda direita da sidebar)
   const handle=document.createElement('div');
