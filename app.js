@@ -39,7 +39,7 @@ function _calcTaxaMotoboy(p){
   if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
-  if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
+  valor+=(parseFloat(p.preco_dinamico)||0);
   valor+=(parseFloat(p.gorjeta)||0);
   return Math.round(valor*100)/100;
 }
@@ -50,10 +50,11 @@ function _calcTaxaLoja(p){
   if(!faixa) return parseFloat(p.taxa_entrega)||0;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
-  if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
+  valor+=(parseFloat(p.preco_dinamico)||0);
   return Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
 }
 let _precoDinTimers={};
+let _precoDinValores={cliente:0,entregador:0};
 
 // ── BRASÍLIA TIMEZONE HELPERS ──
 const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(new Date(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
@@ -1010,6 +1011,20 @@ function tocarSomPronto(){
   }catch(e){}
 }
 
+async function _aplicarPrecoDinamico(p){
+  const pdC=_precoDinValores['cliente']||0;
+  const pdE=_precoDinValores['entregador']||0;
+  if(pdC<=0&&pdE<=0)return;
+  const merged={...p,preco_dinamico:pdC};
+  const taxa_entrega=_calcTaxaLoja(merged);
+  const mergedE={...p,preco_dinamico:pdE};
+  const taxa_entrega_motoboy=_calcTaxaMotoboy(mergedE);
+  const patch={preco_dinamico:pdC,taxa_entrega,updated_at:new Date().toISOString()};
+  if(pdE>0)patch.taxa_entrega_motoboy=taxa_entrega_motoboy;
+  await db('pedidos','PATCH',patch,`?id=eq.${p.id}`);
+  Object.assign(p,patch);
+}
+
 async function processarAutoPronto(){
   const agora=new Date();
   const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&p.recebido_em);
@@ -1018,6 +1033,7 @@ async function processarAutoPronto(){
     if(diff>=60){
       const codigo=String(Math.floor(Math.random()*9000)+1000);
       await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora.toISOString(),codigo_confirmacao:codigo,updated_at:agora.toISOString()},`?id=eq.${p.id}`);
+      await _aplicarPrecoDinamico(p);
     }
   }
 }
@@ -1340,6 +1356,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
   const agora=new Date().toISOString();
   await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${pedidoId}`);
+  const _p=allPedidos.find(x=>x.id===pedidoId);if(_p)await _aplicarPrecoDinamico(_p);
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
   showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');
@@ -2650,9 +2667,10 @@ function _renderPrecoDinamicoTab(el,tipo){
     const valor=parseFloat(dataValor[0]?.valor||0);
     if(input)input.value=valor.toFixed(2);
     if(valor>0&&dataAtivado[0]?.valor){
+      _precoDinValores[tipo]=valor;
       _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
       localStorage.setItem(_lsKey,dataAtivado[0].valor);
-    }else if(valor===0){localStorage.removeItem(_lsKey);}
+    }else{_precoDinValores[tipo]=0;localStorage.removeItem(_lsKey);}
   });
 }
 
@@ -2688,6 +2706,7 @@ function _iniciarBarraPrecoDin(tipo,ativadoEm){
 }
 
 async function _desativarPrecoDinamico(tipo){
+  _precoDinValores[tipo]=0;
   localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
   const input=document.getElementById(`preco-din-valor-${tipo}`);
   if(input)input.value='0.00';
@@ -2718,10 +2737,11 @@ async function salvarPrecoDinamico(tipo){
     }else{
       await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
     }
+    _precoDinValores[tipo]=valor;
     localStorage.setItem(`_pdAtivadoEm_${tipo}`,agora);
     _iniciarBarraPrecoDin(tipo,new Date(agora));
   }else{
-    // Desligando manualmente
+    _precoDinValores[tipo]=0;
     localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
     if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
     const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
