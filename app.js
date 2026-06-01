@@ -2195,8 +2195,7 @@ function _parsearEnderecoNumerado(val){
   const m=val.match(/^(.+?)[,\s]+(\d+)(.*)/);
   if(!m)return null;
   const rua=m[1].trim(),numero=m[2].trim(),resto=m[3].replace(/^[,\s]+/,'').trim();
-  // Query: "101 Rua X, Ribeirão Preto, Brazil" — número primeiro para geocodificação exata
-  const q=encodeURIComponent(`${numero} ${rua}, Ribeirão Preto, Brazil`);
+  const q=encodeURIComponent(`${numero} ${rua}, Brasil`);
   return{numero,rua,resto,q};
 }
 function _labelComNumero(res,numero){
@@ -2209,19 +2208,28 @@ function _labelComNumero(res,numero){
   const local=[bairro,cidade].filter(Boolean).join(', ');
   return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
-async function geocodificarEndereco(endereco,cidade='Ribeirão Preto',estado='SP'){
-  const NOM='https://nominatim.openstreetmap.org/search';
-  const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
+async function geocodificarEndereco(endereco,cidade='',estado=''){
+  const OPENCAGE_KEY='7391047cdf03436bb3cf28c5e00836d1';
   const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
   const base=_norm(endereco);
   const p=_parsearEnderecoNumerado(base);
+  const sufixo=[cidade,estado,'Brasil'].filter(Boolean).join(', ');
+  // OpenCage como primário
+  try{
+    const qOC=encodeURIComponent(p?`${p.numero} ${p.rua}, ${sufixo}`:`${base}, ${sufixo}`);
+    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${qOC}&key=${OPENCAGE_KEY}&countrycode=br&language=pt-BR&limit=1&no_annotations=1`);
+    const d=await r.json();
+    if(d?.results?.length){const res=d.results[0];return{lat:res.geometry.lat,lng:res.geometry.lng,display:res.formatted};}
+  }catch(e){}
+  // Fallback: Nominatim
+  const NOM='https://nominatim.openstreetmap.org/search';
+  const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
   const queries=p?[
-    encodeURIComponent(`${p.numero} ${p.rua}, ${cidade}, ${estado}, Brazil`),
-    encodeURIComponent(`${p.rua}, ${cidade}, ${estado}, Brazil`),
-    encodeURIComponent(`${base}, ${cidade}, Brazil`),
+    encodeURIComponent(`${p.numero} ${p.rua}, ${sufixo}`),
+    encodeURIComponent(`${p.rua}, ${sufixo}`),
+    encodeURIComponent(`${base}, ${sufixo}`),
   ]:[
-    encodeURIComponent(`${base}, ${cidade}, ${estado}, Brazil`),
-    encodeURIComponent(`${base}, ${cidade}, Brazil`),
+    encodeURIComponent(`${base}, ${sufixo}`),
   ];
   for(const q of queries){
     try{
@@ -2975,9 +2983,10 @@ async function renderFinanceiroPage(aba){
   _financeiroAba=aba||_financeiroAba||'gerar-pagamento';
   const abas=[
     {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamento'},
-    {id:'aprovar-saques',icon:'✅',label:'Aprovar Saques'},
+    {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamento'},
     {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobrança'},
     {id:'aprovar-cobrancas',icon:'💰',label:'Aprovar Cobranças'},
+    {id:'credito',icon:'💳',label:'Crédito'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -2996,7 +3005,17 @@ async function renderFinanceiroPage(aba){
   if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
   else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
   else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
+  else if(_financeiroAba==='credito')_renderCredito();
   else _renderAprovarCobrancas();
+}
+
+function _renderCredito(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">💳</div>
+    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Crédito</div>
+    <div style="font-size:14px;color:var(--text3)">Em breve</div>
+  </div></div>`;
 }
 
 async function _carregarResumoFinanceiro(){
@@ -3205,9 +3224,13 @@ function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>c
 
 async function _atualizarSaldoEntregador(entregador_id,valor){
   const ent=await db('entregadores','GET',null,`?id=eq.${entregador_id}&select=id,saldo`);
-  if(!ent||!ent[0])return;
-  const novoSaldo=Math.max(0,(parseFloat(ent[0].saldo)||0)-(parseFloat(valor)||0));
+  if(!ent||!ent[0]){console.warn('[SALDO] entregador não encontrado:',entregador_id);return;}
+  const saldoAtual=parseFloat(ent[0].saldo)||0;
+  const valorPago=parseFloat(valor)||0;
+  const novoSaldo=Math.max(0,saldoAtual-valorPago);
+  console.log(`[SALDO] entregador=${entregador_id} | saldo_antes=R$${saldoAtual.toFixed(2)} | pago=R$${valorPago.toFixed(2)} | saldo_depois=R$${novoSaldo.toFixed(2)}`);
   await dbPatch('entregadores',{saldo:Math.round(novoSaldo*100)/100,updated_at:new Date().toISOString()},`?id=eq.${entregador_id}`);
+  console.log(`[SALDO] atualização concluída para entregador=${entregador_id}`);
 }
 
 async function _aprovarSaquesSelecionados(){
@@ -3238,7 +3261,8 @@ async function recusarSaque(id){
   document.getElementById(`saque-row-${id}`)?.remove();
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
   renderNavSidebar(_navAtivo);
-  if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+  // Saque recusado: pagamento NÃO foi efetuado, saldo não é alterado.
+  console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
   _renderHistoricoAprovarSaques();
@@ -3805,8 +3829,8 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
         const base=_norm(val);
         const p=_parsearEnderecoNumerado(base);
         const q1=p
-          ?encodeURIComponent(`${p.numero} ${p.rua}, Ribeirão Preto, SP, Brazil`)
-          :encodeURIComponent(`${base}, Ribeirão Preto, SP, Brazil`);
+          ?encodeURIComponent(`${p.numero} ${p.rua}, Brasil`)
+          :encodeURIComponent(`${base}, Brasil`);
         let results=[];
         try{
           const r=await fetch(`${NOM}?q=${q1}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
@@ -3814,7 +3838,7 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
         }catch{}
         if(!results.length&&p){
           try{
-            const q2=encodeURIComponent(`${p.rua}, Ribeirão Preto, SP, Brazil`);
+            const q2=encodeURIComponent(`${p.rua}, Brasil`);
             const r=await fetch(`${NOM}?q=${q2}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
             results=await r.json();
           }catch{}
