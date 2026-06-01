@@ -3111,9 +3111,9 @@ async function _buscarPagamentos(){
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
-    db('saques','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=entregador_id`)
+    db('saques','GET',null,`?status=eq.pendente&select=entregador_id`)
   ]);
-  // Entregadores que já têm pagamento gerado (pendente ou pago) no período — excluir da lista
+  // Exclui apenas entregadores com saque pendente aguardando aprovação
   const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
   _gpResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
