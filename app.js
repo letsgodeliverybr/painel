@@ -2510,6 +2510,7 @@ async function abrirEditarEntregador(entId){
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',e.nome)),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
 ${row2(fi('E-mail',`<input value="${(e.email||'').replace(/"/g,'&quot;')}" readonly style="background:var(--surface2);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:not-allowed"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Para alterar o email entre em contato com o suporte</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
+${row1(fi('Código de Cadastro',inp('ee-codigo-cadastro',e.codigo_cadastro,'')))}
 ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
@@ -2533,6 +2534,7 @@ async function salvarEdicaoEntregador(entId){
   const dispVal=document.getElementById('ee-disponivel')?.value;
   const update={
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
+    codigo_cadastro:g('ee-codigo-cadastro')||null,
     rg:g('ee-rg'),data_nascimento:g('ee-nascimento')||null,
     cep:g('ee-cep'),bairro:g('ee-bairro'),logradouro:g('ee-logradouro'),
     numero_endereco:g('ee-end-numero'),complemento_end:g('ee-complemento'),
