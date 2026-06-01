@@ -1161,12 +1161,16 @@ async function calcularTaxaAuto(){
 }
 
 const TODOS_STATUS=[
-  {key:'agendado',label:'Agendado',cor:'#f97316'},
-  {key:'recebido',label:'Recebido',cor:'#EF4444'},{key:'pronto',label:'Pronto',cor:'#EC4899'},
-  {key:'aceito',label:'Aceito',cor:'#F59E0B'},{key:'chegou_local',label:'Chegou no local',cor:'#38BDF8'},
-  {key:'em_rota',label:'Em rota',cor:'#1A56DB'},{key:'chegou_destino',label:'Chegou no destino',cor:'#7C3AED'},
-  {key:'retornando',label:'Retornando',cor:'#10B981'},{key:'finalizado',label:'Finalizado',cor:'#10B981'},
-  {key:'cancelado',label:'Cancelado',cor:'#EF4444'},
+  {key:'agendado',     label:'Agendado',         cor:corStatus('agendado')},
+  {key:'recebido',     label:'Recebido',          cor:corStatus('recebido')},
+  {key:'pronto',       label:'Pronto',            cor:corStatus('pronto')},
+  {key:'aceito',       label:'Aceito',            cor:corStatus('aceito')},
+  {key:'chegou_local', label:'Chegou no local',   cor:corStatus('chegou_local')},
+  {key:'em_rota',      label:'Em rota',           cor:corStatus('em_rota')},
+  {key:'chegou_destino',label:'Chegou no destino',cor:corStatus('chegou_destino')},
+  {key:'retornando',   label:'Retornando',        cor:corStatus('retornando')},
+  {key:'finalizado',   label:'Finalizado',        cor:corStatus('finalizado')},
+  {key:'cancelado',    label:'Cancelado',         cor:corStatus('cancelado')},
 ];
 let _dropdownAberto=null;
 function abrirDropdownStatus(event,pedidoId){
@@ -1261,17 +1265,18 @@ async function alterarPontos(pedidoId,delta){
 }
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
-const STATUS_CORES={recebido:'#e91e8c',pronto:'#e91e8c',aceito:'#eab308',chegou_local:'#06b6d4',em_rota:'#7c3aed',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#e91e8c',disponivel:'#1A56DB',aguardando:'#eab308',entregue:'#475569',fila:'#475569',agendado:'#e91e8c'};
+const corStatus=(s)=>({agendado:'#ef4444',recebido:'#ef4444',cancelado:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',chegou_no_local:'#06b6d4',chegou_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a'}[s]||'#6b7280');
+const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
-function getStatusCor(p){return STATUS_CORES[getStatusKey(p)]||'#1A56DB';}
+function getStatusCor(p){return corStatus(getStatusKey(p));}
 
 function abrirInfoPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!p)return;
   const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
   const sk=p.status_detalhado||p.status||'';
-  const cor=STATUS_CORES[sk]||'#1A56DB';
+  const cor=corStatus(sk);
   const previsaoMs=new Date(p.created_at).getTime()+45*60*1000;
   const restanteMs=previsaoMs-Date.now();
   const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
@@ -1496,7 +1501,7 @@ async function carregarTabelaMapa(){
   const dataVal=dataInput?.value||_dataHojeBrasilia();
   _tabelaFiltros.data=dataVal;
   _tabelaPedidosDia=await db('pedidos','GET',null,
-    `?created_at=gte.${_inicioDiaBrasilia(dataVal)}&created_at=lte.${_fimDiaBrasilia(dataVal)}&order=created_at.desc&limit=500`
+    `?created_at=gte.${_inicioDiaBrasilia(dataVal)}&created_at=lte.${_fimDiaBrasilia(dataVal)}&status=not.in.(finalizado,cancelado)&status_detalhado=not.in.(finalizado,cancelado)&order=created_at.desc&limit=500`
   );
   renderTabelaMapa();
 }
@@ -1526,7 +1531,7 @@ function renderTabelaMapa(){
   const rows=slice.map((p,i)=>{
     const rowBg=i%2===0?'#2D2D2D':'#333333';
     const sk=getStatusKey(p);
-    const badgeCor=STATUS_CORES[sk]||'#888';
+    const badgeCor=corStatus(sk);
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
     const ent=allMotoboys.find(e=>e.id===entId);
@@ -1799,7 +1804,7 @@ function renderPedidosLista(){
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#BBB;padding:0">👤</button>
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:${sk==='pronto'?'#e91e8c':'#BBB'};padding:0">✓</button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
-                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;background:${STATUS_CORES[sk]+'22'};color:${STATUS_CORES[sk]||'#888'};border:1px solid ${STATUS_CORES[sk]+'55'}">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>
+                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>
                 </span>
               </div>
             </div>
