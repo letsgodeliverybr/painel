@@ -2257,7 +2257,7 @@ function renderCadastrosPage(aba){
     {id:'clientes',    icon:'🏪', label:'Clientes'},
     {id:'entregadores',icon:'🛵', label:'Entregadores'},
     {id:'usuarios',    icon:'👥', label:'Usuários'},
-    {id:'precificacao',icon:'💰', label:'Precificação Padrão'},
+    {id:'precificacao',icon:'💰', label:'Tabelas Cobrança/Pgto'},
     {id:'preco-din',   icon:'📈', label:'Preço Dinâmico'},
     {id:'preco-din-ent',icon:'📈',label:'Preço Din. Entregador'},
   ];
