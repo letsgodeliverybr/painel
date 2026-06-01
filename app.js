@@ -1871,6 +1871,7 @@ function renderPedidosLista(){
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const clienteNome=p.cliente_nome||p.nome_cliente||p.cliente||'';
       const telefone=p.telefone||p.telefone_cliente||'';
+      const loja=allLojas.find(l=>l.id===p.loja_id);
       const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
       const txMoto=_calcTaxaMotoboy(p);
       const txLoja=_calcTaxaLoja(p);
@@ -2257,7 +2258,7 @@ function renderCadastrosPage(aba){
     {id:'clientes',    icon:'🏪', label:'Clientes'},
     {id:'entregadores',icon:'🛵', label:'Entregadores'},
     {id:'usuarios',    icon:'👥', label:'Usuários'},
-    {id:'precificacao',icon:'💰', label:'Tabelas Cobrança/Pgto'},
+    {id:'precificacao',icon:'💰', label:'Cobrança e Pagamento'},
     {id:'preco-din',   icon:'📈', label:'Preço Dinâmico'},
     {id:'preco-din-ent',icon:'📈',label:'Preço Din. Entregador'},
   ];
@@ -3083,7 +3084,7 @@ function renderConfiguracaoPage(aba){
 
 let _tabAba='cobranca';
 async function renderTabelasPrecoPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">💰 Tabelas de Preços</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">💰 Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   _tabAba='cobranca';await carregarTabelasPreco();
 }
 function trocarAbaTabela(aba){_tabAba=aba;const bc=document.getElementById('aba-cobranca'),bp=document.getElementById('aba-pagamento');if(aba==='cobranca'){bc.style.borderBottom='2px solid var(--accent)';bc.style.color='var(--accent)';bp.style.borderBottom='2px solid transparent';bp.style.color='var(--text3)';}else{bp.style.borderBottom='2px solid #10b981';bp.style.color='#10b981';bc.style.borderBottom='2px solid transparent';bc.style.color='var(--text3)';}carregarTabelasPreco();}
