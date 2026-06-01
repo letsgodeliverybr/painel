@@ -1954,10 +1954,10 @@ function renderPedidosLista(){
               </div>
             </div>
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
-            <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
+            <div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${p.endereco?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${(p.endereco).slice(0,45)}${p.endereco.length>45?'…':''}</a>`:'—'}</div>
             ${loja?`<div style="font-size:11px;color:#aaa;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🏪 ${loja.nome||''}</div>
             ${loja.telefone?`<a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#25D366;font-weight:600;text-decoration:none">📞 ${loja.telefone}</a>`:''}
-            ${loja.endereco?`<div style="display:flex;align-items:center;gap:4px;margin-top:2px"><span style="font-size:10px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${loja.endereco}</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loja.endereco)}" target="_blank" onclick="event.stopPropagation()" title="Google Maps" style="font-size:13px;text-decoration:none">🗺️</a><a href="waze://?q=${encodeURIComponent(loja.endereco)}" target="_blank" onclick="event.stopPropagation()" title="Waze" style="font-size:13px;text-decoration:none">🚗</a></div>`:''}`:
+            ${loja.endereco?`<div style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loja.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${loja.endereco}</a></div>`:''}`:
             ''}
           </div>
         </div>
