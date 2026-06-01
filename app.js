@@ -2330,7 +2330,7 @@ async function _renderClientesTab(el){
   el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-clientes"></tbody></table></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-clientes');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
 async function _renderEntregadoresTab(el){
@@ -2375,6 +2375,7 @@ async function _renderEntregadoresTab(el){
         <td style="white-space:nowrap">
           <button onclick="_aprovarEntregador('${e.id}')" style="background:#10b981;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-right:5px">✅ Aprovar</button>
           <button onclick="_reprovarEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:#ef4444;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">❌ Reprovar</button>
+          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-left:5px">🗑️</button>
         </td>
       </tr>`).join('');
   } else {
@@ -2388,7 +2389,7 @@ async function _renderEntregadoresTab(el){
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
-        <td><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td>
+        <td style="white-space:nowrap"><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td>
       </tr>`).join('');
   }
 
@@ -2478,6 +2479,20 @@ async function _confirmarReprovacao(id){
   document.getElementById('modal-reprovar-ent')?.classList.remove('open');
   showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
   renderCadastrosPage('entregadores');
+}
+
+async function excluirEntregador(id,nome){
+  if(!confirm(`Tem certeza que deseja excluir o entregador "${nome}"?\nEsta ação não pode ser desfeita.`))return;
+  await db('entregadores','DELETE',null,`?id=eq.${id}`);
+  showNotif('🗑️ Entregador excluído','','var(--red)');
+  renderCadastrosPage('entregadores');
+}
+
+async function excluirLoja(id,nome){
+  if(!confirm(`Tem certeza que deseja excluir a loja "${nome}"?\nEsta ação não pode ser desfeita.`))return;
+  await db('lojas','DELETE',null,`?id=eq.${id}`);
+  showNotif('🗑️ Loja excluída','','var(--red)');
+  renderCadastrosPage('clientes');
 }
 
 async function abrirEditarEntregador(entId){
@@ -2784,7 +2799,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏪 Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
 async function abrirEditarLoja(lojaId){
@@ -3023,7 +3038,7 @@ function _renderGerarPagamento(){
 
 async function _carregarHistoricoSaques(append){
   const el=document.getElementById('gp-historico');if(!el)return;
-  const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&status=eq.pendente&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
+  const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
   const rows=Array.isArray(saques)?saques:[];
   if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum pagamento gerado ainda</div>';return;}
   const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
