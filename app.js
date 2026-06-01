@@ -2997,11 +2997,13 @@ async function _carregarResumoFinanceiro(){
 }
 
 // ── GERAR PAGAMENTO ──
+let _gpHistoricoOffset=0;
+const _gpHistoricoPageSize=20;
 function _renderGerarPagamento(){
   const el=document.getElementById('financeiro-content');if(!el)return;
   const hoje=_dataHojeBrasilia();
   el.innerHTML=`
-    <div class="card"><div style="padding:20px">
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
           <input type="date" id="gp-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
@@ -3010,8 +3012,48 @@ function _renderGerarPagamento(){
         <button onclick="_buscarPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="gp-lista"></div>
+    </div></div>
+    <div class="card"><div style="padding:16px 20px 8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">📋 Pagamentos Gerados</div>
+      <div id="gp-historico"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div></div>`;
+  _gpHistoricoOffset=0;
+  _carregarHistoricoSaques(false);
 }
+
+async function _carregarHistoricoSaques(append){
+  const el=document.getElementById('gp-historico');if(!el)return;
+  const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
+  const rows=Array.isArray(saques)?saques:[];
+  if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum pagamento gerado ainda</div>';return;}
+  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
+  const html=rows.map(s=>`<tr>
+    <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
+    <td>${s.qtd_pedidos??'—'}</td>
+    <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+    <td style="font-size:12px;color:var(--text2)">${s.data_inicio&&s.data_fim?`${s.data_inicio} – ${s.data_fim}`:formatarData(s.created_at)}</td>
+    <td>${statusBadge(s.status)}</td>
+  </tr>`).join('');
+  if(append){
+    const tbody=el.querySelector('tbody');
+    if(tbody)tbody.insertAdjacentHTML('beforeend',html);
+  } else {
+    el.innerHTML=`<div style="overflow-x:auto;max-height:400px;overflow-y:auto" id="gp-hist-scroll"><table style="width:100%">
+      <thead><tr><th>Entregador</th><th>Pedidos</th><th>Valor</th><th>Período</th><th>Status</th></tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+    ${rows.length===_gpHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
+  }
+  _gpHistoricoOffset+=rows.length;
+  if(append&&rows.length===_gpHistoricoPageSize){
+    const btn=el.querySelector('button[onclick="_gpCarregarMais()"]');
+    if(!btn){el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>');}
+  } else if(append){
+    el.querySelector('button[onclick="_gpCarregarMais()"]')?.parentElement?.remove();
+  }
+}
+
+function _gpCarregarMais(){_carregarHistoricoSaques(true);}
 
 async function _buscarPagamentos(){
   const inicio=document.getElementById('gp-data-inicio')?.value;
@@ -3056,17 +3098,25 @@ function _gpToggleAll(checked){document.querySelectorAll('.gp-cb').forEach(cb=>c
 async function _gerarPagamento(){
   const selecionados=[...document.querySelectorAll('.gp-cb:checked')].map(cb=>cb.value);
   if(!selecionados.length){showNotif('Atenção','Selecione ao menos um entregador','var(--yellow)');return;}
+  const inicio=document.getElementById('gp-data-inicio')?.value||null;
+  const fim=document.getElementById('gp-data-fim')?.value||null;
   const agora=new Date().toISOString();let ok=0;
   for(const eid of selecionados){
     const r=_gpResultados[eid];if(!r)continue;
     const valor=Math.round(r.total*100)/100;
-    const res=await db('saques','POST',{entregador_id:eid,valor,status:'pendente',created_at:agora,updated_at:agora});
+    const res=await db('saques','POST',{entregador_id:eid,valor,status:'pendente',qtd_pedidos:r.qtd,data_inicio:inicio,data_fim:fim,created_at:agora,updated_at:agora});
     if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
   }
-  showNotif(`✅ ${ok} pagamento(s) gerado(s)!`,'');
-  _saquesPendentesCount+=ok;renderNavSidebar(_navAtivo);
-  _carregarResumoFinanceiro();
-  _buscarPagamentos();
+  if(ok>0){
+    showNotif(`✅ ${ok} pagamento(s) gerado(s)!`,'');
+    _saquesPendentesCount+=ok;renderNavSidebar(_navAtivo);
+    _carregarResumoFinanceiro();
+    _gpHistoricoOffset=0;
+    _carregarHistoricoSaques(false);
+    document.getElementById('gp-lista').innerHTML='';
+  } else {
+    showNotif('❌ Erro ao gerar pagamento','Verifique as permissões da tabela saques no Supabase','var(--red)');
+  }
 }
 
 // ── APROVAR SAQUES ──
