@@ -3108,13 +3108,17 @@ async function _buscarPagamentos(){
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const [pedidos,entregadores]=await Promise.all([
+  const [pedidos,entregadores,saquesExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta`),
-    db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco')
+    db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
+    db('saques','GET',null,`?status=in.(pendente,pago)&data_inicio=eq.${inicio}&data_fim=eq.${fim}&select=entregador_id`)
   ]);
+  // Entregadores que já têm pagamento gerado (pendente ou pago) no período — excluir da lista
+  const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
   _gpResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
+    if(jaPagos.has(eid))return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
     _gpResultados[eid].total+=p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
     _gpResultados[eid].qtd++;
