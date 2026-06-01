@@ -1158,13 +1158,14 @@ async function _criarEntregaRapida(){
   const numero=(document.getElementById('cr-numero')?.value||'').trim();
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
+  const gorjeta=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const fb=document.getElementById('tabela-mapa-pag')||null;
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
   const result=await db('pedidos','POST',pedido);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
@@ -1172,6 +1173,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
+    document.getElementById('cr-gorjeta').value='';
     _criarRetornoAtivo=false;
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
@@ -1514,6 +1516,7 @@ function renderMapaPage(){
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
+          <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
