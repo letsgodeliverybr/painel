@@ -699,6 +699,7 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       font-size: 13px !important;
     }
     .status-dropdown-item:hover { background: var(--surface2) !important; }
+    .status-dot { width:10px !important; height:10px !important; border-radius:50% !important; flex-shrink:0 !important; display:inline-block !important; }
 
     /* ── PAGAMENTO ── */
     .btn-pagamento {
@@ -1174,16 +1175,16 @@ async function calcularTaxaAuto(){
 }
 
 const TODOS_STATUS=[
-  {key:'agendado',     label:'Agendado',         cor:corStatus('agendado')},
-  {key:'recebido',     label:'Recebido',          cor:corStatus('recebido')},
-  {key:'pronto',       label:'Pronto',            cor:corStatus('pronto')},
-  {key:'aceito',       label:'Aceito',            cor:corStatus('aceito')},
-  {key:'chegou_local', label:'Chegou no local',   cor:corStatus('chegou_local')},
-  {key:'em_rota',      label:'Em rota',           cor:corStatus('em_rota')},
-  {key:'chegou_destino',label:'Chegou no destino',cor:corStatus('chegou_destino')},
-  {key:'retornando',   label:'Retornando',        cor:corStatus('retornando')},
-  {key:'finalizado',   label:'Finalizado',        cor:corStatus('finalizado')},
-  {key:'cancelado',    label:'Cancelado',         cor:corStatus('cancelado')},
+  {key:'agendado',       label:'Agendado',          cor:'#ef4444'},
+  {key:'recebido',       label:'Recebido',           cor:'#ef4444'},
+  {key:'pronto',         label:'Pronto',             cor:'#e91e8c'},
+  {key:'aceito',         label:'Aceito',             cor:'#eab308'},
+  {key:'chegou_no_local',label:'Chegou no local',    cor:'#06b6d4'},
+  {key:'em_rota',        label:'Em rota',            cor:'#1A56DB'},
+  {key:'chegou_destino', label:'Chegou no destino',  cor:'#7c3aed'},
+  {key:'retornando',     label:'Retornando',         cor:'#16a34a'},
+  {key:'finalizado',     label:'Finalizado',         cor:'#16a34a'},
+  {key:'cancelado',      label:'Cancelado',          cor:'#ef4444'},
 ];
 let _dropdownAberto=null;
 function abrirDropdownStatus(event,pedidoId){
