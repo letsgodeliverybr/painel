@@ -3174,7 +3174,7 @@ async function _renderAprovarSaques(){
   _saquesPendentesMap={};
   (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
   if(!saques||!saques.length){
-    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div>`;
+    el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div><div id="as-historico-wrap"></div>`;
     _renderHistoricoAprovarSaques();
     return;
   }
@@ -3250,7 +3250,10 @@ async function _aprovarSaquesSelecionados(){
   renderNavSidebar(_navAtivo);
   showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
   _carregarResumoFinanceiro();
-  _renderHistoricoAprovarSaques();
+  // Se não há mais linhas pendentes na tabela, recarrega a tela para exibir estado vazio + histórico
+  const restantes=document.querySelectorAll('.as-cb').length;
+  if(restantes===0)_renderAprovarSaques();
+  else _renderHistoricoAprovarSaques();
 }
 
 async function recusarSaque(id){
@@ -3265,7 +3268,10 @@ async function recusarSaque(id){
   console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
-  _renderHistoricoAprovarSaques();
+  // Se não há mais linhas pendentes, recarrega para exibir estado vazio + histórico
+  const restantes=document.querySelectorAll('.as-cb').length;
+  if(restantes===0)_renderAprovarSaques();
+  else _renderHistoricoAprovarSaques();
 }
 
 // ── GERAR COBRANÇA ──
