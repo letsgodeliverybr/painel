@@ -2217,7 +2217,7 @@ async function geocodificarEndereco(endereco,cidade='',estado=''){
   // OpenCage como primário
   try{
     const qOC=encodeURIComponent(p?`${p.numero} ${p.rua}, ${sufixo}`:`${base}, ${sufixo}`);
-    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${qOC}&key=${OPENCAGE_KEY}&countrycode=br&language=pt-BR&limit=1&no_annotations=1`);
+    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${qOC}&key=${OPENCAGE_KEY}&countrycode=br&language=pt-BR&limit=1&no_annotations=1&bounds=-35,-75,-5,-28`);
     const d=await r.json();
     if(d?.results?.length){const res=d.results[0];return{lat:res.geometry.lat,lng:res.geometry.lng,display:res.formatted};}
   }catch(e){}
@@ -2993,7 +2993,7 @@ async function renderFinanceiroPage(aba){
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">💰 Total Pago (Semana)</div><div class="stat-value" id="fin-total-semana" style="font-size:22px">—</div></div>
-        <div class="stat-card"><div class="stat-label">⏳ Total Pendente</div><div class="stat-value" id="fin-total-pendente" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">⏳ Total Pendente</div><div style="display:flex;align-items:baseline;gap:8px"><div class="stat-value" id="fin-total-pendente" style="font-size:22px">—</div><span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3)">WALLET</span></div></div>
         <div class="stat-card"><div class="stat-label">📋 Saques Pendentes</div><div class="stat-value" id="fin-qtd-pendente" style="font-size:22px">—</div></div>
       </div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
@@ -3363,13 +3363,17 @@ async function _buscarCobrancas(){
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const [pedidos,lojas]=await Promise.all([
+  const [pedidos,lojas,cobrancasExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=loja_id,taxa_entrega`),
-    db('lojas','GET',null,'?select=id,nome')
+    db('lojas','GET',null,'?select=id,nome'),
+    db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=loja_id`)
   ]);
+  // Lojas que já têm cobrança gerada (pendente ou paga) no período — excluir da lista
+  const jaCobradasSet=new Set((Array.isArray(cobrancasExistentes)?cobrancasExistentes:[]).map(c=>c.loja_id));
   _gcResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
     const lid=p.loja_id;if(!lid)return;
+    if(jaCobradasSet.has(lid))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=parseFloat(p.taxa_entrega)||0;
     _gcResultados[lid].qtd++;
@@ -3904,32 +3908,19 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
     _autocompleteTimer=setTimeout(async()=>{
       const _acFb=feedbackId?document.getElementById(feedbackId):null;
       try{
-        const NOM='https://nominatim.openstreetmap.org/search';
-        const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
-        const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
-        const base=_norm(val);
-        const p=_parsearEnderecoNumerado(base);
-        const q1=p
-          ?encodeURIComponent(`${p.numero} ${p.rua}, Brasil`)
-          :encodeURIComponent(`${base}, Brasil`);
-        let results=[];
-        try{
-          const r=await fetch(`${NOM}?q=${q1}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
-          results=await r.json();
-        }catch{}
-        if(!results.length&&p){
-          try{
-            const q2=encodeURIComponent(`${p.rua}, Brasil`);
-            const r=await fetch(`${NOM}?q=${q2}&format=json&limit=8&addressdetails=1&countrycodes=br`,{headers:HDR});
-            results=await r.json();
-          }catch{}
-        }
+        const q=encodeURIComponent(`${val}, Brasil`);
+        const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${q}&key=7391047cdf03436bb3cf28c5e00836d1&countrycode=br&language=pt-BR&limit=8&no_annotations=1&bounds=-35,-75,-5,-28`);
+        const d=await r.json();
+        const results=Array.isArray(d?.results)?d.results:[];
         if(!results.length){
           dropdown.style.display='none';
-          if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Número não encontrado, tente outro endereço</span>';
+          if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Endereço não encontrado, tente novamente</span>';
           return;
         }
-        dropdown.innerHTML=results.map(res=>{const lbl=_labelComNumero(res,p?.numero);return`<div data-lat="${res.lat}" data-lng="${res.lon}" data-label="${lbl.replace(/"/g,"'")}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${lbl}</div>`;}).join('');
+        dropdown.innerHTML=results.map(res=>{
+          const lbl=(res.formatted||'').replace(/"/g,"'");
+          return`<div data-lat="${res.geometry.lat}" data-lng="${res.geometry.lng}" data-label="${lbl}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${res.formatted||lbl}</div>`;
+        }).join('');
         dropdown.querySelectorAll('div').forEach(item=>{
           item.addEventListener('click',()=>{
             const lat=parseFloat(item.dataset.lat),lng=parseFloat(item.dataset.lng);
