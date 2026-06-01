@@ -1452,15 +1452,15 @@ function renderMapaPage(){
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
-          <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:7px;font-size:12px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
-          <input id="tf-busca" placeholder="🔍 Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:5px 10px;border:1px solid #3A3A3A;border-radius:7px;font-size:12px;background:#1E1E1E !important;color:#DDD !important;outline:none;min-width:180px;flex:1;font-family:Inter,sans-serif"/>
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
+          <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
+          <input id="tf-busca" placeholder="🔍 Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:4px 8px 4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;min-width:160px;flex:1;font-family:Inter,sans-serif"/>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
             <thead style="position:sticky;top:0;z-index:2;background:#3A3A3A !important">
               <tr style="background:#3A3A3A !important">
-                ${['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística'].map((h,i)=>`<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">${h}</th>`).join('')}
+                ${['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística'].map((h,i)=>`<th style="padding:6px 7px;text-align:left;border-bottom:1px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody id="tabela-mapa-body">
@@ -1513,7 +1513,7 @@ const _TABELA_PAGE=20;
 function _buildTabelaRows(filtered,from){
   const to=Math.min(from+_TABELA_PAGE,filtered.length);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='',bg)=>`<td style="padding:8px 12px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
+  const TD=(s,extra='',bg)=>`<td style="padding:6px 7px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:11px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
   return filtered.slice(from,to).map((p,i)=>{
     const rowBg=(from+i)%2===0?'#2D2D2D':'#333333';
     const sk=getStatusKey(p);const badgeCor=corStatus(sk);
@@ -1533,8 +1533,8 @@ function _buildTabelaRows(filtered,from){
       ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg)}
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(`<span style="color:#BBB">${p.forma_pagamento||p.onde_cobrar||'—'}</span>`,'',rowBg)}
-      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;user-select:none;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:9px">▾</span></span>`,'',rowBg)}
-      ${TD(entId?'🛵':'<span style="opacity:.25">🛵</span>','text-align:center',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
+      ${TD(`<span style="font-size:12px;${entId?'':'opacity:.25'}"">🛵</span>`,'text-align:center;padding:3px 5px',rowBg)}
     </tr>`;
   }).join('');
 }
