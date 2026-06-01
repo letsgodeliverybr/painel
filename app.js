@@ -716,6 +716,7 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     /* ── PRONTO PULSE ── */
     .pronto-pulse { animation: pulse 1.5s infinite !important; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    @keyframes spin { to{transform:rotate(360deg)} }
 
     /* ── SIDEBAR (tema-aware) ── */
     .sb-dark {
@@ -1462,11 +1463,6 @@ function renderMapaPage(){
             </tbody>
           </table>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface) !important;flex-shrink:0">
-          <button id="tabela-mapa-prev" onclick="_tabelaIrPagina(-1)" disabled style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2) !important;color:var(--text) !important;font-family:Inter,sans-serif">← Ant</button>
-          <span id="tabela-mapa-pag" style="font-size:11px;color:var(--text2) !important;flex:1;text-align:center">—</span>
-          <button id="tabela-mapa-next" onclick="_tabelaIrPagina(1)" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2) !important;color:var(--text) !important;font-family:Inter,sans-serif">Próx →</button>
-        </div>
       </div>
     </div>`;
   iniciarDragSidebar();
@@ -1506,40 +1502,22 @@ async function carregarTabelaMapa(){
   renderTabelaMapa();
 }
 
-function renderTabelaMapa(){
-  const el=document.getElementById('tabela-mapa-body');
-  if(!el)return;
-  const busca=(_tabelaFiltros.busca||'').toLowerCase();
-  const filtEnt=_tabelaFiltros.entregador;
-  const filtSt=_tabelaFiltros.status;
-  let filtered=_tabelaPedidosDia.filter(p=>{
-    if(busca&&!(
-      (p.nome_cliente||p.cliente||'').toLowerCase().includes(busca)||
-      String(p.numero||'').includes(busca)
-    ))return false;
-    const entId=p.motoboy_id||p.entregador_id;
-    if(filtEnt&&entId!==filtEnt)return false;
-    if(filtSt&&getStatusKey(p)!==filtSt)return false;
-    return true;
-  });
-  const total=filtered.length;
-  const pagTotal=Math.max(1,Math.ceil(total/20));
-  if(_tabelaPagina>=pagTotal)_tabelaPagina=pagTotal-1;
-  const slice=filtered.slice(_tabelaPagina*20,(_tabelaPagina+1)*20);
+let _tabelaScrollFiltered=[],_tabelaScrollOffset=0,_tabelaScrollObserver=null;
+const _TABELA_PAGE=20;
+
+function _buildTabelaRows(filtered,from){
+  const to=Math.min(from+_TABELA_PAGE,filtered.length);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='',bg='')=>`<td style="padding:8px 12px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
-  const rows=slice.map((p,i)=>{
-    const rowBg=i%2===0?'#2D2D2D':'#333333';
-    const sk=getStatusKey(p);
-    const badgeCor=corStatus(sk);
+  const TD=(s,extra='',bg)=>`<td style="padding:8px 12px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:13px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
+  return filtered.slice(from,to).map((p,i)=>{
+    const rowBg=(from+i)%2===0?'#2D2D2D':'#333333';
+    const sk=getStatusKey(p);const badgeCor=corStatus(sk);
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
     const ent=allMotoboys.find(e=>e.id===entId);
-    const taxaCobrada=parseFloat(p.taxa_entrega)||0;
-    const taxaMotoboy=_calcTaxaMotoboy(p);
-    const endereco=p.endereco_entrega||p.endereco||'—';
-    const logoOk=entId?'🛵':'<span style="opacity:0.25">🛵</span>';
     const hora=p.created_at?formatarHora(p.created_at):'—';
+    const endereco=p.endereco_entrega||p.endereco||'—';
+    const taxaMotoboy=_calcTaxaMotoboy(p);const taxaCobrada=parseFloat(p.taxa_entrega)||0;
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -1551,32 +1529,53 @@ function renderTabelaMapa(){
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(`<span style="color:#BBB">${p.forma_pagamento||p.onde_cobrar||'—'}</span>`,'',rowBg)}
       ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;user-select:none;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:9px">▾</span></span>`,'',rowBg)}
-      ${TD(`${logoOk}`,'text-align:center',rowBg)}
+      ${TD(entId?'🛵':'<span style="opacity:.25">🛵</span>','text-align:center',rowBg)}
     </tr>`;
   }).join('');
-  el.innerHTML=rows||`<tr><td colspan="11" style="text-align:center;padding:20px;color:#555">Nenhum pedido encontrado</td></tr>`;
-  const pInfo=document.getElementById('tabela-mapa-pag');
-  if(pInfo)pInfo.textContent=`Página ${_tabelaPagina+1} de ${pagTotal} (${total} pedido${total!==1?'s':''})`;
-  const btnPrev=document.getElementById('tabela-mapa-prev');
-  const btnNext=document.getElementById('tabela-mapa-next');
-  if(btnPrev)btnPrev.disabled=_tabelaPagina===0;
-  if(btnNext)btnNext.disabled=_tabelaPagina>=pagTotal-1;
+}
+
+function _tabelaAnexarSentinela(){
+  const el=document.getElementById('tabela-mapa-body');if(!el)return;
+  if(_tabelaScrollOffset>=_tabelaScrollFiltered.length){
+    el.insertAdjacentHTML('beforeend',`<tr><td colspan="11" style="text-align:center;padding:12px;color:#555;font-size:12px;background:#2D2D2D">✓ Todos os pedidos carregados</td></tr>`);
+    return;
+  }
+  el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="11" style="padding:10px;text-align:center;background:#2D2D2D"><div style="width:20px;height:20px;border:2px solid #3A3A3A;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
+  const sentinel=document.getElementById('tabela-sentinel');if(!sentinel)return;
+  const root=el.parentElement?.parentElement;
+  _tabelaScrollObserver=new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting)return;
+    _tabelaScrollObserver.disconnect();_tabelaScrollObserver=null;
+    sentinel.remove();
+    const el2=document.getElementById('tabela-mapa-body');if(!el2)return;
+    el2.insertAdjacentHTML('beforeend',_buildTabelaRows(_tabelaScrollFiltered,_tabelaScrollOffset));
+    _tabelaScrollOffset=Math.min(_tabelaScrollOffset+_TABELA_PAGE,_tabelaScrollFiltered.length);
+    _tabelaAnexarSentinela();
+  },{root:root||null,threshold:0,rootMargin:'120px'});
+  _tabelaScrollObserver.observe(sentinel);
+}
+
+function renderTabelaMapa(){
+  if(_tabelaScrollObserver){_tabelaScrollObserver.disconnect();_tabelaScrollObserver=null;}
+  const el=document.getElementById('tabela-mapa-body');if(!el)return;
+  const busca=(_tabelaFiltros.busca||'').toLowerCase();
+  let filtered=_tabelaPedidosDia.filter(p=>{
+    if(busca&&!((p.nome_cliente||p.cliente||'').toLowerCase().includes(busca)||String(p.numero||'').includes(busca)))return false;
+    return true;
+  });
+  _tabelaScrollFiltered=filtered;_tabelaScrollOffset=0;
+  if(!filtered.length){el.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:20px;color:#555">Nenhum pedido encontrado</td></tr>`;return;}
+  el.innerHTML=_buildTabelaRows(filtered,0);
+  _tabelaScrollOffset=Math.min(_TABELA_PAGE,filtered.length);
+  _tabelaAnexarSentinela();
 }
 
 function _tabelaFiltrar(){
-  _tabelaPagina=0;
   _tabelaFiltros.busca=document.getElementById('tf-busca')?.value||'';
-  _tabelaFiltros.entregador='';
-  _tabelaFiltros.status='';
   renderTabelaMapa();
 }
-
-function _tabelaMudarData(){_tabelaPagina=0;carregarTabelaMapa();}
-
-function _tabelaIrPagina(delta){
-  _tabelaPagina+=delta;
-  renderTabelaMapa();
-}
+function _tabelaMudarData(){carregarTabelaMapa();}
+function _tabelaIrPagina(){}
 
 function _localizarPedidoMapa(id){
   const p=allPedidos.find(x=>x.id===id)||_tabelaPedidosDia.find(x=>x.id===id);
