@@ -1126,6 +1126,13 @@ async function abrirModal(id){
       iniciarAutocompleteEndereco('np-endereco','','','np-endereco-feedback');
     },80);
   }
+  if(id==='modal-loja'){
+    db('tabelas_preco','GET',null,'?order=nome.asc').then(tabs=>{
+      const opts='<option value="">Selecione...</option>'+tabs.map(t=>`<option value="${t.id}">${t.nome||t.id}</option>`).join('');
+      const sc=document.getElementById('loja-tabela-cobranca');if(sc)sc.innerHTML=opts;
+      const sp=document.getElementById('loja-tabela-pagamento');if(sp)sp.innerHTML=opts;
+    });
+  }
 }
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
 
@@ -2737,7 +2744,9 @@ async function renderLojasPage(){
 }
 
 async function abrirEditarLoja(lojaId){
-  const data=await db('lojas','GET',null,`?id=eq.${lojaId}`);const l=data[0];if(!l)return;
+  const [data,tabelas]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?order=nome.asc')]);
+  const l=data[0];if(!l)return;
+  const _tabOpts=(sel)=>'<option value="">Selecione...</option>'+tabelas.map(t=>`<option value="${t.id}"${t.id===sel?' selected':''}>${t.nome||t.id}</option>`).join('');
   let modal=document.getElementById('modal-editar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
@@ -2758,11 +2767,7 @@ ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione..
 ${r2(fi('Telefone',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('Celular',inp('el-celular',l.celular,'(16) 99999-9999')))}
 ${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
-${sec('📍 Coordenadas GPS')}
-<div style="background:#1A56DB10;border:1px solid #1A56DB40;border-radius:10px;padding:14px">
-${r2(fi('Latitude',`<input type="number" id="el-lat" step="0.000001" value="${v(l.latitude)}" placeholder="-21.1775" style="${is}"/>`),fi('Longitude',`<input type="number" id="el-lng" step="0.000001" value="${v(l.longitude)}" placeholder="-47.8103" style="${is}"/>`))}
-<button onclick="geocodificarLoja()" style="background:#1A56DB20;color:#1A56DB;border:1px solid #1A56DB50;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-top:4px">🔍 Buscar coordenadas pelo endereço</button>
-<div id="el-geo-feedback" style="margin-top:6px;font-size:12px"></div></div>
+${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${_tabOpts(l.tabela_cobranca_id)}</select>`),fi('Tabela de Pagamento (Motoboy)',`<select id="el-tabela-pagamento" style="${ss}">${_tabOpts(l.tabela_pagamento_id)}</select>`))}
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
@@ -2788,7 +2793,6 @@ async function geocodificarLoja(){
 async function salvarEdicaoLoja(lojaId){
   const fb=document.getElementById('el-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const g=(id)=>document.getElementById(id)?.value||'';
-  const lat=parseFloat(g('el-lat'))||null,lng=parseFloat(g('el-lng'))||null;
   const pj=g('el-pessoa-juridica');
   const update={
     nome:g('el-nome'),razao_social:g('el-razao-social'),
@@ -2797,7 +2801,9 @@ async function salvarEdicaoLoja(lojaId){
     tipo_cliente:g('el-tipo-cliente')||null,responsavel:g('el-responsavel'),
     telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
     pessoa_juridica:pj===''?null:pj==='true',
-    ativo:g('el-ativo')==='true',latitude:lat,longitude:lng,
+    ativo:g('el-ativo')==='true',
+    tabela_cobranca_id:g('el-tabela-cobranca')||null,
+    tabela_pagamento_id:g('el-tabela-pagamento')||null,
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
@@ -2812,7 +2818,9 @@ async function criarLoja(){
   const fb=document.getElementById('loja-feedback');
   if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha nome, e-mail e senha.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
-  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true});
+  const tabCobranca=document.getElementById('loja-tabela-cobranca')?.value||null;
+  const tabPagamento=document.getElementById('loja-tabela-pagamento')?.value||null;
+  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,tabela_cobranca_id:tabCobranca||null,tabela_pagamento_id:tabPagamento||null});
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
   await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
