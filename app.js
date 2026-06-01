@@ -1511,10 +1511,10 @@ function renderMapaPage(){
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
-          <div style="width:1px;height:28px;background:#E5E7EB;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:15px;color:#ef4444">0</div><div class="mapa-stat-label" style="font-size:10px">Cancelados</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#2D2D2D !important;border-bottom:1px solid #3A3A3A">
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#10b981;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#888">Finalizados hoje</div></div></div>
+          <div style="width:1px;height:22px;background:#3A3A3A;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#ef4444;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#888">Cancelados hoje</div></div></div>
         </div>
         <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
@@ -1774,13 +1774,14 @@ async function atualizarTudo(){
   const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
   const procurando=allPedidos.filter(p=>getStatusKey(p)==='pronto').length;
   const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','chegou_destino','retornando'].includes(getStatusKey(p))).length;
-  const [finalizadosData,canceladosData]=await Promise.all([
-    db('pedidos','GET',null,'?status=eq.finalizado&select=id&limit=500'),
-    db('pedidos','GET',null,'?status=eq.cancelado&select=id&limit=500'),
-  ]);
+  const _hoje=_dataHojeBrasilia();
+  const _ini=_inicioDiaBrasilia(_hoje),_fim=_fimDiaBrasilia(_hoje);
+  const contadoresHoje=await db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=in.(finalizado,cancelado)`);
+  const finalizadosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='finalizado').length;
+  const canceladosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='cancelado').length;
   const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   setVal('ms-online',online);setVal('ms-pedidos',allPedidos.length);setVal('ms-preparo',emPreparo);
-  setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosData.length);setVal('ms-cancelados',canceladosData.length);
+  setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosHoje);setVal('ms-cancelados',canceladosHoje);
   renderPedidosLista();if(map)atualizarMarcadores();
   carregarTabelaMapa();
 }
