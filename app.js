@@ -3156,6 +3156,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(window.matchMedia('(prefers-color-scheme: dark)').matches){
     document.documentElement.classList.add('dark');
   }
+  window._criarTabelas=async function(){
+    let tNome='',fNome='';
+    for(const t of ['tabelas_cobranca','tabelas_preco','precificacao','tabela_preco']){
+      const r=await db(t,'GET',null,'?limit=1');
+      if(Array.isArray(r)){tNome=t;console.log('PRINCIPAL:',t,JSON.stringify(r[0]));break;}
+    }
+    for(const t of ['faixas_cobranca','faixas_preco','faixas','precificacao_faixas','tabela_faixas','itens_tabela','tabelas_preco_faixas']){
+      const r=await db(t,'GET',null,'?limit=2');
+      if(Array.isArray(r)&&r.length>0){fNome=t;console.log('FAIXAS:',t,JSON.stringify(r));break;}
+    }
+    console.log('USE: tNome='+tNome+' fNome='+fNome);
+  };
   const card=document.querySelector('.login-card');
   if(card){
     if(!document.getElementById('login-logo-wrap')){
