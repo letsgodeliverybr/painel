@@ -3023,7 +3023,7 @@ function _renderGerarPagamento(){
 
 async function _carregarHistoricoSaques(append){
   const el=document.getElementById('gp-historico');if(!el)return;
-  const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
+  const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&status=eq.pendente&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
   const rows=Array.isArray(saques)?saques:[];
   if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum pagamento gerado ainda</div>';return;}
   const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
@@ -3120,11 +3120,15 @@ async function _gerarPagamento(){
 }
 
 // ── APROVAR SAQUES ──
+let _saquesPendentesMap={};
 async function _renderAprovarSaques(){
   const el=document.getElementById('financeiro-content');if(!el)return;
   const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
+  _saquesPendentesMap={};
+  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
   if(!saques||!saques.length){
     el.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600">Nenhum saque pendente</div></div>`;
+    _renderHistoricoAprovarSaques();
     return;
   }
   el.innerHTML=`
@@ -3132,7 +3136,7 @@ async function _renderAprovarSaques(){
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
       <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
     </div>
-    <div class="card"><div style="overflow-x:auto"><table>
+    <div class="card" style="margin-bottom:20px"><div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
       <tbody>${saques.map(s=>{const ent=s.entregadores||{};return`<tr id="saque-row-${s.id}">
         <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
@@ -3144,10 +3148,39 @@ async function _renderAprovarSaques(){
         <td>${ent.banco||'—'}</td>
         <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
-    </table></div></div>`;
+    </table></div></div>
+    <div id="as-historico-wrap"></div>`;
+  _renderHistoricoAprovarSaques();
+}
+
+async function _renderHistoricoAprovarSaques(){
+  const wrap=document.getElementById('as-historico-wrap');
+  if(!wrap)return;
+  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30');
+  if(!hist||!hist.length){wrap.innerHTML='';return;}
+  const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
+  wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Saques</div>
+    <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
+      <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>${hist.map(s=>`<tr>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.updated_at||s.created_at)}</td>
+        <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+        <td>${badge(s)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div></div>`;
 }
 
 function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>cb.checked=checked);}
+
+async function _atualizarSaldoEntregador(entregador_id,valor){
+  const ent=await db('entregadores','GET',null,`?id=eq.${entregador_id}&select=id,saldo`);
+  if(!ent||!ent[0])return;
+  const novoSaldo=Math.max(0,(parseFloat(ent[0].saldo)||0)-(parseFloat(valor)||0));
+  await dbPatch('entregadores',{saldo:Math.round(novoSaldo*100)/100,updated_at:new Date().toISOString()},`?id=eq.${entregador_id}`);
+}
 
 async function _aprovarSaquesSelecionados(){
   const ids=[...document.querySelectorAll('.as-cb:checked')].map(cb=>cb.value);
@@ -3155,22 +3188,32 @@ async function _aprovarSaquesSelecionados(){
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
     const res=await dbPatch('saques',{status:'pago',updated_at:agora},`?id=eq.${id}`);
-    if(res!==null){document.getElementById(`saque-row-${id}`)?.remove();ok++;}
+    if(res!==null){
+      document.getElementById(`saque-row-${id}`)?.remove();
+      ok++;
+      const s=_saquesPendentesMap[id];
+      if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+    }
   }
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-ok);
   renderNavSidebar(_navAtivo);
   showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
   _carregarResumoFinanceiro();
+  _renderHistoricoAprovarSaques();
 }
 
 async function recusarSaque(id){
-  const res=await dbPatch('saques',{status:'recusado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  const agora=new Date().toISOString();
+  const s=_saquesPendentesMap[id];
+  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}`);
   if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
   document.getElementById(`saque-row-${id}`)?.remove();
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
   renderNavSidebar(_navAtivo);
+  if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
+  _renderHistoricoAprovarSaques();
 }
 
 // ── GERAR COBRANÇA ──
