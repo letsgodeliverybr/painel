@@ -1159,16 +1159,19 @@ async function _criarEntregaRapida(){
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
   const gorjeta=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
+  const lojaId=document.getElementById('cr-loja-id')?.value||null;
+  if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const fb=document.getElementById('tabela-mapa-pag')||null;
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
   const result=await db('pedidos','POST',pedido);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
+    const selCrReset=document.getElementById('cr-loja-id');if(selCrReset)selCrReset.selectedIndex=0;
     document.getElementById('cr-numero').value='';
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-endereco').value='';
@@ -1509,7 +1512,7 @@ function renderMapaPage(){
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
         <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
-          <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
+          <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
@@ -1542,6 +1545,7 @@ function renderMapaPage(){
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
+    db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione a loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
     setInterval(_verificarAgendados,60000);
     setInterval(processarPontosAutomaticos,60000);
     iniciarRealtimeSupabase();
