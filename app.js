@@ -739,8 +739,8 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 500px;
-      min-width: 500px;
+      width: 600px;
+      min-width: 600px;
       flex-shrink: 0 !important;
       transition: width 0.3s ease, min-width 0.3s ease;
     }
@@ -1492,7 +1492,7 @@ function renderMapaPage(){
       </div>
     </div>
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
-      <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:60px;flex-shrink:0;overflow:hidden">
+      <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
@@ -1678,7 +1678,7 @@ function _iniciarResizeMapa(){
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
-  const SB_W=500,SNAP=80;
+  const SB_W=600,SNAP=80;
   let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
   // Handle de arrasto (faixa de 8px na borda direita da sidebar)
   const handle=document.createElement('div');
