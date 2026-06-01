@@ -1245,25 +1245,39 @@ const TODOS_STATUS=[
   {key:'cancelado',      label:'Cancelado',          cor:'#ef4444'},
 ];
 let _dropdownAberto=null;
-function abrirDropdownStatus(event,pedidoId){
-  event.stopPropagation();fecharDropdownStatus();
-  const wrapper=document.getElementById(`badge-wrapper-${pedidoId}`);if(!wrapper)return;
-  const dropdown=document.createElement('div');dropdown.className='status-dropdown';dropdown.id='status-dropdown-atual';
-  dropdown.innerHTML=TODOS_STATUS.map(s=>`<button class="status-dropdown-item" onclick="event.stopPropagation();alterarStatusPedido('${pedidoId}','${s.key}')"><span class="status-dot" style="background:${s.cor}"></span><span style="color:${s.cor}">${s.label}</span></button>`).join('');
-  wrapper.appendChild(dropdown);_dropdownAberto=pedidoId;
-  setTimeout(()=>document.addEventListener('click',fecharDropdownStatus,{once:true}),10);
+function _criarDropdown(pedidoId,itens){
+  if(_dropdownAberto){_dropdownAberto.remove();_dropdownAberto=null;}
+  const dd=document.createElement('div');
+  dd.id='status-dropdown-atual';
+  dd.style.cssText='position:fixed;z-index:99999;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:180px;overflow:hidden';
+  dd.innerHTML=itens;
+  document.body.appendChild(dd);
+  _dropdownAberto=dd;
+  setTimeout(()=>document.addEventListener('click',()=>{dd.remove();_dropdownAberto=null;},{once:true}),10);
+  return dd;
 }
-function fecharDropdownStatus(){const el=document.getElementById('status-dropdown-atual');if(el)el.remove();_dropdownAberto=null;}
-
+function _posicionarDropdown(dd,anchorEl){
+  const rect=anchorEl.getBoundingClientRect();
+  let top=rect.bottom+4,left=rect.left;
+  const ddH=dd.offsetHeight||220;
+  if(top+ddH>window.innerHeight)top=Math.max(4,rect.top-ddH-4);
+  if(left+180>window.innerWidth)left=Math.max(4,window.innerWidth-184);
+  dd.style.top=top+'px';dd.style.left=left+'px';
+}
+function abrirDropdownStatus(event,pedidoId){
+  event.stopPropagation();
+  const wrapper=document.getElementById('badge-wrapper-'+pedidoId);if(!wrapper)return;
+  const itens=TODOS_STATUS.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedido('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
+  const dd=_criarDropdown(pedidoId,itens);
+  _posicionarDropdown(dd,wrapper);
+}
+function fecharDropdownStatus(){if(_dropdownAberto){_dropdownAberto.remove();_dropdownAberto=null;}}
 function abrirDropdownStatusTabela(event,pedidoId){
-  event.stopPropagation();fecharDropdownStatus();
-  const rect=event.currentTarget.getBoundingClientRect();
-  const dropdown=document.createElement('div');
-  dropdown.className='status-dropdown';dropdown.id='status-dropdown-atual';
-  dropdown.style.cssText=`position:fixed;top:${rect.bottom+4}px;left:${rect.left}px;z-index:9999;min-width:180px`;
-  dropdown.innerHTML=TODOS_STATUS.map(s=>`<button class="status-dropdown-item" onclick="event.stopPropagation();alterarStatusPedidoTabela('${pedidoId}','${s.key}')"><span class="status-dot" style="background:${s.cor}"></span><span style="color:${s.cor}">${s.label}</span></button>`).join('');
-  document.body.appendChild(dropdown);_dropdownAberto=pedidoId;
-  setTimeout(()=>document.addEventListener('click',fecharDropdownStatus,{once:true}),10);
+  event.stopPropagation();
+  const anchor=event.currentTarget;
+  const itens=TODOS_STATUS.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoTabela('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
+  const dd=_criarDropdown(pedidoId,itens);
+  _posicionarDropdown(dd,anchor);
 }
 
 async function alterarStatusPedidoTabela(pedidoId,novoStatus){
