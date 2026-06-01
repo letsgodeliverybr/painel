@@ -1156,6 +1156,7 @@ function _criarEntregaRapidaToggle(){
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
   const numero=(document.getElementById('cr-numero')?.value||'').trim();
+  const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const agora=new Date().toISOString();
@@ -1163,11 +1164,12 @@ async function _criarEntregaRapida(){
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const fb=document.getElementById('tabela-mapa-pag')||null;
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente:'',status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
   const result=await db('pedidos','POST',pedido);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
     document.getElementById('cr-numero').value='';
+    document.getElementById('cr-cliente').value='';
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     _criarRetornoAtivo=false;
@@ -1509,6 +1511,7 @@ function renderMapaPage(){
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
+          <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
