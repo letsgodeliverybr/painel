@@ -2631,7 +2631,16 @@ function _renderPrecoDinamicoTab(el,tipo){
         <button class="btn-modal-primary" onclick="salvarPrecoDinamico('${tipo}')">💾 Salvar</button>
       </div>
     </div>`;
-  // Carrega valor atual e timestamp de ativação
+  // Restaurar estado do localStorage imediatamente (antes da query ao banco)
+  const _lsKey=`_pdAtivadoEm_${tipo}`;
+  const _lsVal=localStorage.getItem(_lsKey);
+  if(_lsVal){
+    const _lsDate=new Date(_lsVal);
+    const _restante=_lsDate.getTime()+120*60*1000-Date.now();
+    if(_restante>0){_iniciarBarraPrecoDin(tipo,_lsDate);}
+    else{localStorage.removeItem(_lsKey);}
+  }
+  // Carrega valor atual e timestamp de ativação do banco
   Promise.all([
     db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`),
     db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}_ativado_em`)
@@ -2639,7 +2648,10 @@ function _renderPrecoDinamicoTab(el,tipo){
     const input=document.getElementById(`preco-din-valor-${tipo}`);
     const valor=parseFloat(dataValor[0]?.valor||0);
     if(input)input.value=valor.toFixed(2);
-    if(valor>0&&dataAtivado[0]?.valor)_iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
+    if(valor>0&&dataAtivado[0]?.valor){
+      _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
+      localStorage.setItem(_lsKey,dataAtivado[0].valor);
+    }else if(valor===0){localStorage.removeItem(_lsKey);}
   });
 }
 
@@ -2675,6 +2687,7 @@ function _iniciarBarraPrecoDin(tipo,ativadoEm){
 }
 
 async function _desativarPrecoDinamico(tipo){
+  localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
   const input=document.getElementById(`preco-din-valor-${tipo}`);
   if(input)input.value='0.00';
   const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
@@ -2704,9 +2717,11 @@ async function salvarPrecoDinamico(tipo){
     }else{
       await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
     }
+    localStorage.setItem(`_pdAtivadoEm_${tipo}`,agora);
     _iniciarBarraPrecoDin(tipo,new Date(agora));
   }else{
     // Desligando manualmente
+    localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
     if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
     const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
     if(wrap)wrap.style.display='none';
@@ -3093,7 +3108,7 @@ async function carregarTabelasPreco(){
   const el=document.getElementById('tabelas-lista'),btnNovo=document.getElementById('tp-btn-novo');if(!el)return;
   if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_tabAba==='pagamento'?'➕ Novo Pagamento':'➕ Nova Cobrança';btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
-  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixas('${t.id}','${t.nome}','${t.tipo||'cobranca'}')">📊 Ver faixas</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixas('${t.id}','${t.nome}','${t.tipo||'cobranca'}')">📊 Ver faixas</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">📋</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 async function verFaixas(tabelaId,tabelaNome,tipo){
   const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelaId}&order=km_de.asc`);
@@ -3136,6 +3151,18 @@ async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
   showNotif('✅ Faixa atualizada!','');verFaixas(tabelaId,tabelaNome,tipo);
 }
 async function excluirTabela(id){if(!confirm('Excluir tabela e faixas?'))return;await db('tabelas_preco_faixas','DELETE',null,`?tabela_id=eq.${id}`);await db('tabelas_preco','DELETE',null,`?id=eq.${id}`);showNotif('🗑️ Excluída','','var(--red)');carregarTabelasPreco();}
+async function clonarTabela(id,nome){
+  showNotif('⏳ Clonando...','');
+  const orig=await db('tabelas_preco','GET',null,`?id=eq.${id}`);
+  if(!orig||!orig[0]){showNotif('Erro','Tabela não encontrada','var(--red)');return;}
+  const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${id}&order=km_de.asc`);
+  const base={...orig[0]};delete base.id;
+  const nova=await db('tabelas_preco','POST',{...base,nome:nome+' (cópia)',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+  if(!nova||!nova[0]){showNotif('Erro','Falha ao clonar','var(--red)');return;}
+  for(const f of faixas){const fc={...f};delete fc.id;await db('tabelas_preco_faixas','POST',{...fc,tabela_id:nova[0].id,created_at:new Date().toISOString()});}
+  showNotif('✅ Tabela clonada!',nova[0].nome);
+  carregarTabelasPreco();
+}
 
 async function renderLojaPedidosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">↻</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
