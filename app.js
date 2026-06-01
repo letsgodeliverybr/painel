@@ -3168,6 +3168,22 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     console.log('USE: tNome='+tNome+' fNome='+fNome);
   };
+  window._duplicarTabelasAgora=async function(){
+    const tabelaOriginal=await db('tabelas_preco','GET',null,'?id=eq.a1e291f2-f815-4f67-86bf-cd4e95fb5fb6');
+    console.log('tabela original:',JSON.stringify(tabelaOriginal));
+    const faixasOriginais=await db('tabelas_preco_faixas','GET',null,'?tabela_id=eq.a1e291f2-f815-4f67-86bf-cd4e95fb5fb6&order=km_de.asc');
+    console.log('faixas:',JSON.stringify(faixasOriginais));
+    if(!tabelaOriginal||!tabelaOriginal[0]){console.error('Tabela original não encontrada');return;}
+    const base={...tabelaOriginal[0]};delete base.id;
+    const t1=await db('tabelas_preco','POST',{...base,nome:'Restaurante Premium',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    console.log('t1 criada:',JSON.stringify(t1));
+    const t2=await db('tabelas_preco','POST',{...base,nome:'Cliente 100% Demanda',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    console.log('t2 criada:',JSON.stringify(t2));
+    if(t1&&t1[0]){for(const f of faixasOriginais){const fc={...f};delete fc.id;await db('tabelas_preco_faixas','POST',{...fc,tabela_id:t1[0].id,created_at:new Date().toISOString()});}console.log('faixas t1 copiadas!');}
+    if(t2&&t2[0]){for(const f of faixasOriginais){const fc={...f};delete fc.id;await db('tabelas_preco_faixas','POST',{...fc,tabela_id:t2[0].id,created_at:new Date().toISOString()});}console.log('faixas t2 copiadas!');}
+    console.log('CONCLUÍDO!');localStorage.setItem('_dupTabelas','1');
+  };
+  if(!localStorage.getItem('_dupTabelas'))setTimeout(()=>window._duplicarTabelasAgora(),3000);
   const card=document.querySelector('.login-card');
   if(card){
     if(!document.getElementById('login-logo-wrap')){
