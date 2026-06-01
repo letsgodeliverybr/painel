@@ -2101,8 +2101,25 @@ async function salvarEdicaoPedido(pedidoId){
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
   await logAcao('editar_pedido',{pedido_id:pedidoId});
+  // Recalcular taxa_entrega pela tabela de cobrança após atualizar com_retorno
+  const _TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
+  const pedidoAtual=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  const distKm=parseFloat(pedidoAtual?.distancia_km)||1;
+  const faixasC=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${_TABELA_COBRANCA_ID}&order=km_ate.asc`);
+  if(faixasC.length){
+    const faixa=faixasC.find(f=>distKm<=parseFloat(f.km_ate))||faixasC[faixasC.length-1];
+    const novaTaxa=Math.round((_epRetornoAtivo?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno))*100)/100;
+    await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
+    const merged={...update,taxa_entrega:novaTaxa};
+    const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],merged);
+    const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],merged);
+  }else{
+    const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],update);
+    const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
+  }
+  renderPedidosLista();renderTabelaMapa();
   if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido atualizado!','');
-  setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1200);
+  setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1500);
 }
 
 async function abrirAlocarMotoboy(pedidoId){
