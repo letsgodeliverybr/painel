@@ -51,7 +51,7 @@ function _calcTaxaLoja(p){
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
   if((parseFloat(p.preco_dinamico)||0)>0) valor+=1.60;
-  return Math.round(valor*100)/100;
+  return Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
 }
 let _precoDinTimers={};
 
