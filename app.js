@@ -738,8 +738,8 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       flex-direction: column !important;
       height: 100% !important;
       overflow: hidden !important;
-      width: 420px;
-      min-width: 420px;
+      width: 340px;
+      min-width: 340px;
       flex-shrink: 0 !important;
       transition: width 0.3s ease, min-width 0.3s ease;
     }
@@ -1591,7 +1591,7 @@ function _localizarPedidoMapa(id){
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
-  const SB_W=420,SNAP=80;
+  const SB_W=340,SNAP=80;
   let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
   // Handle de arrasto (faixa de 8px na borda direita da sidebar)
   const handle=document.createElement('div');
@@ -1803,9 +1803,9 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3)">${horaC}</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
-                <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#BBB;padding:0">✏</button>
-                <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#BBB;padding:0">👤</button>
-                ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto" style="background:#2D2D2D;border:1px solid #3A3A3A;border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:${sk==='pronto'?'#e91e8c':'#BBB'};padding:0">✓</button>`:''}
+                <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
+                ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${sk==='pronto'?'#e91e8c':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>
                 </span>
