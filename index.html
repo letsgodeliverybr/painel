@@ -242,9 +242,11 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
       <button id="btn-novo-pedido" onclick="abrirModal('modal-pedido')" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
         ➕ Novo Pedido
       </button>
-      <div id="topbar-saldo" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:6px 12px;font-size:13px;color:var(--green);font-weight:700;">
-        <div style="font-size:13px;font-weight:700;color:#fff">R$ <span id="saldo-valor">0,00</span></div>
-        <div style="font-size:9px;color:rgba(255,255,255,.65);letter-spacing:.5px;text-align:center">Wallet</div>
+      <div id="topbar-saldo" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:6px 12px;cursor:default;">
+        <div style="display:flex;flex-direction:column;align-items:center;line-height:1.2">
+          <span style="font-size:13px;font-weight:700;color:#fff">R$ <span id="saldo-valor">0,00</span></span>
+          <span style="font-size:9px;color:#aaa;font-weight:400">Wallet</span>
+        </div>
       </div>
     </div>
     <div class="topbar-divider" style="display:none;"></div>
