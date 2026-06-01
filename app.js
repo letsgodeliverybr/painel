@@ -1056,15 +1056,15 @@ async function abrirModal(id){
       const modalBody=document.querySelector('#modal-pedido .modal-body');
       if(!modalBody||document.getElementById('np-loja-id'))return;
       const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
+      _npLojasData=lojas;
       // Substituir conteúdo inteiro do modal
       modalBody.innerHTML=`
         <div class="form-row full" style="margin-bottom:4px">
-          <div class="fi">
-            <label style="color:#1A56DB;font-weight:700">🏪 Loja (obrigatório para validação GPS)</label>
-            <select id="np-loja-id" onchange="onChangeLoja()" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px">
-              <option value="">Selecione a loja...</option>
-              ${lojas.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('')}
-            </select>
+          <div class="fi" style="position:relative">
+            <label style="color:#1A56DB;font-weight:700">🏪 Loja</label>
+            <input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/>
+            <input type="hidden" id="np-loja-id"/>
+            <div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div>
           </div>
         </div>
         <div class="form-row">
@@ -1142,7 +1142,57 @@ function _toggleAgendamento(){
 // Funções para cálculo automático de taxa
 let _taxaTimer=null;
 function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeout(()=>calcularTaxaAuto(),800);}
+let _npLojasData=[];
+let _criarRetornoAtivo=false;
+function _criarEntregaRapidaToggle(){
+  _criarRetornoAtivo=!_criarRetornoAtivo;
+  const btn=document.getElementById('cr-retorno-btn');
+  const lbl=document.getElementById('cr-retorno-lbl');
+  if(btn)btn.style.background=_criarRetornoAtivo?'#1A56DB':'#3a3a3a';
+  if(lbl){lbl.textContent=_criarRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_criarRetornoAtivo?'#fff':'#888';}
+}
+async function _criarEntregaRapida(){
+  const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
+  const numero=(document.getElementById('cr-numero')?.value||'').trim();
+  const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
+  if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
+  const agora=new Date().toISOString();
+  const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
+  const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
+  const fb=document.getElementById('tabela-mapa-pag')||null;
+  const geo=await geocodificarEndereco(endereco).catch(()=>null);
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente:'',status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:null,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,gorjeta:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null,created_at:agora,updated_at:agora};
+  const result=await db('pedidos','POST',pedido);
+  if(result&&result.length>0){
+    showNotif('✅ Entrega criada!',`#${numFinal}`);
+    document.getElementById('cr-numero').value='';
+    document.getElementById('cr-endereco').value='';
+    document.getElementById('cr-complemento').value='';
+    _criarRetornoAtivo=false;
+    const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
+    if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
+    atualizarTudo();
+  }else{showNotif('Erro','Falha ao criar entrega','var(--red)');}
+}
 function onChangeLoja(){calcularTaxaAuto();}
+function _npLojaFiltrar(val){
+  const dd=document.getElementById('np-loja-dropdown');if(!dd)return;
+  const q=(val||'').trim().toLowerCase();
+  if(!q){dd.style.display='none';return;}
+  const hits=_npLojasData.filter(l=>(l.nome||'').toLowerCase().includes(q)).slice(0,8);
+  if(!hits.length){dd.style.display='none';return;}
+  dd.innerHTML=hits.map(l=>`<div onclick="_npSelecionarLoja('${l.id}','${(l.nome||'').replace(/'/g,'&#39;')}',${l.latitude||0},${l.longitude||0})" style="padding:8px 12px;cursor:pointer;color:#DDD;font-size:13px;font-family:Inter,sans-serif" onmouseover="this.style.background='#3A3A3A'" onmouseout="this.style.background='none'">${l.nome}</div>`).join('');
+  dd.style.display='block';
+}
+function _npSelecionarLoja(id,nome,lat,lng){
+  const inp=document.getElementById('np-loja-busca');
+  const hid=document.getElementById('np-loja-id');
+  const dd=document.getElementById('np-loja-dropdown');
+  if(inp)inp.value=nome;
+  if(hid){hid.value=id;hid.dataset.lat=lat;hid.dataset.lng=lng;}
+  if(dd)dd.style.display='none';
+  onChangeLoja();
+}
 function onChangeGorjeta(){
   const g=parseFloat(document.getElementById('np-gorjeta')?.value)||0;
   const info=document.getElementById('np-gorjeta-info');
@@ -1150,14 +1200,13 @@ function onChangeGorjeta(){
 }
 
 async function calcularTaxaAuto(){
-  const lojaSelect=document.getElementById('np-loja-id');
+  const lojaHid=document.getElementById('np-loja-id');
   const endereco=document.getElementById('np-endereco')?.value?.trim();
   const fb=document.getElementById('np-endereco-feedback');
   if(!endereco||endereco.length<6)return;
   if(!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
-  if(!lojaSelect?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
-  const lojaOpt=lojaSelect.options[lojaSelect.selectedIndex];
-  const lojaLat=parseFloat(lojaOpt.dataset.lat),lojaLng=parseFloat(lojaOpt.dataset.lng);
+  if(!lojaHid?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
+  const lojaLat=parseFloat(lojaHid.dataset.lat),lojaLng=parseFloat(lojaHid.dataset.lng);
   if(!lojaLat||!lojaLng){if(fb)fb.innerHTML='<span style="color:#f59e0b">⚠️ Loja sem coordenadas GPS</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">📍 Calculando distância...</span>';
   const geo=await geocodificarEndereco(endereco);
@@ -1437,7 +1486,7 @@ function renderMapaPage(){
       </div>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-      <div class="mapa-container" style="position:relative;height:50vh;flex-shrink:0;overflow:hidden">
+      <div class="mapa-container" style="position:relative;height:35vh;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:8px 12px;align-items:center">
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:4px 10px"><span style="font-size:14px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:15px;color:#10b981">0</div><div class="mapa-stat-label" style="font-size:10px">Finalizados</div></div></div>
@@ -1451,10 +1500,16 @@ function renderMapaPage(){
         </div>
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
-      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:50vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+      <div id="tabela-mapa-section" style="flex-shrink:0;min-height:35vh;background:var(--bg) !important;border-top:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
         <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
           <button onclick="carregarTabelaMapa()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#1E1E1E !important;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;font-weight:600;color:#DDD;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📅 Hoje</button>
-          <input id="tf-busca" placeholder="🔍 Buscar cliente ou nº..." oninput="_tabelaFiltrar()" style="padding:4px 8px 4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;min-width:160px;flex:1;font-family:Inter,sans-serif"/>
+          <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
+          <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
+          <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
+          <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
+          <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
+          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#3a3a3a;border:1px solid #444;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s"><span id="cr-retorno-lbl" style="color:#888">Sem ret</span></div>
+          <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
@@ -1496,14 +1551,9 @@ async function _verificarAgendados(){
 }
 // ─── TABELA DE PEDIDOS ABAIXO DO MAPA ───────────────────────────────────────
 
-async function carregarTabelaMapa(){
+function carregarTabelaMapa(){
   if(!document.getElementById('tabela-mapa-body'))return;
-  const dataInput=document.getElementById('tf-data');
-  const dataVal=dataInput?.value||_dataHojeBrasilia();
-  _tabelaFiltros.data=dataVal;
-  _tabelaPedidosDia=await db('pedidos','GET',null,
-    `?created_at=gte.${_inicioDiaBrasilia(dataVal)}&created_at=lte.${_fimDiaBrasilia(dataVal)}&status=not.in.(finalizado,cancelado)&status_detalhado=not.in.(finalizado,cancelado)&order=created_at.desc&limit=500`
-  );
+  _tabelaPedidosDia=allPedidos;
   renderTabelaMapa();
 }
 
@@ -2561,7 +2611,8 @@ async function salvarPrecoDinamico(tipo){
 async function renderNovoPedidoPage(){
   _npRetornoAtivo=false;
   const lojas=currentPerfil==='adm'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
-  const seletorLoja=currentPerfil==='adm'?`<div class="form-row full"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><select id="np-loja-id" onchange="onChangeLoja()" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"><option value="">Selecione a loja...</option>${lojas.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('')}</select></div></div>`:'';
+  _npLojasData=lojas;
+  const seletorLoja=currentPerfil==='adm'?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`:'';
   document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">➕ Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
   setTimeout(()=>iniciarAutocompleteEndereco('np-endereco','','','np-endereco-feedback'),100);
 }
