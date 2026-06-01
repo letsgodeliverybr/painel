@@ -2944,7 +2944,7 @@ async function _carregarBadgeSaques(){
 async function renderFinanceiroPage(aba){
   _financeiroAba=aba||_financeiroAba||'gerar-pagamento';
   const abas=[
-    {id:'gerar-pagamento',icon:'💳',label:'Gerar Pagamento'},
+    {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamento'},
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Saques'},
     {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobrança'},
     {id:'aprovar-cobrancas',icon:'💰',label:'Aprovar Cobranças'},
