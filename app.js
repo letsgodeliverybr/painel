@@ -2013,7 +2013,7 @@ async function dispararRota(){
   if(ids.length<2)return;
   const p0=allPedidos.find(p=>p.id===ids[0]);
   const agora=new Date().toISOString();
-  await db('rotas','POST',{loja_id:p0?.loja_id||null,pedido_ids:ids,status:'aguardando',entregador_id:null,raio_atual:2,tentativas_entregador:0,created_at:agora,updated_at:agora});
+  await db('rotas','POST',{loja_id:p0?.loja_id||null,pedidos:ids,status:'aguardando',entregador_id:null,raio_atual:2,tentativas_entregador:0,created_at:agora,updated_at:agora});
   _pedidosSelecionados.clear();
   renderPedidosLista();
 }
@@ -3070,83 +3070,48 @@ function _scTrocarAba(aba){
 
 async function _scBuscar(){
   const wrap=document.getElementById('sc-tabela');if(!wrap)return;
+  // Sub-aba entregadores: tabela não disponível ainda
+  if(_scSubAba!=='lojas'){
+    wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px">🚧</div><div style="font-size:15px;font-weight:600">Em breve</div><div style="font-size:13px;margin-top:8px">Módulo de créditos de entregadores em desenvolvimento</div></div></div>';
+    return;
+  }
   wrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div>';
   const nome=(document.getElementById('sc-f-nome')?.value||'').toLowerCase();
   const ini=document.getElementById('sc-f-ini')?.value;
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
-  const isLojas=_scSubAba==='lojas';
-  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
-  const fkJoin=isLojas?'lojas':'entregadores';
-  let qs=`?select=*,${fkJoin}(nome)&order=data.desc&limit=200`;
-  if(tipo)qs+=`&tipo=eq.${tipo}`;
-  if(ini)qs+=`&data=gte.${ini}`;
-  if(fim)qs+=`&data=lte.${fim}`;
-  const rows=await db(tabela,'GET',null,qs);
-  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r[fkJoin]?.nome||'').toLowerCase().includes(nome));
-  const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-  const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  // Lojas: usa cobrancas_lojas (campos: loja_id, valor_total, status, data_inicio, data_fim)
+  let qs='?select=*,lojas(nome)&order=created_at.desc&limit=200';
+  if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
+  if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
+  if(tipo==='credito')qs+='&status=eq.pago';
+  else if(tipo==='debito')qs+='&status=eq.pendente';
+  const rows=await db('cobrancas_lojas','GET',null,qs);
+  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r.lojas?.nome||'').toLowerCase().includes(nome));
+  const totC=data.filter(r=>r.status==='pago').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const totD=data.filter(r=>r.status==='pendente').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
   const saldo=totC-totD;
   const e1=document.getElementById('sc-tot-c'),e2=document.getElementById('sc-tot-d'),e3=document.getElementById('sc-tot-s');
   if(e1)e1.textContent=`R$ ${totC.toFixed(2)}`;
   if(e2)e2.textContent=`R$ ${totD.toFixed(2)}`;
   if(e3){e3.textContent=`R$ ${Math.abs(saldo).toFixed(2)}`;e3.style.color=saldo>=0?'#10b981':'#ef4444';}
   if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
-  const badge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Credito</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Debito</span>`;
-  const colNome=isLojas?'Loja':'Entregador';
+  const badge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Tipo</th><th>${colNome}</th><th>Valor</th><th>Observacoes</th><th>Editar</th></tr></thead>
+    <thead><tr><th>Gerado em</th><th>Período</th><th>Loja</th><th>Pedidos</th><th>Valor Total</th><th>Status</th></tr></thead>
     <tbody>${data.map(r=>`<tr>
-      <td style="font-size:12px;color:var(--text3)">${r.data||'—'}</td>
-      <td>${badge(r.tipo)}</td>
-      <td style="font-weight:600;color:var(--text)">${r[fkJoin]?.nome||'—'}</td>
-      <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
-      <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}</td>
-      <td><button onclick="_scAbrirModal('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Editar</button></td>
+      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(r.created_at)}</td>
+      <td style="font-size:12px;color:var(--text2)">${r.data_inicio||'—'} – ${r.data_fim||'—'}</td>
+      <td style="font-weight:600;color:var(--text)">${r.lojas?.nome||'—'}</td>
+      <td>${r.qtd_pedidos||'—'}</td>
+      <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(r.valor_total)||0).toFixed(2)}</td>
+      <td>${badge(r.status)}</td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
 
-async function _scAbrirModal(id){
-  _scEditId=id;
-  document.getElementById('sc-modal-titulo').textContent=id?'Editar':'Cadastrar';
-  const isLojas=_scSubAba==='lojas';
-  document.getElementById('sc-modal-entidade-wrap').querySelector('label').textContent=isLojas?'LOJA':'ENTREGADOR';
-  if(isLojas&&!_scLojas.length)_scLojas=(await db('lojas','GET',null,'?select=id,nome&order=nome.asc'))||[];
-  if(!isLojas&&!_scEntregadores.length)_scEntregadores=(await db('entregadores','GET',null,'?select=id,nome&order=nome.asc'))||[];
-  const lista=isLojas?_scLojas:_scEntregadores;
-  const sel=document.getElementById('sc-m-ent');
-  sel.innerHTML=lista.map(e=>`<option value="${e.id}">${e.nome||'—'}</option>`).join('');
-  if(id){
-    const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
-    const fk=isLojas?'loja_id':'entregador_id';
-    const res=await db(tabela,'GET',null,`?id=eq.${id}&select=*`);
-    const r=Array.isArray(res)?res[0]:null;
-    if(r){sel.value=r[fk]||'';document.getElementById('sc-m-data').value=r.data||_dataHojeBrasilia();document.getElementById('sc-m-tipo').value=r.tipo||'credito';document.getElementById('sc-m-valor').value=r.valor||'';document.getElementById('sc-m-obs').value=r.observacoes||'';}
-  }else{
-    sel.value=lista[0]?.id||'';document.getElementById('sc-m-data').value=_dataHojeBrasilia();document.getElementById('sc-m-tipo').value='credito';document.getElementById('sc-m-valor').value='';document.getElementById('sc-m-obs').value='';
-  }
-  document.getElementById('modal-sc').style.display='flex';
-}
-
-async function _scSalvar(){
-  const isLojas=_scSubAba==='lojas';
-  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
-  const fk=isLojas?'loja_id':'entregador_id';
-  const entidade=document.getElementById('sc-m-ent').value;
-  const data=document.getElementById('sc-m-data').value;
-  const tipo=document.getElementById('sc-m-tipo').value;
-  const valor=parseFloat(document.getElementById('sc-m-valor').value)||0;
-  const observacoes=document.getElementById('sc-m-obs').value.trim();
-  if(!entidade||!data||valor<=0){showNotif('Atenção','Preencha todos os campos obrigatorios','var(--yellow)');return;}
-  const agora=new Date().toISOString();
-  const payload={[fk]:entidade,tipo,valor:Math.round(valor*100)/100,observacoes,data,updated_at:agora};
-  if(_scEditId){await dbPatch(tabela,payload,`?id=eq.${_scEditId}`);}
-  else{await db(tabela,'POST',{...payload,created_at:agora});}
-  document.getElementById('modal-sc').style.display='none';
-  showNotif(_scEditId?'Registro atualizado':'Registro salvo','');
-  _scBuscar();
-}
+function _scAbrirModal(id){showNotif('Atenção','Use a aba Aprovar Cobranças para gerenciar cobranças de lojas','var(--yellow)');}
+function _scSalvar(){}
 
 async function _carregarResumoFinanceiro(){
   const hojeBrStr=_dataHojeBrasilia();
@@ -3163,17 +3128,11 @@ async function _carregarResumoFinanceiro(){
     db('saques','GET',null,'?select=valor&status=eq.pendente'),
   ]);
 
-  // Tabelas opcionais — ignora erro se não existirem
-  let creditos=[],anotacoesReceber=[],anotacoesPagar=[];
-  try{creditos=await db('creditos','GET',null,'?select=valor')||[];}catch{}
-  try{anotacoesReceber=await db('anotacoes','GET',null,'?select=valor&tipo=eq.receber')||[];}catch{}
-  try{anotacoesPagar=await db('anotacoes','GET',null,'?select=valor&tipo=eq.pagar')||[];}catch{}
-
   const somaValor=arr=>(Array.isArray(arr)?arr:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const somaValorTotal=arr=>(Array.isArray(arr)?arr:[]).reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
 
-  const faturamento=somaValorTotal(cobrancasPagas)+somaValor(creditos)+somaValor(anotacoesReceber);
-  const despesas=somaValor(saquesPagos)+somaValor(anotacoesPagar);
+  const faturamento=somaValorTotal(cobrancasPagas);
+  const despesas=somaValor(saquesPagos);
   const lucro=faturamento-despesas;
 
   _saquesPendentesCount=Array.isArray(saquesPendentes)?saquesPendentes.length:0;
@@ -3923,7 +3882,7 @@ async function _liberarEntregador(id){
 }
 
 async function _buscarEntregador(lat,lng,raio,excluir=[]){
-  const lista=await db('entregadores','GET',null,'?disponivel=eq.true&em_processo=eq.false&latitude=not.is.null');
+  const lista=await db('entregadores','GET',null,'?disponivel=eq.true&em_processo=eq.false&select=id,nome,latitude,longitude');
   if(!lista||!lista.length)return null;
   return lista
     .filter(e=>e.latitude&&e.longitude&&!excluir.includes(e.id))
@@ -3959,13 +3918,13 @@ async function _despacharRota(lojaId,grupo,loja){
       else await logDespacho('entregador_ocupado',{entregador_id:ent.id});
     }
     const res=await db('rotas','POST',{
-      loja_id:lojaId,pedido_ids:pedidoIds,status:'aguardando',
+      loja_id:lojaId,pedidos:pedidoIds,status:'aguardando',
       entregador_id:entId,raio_atual:2,tentativas_entregador:entId?1:0,
       created_at:agora,updated_at:agora
     });
     const rota=Array.isArray(res)?res[0]:res;
     if(!rota?.id){await _liberarEntregador(entId);entId=null;return;}
-    await logDespacho('criou_rota',{rota_id:rota.id,loja_id:lojaId,pedido_ids:pedidoIds});
+    await logDespacho('criou_rota',{rota_id:rota.id,loja_id:lojaId,pedidos:pedidoIds});
     if(entId){
       await logDespacho('tentou_entregador',{rota_id:rota.id,entregador_id:entId,raio:2});
       await db('entregadores','PATCH',{notificacao_rota:rota.id,em_processo:false},`?id=eq.${entId}`);
@@ -3992,8 +3951,8 @@ async function verificarRotas(){
   try{
     const pedidos=await db('pedidos','GET',null,'?status=eq.recebido&latitude=not.is.null&select=id,loja_id,latitude,longitude');
     if(!pedidos||pedidos.length<2)return;
-    const rotasAtivas=await db('rotas','GET',null,'?status=in.(aguardando,disponivel)&select=pedido_ids');
-    const emRota=new Set((rotasAtivas||[]).flatMap(r=>Array.isArray(r.pedido_ids)?r.pedido_ids:[]));
+    const rotasAtivas=await db('rotas','GET',null,'?status=in.(aguardando,disponivel)&select=pedidos');
+    const emRota=new Set((rotasAtivas||[]).flatMap(r=>Array.isArray(r.pedidos)?r.pedidos:[]));
     const livres=pedidos.filter(p=>!emRota.has(p.id)&&p.loja_id&&p.latitude&&p.longitude);
     const porLoja={};
     for(const p of livres){if(!porLoja[p.loja_id])porLoja[p.loja_id]=[];porLoja[p.loja_id].push(p);}
