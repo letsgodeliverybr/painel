@@ -3113,8 +3113,36 @@ async function _scBuscar(){
   </table></div></div>`;
 }
 
-function _scAbrirModal(id){showNotif('Atenção','Use a aba Aprovar Cobranças para gerenciar cobranças de lojas','var(--yellow)');}
-function _scSalvar(){}
+async function _scAbrirModal(id){
+  const lojas=await db('lojas','GET',null,'?select=id,nome&order=nome.asc');
+  const sel=document.getElementById('sc-m-ent');
+  if(sel){
+    sel.innerHTML=(Array.isArray(lojas)?lojas:[]).map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+    if(id){const opt=sel.querySelector(`option[value="${id}"]`);if(opt)opt.selected=true;}
+  }
+  const titulo=document.getElementById('sc-modal-titulo');
+  if(titulo)titulo.textContent='Cadastrar Crédito / Débito';
+  const modal=document.getElementById('modal-sc');
+  if(modal)modal.style.display='flex';
+}
+
+async function _scSalvar(){
+  const loja_id=document.getElementById('sc-m-ent')?.value;
+  const data=document.getElementById('sc-m-data')?.value;
+  const tipo=document.getElementById('sc-m-tipo')?.value;
+  const valor=parseFloat(document.getElementById('sc-m-valor')?.value||0);
+  const descricao=(document.getElementById('sc-m-obs')?.value||'').trim();
+  if(!loja_id||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha loja, data, tipo e valor','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const res=await db('creditos_lojas','POST',{loja_id,tipo,valor,descricao,data,created_at:agora,updated_at:agora});
+  if(res&&(Array.isArray(res)?res.length>0:res.id)){
+    showNotif('✅ Registro salvo com sucesso!','');
+    document.getElementById('modal-sc').style.display='none';
+    _scBuscar();
+  } else {
+    showNotif('❌ Erro ao salvar','Verifique as permissões da tabela creditos_lojas no Supabase','var(--red)');
+  }
+}
 
 async function _carregarResumoFinanceiro(){
   const hojeBrStr=_dataHojeBrasilia();
