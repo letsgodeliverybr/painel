@@ -13,6 +13,7 @@ let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null,_pedidosSelecionados=new Set();
 let idsProntoNotificados=new Set();
+const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
@@ -1354,7 +1355,8 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
-  // Atualiza estado local imediatamente para evitar race com Realtime
+  // Trava o status local por 5s para o Realtime não sobrescrever
+  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+5000});
   const _pl=allPedidos.find(x=>x.id===pedidoId);
   if(_pl)Object.assign(_pl,update);
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:novoStatus});
@@ -1371,7 +1373,8 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
   const agora=new Date().toISOString();
   await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${pedidoId}`);
-  // Atualiza estado local imediatamente para evitar race com Realtime
+  // Trava o status local por 5s para o Realtime não sobrescrever
+  _pedidoStatusLock.set(pedidoId,{status:'pronto',status_detalhado:'pronto',expires:Date.now()+5000});
   const _p=allPedidos.find(x=>x.id===pedidoId);
   if(_p){_p.status='pronto';_p.status_detalhado='pronto';_p.pronto_em=agora;_p.updated_at=agora;}
   if(_p)await _aplicarPrecoDinamico(_p);
@@ -1819,14 +1822,25 @@ function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedido
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 function _copiarRastreio(id){const url=window.location.origin+window.location.pathname+'?rastrear='+id;navigator.clipboard.writeText(url).then(()=>showNotif('✅ Link copiado!',''));}
 
+function _aplicarLockStatus(lista){
+  const agora=Date.now();
+  for(const [id,lock] of _pedidoStatusLock){
+    if(agora>lock.expires){_pedidoStatusLock.delete(id);continue;}
+    const p=lista.find(x=>x.id===id);
+    if(p){p.status=lock.status;p.status_detalhado=lock.status_detalhado;}
+  }
+}
+
 async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
+  _aplicarLockStatus(allPedidos);
   allMotoboys=await db('entregadores','GET',null,'');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
+  _aplicarLockStatus(allPedidos);
   verificarNovosProtos(allPedidos);
   const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
   const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
