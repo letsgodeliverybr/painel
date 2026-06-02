@@ -2992,9 +2992,9 @@ async function renderFinanceiroPage(aba){
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
-        <div class="stat-card"><div class="stat-label">💰 Total Pago (Semana)</div><div class="stat-value" id="fin-total-semana" style="font-size:22px">—</div></div>
-        <div class="stat-card"><div class="stat-label">⏳ Total Pendente</div><div style="display:flex;align-items:baseline;gap:8px"><div class="stat-value" id="fin-total-pendente" style="font-size:22px">—</div><span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3)">WALLET</span></div></div>
-        <div class="stat-card"><div class="stat-label">📋 Saques Pendentes</div><div class="stat-value" id="fin-qtd-pendente" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fin-faturamento" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fin-despesas" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="fin-lucro" style="font-size:22px">—</div></div>
       </div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
@@ -3026,21 +3026,35 @@ async function _carregarResumoFinanceiro(){
   const diff=dow===0?6:dow-1;
   hojeBrUtc.setUTCDate(hojeBrUtc.getUTCDate()-diff);
   const startSemanaISO=_inicioDiaBrasilia(hojeBrUtc.toISOString().slice(0,10));
-  const [pendentes,pagosSemana]=await Promise.all([
-    db('saques','GET',null,'?select=valor&status=eq.pendente'),
+
+  const [cobrancasPagas,saquesPagos,saquesPendentes]=await Promise.all([
+    db('cobrancas_lojas','GET',null,`?select=valor_total&status=eq.pago&updated_at=gte.${startSemanaISO}`),
     db('saques','GET',null,`?select=valor&status=eq.pago&updated_at=gte.${startSemanaISO}`),
+    db('saques','GET',null,'?select=valor&status=eq.pendente'),
   ]);
-  const qtd=Array.isArray(pendentes)?pendentes.length:0;
-  const totalPend=Array.isArray(pendentes)?pendentes.reduce((s,r)=>s+(parseFloat(r.valor)||0),0):0;
-  const totalSem=Array.isArray(pagosSemana)?pagosSemana.reduce((s,r)=>s+(parseFloat(r.valor)||0),0):0;
-  _saquesPendentesCount=qtd;
+
+  // Tabelas opcionais — ignora erro se não existirem
+  let creditos=[],anotacoesReceber=[],anotacoesPagar=[];
+  try{creditos=await db('creditos','GET',null,'?select=valor')||[];}catch{}
+  try{anotacoesReceber=await db('anotacoes','GET',null,'?select=valor&tipo=eq.receber')||[];}catch{}
+  try{anotacoesPagar=await db('anotacoes','GET',null,'?select=valor&tipo=eq.pagar')||[];}catch{}
+
+  const somaValor=arr=>(Array.isArray(arr)?arr:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const somaValorTotal=arr=>(Array.isArray(arr)?arr:[]).reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+
+  const faturamento=somaValorTotal(cobrancasPagas)+somaValor(creditos)+somaValor(anotacoesReceber);
+  const despesas=somaValor(saquesPagos)+somaValor(anotacoesPagar);
+  const lucro=faturamento-despesas;
+
+  _saquesPendentesCount=Array.isArray(saquesPendentes)?saquesPendentes.length:0;
   renderNavSidebar(_navAtivo);
-  const e1=document.getElementById('fin-total-semana');
-  const e2=document.getElementById('fin-total-pendente');
-  const e3=document.getElementById('fin-qtd-pendente');
-  if(e1)e1.textContent=`R$ ${totalSem.toFixed(2)}`;
-  if(e2)e2.textContent=`R$ ${totalPend.toFixed(2)}`;
-  if(e3)e3.textContent=qtd;
+
+  const e1=document.getElementById('fin-faturamento');
+  const e2=document.getElementById('fin-despesas');
+  const e3=document.getElementById('fin-lucro');
+  if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
+  if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
+  if(e3){e3.textContent=`R$ ${Math.abs(lucro).toFixed(2)}`;e3.style.color=lucro>=0?'var(--green)':'var(--red)';}
 }
 
 // ── GERAR PAGAMENTO ──
@@ -3111,7 +3125,7 @@ async function _buscarPagamentos(){
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
-    db('saques','GET',null,`?status=eq.pendente&select=entregador_id`)
+    db('saques','GET',null,`?status=in.(pendente,pago)&select=entregador_id`)
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
   // Exclui apenas entregadores com saque pendente aguardando aprovação
@@ -3904,13 +3918,13 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   if(!dropdown){dropdown=document.createElement('div');dropdown.id=inputId+'-suggestions';dropdown.style.cssText='position:absolute;z-index:9999;background:#1e2130;border:1px solid #1A56DB;border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);width:100%;';input.parentElement.style.position='relative';input.parentElement.appendChild(dropdown);}
   input.addEventListener('input',()=>{
     clearTimeout(_autocompleteTimer);const val=input.value.trim();
-    if(val.length<4){dropdown.style.display='none';return;}
+    if(val.length<5){dropdown.style.display='none';return;}
     if(!/\d/.test(val)){dropdown.style.display='none';const _acFb=feedbackId?document.getElementById(feedbackId):null;if(_acFb)_acFb.innerHTML='<span style="color:var(--text3);font-size:11px">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
     _autocompleteTimer=setTimeout(async()=>{
       const _acFb=feedbackId?document.getElementById(feedbackId):null;
       try{
         const q=encodeURIComponent(`${val}, Brasil`);
-        const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${q}&key=7391047cdf03436bb3cf28c5e00836d1&countrycode=br&language=pt-BR&limit=8&no_annotations=1&bounds=-35,-75,-5,-28`);
+        const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${q}&key=7391047cdf03436bb3cf28c5e00836d1&countrycode=br&language=pt-BR&limit=8&no_annotations=1&bounds=-35,-75,-5,-28&proximity=-21.1775,-47.8103`);
         const d=await r.json();
         const results=Array.isArray(d?.results)?d.results:[];
         if(!results.length){
@@ -3935,7 +3949,7 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
         });
         dropdown.style.display='block';
       }catch(e){dropdown.style.display='none';}
-    },500);
+    },300);
   });
   document.addEventListener('click',(e)=>{if(!input.contains(e.target)&&!dropdown.contains(e.target))dropdown.style.display='none';});
 }
