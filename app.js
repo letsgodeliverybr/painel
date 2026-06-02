@@ -1354,6 +1354,9 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  // Atualiza estado local imediatamente para evitar race com Realtime
+  const _pl=allPedidos.find(x=>x.id===pedidoId);
+  if(_pl)Object.assign(_pl,update);
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:novoStatus});
   await atualizarTudo();
 }
@@ -1368,7 +1371,10 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
   const agora=new Date().toISOString();
   await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${pedidoId}`);
-  const _p=allPedidos.find(x=>x.id===pedidoId);if(_p)await _aplicarPrecoDinamico(_p);
+  // Atualiza estado local imediatamente para evitar race com Realtime
+  const _p=allPedidos.find(x=>x.id===pedidoId);
+  if(_p){_p.status='pronto';_p.status_detalhado='pronto';_p.pronto_em=agora;_p.updated_at=agora;}
+  if(_p)await _aplicarPrecoDinamico(_p);
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
   _notificarPedidoPronto();
