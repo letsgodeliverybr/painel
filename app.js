@@ -3212,32 +3212,15 @@ async function _carregarHistoricoSaques(append){
 function _gpCarregarMais(){_carregarHistoricoSaques(true);}
 
 async function _buscarPagamentos(){
-  const inicio=document.getElementById('gp-data-inicio')?.value;
-  const fim=document.getElementById('gp-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
-  const hIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
-  const hFim=document.getElementById('gp-hora-fim')?.value||'23:59';
-  const inicioISO=new Date(`${inicio}T${hIni}:00-03:00`).toISOString();
-  const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  console.log(`[PAG] periodo: ${inicio} ${hIni} → ${fim} ${hFim}`);
-  console.log(`[PAG] ISO: ${inicioISO} → ${fimISO}`);
-  const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,finalizado_em,updated_at';
-  const [p1,p2,entregadores,saquesExistentes,debugTotal]=await Promise.all([
-    // Query 1: pedidos com finalizado_em no período
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
-    // Query 2: pedidos sem finalizado_em, filtra por updated_at (fallback)
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=is.null&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}&select=${selectFields}`),
+  const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
+  const [pedidos,entregadores,saquesExistentes]=await Promise.all([
+    db('pedidos','GET',null,`?status=eq.finalizado&select=${selectFields}`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
-    db('saques','GET',null,`?status=in.(pendente,pago)&select=entregador_id`),
-    // Query de diagnóstico: total de finalizados sem filtro de data
-    db('pedidos','GET',null,'?status=eq.finalizado&select=id,finalizado_em,updated_at&limit=3&order=updated_at.desc'),
+    db('saques','GET',null,'?status=in.(pendente,pago)&select=entregador_id'),
   ]);
-  console.log(`[PAG] via finalizado_em: ${Array.isArray(p1)?p1.length:0} | via updated_at: ${Array.isArray(p2)?p2.length:0}`);
-  console.log('[PAG] amostra (últimos 3 finalizados):', JSON.stringify(debugTotal));
-  // Merge das duas queries, deduplicando por id não é necessário pois os filtros são mutuamente exclusivos
-  const arr=[...(Array.isArray(p1)?p1:[]),...(Array.isArray(p2)?p2:[])];
+  const arr=Array.isArray(pedidos)?pedidos:[];
   // Exclui apenas entregadores com saque pendente aguardando aprovação
   const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
   _gpResultados={};
