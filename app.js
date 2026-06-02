@@ -57,10 +57,13 @@ let _precoDinTimers={};
 let _precoDinValores={cliente:0,entregador:0};
 
 // ── BRASÍLIA TIMEZONE HELPERS ──
-const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(new Date(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
-const formatarHora=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
-const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
-const formatarData=(dataStr)=>{if(!dataStr)return'—';return new Date(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
+// Supabase retorna timestamps sem 'Z'; sem o sufixo o browser trata como horário local,
+// causando double-conversão. _parseUtc garante parse correto como UTC.
+const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'Z');};
+const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
+const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
+const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
+const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
 const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
