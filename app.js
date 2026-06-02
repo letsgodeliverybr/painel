@@ -1152,6 +1152,10 @@ async function abrirModal(id){
       const sc=document.getElementById('loja-tabela-cobranca');if(sc)sc.innerHTML=opts;
       const sp=document.getElementById('loja-tabela-pagamento');if(sp)sp.innerHTML=opts;
     });
+    // limpa lat/lng anteriores e inicia autocomplete
+    const latEl=document.getElementById('loja-lat'),lngEl=document.getElementById('loja-lng');
+    if(latEl)latEl.value='';if(lngEl)lngEl.value='';
+    setTimeout(()=>iniciarAutocompleteEndereco('loja-endereco','loja-lat','loja-lng','loja-endereco-feedback'),100);
   }
 }
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
@@ -2903,7 +2907,14 @@ async function criarLoja(){
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const tabCobranca=document.getElementById('loja-tabela-cobranca')?.value||null;
   const tabPagamento=document.getElementById('loja-tabela-pagamento')?.value||null;
-  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,tabela_cobranca_id:tabCobranca||null,tabela_pagamento_id:tabPagamento||null});
+  let lat=parseFloat(document.getElementById('loja-lat')?.value)||null;
+  let lng=parseFloat(document.getElementById('loja-lng')?.value)||null;
+  if(endereco&&(!lat||!lng)){
+    fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Geocodificando endereço...</div>';
+    const geo=await geocodificarEndereco(endereco).catch(()=>null);
+    if(geo){lat=geo.lat;lng=geo.lng;}
+  }
+  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,latitude:lat,longitude:lng,tabela_cobranca_id:tabCobranca||null,tabela_pagamento_id:tabPagamento||null});
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
   await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
