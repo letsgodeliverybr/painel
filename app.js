@@ -1326,7 +1326,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   fecharDropdownStatus();
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
-  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota')update.em_rota_em=agora;
   if(novoStatus==='retornando')update.retornando_em=agora;
@@ -1351,11 +1351,15 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='em_rota')update.em_rota_em=agora;
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:novoStatus});
   await atualizarTudo();
+}
+
+function _notificarPedidoPronto(){
+  fetch(`${SB_URL}/functions/v1/notify-novo-pedido`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({tipo:'novo_pedido'})}).catch(e=>console.warn('[FCM] falha ao notificar:',e));
 }
 
 async function marcarPedidoPronto(pedidoId, statusAtual){
@@ -1367,6 +1371,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const _p=allPedidos.find(x=>x.id===pedidoId);if(_p)await _aplicarPrecoDinamico(_p);
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
+  _notificarPedidoPronto();
   showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');
   await atualizarTudo();
 }
