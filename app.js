@@ -2848,7 +2848,8 @@ async function abrirEditarLoja(lojaId){
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
-${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}"/>`))}
+${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
+<div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
 ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
 ${r2(fi('Telefone',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('Celular',inp('el-celular',l.celular,'(16) 99999-9999')))}
@@ -2894,6 +2895,14 @@ async function salvarEdicaoLoja(lojaId){
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
+  let lat=parseFloat(document.getElementById('el-lat')?.value)||null;
+  let lng=parseFloat(document.getElementById('el-lng')?.value)||null;
+  if(update.endereco&&(!lat||!lng)){
+    const geo=await geocodificarEndereco(update.endereco).catch(()=>null);
+    if(geo){lat=geo.lat;lng=geo.lng;}
+  }
+  if(lat)update.latitude=lat;
+  if(lng)update.longitude=lng;
   const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
   await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
