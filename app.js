@@ -3108,20 +3108,12 @@ async function _buscarPagamentos(){
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  console.log(`[PAG] período: ${inicio} → ${fim}`);
-  console.log(`[PAG] filtro ISO: finalizado_em gte=${_inicioDiaBrasilia(inicio)} lte=${_fimDiaBrasilia(fim)}`);
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,finalizado_em,updated_at`),
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
     db('saques','GET',null,`?status=eq.pendente&select=entregador_id`)
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
-  console.log(`[PAG] pedidos encontrados: ${arr.length}`);
-  if(arr.length){
-    console.log('[PAG] primeiros finalizado_em:',arr.slice(0,5).map(p=>({finalizado_em:p.finalizado_em,updated_at:p.updated_at,motoboy_id:p.motoboy_id||p.entregador_id})));
-  }else{
-    console.warn('[PAG] nenhum pedido retornado — verifique se o campo finalizado_em está preenchido ou se o filtro de data está correto');
-  }
   // Exclui apenas entregadores com saque pendente aguardando aprovação
   const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
   _gpResultados={};
