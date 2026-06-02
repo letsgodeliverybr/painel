@@ -3197,9 +3197,15 @@ function _renderGerarPagamento(){
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
-          <input type="date" id="gp-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+          <div style="display:flex;gap:6px">
+            <input type="date" id="gp-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <input type="time" id="gp-hora-inicio" value="00:00" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
+          </div></div>
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
-          <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+          <div style="display:flex;gap:6px">
+            <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <input type="time" id="gp-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
+          </div></div>
         <button onclick="_buscarPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="gp-lista"></div>
@@ -3250,10 +3256,14 @@ async function _buscarPagamentos(){
   const inicio=document.getElementById('gp-data-inicio')?.value;
   const fim=document.getElementById('gp-data-fim')?.value;
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const hIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
+  const hFim=document.getElementById('gp-hora-fim')?.value||'23:59';
+  const inicioISO=new Date(`${inicio}T${hIni}:00-03:00`).toISOString();
+  const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno`),
+    db('pedidos','GET',null,`?status=eq.finalizado&or=(and(finalizado_em.gte.${inicioISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${inicioISO},updated_at.lte.${fimISO}))&select=motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
     db('saques','GET',null,`?status=in.(pendente,pago)&select=entregador_id`)
   ]);
@@ -3454,9 +3464,15 @@ function _renderGerarCobranca(){
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
-          <input type="date" id="gc-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+          <div style="display:flex;gap:6px">
+            <input type="date" id="gc-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <input type="time" id="gc-hora-inicio" value="00:00" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
+          </div></div>
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
-          <input type="date" id="gc-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+          <div style="display:flex;gap:6px">
+            <input type="date" id="gc-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <input type="time" id="gc-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
+          </div></div>
         <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="gc-lista"></div>
@@ -3506,10 +3522,14 @@ async function _buscarCobrancas(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
   const fim=document.getElementById('gc-data-fim')?.value;
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const hIni=document.getElementById('gc-hora-inicio')?.value||'00:00';
+  const hFim=document.getElementById('gc-hora-fim')?.value||'23:59';
+  const inicioISO=new Date(`${inicio}T${hIni}:00-03:00`).toISOString();
+  const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,cobrancasExistentes]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${_inicioDiaBrasilia(inicio)}&finalizado_em=lte.${_fimDiaBrasilia(fim)}&select=loja_id,taxa_entrega`),
+    db('pedidos','GET',null,`?status=eq.finalizado&or=(and(finalizado_em.gte.${inicioISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${inicioISO},updated_at.lte.${fimISO}))&select=loja_id,taxa_entrega`),
     db('lojas','GET',null,'?select=id,nome'),
     db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=loja_id`)
   ]);
