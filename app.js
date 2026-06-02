@@ -3366,12 +3366,18 @@ async function _buscarSaques(){
       <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Valor</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
-      <tbody>${saques.map(s=>{const ent=s.entregadores||{};return`<tr id="saque-row-${s.id}">
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <tbody>${saques.map(s=>{const ent=s.entregadores||{};
+        const bruto=parseFloat(s.valor_bruto||s.valor||0);
+        const taxa=parseFloat(s.taxa||0);
+        const liq=parseFloat(s.valor_liquido||s.valor||0);
+        return`<tr id="saque-row-${s.id}">
         <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
-        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+        <td style="font-weight:700;color:var(--text)">R$ ${bruto.toFixed(2)}</td>
+        <td style="color:#ef4444;font-size:12px">R$ ${taxa.toFixed(2)}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${liq.toFixed(2)}</td>
         <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
         <td>${ent.tipo_chave_pix||'—'}</td>
         <td>${ent.banco||'—'}</td>
@@ -3393,11 +3399,14 @@ async function _renderHistoricoAprovarSaques(inicio,fim){
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Saques</div>
     <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Data</th><th>Entregador</th><th>Valor</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado em</th><th>Status</th></tr></thead>
       <tbody>${hist.map(s=>`<tr>
-        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.updated_at||s.created_at)}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
-        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
+        <td>R$ ${(parseFloat(s.valor_bruto||s.valor)||0).toFixed(2)}</td>
+        <td style="color:#ef4444;font-size:12px">R$ ${(parseFloat(s.taxa)||0).toFixed(2)}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor_liquido||s.valor)||0).toFixed(2)}</td>
+        <td style="font-size:11px;color:var(--text3)">${s.aprovado_em?formatarDataHora(s.aprovado_em):'—'}</td>
         <td>${badge(s)}</td>
       </tr>`).join('')}</tbody>
     </table></div>
@@ -3422,7 +3431,7 @@ async function _aprovarSaquesSelecionados(){
   if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
-    const res=await dbPatch('saques',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}`);
     if(res!==null){
       document.getElementById(`saque-row-${id}`)?.remove();
       ok++;
