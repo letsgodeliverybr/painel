@@ -3390,10 +3390,9 @@ async function _buscarSaques(){
 async function _renderHistoricoAprovarSaques(inicio,fim){
   const wrap=document.getElementById('as-historico-wrap');
   if(!wrap)return;
-  const qs=(inicio&&fim)
-    ?`?select=*,entregadores(nome)&status=in.(pago,recusado)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=updated_at.desc&limit=50`
-    :`?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30`;
-  const hist=await db('saques','GET',null,qs);
+  // Histórico sempre mostra os últimos 50 registros sem filtro de data
+  // para não sumir quando os saques aprovados são de outros períodos
+  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=50');
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
