@@ -3221,7 +3221,7 @@ async function _buscarPagamentos(){
   const [pedidos,entregadores,saquesExistentes]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&select=${selectFields}`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
-    db('saques','GET',null,'?status=in.(pendente,pago)&select=entregador_id'),
+    db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
   // Exclui apenas entregadores com saque pendente aguardando aprovação
