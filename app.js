@@ -3009,13 +3009,143 @@ async function renderFinanceiroPage(aba){
   else _renderAprovarCobrancas();
 }
 
+// ── CREDITO / DEBITO ──
+let _scSubAba='lojas',_scEditId=null,_scLojas=[],_scEntregadores=[];
+const _scInput=s=>`padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:100%;box-sizing:border-box`;
+const _scLabel=t=>`<label style="display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.4px">${t}</label>`;
+
 function _renderCredito(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">💳</div>
-    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Crédito</div>
-    <div style="font-size:14px;color:var(--text3)">Em breve</div>
-  </div></div>`;
+  const hoje=_dataHojeBrasilia();
+  const _btnTab=(id,label)=>{const a=_scSubAba===id;return`<button onclick="_scTrocarAba('${id}')" id="sc-btn-${id}" style="padding:10px 20px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${a?'var(--accent)':'transparent'};color:${a?'var(--accent)':'var(--text3)'}">${label}</button>`;};
+  el.innerHTML=`
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto">
+      ${_btnTab('lojas','Credito/Debito Lojas')}${_btnTab('entregadores','Credito/Debito Entregadores')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+      <div class="stat-card"><div class="stat-label">Total Creditos</div><div class="stat-value" id="sc-tot-c" style="font-size:22px;color:#10b981">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total Debitos</div><div class="stat-value" id="sc-tot-d" style="font-size:22px;color:#ef4444">—</div></div>
+      <div class="stat-card"><div class="stat-label">Saldo Total</div><div class="stat-value" id="sc-tot-s" style="font-size:22px">—</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:2;min-width:140px">${_scLabel('NOME')}<input id="sc-f-nome" placeholder="Buscar por nome..." style="${_scInput()}"/></div>
+        <div>${_scLabel('DATA INICIO')}<input type="date" id="sc-f-ini" style="${_scInput()}"/></div>
+        <div>${_scLabel('DATA FIM')}<input type="date" id="sc-f-fim" style="${_scInput()}"/></div>
+        <div>${_scLabel('TIPO')}<select id="sc-f-tipo" style="${_scInput()}"><option value="">Todos</option><option value="credito">Credito</option><option value="debito">Debito</option></select></div>
+        <button onclick="_scBuscar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Buscar</button>
+        <button onclick="_scAbrirModal(null)" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Cadastrar</button>
+      </div>
+    </div></div>
+    <div id="sc-tabela"><div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div></div>
+
+    <div id="modal-sc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:16px;padding:28px;width:100%;max-width:440px;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px" id="sc-modal-titulo">Cadastrar</div>
+        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('ENTIDADE')}<select id="sc-m-ent" style="${_scInput()}"></select></div>
+        <div style="margin-bottom:14px">${_scLabel('DATA')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
+        <div style="margin-bottom:14px">${_scLabel('TIPO')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option></select></div>
+        <div style="margin-bottom:14px">${_scLabel('VALOR')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" style="${_scInput()}"/></div>
+        <div style="margin-bottom:22px">${_scLabel('OBSERVACOES')}<input type="text" id="sc-m-obs" placeholder="Observações..." style="${_scInput()}"/></div>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('modal-sc').style.display='none'" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Cancelar</button>
+          <button onclick="_scSalvar()" style="flex:2;padding:10px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Salvar</button>
+        </div>
+      </div>
+    </div>`;
+  _scBuscar();
+}
+
+function _scTrocarAba(aba){
+  _scSubAba=aba;
+  ['lojas','entregadores'].forEach(id=>{
+    const b=document.getElementById(`sc-btn-${id}`);if(!b)return;
+    const a=_scSubAba===id;
+    b.style.borderBottom=`2px solid ${a?'var(--accent)':'transparent'}`;
+    b.style.color=a?'var(--accent)':'var(--text3)';
+  });
+  document.getElementById('sc-f-nome').value='';
+  _scBuscar();
+}
+
+async function _scBuscar(){
+  const wrap=document.getElementById('sc-tabela');if(!wrap)return;
+  wrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div>';
+  const nome=(document.getElementById('sc-f-nome')?.value||'').toLowerCase();
+  const ini=document.getElementById('sc-f-ini')?.value;
+  const fim=document.getElementById('sc-f-fim')?.value;
+  const tipo=document.getElementById('sc-f-tipo')?.value;
+  const isLojas=_scSubAba==='lojas';
+  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
+  const fkJoin=isLojas?'lojas':'entregadores';
+  let qs=`?select=*,${fkJoin}(nome)&order=data.desc&limit=200`;
+  if(tipo)qs+=`&tipo=eq.${tipo}`;
+  if(ini)qs+=`&data=gte.${ini}`;
+  if(fim)qs+=`&data=lte.${fim}`;
+  const rows=await db(tabela,'GET',null,qs);
+  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r[fkJoin]?.nome||'').toLowerCase().includes(nome));
+  const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const saldo=totC-totD;
+  const e1=document.getElementById('sc-tot-c'),e2=document.getElementById('sc-tot-d'),e3=document.getElementById('sc-tot-s');
+  if(e1)e1.textContent=`R$ ${totC.toFixed(2)}`;
+  if(e2)e2.textContent=`R$ ${totD.toFixed(2)}`;
+  if(e3){e3.textContent=`R$ ${Math.abs(saldo).toFixed(2)}`;e3.style.color=saldo>=0?'#10b981':'#ef4444';}
+  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
+  const badge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Credito</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Debito</span>`;
+  const colNome=isLojas?'Loja':'Entregador';
+  wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>${colNome}</th><th>Valor</th><th>Observacoes</th><th>Editar</th></tr></thead>
+    <tbody>${data.map(r=>`<tr>
+      <td style="font-size:12px;color:var(--text3)">${r.data||'—'}</td>
+      <td>${badge(r.tipo)}</td>
+      <td style="font-weight:600;color:var(--text)">${r[fkJoin]?.nome||'—'}</td>
+      <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
+      <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}</td>
+      <td><button onclick="_scAbrirModal('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Editar</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div></div>`;
+}
+
+async function _scAbrirModal(id){
+  _scEditId=id;
+  document.getElementById('sc-modal-titulo').textContent=id?'Editar':'Cadastrar';
+  const isLojas=_scSubAba==='lojas';
+  document.getElementById('sc-modal-entidade-wrap').querySelector('label').textContent=isLojas?'LOJA':'ENTREGADOR';
+  if(isLojas&&!_scLojas.length)_scLojas=(await db('lojas','GET',null,'?select=id,nome&order=nome.asc'))||[];
+  if(!isLojas&&!_scEntregadores.length)_scEntregadores=(await db('entregadores','GET',null,'?select=id,nome&order=nome.asc'))||[];
+  const lista=isLojas?_scLojas:_scEntregadores;
+  const sel=document.getElementById('sc-m-ent');
+  sel.innerHTML=lista.map(e=>`<option value="${e.id}">${e.nome||'—'}</option>`).join('');
+  if(id){
+    const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
+    const fk=isLojas?'loja_id':'entregador_id';
+    const res=await db(tabela,'GET',null,`?id=eq.${id}&select=*`);
+    const r=Array.isArray(res)?res[0]:null;
+    if(r){sel.value=r[fk]||'';document.getElementById('sc-m-data').value=r.data||_dataHojeBrasilia();document.getElementById('sc-m-tipo').value=r.tipo||'credito';document.getElementById('sc-m-valor').value=r.valor||'';document.getElementById('sc-m-obs').value=r.observacoes||'';}
+  }else{
+    sel.value=lista[0]?.id||'';document.getElementById('sc-m-data').value=_dataHojeBrasilia();document.getElementById('sc-m-tipo').value='credito';document.getElementById('sc-m-valor').value='';document.getElementById('sc-m-obs').value='';
+  }
+  document.getElementById('modal-sc').style.display='flex';
+}
+
+async function _scSalvar(){
+  const isLojas=_scSubAba==='lojas';
+  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
+  const fk=isLojas?'loja_id':'entregador_id';
+  const entidade=document.getElementById('sc-m-ent').value;
+  const data=document.getElementById('sc-m-data').value;
+  const tipo=document.getElementById('sc-m-tipo').value;
+  const valor=parseFloat(document.getElementById('sc-m-valor').value)||0;
+  const observacoes=document.getElementById('sc-m-obs').value.trim();
+  if(!entidade||!data||valor<=0){showNotif('Atenção','Preencha todos os campos obrigatorios','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const payload={[fk]:entidade,tipo,valor:Math.round(valor*100)/100,observacoes,data,updated_at:agora};
+  if(_scEditId){await dbPatch(tabela,payload,`?id=eq.${_scEditId}`);}
+  else{await db(tabela,'POST',{...payload,created_at:agora});}
+  document.getElementById('modal-sc').style.display='none';
+  showNotif(_scEditId?'Registro atualizado':'Registro salvo','');
+  _scBuscar();
 }
 
 async function _carregarResumoFinanceiro(){
