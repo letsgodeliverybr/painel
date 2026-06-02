@@ -3246,24 +3246,35 @@ async function _calcularPagamentos(){
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
-  const [pedidos,entregadores,saquesExistentes]=await Promise.all([
+  const [pedidos,entregadores,saquesPendentes,saquesPagos]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&select=${selectFields}`),
     db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
     db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
+    db('saques','GET',null,'?status=eq.pago&select=entregador_id,valor'),
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
-  const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
+  const comPendente=new Set((Array.isArray(saquesPendentes)?saquesPendentes:[]).map(s=>s.entregador_id));
+  // total já pago por entregador
+  const totalPago={};
+  (Array.isArray(saquesPagos)?saquesPagos:[]).forEach(s=>{
+    totalPago[s.entregador_id]=(totalPago[s.entregador_id]||0)+(parseFloat(s.valor)||0);
+  });
   _gpResultados={};
   arr.forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
-    if(jaPagos.has(eid))return;
+    if(comPendente.has(eid))return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
     _gpResultados[eid].total+=_calcTaxaMotoboy(p)??(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
     _gpResultados[eid].qtd++;
   });
+  // desconta saques já pagos e remove saldo zero/negativo
+  Object.keys(_gpResultados).forEach(eid=>{
+    _gpResultados[eid].total=Math.round((_gpResultados[eid].total-(totalPago[eid]||0))*100)/100;
+    if(_gpResultados[eid].total<=0)delete _gpResultados[eid];
+  });
   const rows=Object.values(_gpResultados);
   if(!lista)return;
-  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com pedidos finalizados no período</div></div>`;return;}
+  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com saldo a pagar</div></div>`;return;}
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
