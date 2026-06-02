@@ -3168,7 +3168,7 @@ function _renderGerarPagamento(){
             <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gp-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
           </div></div>
-        <button onclick="_buscarPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+        <button onclick="_calcularPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="gp-lista"></div>
     </div></div>
@@ -3214,7 +3214,7 @@ async function _carregarHistoricoSaques(append){
 
 function _gpCarregarMais(){_carregarHistoricoSaques(true);}
 
-async function _buscarPagamentos(){
+async function _calcularPagamentos(){
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
@@ -3224,7 +3224,6 @@ async function _buscarPagamentos(){
     db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
-  // Exclui apenas entregadores com saque pendente aguardando aprovação
   const jaPagos=new Set((Array.isArray(saquesExistentes)?saquesExistentes:[]).map(s=>s.entregador_id));
   _gpResultados={};
   arr.forEach(p=>{
@@ -3253,6 +3252,45 @@ async function _buscarPagamentos(){
         <td>${r.entregador.tipo_chave_pix||'—'}</td>
       </tr>`).join('')}</tbody>
     </table></div>`;
+}
+
+async function _buscarPagamentos(){
+  const pendWrap=document.getElementById('as-pendentes-wrap');
+  if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
+  _saquesPendentesMap={};
+  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
+  if(!pendWrap)return;
+  if(!saques||!saques.length){
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque pendente</div></div>`;
+    _renderHistoricoAprovarSaques();
+    return;
+  }
+  pendWrap.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <tbody>${saques.map(s=>{const ent=s.entregadores||{};
+        const bruto=parseFloat(s.valor_bruto||s.valor||0);
+        const taxa=parseFloat(s.taxa||0);
+        const liq=parseFloat(s.valor_liquido||s.valor||0);
+        return`<tr id="saque-row-${s.id}">
+        <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
+        <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
+        <td style="font-weight:700;color:var(--text)">R$ ${bruto.toFixed(2)}</td>
+        <td style="color:#ef4444;font-size:12px">R$ ${taxa.toFixed(2)}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${liq.toFixed(2)}</td>
+        <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
+        <td>${ent.tipo_chave_pix||'—'}</td>
+        <td>${ent.banco||'—'}</td>
+        <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+      </tr>`;}).join('')}</tbody>
+    </table></div>`;
+  _renderHistoricoAprovarSaques();
 }
 
 function _gpToggleAll(checked){document.querySelectorAll('.gp-cb').forEach(cb=>cb.checked=checked);}
@@ -3285,62 +3323,16 @@ async function _gerarPagamento(){
 let _saquesPendentesMap={};
 function _renderAprovarSaques(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  const hoje=_dataHojeBrasilia();
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
-      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
-          <input type="date" id="as-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
-          <input type="date" id="as-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
-        <button onclick="_buscarSaques()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Saques pendentes de aprovação</div>
+        <button onclick="_buscarPagamentos()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔄 Atualizar</button>
       </div>
       <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
     <div id="as-historico-wrap"></div>`;
-  _buscarSaques();
-}
-
-async function _buscarSaques(){
-  const inicio=document.getElementById('as-data-inicio')?.value;
-  const fim=document.getElementById('as-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
-  const pendWrap=document.getElementById('as-pendentes-wrap');
-  if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const saques=await db('saques','GET',null,`?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.asc`);
-  _saquesPendentesMap={};
-  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
-  if(!pendWrap)return;
-  if(!saques||!saques.length){
-    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque pendente no período</div></div>`;
-    _renderHistoricoAprovarSaques(inicio,fim);
-    return;
-  }
-  pendWrap.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
-      <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
-    </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
-      <tbody>${saques.map(s=>{const ent=s.entregadores||{};
-        const bruto=parseFloat(s.valor_bruto||s.valor||0);
-        const taxa=parseFloat(s.taxa||0);
-        const liq=parseFloat(s.valor_liquido||s.valor||0);
-        return`<tr id="saque-row-${s.id}">
-        <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
-        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
-        <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
-        <td style="font-weight:700;color:var(--text)">R$ ${bruto.toFixed(2)}</td>
-        <td style="color:#ef4444;font-size:12px">R$ ${taxa.toFixed(2)}</td>
-        <td style="font-weight:700;color:#10b981">R$ ${liq.toFixed(2)}</td>
-        <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
-        <td>${ent.tipo_chave_pix||'—'}</td>
-        <td>${ent.banco||'—'}</td>
-        <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
-      </tr>`;}).join('')}</tbody>
-    </table></div>`;
-  _renderHistoricoAprovarSaques(inicio,fim);
+  _buscarPagamentos();
 }
 
 async function _renderHistoricoAprovarSaques(inicio,fim){
@@ -3398,8 +3390,7 @@ async function _aprovarSaquesSelecionados(){
   renderNavSidebar(_navAtivo);
   showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
   _carregarResumoFinanceiro();
-  // Recarrega os saques do período atual preservando os filtros de data
-  _buscarSaques();
+  _buscarPagamentos();
 }
 
 async function recusarSaque(id){
@@ -3410,12 +3401,10 @@ async function recusarSaque(id){
   document.getElementById(`saque-row-${id}`)?.remove();
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
   renderNavSidebar(_navAtivo);
-  // Saque recusado: pagamento NÃO foi efetuado, saldo não é alterado.
   console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
-  // Recarrega os saques do período atual preservando os filtros de data
-  _buscarSaques();
+  _buscarPagamentos();
 }
 
 // ── GERAR COBRANÇA ──
