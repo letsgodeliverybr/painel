@@ -2980,13 +2980,13 @@ async function _carregarBadgeSaques(){
 }
 
 async function renderFinanceiroPage(aba){
-  _financeiroAba=aba||_financeiroAba||'gerar-pagamento';
+  _financeiroAba=aba||_financeiroAba||'gerar-cobranca';
   const abas=[
-    {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamento'},
-    {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamento'},
-    {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobrança'},
+    {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobranças'},
     {id:'aprovar-cobrancas',icon:'💰',label:'Aprovar Cobranças'},
-    {id:'credito',icon:'💳',label:'Crédito'},
+    {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
+    {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
+    {id:'credito',icon:'💳',label:'Créditos'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
