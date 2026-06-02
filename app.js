@@ -3083,32 +3083,30 @@ async function _scBuscar(){
   const ini=document.getElementById('sc-f-ini')?.value;
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
-  // Lojas: usa cobrancas_lojas (campos: loja_id, valor_total, status, data_inicio, data_fim)
   let qs='?select=*,lojas(nome)&order=created_at.desc&limit=200';
   if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
   if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
-  if(tipo==='credito')qs+='&status=eq.pago';
-  else if(tipo==='debito')qs+='&status=eq.pendente';
-  const rows=await db('cobrancas_lojas','GET',null,qs);
+  if(tipo==='credito')qs+='&tipo=eq.credito';
+  else if(tipo==='debito')qs+='&tipo=eq.debito';
+  const rows=await db('creditos_lojas','GET',null,qs);
   const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r.lojas?.nome||'').toLowerCase().includes(nome));
-  const totC=data.filter(r=>r.status==='pago').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
-  const totD=data.filter(r=>r.status==='pendente').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const saldo=totC-totD;
   const e1=document.getElementById('sc-tot-c'),e2=document.getElementById('sc-tot-d'),e3=document.getElementById('sc-tot-s');
   if(e1)e1.textContent=`R$ ${totC.toFixed(2)}`;
   if(e2)e2.textContent=`R$ ${totD.toFixed(2)}`;
   if(e3){e3.textContent=`R$ ${Math.abs(saldo).toFixed(2)}`;e3.style.color=saldo>=0?'#10b981':'#ef4444';}
   if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
-  const badge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
+  const tipoBadge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Crédito</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Débito</span>`;
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Gerado em</th><th>Período</th><th>Loja</th><th>Pedidos</th><th>Valor Total</th><th>Status</th></tr></thead>
+    <thead><tr><th>Data</th><th>Loja</th><th>Tipo</th><th>Valor</th><th>Descrição</th></tr></thead>
     <tbody>${data.map(r=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(r.created_at)}</td>
-      <td style="font-size:12px;color:var(--text2)">${r.data_inicio||'—'} – ${r.data_fim||'—'}</td>
       <td style="font-weight:600;color:var(--text)">${r.lojas?.nome||'—'}</td>
-      <td>${r.qtd_pedidos||'—'}</td>
-      <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(r.valor_total)||0).toFixed(2)}</td>
-      <td>${badge(r.status)}</td>
+      <td>${tipoBadge(r.tipo)}</td>
+      <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
+      <td style="color:var(--text2);font-size:12px">${r.descricao||'—'}</td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
