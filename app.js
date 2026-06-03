@@ -2251,7 +2251,7 @@ function _labelComNumero(res,numero){
   return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
 async function geocodificarEndereco(endereco,cidade='',estado=''){
-  const GMAPS_KEY='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
+  const GMAPS_KEY='AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs';
   const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
   const base=_norm(endereco);
   const sufixo=[cidade,estado,'Brasil'].filter(Boolean).join(', ');
