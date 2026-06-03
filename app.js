@@ -2921,8 +2921,6 @@ async function salvarEdicaoLoja(lojaId){
     telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
     pessoa_juridica:pj===''?null:pj==='true',
     ativo:g('el-ativo')==='true',
-    tabela_cobranca_id:g('el-tabela-cobranca')||null,
-    tabela_pagamento_id:g('el-tabela-pagamento')||null,
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
@@ -2954,7 +2952,7 @@ async function criarLoja(){
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
-  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,latitude:lat,longitude:lng,tabela_cobranca_id:tabCobranca||null,tabela_pagamento_id:tabPagamento||null});
+  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,latitude:lat,longitude:lng});
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
   await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
