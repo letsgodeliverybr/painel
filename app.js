@@ -4088,63 +4088,30 @@ function pararRoteirizacao(){
 // ═══════════════════════════════════════════════
 // AUTOCOMPLETE DE ENDEREÇO
 // ═══════════════════════════════════════════════
-let _autocompleteTimer=null;
-function _fmtEndNominatim(res){
-  const a=res.address||{};
-  const road=a.road||a.pedestrian||a.footway||a.street||a.path||'';
-  const num=a.house_number||'';
-  const bairro=a.suburb||a.neighbourhood||a.city_district||a.quarter||a.village||'';
-  const cidade=a.city||a.town||a.municipality||'';
-  const rua=road?(num?`${road}, ${num}`:road):'';
-  const localidade=[bairro,cidade].filter(Boolean).join(', ');
-  const partes=[rua,localidade].filter(Boolean);
-  return partes.length?partes.join(' - '):res.display_name.split(',').slice(0,4).join(',').trim();
-}
 function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   const input=document.getElementById(inputId);if(!input)return;
-  let dropdown=document.getElementById(inputId+'-suggestions');
-  if(!dropdown){dropdown=document.createElement('div');dropdown.id=inputId+'-suggestions';dropdown.style.cssText='position:absolute;z-index:9999;background:#1e2130;border:1px solid #1A56DB;border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);width:100%;';input.parentElement.style.position='relative';input.parentElement.appendChild(dropdown);}
-  input.addEventListener('input',()=>{
-    clearTimeout(_autocompleteTimer);const val=input.value.trim();
-    if(val.length<4){dropdown.style.display='none';return;}
-    _autocompleteTimer=setTimeout(async()=>{
-      const _acFb=feedbackId?document.getElementById(feedbackId):null;
-      try{
-        const key='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
-        const r=await fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(val)}&components=country:br&language=pt-BR&types=address&key=${key}`);
-        const d=await r.json();
-        const predictions=Array.isArray(d?.predictions)?d.predictions:[];
-        if(!predictions.length){
-          dropdown.style.display='none';
-          if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Endereço não encontrado, tente novamente</span>';
-          return;
-        }
-        dropdown.innerHTML=predictions.map(p=>{
-          const lbl=(p.description||'').replace(/"/g,"'");
-          return`<div data-place-id="${p.place_id}" data-label="${lbl}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${p.description}</div>`;
-        }).join('');
-        dropdown.querySelectorAll('div').forEach(item=>{
-          item.addEventListener('click',async()=>{
-            input.value=item.dataset.label;dropdown.style.display='none';
-            const fb=feedbackId?document.getElementById(feedbackId):null;
-            if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:11px">📍 Localizando...</span>';
-            try{
-              const key='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
-              const det=await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.dataset.placeId}&fields=geometry&key=${key}`);
-              const dd=await det.json();
-              const loc=dd?.result?.geometry?.location;
-              if(loc){
-                if(latId&&document.getElementById(latId))document.getElementById(latId).value=loc.lat.toFixed(6);
-                if(lngId&&document.getElementById(lngId))document.getElementById(lngId).value=loc.lng.toFixed(6);
-                if(fb)fb.innerHTML=`<span style="color:var(--green);font-size:11px">✅ Localizado</span>`;
-              }
-            }catch(_){}
-            setTimeout(()=>calcularTaxaAuto(),100);
-          });
-        });
-        dropdown.style.display='block';
-      }catch(e){dropdown.style.display='none';}
-    },300);
+  if(input.dataset.gacInit)return;
+  if(!window.google?.maps?.places){
+    setTimeout(()=>iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId),200);
+    return;
+  }
+  input.dataset.gacInit='1';
+  const ac=new google.maps.places.Autocomplete(input,{
+    componentRestrictions:{country:'br'},
+    fields:['geometry','formatted_address'],
+    types:['address'],
   });
-  document.addEventListener('click',(e)=>{if(!input.contains(e.target)&&!dropdown.contains(e.target))dropdown.style.display='none';});
+  ac.addListener('place_changed',()=>{
+    const place=ac.getPlace();
+    const fb=feedbackId?document.getElementById(feedbackId):null;
+    if(!place.geometry){
+      if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Selecione um endereço da lista</span>';
+      return;
+    }
+    const lat=place.geometry.location.lat(),lng=place.geometry.location.lng();
+    if(latId&&document.getElementById(latId))document.getElementById(latId).value=lat.toFixed(6);
+    if(lngId&&document.getElementById(lngId))document.getElementById(lngId).value=lng.toFixed(6);
+    if(fb)fb.innerHTML='<span style="color:var(--green);font-size:11px">✅ Localizado</span>';
+    setTimeout(()=>calcularTaxaAuto(),100);
+  });
 }
