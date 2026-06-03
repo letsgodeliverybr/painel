@@ -4091,15 +4091,12 @@ function pararRoteirizacao(){
 // ═══════════════════════════════════════════════
 function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   const input=document.getElementById(inputId);if(!input)return;
-  console.log('[Places] focus em',inputId,'| gacInit:',input.dataset.gacInit||'não','| google.maps.places:',!!window.google?.maps?.places);
   if(input.dataset.gacInit)return;
   if(!window.google?.maps?.places){
-    console.warn('[Places] SDK não carregado ainda, aguardando 200ms...');
     setTimeout(()=>iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId),200);
     return;
   }
   input.dataset.gacInit='1';
-  console.log('[Places] Autocomplete inicializado em',inputId);
   const ac=new google.maps.places.Autocomplete(input,{
     componentRestrictions:{country:'br'},
     fields:['geometry','formatted_address'],
