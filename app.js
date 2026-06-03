@@ -2251,35 +2251,28 @@ function _labelComNumero(res,numero){
   return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
 async function geocodificarEndereco(endereco,cidade='',estado=''){
-  const OPENCAGE_KEY='7391047cdf03436bb3cf28c5e00836d1';
+  const GMAPS_KEY='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
   const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
   const base=_norm(endereco);
-  const p=_parsearEnderecoNumerado(base);
   const sufixo=[cidade,estado,'Brasil'].filter(Boolean).join(', ');
-  // OpenCage como primário
+  const query=`${base}${sufixo?', '+sufixo:''}`;
+  // Google Geocoding como primário
   try{
-    const qOC=encodeURIComponent(p?`${p.numero} ${p.rua}, ${sufixo}`:`${base}, ${sufixo}`);
-    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${qOC}&key=${OPENCAGE_KEY}&countrycode=br&language=pt-BR&limit=1&no_annotations=1&bounds=-35,-75,-5,-28`);
+    const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=br&language=pt-BR&key=${GMAPS_KEY}`);
     const d=await r.json();
-    if(d?.results?.length){const res=d.results[0];return{lat:res.geometry.lat,lng:res.geometry.lng,display:res.formatted};}
+    if(d?.results?.length){
+      const res=d.results[0];
+      return{lat:res.geometry.location.lat,lng:res.geometry.location.lng,display:res.formatted_address};
+    }
   }catch(e){}
   // Fallback: Nominatim
   const NOM='https://nominatim.openstreetmap.org/search';
   const HDR={'Accept-Language':'pt-BR','User-Agent':'LetsGoDelivery/1.0'};
-  const queries=p?[
-    encodeURIComponent(`${p.numero} ${p.rua}, ${sufixo}`),
-    encodeURIComponent(`${p.rua}, ${sufixo}`),
-    encodeURIComponent(`${base}, ${sufixo}`),
-  ]:[
-    encodeURIComponent(`${base}, ${sufixo}`),
-  ];
-  for(const q of queries){
-    try{
-      const r=await fetch(`${NOM}?q=${q}&format=json&limit=1&addressdetails=1&countrycodes=br`,{headers:HDR});
-      const d=await r.json();
-      if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:_labelComNumero(d[0],p?.numero)};
-    }catch(e){}
-  }
+  try{
+    const r=await fetch(`${NOM}?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1&countrycodes=br`,{headers:HDR});
+    const d=await r.json();
+    if(d?.length)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};
+  }catch(e){}
   return null;
 }
 function calcularDistancia(lat1,lon1,lat2,lon2){
@@ -4113,32 +4106,39 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
   if(!dropdown){dropdown=document.createElement('div');dropdown.id=inputId+'-suggestions';dropdown.style.cssText='position:absolute;z-index:9999;background:#1e2130;border:1px solid #1A56DB;border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);width:100%;';input.parentElement.style.position='relative';input.parentElement.appendChild(dropdown);}
   input.addEventListener('input',()=>{
     clearTimeout(_autocompleteTimer);const val=input.value.trim();
-    if(val.length<5){dropdown.style.display='none';return;}
-    if(!/\d/.test(val)){dropdown.style.display='none';const _acFb=feedbackId?document.getElementById(feedbackId):null;if(_acFb)_acFb.innerHTML='<span style="color:var(--text3);font-size:11px">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
+    if(val.length<4){dropdown.style.display='none';return;}
     _autocompleteTimer=setTimeout(async()=>{
       const _acFb=feedbackId?document.getElementById(feedbackId):null;
       try{
-        const q=encodeURIComponent(`${val}, Brasil`);
-        const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${q}&key=7391047cdf03436bb3cf28c5e00836d1&countrycode=br&language=pt-BR&limit=8&no_annotations=1&bounds=-35,-75,-5,-28&proximity=-21.1775,-47.8103`);
+        const key='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
+        const r=await fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(val)}&components=country:br&language=pt-BR&types=address&key=${key}`);
         const d=await r.json();
-        const results=Array.isArray(d?.results)?d.results:[];
-        if(!results.length){
+        const predictions=Array.isArray(d?.predictions)?d.predictions:[];
+        if(!predictions.length){
           dropdown.style.display='none';
           if(_acFb)_acFb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Endereço não encontrado, tente novamente</span>';
           return;
         }
-        dropdown.innerHTML=results.map(res=>{
-          const lbl=(res.formatted||'').replace(/"/g,"'");
-          return`<div data-lat="${res.geometry.lat}" data-lng="${res.geometry.lng}" data-label="${lbl}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${res.formatted||lbl}</div>`;
+        dropdown.innerHTML=predictions.map(p=>{
+          const lbl=(p.description||'').replace(/"/g,"'");
+          return`<div data-place-id="${p.place_id}" data-label="${lbl}" style="padding:10px 14px;cursor:pointer;font-size:12px;color:#fff;border-bottom:1px solid #2a2d3e;line-height:1.4;" onmouseover="this.style.background='#1A56DB22'" onmouseout="this.style.background='none'">📍 ${p.description}</div>`;
         }).join('');
         dropdown.querySelectorAll('div').forEach(item=>{
-          item.addEventListener('click',()=>{
-            const lat=parseFloat(item.dataset.lat),lng=parseFloat(item.dataset.lng);
+          item.addEventListener('click',async()=>{
             input.value=item.dataset.label;dropdown.style.display='none';
-            if(latId&&document.getElementById(latId))document.getElementById(latId).value=lat.toFixed(6);
-            if(lngId&&document.getElementById(lngId))document.getElementById(lngId).value=lng.toFixed(6);
             const fb=feedbackId?document.getElementById(feedbackId):null;
-            if(fb)fb.innerHTML=`<span style="color:var(--green);font-size:11px">✅ Localizado</span>`;
+            if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:11px">📍 Localizando...</span>';
+            try{
+              const key='AIzaSyCCPzZZWrLGmnUlzxo66h4tzn0I0HsV-10';
+              const det=await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.dataset.placeId}&fields=geometry&key=${key}`);
+              const dd=await det.json();
+              const loc=dd?.result?.geometry?.location;
+              if(loc){
+                if(latId&&document.getElementById(latId))document.getElementById(latId).value=loc.lat.toFixed(6);
+                if(lngId&&document.getElementById(lngId))document.getElementById(lngId).value=loc.lng.toFixed(6);
+                if(fb)fb.innerHTML=`<span style="color:var(--green);font-size:11px">✅ Localizado</span>`;
+              }
+            }catch(_){}
             setTimeout(()=>calcularTaxaAuto(),100);
           });
         });
