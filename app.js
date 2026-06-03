@@ -4089,11 +4089,12 @@ function pararRoteirizacao(){
 // ═══════════════════════════════════════════════
 // AUTOCOMPLETE DE ENDEREÇO
 // ═══════════════════════════════════════════════
-function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId){
+function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId,_retry=0){
   const input=document.getElementById(inputId);if(!input)return;
   if(input.dataset.gacInit)return;
   if(!window.google?.maps?.places){
-    setTimeout(()=>iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId),200);
+    if(_retry>=10)return;
+    setTimeout(()=>iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId,_retry+1),200);
     return;
   }
   input.dataset.gacInit='1';
