@@ -2879,7 +2879,7 @@ async function abrirEditarLoja(lojaId){
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
-${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
+${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}" onfocus="iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback')"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
 <div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
 ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
