@@ -1032,13 +1032,18 @@ async function _aplicarPrecoDinamico(p){
 
 async function processarAutoPronto(){
   const agora=new Date();
-  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&p.recebido_em);
+  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido'));
   for(const p of pedidosRecebidos){
-    const diff=(agora-new Date(p.recebido_em))/1000;
+    const base=p.recebido_em||p.created_at;if(!base)continue;
+    const diff=(agora-new Date(base))/1000;
     if(diff>=60){
       const codigo=String(Math.floor(Math.random()*9000)+1000);
-      await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora.toISOString(),codigo_confirmacao:codigo,updated_at:agora.toISOString()},`?id=eq.${p.id}`);
-      await _aplicarPrecoDinamico(p);
+      const res=await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora.toISOString(),codigo_confirmacao:codigo,updated_at:agora.toISOString()},`?id=eq.${p.id}`);
+      if(res&&(Array.isArray(res)?res.length>0:res.id)){
+        _pedidoStatusLock.set(p.id,{status:'pronto',status_detalhado:'pronto',expires:Date.now()+15000});
+        p.status='pronto';p.status_detalhado='pronto';
+        await _aplicarPrecoDinamico(p);
+      }
     }
   }
 }
@@ -1335,7 +1340,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
-  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+5000});
+  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+15000});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
   const ai=allPedidos.findIndex(p=>p.id===pedidoId);
@@ -1356,7 +1361,7 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
-  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+5000});
+  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+15000});
   const _pl=allPedidos.find(x=>x.id===pedidoId);
   if(_pl)Object.assign(_pl,update);
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:novoStatus});
@@ -1374,7 +1379,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const agora=new Date().toISOString();
   await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
-  _pedidoStatusLock.set(pedidoId,{status:'pronto',status_detalhado:'pronto',expires:Date.now()+5000});
+  _pedidoStatusLock.set(pedidoId,{status:'pronto',status_detalhado:'pronto',expires:Date.now()+15000});
   const _p=allPedidos.find(x=>x.id===pedidoId);
   if(_p){_p.status='pronto';_p.status_detalhado='pronto';_p.pronto_em=agora;_p.updated_at=agora;}
   if(_p)await _aplicarPrecoDinamico(_p);
