@@ -1335,7 +1335,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
-  // Atualiza in-memory sem nova requisição
+  _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Date.now()+5000});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
   const ai=allPedidos.findIndex(p=>p.id===pedidoId);
