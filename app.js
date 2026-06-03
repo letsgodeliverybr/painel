@@ -1848,7 +1848,7 @@ function _aplicarLockStatus(lista){
 async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
   _aplicarLockStatus(allPedidos);
-  allMotoboys=await db('entregadores','GET',null,'');
+  allMotoboys=await db('entregadores','GET',null,'?ativo=eq.true&status=neq.em_analise');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
