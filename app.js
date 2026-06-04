@@ -1610,7 +1610,7 @@ function renderMapaPage(){
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
             <thead style="position:sticky;top:0;z-index:2;background:#3A3A3A !important">
               <tr style="background:#3A3A3A !important">
-                ${['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística'].map((h,i)=>`<th style="padding:6px 7px;text-align:left;border-bottom:1px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${h}</th>`).join('')}
+                ${(currentPerfil==='loja'?['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Cobrada','Onde Cobrar','Status','Logística']:['Nº','Hora','Cliente','Coleta','Entrega','Entregador','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística']).map((h,i)=>`<th style="padding:6px 7px;text-align:left;border-bottom:1px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody id="tabela-mapa-body">
@@ -1687,7 +1687,7 @@ function _buildTabelaRows(filtered,from){
       ${TD(`<span style="color:#BBB;font-size:12px">${loja?.nome||'—'}</span>`,'',rowBg)}
       ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;color:#DDD">${endereco}</span>`,'',rowBg)}
       ${TD(`<span style="color:#DDD">${ent?.nome||'<span style="color:#555">—</span>'}</span>`,'',rowBg)}
-      ${TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg)}
+      ${currentPerfil!=='loja'?TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg):''}
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(`<span style="color:#BBB">${p.forma_pagamento||p.onde_cobrar||'—'}</span>`,'',rowBg)}
       ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
