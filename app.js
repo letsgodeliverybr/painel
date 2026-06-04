@@ -1205,15 +1205,15 @@ function _toggleAgendamento(){
 let _taxaTimer=null;
 function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeout(()=>calcularTaxaAuto(),800);}
 let _npLojasData=[];
-let _criarRetornoAtivo=false;
+let _crRetornoAtivo=false;
 function _criarEntregaRapidaToggle(){
-  _criarRetornoAtivo=!_criarRetornoAtivo;
+  _crRetornoAtivo=!_crRetornoAtivo;
   const track=document.getElementById('cr-retorno-track');
   const thumb=document.getElementById('cr-retorno-thumb');
   const lbl=document.getElementById('cr-retorno-lbl');
-  if(track){track.style.background=_criarRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_criarRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
-  if(thumb){thumb.style.left=_criarRetornoAtivo?'19px':'1px';thumb.style.background=_criarRetornoAtivo?'#fff':'#666';}
-  if(lbl){lbl.textContent=_criarRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_criarRetornoAtivo?'#1A56DB':'#888';}
+  if(track){track.style.background=_crRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_crRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
+  if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
+  if(lbl){lbl.textContent=_crRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
 }
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
@@ -1229,7 +1229,7 @@ async function _criarEntregaRapida(){
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const fb=document.getElementById('tabela-mapa-pag')||null;
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,pontos:4,distancia_km:0,com_retorno:_criarRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,pontos:4,distancia_km:0,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
   const result=await db('pedidos','POST',pedido);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
@@ -1239,7 +1239,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-gorjeta').value='';
-    _criarRetornoAtivo=false;
+    _crRetornoAtivo=false;
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
