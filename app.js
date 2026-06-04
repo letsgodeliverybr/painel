@@ -1221,19 +1221,23 @@ async function _criarEntregaRapida(){
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
   const gorjeta=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
-  const lojaId=document.getElementById('cr-loja-id')?.value||null;
+  // Lê value mesmo se o select estiver disabled (perfil loja)
+  const selCrEl=document.getElementById('cr-loja-id');
+  const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
+  console.log('[CR] lojaId lido:', lojaId, '| disabled:', selCrEl?.disabled, '| perfil:', currentPerfil);
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
-  const fb=document.getElementById('tabela-mapa-pag')||null;
-  const geo=await geocodificarEndereco(endereco).catch(()=>null);
+  const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,pontos:4,distancia_km:0,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
+  console.log('[CR] pedido a criar:', pedido);
   const result=await db('pedidos','POST',pedido);
+  console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
-    const selCrReset=document.getElementById('cr-loja-id');if(selCrReset)selCrReset.selectedIndex=0;
+    if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
     document.getElementById('cr-numero').value='';
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-endereco').value='';
@@ -1243,7 +1247,10 @@ async function _criarEntregaRapida(){
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
-  }else{showNotif('Erro','Falha ao criar entrega','var(--red)');}
+  }else{
+    console.error('[CR] falha ao criar entrega — resultado:', result, '| pedido enviado:', pedido);
+    showNotif('Erro','Falha ao criar entrega','var(--red)');
+  }
 }
 function onChangeLoja(){calcularTaxaAuto();}
 function _npLojaFiltrar(val){
