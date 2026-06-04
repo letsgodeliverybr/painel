@@ -1628,7 +1628,17 @@ function renderMapaPage(){
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
-    db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione a loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
+    if(currentPerfil==='loja'){
+      const selCr=document.getElementById('cr-loja-id');
+      if(selCr){
+        const lojaAtual=allLojas.find(l=>l.id===currentUser?.loja_id)||{id:currentUser?.loja_id,nome:'Minha Loja',latitude:'',longitude:''};
+        selCr.innerHTML=`<option value="${lojaAtual.id}" data-lat="${lojaAtual.latitude||''}" data-lng="${lojaAtual.longitude||''}" selected>${lojaAtual.nome}</option>`;
+        selCr.disabled=true;
+        selCr.style.opacity='0.7';selCr.style.cursor='default';
+      }
+    } else {
+      db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione a loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
+    }
     setInterval(_verificarAgendados,60000);
     setInterval(processarPontosAutomaticos,60000);
     iniciarRealtimeSupabase();
