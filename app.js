@@ -1534,7 +1534,7 @@ async function fazerLogin(){
   document.getElementById('user-nome').textContent=currentUser.nome;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
   const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+badgeMap[currentPerfil];badge.textContent=labelMap[currentPerfil];
-  renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido'),100);
+  renderTabs();setTimeout(()=>goTab('mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
   _carregarSaldoTopbar();
   if(currentPerfil==='adm')_carregarBadgeSaques();
@@ -1558,7 +1558,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'loja-pedidos':renderLojaPedidosPage,'loja-mapa':renderLojaMapaPage,'loja-relatorio':renderLojaRelatorioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage};
   if(pages[id])pages[id]();
 }
 
@@ -3893,7 +3893,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
-    renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'mapa':currentPerfil==='suporte'?'mapa':'novo-pedido');_carregarSaldoTopbar();},150);
+    renderTabs();setTimeout(()=>{goTab('mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
   }catch(e){sessionStorage.removeItem('lg_user');}
 });
