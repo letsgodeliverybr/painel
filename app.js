@@ -1095,18 +1095,15 @@ async function abrirModal(id){
     setTimeout(async()=>{
       const modalBody=document.querySelector('#modal-pedido .modal-body');
       if(!modalBody||document.getElementById('np-loja-id'))return;
-      const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
+      const isAdm=currentPerfil==='adm';
+      const lojas=isAdm?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
       _npLojasData=lojas;
-      // Substituir conteúdo inteiro do modal
+      const lojaNome=!isAdm?(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||'Minha Loja'):'';
+      const blocoLoja=isAdm
+        ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
+        :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
-        <div class="form-row full" style="margin-bottom:4px">
-          <div class="fi" style="position:relative">
-            <label style="color:#1A56DB;font-weight:700">🏪 Loja</label>
-            <input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/>
-            <input type="hidden" id="np-loja-id"/>
-            <div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div>
-          </div>
-        </div>
+        ${blocoLoja}
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
           <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome do cliente"/></div>
