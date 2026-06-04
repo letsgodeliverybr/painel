@@ -66,6 +66,7 @@ const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr)
 const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
 const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
 const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
 const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
@@ -1505,7 +1506,7 @@ function abrirInfoPedido(pedidoId){
 
 function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
-  const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA:NAV_ITEMS_SUPORTE;
+  const items=currentPerfil==='loja'||currentPerfil==='adm'?NAV_ITEMS_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   body.innerHTML=items.map(item=>{
     const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:'';
@@ -1548,7 +1549,7 @@ function logout(){
 }
 
 function renderTabs(){
-  const tabs=currentPerfil==='adm'?tabsAdm:currentPerfil==='loja'?tabsLoja:tabsSuporte;
+  const tabs=currentPerfil==='loja'||currentPerfil==='adm'?tabsAdm:tabsSuporte;
   document.getElementById('tab-buttons').innerHTML=tabs.map(t=>`<button class="tab-btn" id="tab-${t.id}" onclick="goTab('${t.id}')"><span>${t.icon}</span>${t.label}</button>`).join('');
   const tabBar=document.getElementById('tab-buttons');
   if(tabBar)tabBar.style.display='none';
@@ -1846,14 +1847,15 @@ function _aplicarLockStatus(lista){
 }
 
 async function atualizarTudo(){
-  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
+  const _lf=_lojaFiltro();
+  allPedidos=await db('pedidos','GET',null,`?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)${_lf}`);
   _aplicarLockStatus(allPedidos);
-  allMotoboys=await db('entregadores','GET',null,'?disponivel=eq.true');
+  allMotoboys=await db('entregadores','GET',null,'?ativo=eq.true&status=neq.em_analise');
   allLojas=await db('lojas','GET',null,'?ativo=eq.true');
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
-  allPedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)');
+  allPedidos=await db('pedidos','GET',null,`?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)${_lf}`);
   _aplicarLockStatus(allPedidos);
   verificarNovosProtos(allPedidos);
   const online=allMotoboys.filter(e=>e.disponivel||e.status==='ocupado').length;
@@ -1862,7 +1864,7 @@ async function atualizarTudo(){
   const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','chegou_destino','retornando'].includes(getStatusKey(p))).length;
   const _hoje=_dataHojeBrasilia();
   const _ini=_inicioDiaBrasilia(_hoje),_fim=_fimDiaBrasilia(_hoje);
-  const contadoresHoje=await db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=in.(finalizado,cancelado)`);
+  const contadoresHoje=await db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=in.(finalizado,cancelado)${_lf}`);
   const finalizadosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='finalizado').length;
   const canceladosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='cancelado').length;
   const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
@@ -2843,7 +2845,7 @@ async function renderNovoPedidoPage(){
 
 async function renderPedidosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th><th>Data</th></tr></thead><tbody id="tbody-pedidos"></tbody></table></div></div></div>`;
-  const pedidos=await db('pedidos','GET',null,'?order=created_at.desc&limit=100');
+  const pedidos=await db('pedidos','GET',null,`?order=created_at.desc&limit=100${_lojaFiltro()}`);
   const tbody=document.getElementById('tbody-pedidos');if(!tbody)return;
   tbody.innerHTML=pedidos.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>{const sk=getStatusKey(p);return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
@@ -2986,8 +2988,8 @@ async function criarUsuario(){
 
 async function renderRelatoriosPage(){
   const hoje=_dataHojeBrasilia();
-  const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
-  const opcoesLojas='<option value="">Todas as lojas</option>'+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  const lojas=currentPerfil!=='loja'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
+  const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
   const inputStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text)';
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">📈 Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">🔍 Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div><div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div></div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
@@ -2999,6 +3001,7 @@ async function carregarRelatorio(){
   if(de)filtro+=`&created_at=gte.${_inicioDiaBrasilia(de)}`;
   if(ate)filtro+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
   if(lojaId)filtro+=`&loja_id=eq.${lojaId}`;
+  filtro+=_lojaFiltro();
   const [pedidos,motoboys,lojas,usuarios]=await Promise.all([db('pedidos','GET',null,filtro),db('entregadores','GET',null,''),db('lojas','GET',null,''),db('usuarios_painel','GET',null,'')]);
   document.getElementById('r-total').textContent=pedidos.length;
   document.getElementById('r-ent').textContent=pedidos.filter(p=>p.status==='entregue'||p.status==='finalizado').length;
@@ -3200,8 +3203,9 @@ async function _carregarResumoFinanceiro(){
   hojeBrUtc.setUTCDate(hojeBrUtc.getUTCDate()-diff);
   const startSemanaISO=_inicioDiaBrasilia(hojeBrUtc.toISOString().slice(0,10));
 
+  const _lf=_lojaFiltro();
   const [cobrancasPagas,saquesPagos,saquesPendentes]=await Promise.all([
-    db('cobrancas_lojas','GET',null,`?select=valor_total&status=eq.pago&updated_at=gte.${startSemanaISO}`),
+    db('cobrancas_lojas','GET',null,`?select=valor_total&status=eq.pago&updated_at=gte.${startSemanaISO}${_lf}`),
     db('saques','GET',null,`?select=valor&status=eq.pago&updated_at=gte.${startSemanaISO}`),
     db('saques','GET',null,'?select=valor&status=eq.pendente'),
   ]);
