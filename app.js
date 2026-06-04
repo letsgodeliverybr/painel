@@ -1206,6 +1206,27 @@ let _taxaTimer=null;
 function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeout(()=>calcularTaxaAuto(),800);}
 let _npLojasData=[];
 let _crRetornoAtivo=false;
+let _crCalcTimer=null;
+async function _crCalcularTaxa(){
+  const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
+  const spanKm=document.getElementById('cr-dist-km');
+  const spanTaxa=document.getElementById('cr-dist-taxa');
+  if(!spanKm||!spanTaxa)return;
+  if(!endereco||endereco.length<6){spanKm.textContent='';spanTaxa.textContent='';return;}
+  const selCrEl=document.getElementById('cr-loja-id');
+  const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
+  if(!lojaId){spanKm.textContent='';spanTaxa.textContent='';return;}
+  const loja=allLojas.find(l=>l.id===lojaId);
+  if(!loja?.latitude||!loja?.longitude){spanKm.textContent='';spanTaxa.textContent='';return;}
+  spanKm.textContent='📍...';
+  const geo=await geocodificarEndereco(endereco).catch(()=>null);
+  if(!geo){spanKm.textContent='';spanTaxa.textContent='';return;}
+  const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
+  const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
+  spanKm.textContent=`${distKm} km`;
+  spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
+}
+function _crCalcularTaxaDebounce(){clearTimeout(_crCalcTimer);_crCalcTimer=setTimeout(_crCalcularTaxa,700);}
 function _criarEntregaRapidaToggle(){
   _crRetornoAtivo=!_crRetornoAtivo;
   const track=document.getElementById('cr-retorno-track');
@@ -1625,10 +1646,12 @@ function renderMapaPage(){
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
-          <input id="cr-endereco" placeholder="Endereço + Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
+          <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
+          <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
+          <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
