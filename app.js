@@ -1149,6 +1149,21 @@ async function abrirModal(id){
           </div>
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>`;
+      // Para perfil loja: seta lat/lng no hidden np-loja-id para calcularTaxaAuto funcionar
+      if(!isAdm&&currentUser?.loja_id){
+        const lojaLocal=allLojas.find(l=>l.id===currentUser.loja_id);
+        const hidEl=document.getElementById('np-loja-id');
+        if(hidEl){
+          if(lojaLocal?.latitude&&lojaLocal?.longitude){
+            hidEl.dataset.lat=lojaLocal.latitude;hidEl.dataset.lng=lojaLocal.longitude;
+          } else {
+            db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,latitude,longitude`).then(res=>{
+              const el=document.getElementById('np-loja-id');
+              if(el&&res?.[0]?.latitude){el.dataset.lat=res[0].latitude;el.dataset.lng=res[0].longitude;}
+            });
+          }
+        }
+      }
     },80);
   }
   if(id==='modal-loja'){
@@ -2078,7 +2093,9 @@ async function dispararRota(){
 function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));
   motoboyMarkers={};pedidoMarkers={};lojaMarkers={};
-  const lojasVisiveis=_estadoLojas===2?[]:_estadoLojas===1?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
+  const lojasVisiveis=currentPerfil==='loja'
+    ?allLojas.filter(l=>l.id===currentUser?.loja_id)
+    :_estadoLojas===2?[]:_estadoLojas===1?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
   const _svgPin=`<svg width="38" height="48" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="#1A56DB" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
   lojasVisiveis.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});});
   const _statusAtivos=['aceito','chegou_local','chegou_destino','em_rota'];
