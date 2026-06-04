@@ -17,9 +17,11 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 let _sidebarBusca='';
@@ -1506,7 +1508,7 @@ function abrirInfoPedido(pedidoId){
 
 function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
-  const items=currentPerfil==='loja'||currentPerfil==='adm'?NAV_ITEMS_ADM:NAV_ITEMS_SUPORTE;
+  const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   body.innerHTML=items.map(item=>{
     const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:'';
@@ -1549,7 +1551,7 @@ function logout(){
 }
 
 function renderTabs(){
-  const tabs=currentPerfil==='loja'||currentPerfil==='adm'?tabsAdm:tabsSuporte;
+  const tabs=currentPerfil==='adm'?tabsAdm:currentPerfil==='loja'?tabsLojaAdm:tabsSuporte;
   document.getElementById('tab-buttons').innerHTML=tabs.map(t=>`<button class="tab-btn" id="tab-${t.id}" onclick="goTab('${t.id}')"><span>${t.icon}</span>${t.label}</button>`).join('');
   const tabBar=document.getElementById('tab-buttons');
   if(tabBar)tabBar.style.display='none';
