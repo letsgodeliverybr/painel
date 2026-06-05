@@ -1331,8 +1331,9 @@ async function calcularTaxaAuto(){
   const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelas[0].id}&order=km_de.asc`);
   const faixa=faixas.find(f=>distKm>=parseFloat(f.km_de)&&distKm<=parseFloat(f.km_ate));
   if(faixa){
-    document.getElementById('np-taxa').value=parseFloat(faixa.valor_sem_retorno).toFixed(2);
-    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km → Taxa: R$ ${parseFloat(faixa.valor_sem_retorno).toFixed(2)}</span>`;
+    const valorFaixa=_npRetornoAtivo?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
+    document.getElementById('np-taxa').value=valorFaixa.toFixed(2);
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km → Taxa: R$ ${valorFaixa.toFixed(2)}</span>`;
   }else{if(fb)fb.innerHTML=`<span style="color:#f59e0b">⚠️ ${distKm.toFixed(2)} km — fora das faixas, informe a taxa</span>`;}
 }
 
@@ -2230,6 +2231,7 @@ function _npToggleRetorno(){
   const lbl=document.getElementById('np-retorno-lbl');
   if(btn)btn.style.background=_npRetornoAtivo?'#1A56DB':'#3a3a3a';
   if(lbl){lbl.textContent=_npRetornoAtivo?'Com retorno':'Sem retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
+  calcularTaxaAuto();
 }
 let _epRetornoAtivo=false;
 function _epToggleRetorno(){
