@@ -2488,10 +2488,10 @@ async function _renderEntregadoresTab(el){
       ?'<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_perfil)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_cnh)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_crlv)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_perfil||e.foto||e.avatar||e.imagem)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_cnh||e.cnh)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_crlv||e.crlv)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia||e.comprovante_residencia)}</td>
         <td>${e.telefone||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${e.cpf||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${[e.modal_veiculo,e.modelo_veiculo].filter(Boolean).join(' ')||'—'}</td>
@@ -2511,10 +2511,10 @@ async function _renderEntregadoresTab(el){
       ?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_perfil)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_cnh)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_crlv)}</td>
-        <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_perfil||e.foto||e.avatar||e.imagem)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_cnh||e.cnh)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_crlv||e.crlv)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia||e.comprovante_residencia)}</td>
         <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
