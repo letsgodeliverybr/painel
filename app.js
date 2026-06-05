@@ -17,11 +17,11 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
-const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'},{id:'logs',icon:'📋',label:'Logs'}];
+const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'relatorios',icon:'📈',label:'Relatórios'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
 let _sidebarBusca='';
@@ -1092,9 +1092,14 @@ function showNotif(title,msg,color='var(--green)'){
 async function abrirModal(id){
   document.getElementById(id).classList.add('open');
   if(id==='modal-pedido'){
+    _npRetornoAtivo=false;
     setTimeout(async()=>{
       const modalBody=document.querySelector('#modal-pedido .modal-body');
-      if(!modalBody||document.getElementById('np-loja-id'))return;
+      if(!modalBody||document.getElementById('np-loja-id')){
+        const _rb=document.getElementById('np-retorno-btn');const _rl=document.getElementById('np-retorno-lbl');
+        if(_rb)_rb.style.background='#3a3a3a';if(_rl){_rl.textContent='Sem retorno';_rl.style.color='#888888';}
+        return;
+      }
       const isAdm=currentPerfil==='adm';
       const lojas=isAdm?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
       _npLojasData=lojas;
@@ -1122,6 +1127,10 @@ async function abrirModal(id){
           <div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div>
         </div>
         <div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div>
+        <div class="form-row">
+          <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div>
+          <div class="fi"></div>
+        </div>
         <div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div>
         <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div>
         <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
@@ -2047,7 +2056,7 @@ function renderPedidosLista(){
               <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
                 ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
                 ${txLoja>0?`<div style="color:#60a5fa;font-weight:700">Loja R$ ${txLoja.toFixed(2)}</div>`:''}
-                ${txMoto!==null?`<div style="color:#10b981;font-weight:700">Moto R$ ${txMoto.toFixed(2)}</div>`:''}
+                ${txMoto!==null&&currentPerfil!=='loja'?`<div style="color:#10b981;font-weight:700">Moto R$ ${txMoto.toFixed(2)}</div>`:''}
                 ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
               </div>
             </div>
