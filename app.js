@@ -1244,6 +1244,7 @@ function _criarEntregaRapidaToggle(){
   if(track){track.style.background=_crRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_crRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
   if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
   if(lbl){lbl.textContent=_crRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
+  _crCalcularTaxa();
 }
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
