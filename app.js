@@ -1216,12 +1216,13 @@ function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeo
 let _npLojasData=[];
 let _crRetornoAtivo=false;
 let _crCalcTimer=null;
+let _crLastDistKm=null;
 async function _crCalcularTaxa(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
   const spanKm=document.getElementById('cr-dist-km');
   const spanTaxa=document.getElementById('cr-dist-taxa');
   if(!spanKm||!spanTaxa)return;
-  if(!endereco||endereco.length<6){spanKm.textContent='';spanTaxa.textContent='';return;}
+  if(!endereco||endereco.length<6){spanKm.textContent='';spanTaxa.textContent='';_crLastDistKm=null;return;}
   const selCrEl=document.getElementById('cr-loja-id');
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
   if(!lojaId){spanKm.textContent='';spanTaxa.textContent='';return;}
@@ -1231,6 +1232,7 @@ async function _crCalcularTaxa(){
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
   if(!geo){spanKm.textContent='';spanTaxa.textContent='';return;}
   const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
+  _crLastDistKm=distKm;
   const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
   spanKm.textContent=`${distKm} km`;
   spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
@@ -1244,7 +1246,13 @@ function _criarEntregaRapidaToggle(){
   if(track){track.style.background=_crRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_crRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
   if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
   if(lbl){lbl.textContent=_crRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
-  _crCalcularTaxa();
+  if(_crLastDistKm!==null){
+    const spanTaxa=document.getElementById('cr-dist-taxa');
+    const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
+    if(spanTaxa)spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
+  } else {
+    _crCalcularTaxa();
+  }
 }
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
@@ -1274,7 +1282,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-gorjeta').value='';
-    _crRetornoAtivo=false;
+    _crRetornoAtivo=false;_crLastDistKm=null;
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
