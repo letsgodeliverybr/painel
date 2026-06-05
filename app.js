@@ -3864,7 +3864,7 @@ async function renderTabelasPrecoPage(){
 }
 function trocarAbaTabela(aba){_tabAba=aba;const bc=document.getElementById('aba-cobranca'),bp=document.getElementById('aba-pagamento');if(aba==='cobranca'){bc.style.borderBottom='2px solid var(--accent)';bc.style.color='var(--accent)';bp.style.borderBottom='2px solid transparent';bp.style.color='var(--text3)';}else{bp.style.borderBottom='2px solid #10b981';bp.style.color='#10b981';bc.style.borderBottom='2px solid transparent';bc.style.color='var(--text3)';}carregarTabelasPreco();}
 async function carregarTabelasPreco(){
-  const tabelas=await db('tabelas_preco','GET',null,`?tipo=eq.${_tabAba}&order=created_at.asc`);
+  const tabelas=await db('tabelas_preco','GET',null,`?tipo=eq.${_tabAba}&order=nome.asc`);
   const el=document.getElementById('tabelas-lista'),btnNovo=document.getElementById('tp-btn-novo');if(!el)return;
   if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_tabAba==='pagamento'?'➕ Novo Pagamento':'➕ Nova Cobrança';btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
