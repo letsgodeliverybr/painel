@@ -2494,9 +2494,9 @@ async function _renderEntregadoresTab(el){
         <td style="font-size:12px;color:var(--text2)">${e.chave_pix||'—'}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarData(e.created_at)}</td>
         <td style="white-space:nowrap">
-          <button onclick="_aprovarEntregador('${e.id}')" style="background:#10b981;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-right:5px">✅ Aprovar</button>
-          <button onclick="_reprovarEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:#ef4444;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">❌ Reprovar</button>
-          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-left:5px">🗑️</button>
+          <span onclick="_abrirDropdownCadastro(event,'${e.id}')" style="background:#3b82f6;color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none;margin-right:6px">🔍 Em Análise ▾</span>
+          <button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">✏️</button>
+          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">🗑️</button>
         </td>
       </tr>`).join('');
   } else {
@@ -2508,9 +2508,9 @@ async function _renderEntregadoresTab(el){
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
         <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
-        <td><span class="p-badge b-${cadBadge(e.status_cadastro)}">${e.status_cadastro||'pendente'}</span></td>
+        <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
-        <td style="white-space:nowrap"><button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td>
+        <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="event.stopPropagation();excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td>
       </tr>`).join('');
   }
 
@@ -2599,6 +2599,34 @@ async function _confirmarReprovacao(id){
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
   document.getElementById('modal-reprovar-ent')?.classList.remove('open');
   showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
+  renderCadastrosPage('entregadores');
+}
+
+function _abrirDropdownCadastro(event,entId){
+  event.stopPropagation();
+  document.getElementById('dd-cadastro')?.remove();
+  const opts=[
+    {key:'aprovado',label:'✅ Aprovado',color:'#10b981'},
+    {key:'em_analise',label:'🔍 Em Análise',color:'#3b82f6'},
+    {key:'pendente',label:'⏳ Pendente',color:'#6b7280'},
+    {key:'reprovado',label:'❌ Reprovado',color:'#ef4444'},
+  ];
+  const dd=document.createElement('div');
+  dd.id='dd-cadastro';
+  dd.style.cssText='position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:140px';
+  const rect=event.currentTarget.getBoundingClientRect();
+  dd.style.top=(rect.bottom+4)+'px';dd.style.left=rect.left+'px';
+  dd.innerHTML=opts.map(o=>`<div onclick="_setCadastroStatus('${entId}','${o.key}')" style="padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;color:${o.color};border-radius:6px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${o.label}</div>`).join('');
+  document.body.appendChild(dd);
+  setTimeout(()=>document.addEventListener('click',()=>document.getElementById('dd-cadastro')?.remove(),{once:true}),0);
+}
+async function _setCadastroStatus(entId,novoStatus){
+  document.getElementById('dd-cadastro')?.remove();
+  const patch={status_cadastro:novoStatus,updated_at:new Date().toISOString()};
+  if(novoStatus==='aprovado'){patch.aprovado=true;patch.status='ativo';}
+  else if(novoStatus==='reprovado'||novoStatus==='em_analise'){patch.aprovado=false;}
+  await dbPatch('entregadores',patch,`?id=eq.${entId}`);
+  showNotif(`Status atualizado: ${novoStatus}`,'');
   renderCadastrosPage('entregadores');
 }
 
