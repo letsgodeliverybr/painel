@@ -2478,7 +2478,7 @@ async function _renderEntregadoresTab(el){
   else filtered=data;
 
   let theadHtml,tbodyHtml;
-  const _fotoBtn=(url)=>url?`<span onclick="window.open('${url}','_blank')" title="Ver imagem" style="cursor:pointer;font-size:16px">👁️</span>`:'—';
+  const _fotoBtn=(url)=>url?`<button onclick="window.open('${url}','_blank')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
   if(_entFiltro==='em_analise'){
     theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>PIX</th><th>Data cadastro</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
