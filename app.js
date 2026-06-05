@@ -2467,12 +2467,14 @@ async function _renderEntregadoresTab(el){
     ${btnFiltro('todos','Todos')}
     ${btnFiltro('aprovados','✅ Aprovados')}
     <button onclick="_entSetFiltro('em_analise')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${_entFiltro==='em_analise'?'#1A56DB':'var(--border)'};background:${_entFiltro==='em_analise'?'#1A56DB':'var(--surface2)'};color:${_entFiltro==='em_analise'?'#fff':'var(--text2)'}">🔍 Em Análise${badge}</button>
-    ${btnFiltro('pendentes','⏳ Pendentes')}`;
+    ${btnFiltro('pendentes','⏳ Pendentes')}
+    ${btnFiltro('reprovados','❌ Reprovados')}`;
 
   let filtered;
   if(_entFiltro==='aprovados') filtered=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
   else if(_entFiltro==='em_analise') filtered=data.filter(e=>e.status_cadastro==='em_analise');
   else if(_entFiltro==='pendentes') filtered=data.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
+  else if(_entFiltro==='reprovados') filtered=data.filter(e=>e.status_cadastro==='reprovado');
   else filtered=data;
 
   let theadHtml,tbodyHtml;
