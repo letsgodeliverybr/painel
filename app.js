@@ -3407,7 +3407,7 @@ async function _calcularPagamentos(){
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
   const [pedidos,entregadores,saquesPendentes,saquesPagos]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&select=${selectFields}`),
-    db('entregadores','GET',null,'?select=id,nome,chave_pix,tipo_chave_pix,banco'),
+    db('entregadores','GET',null,'?select=*'),
     db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
     db('saques','GET',null,'?status=eq.pago&select=entregador_id,valor'),
   ]);
@@ -3561,7 +3561,7 @@ async function _renderHistoricoAprovarSaques(inicio,fim){
 function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>cb.checked=checked);}
 
 async function _atualizarSaldoEntregador(entregador_id,valor){
-  const ent=await db('entregadores','GET',null,`?id=eq.${entregador_id}&select=id,saldo`);
+  const ent=await db('entregadores','GET',null,`?id=eq.${entregador_id}&select=*`);
   if(!ent||!ent[0]){console.warn('[SALDO] entregador não encontrado:',entregador_id);return;}
   const saldoAtual=parseFloat(ent[0].saldo)||0;
   const valorPago=parseFloat(valor)||0;
@@ -4055,7 +4055,7 @@ async function _liberarEntregador(id){
 }
 
 async function _buscarEntregador(lat,lng,raio,excluir=[]){
-  const lista=await db('entregadores','GET',null,'?disponivel=eq.true&em_processo=eq.false&select=id,nome,lat,lng');
+  const lista=await db('entregadores','GET',null,'?disponivel=eq.true&em_processo=eq.false&select=*');
   if(!lista||!lista.length)return null;
   return lista
     .filter(e=>e.lat&&e.lng&&!excluir.includes(e.id))
