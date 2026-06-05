@@ -2455,7 +2455,7 @@ async function _renderClientesTab(el){
 }
 
 async function _renderEntregadoresTab(el){
-  const _entQuery='?order=updated_at.desc';
+  const _entQuery='?select=*,foto_perfil,foto_cnh,foto_crlv&order=updated_at.desc';
   const _entUrl=`${SB_URL}/rest/v1/entregadores${_entQuery}`;
   console.log('[entregadores] chamando db() | URL →', _entUrl);
   console.log('[entregadores] SB_KEY usado →', SB_KEY);
@@ -2481,12 +2481,16 @@ async function _renderEntregadoresTab(el){
   else filtered=data;
 
   let theadHtml,tbodyHtml;
+  const _fotoBtn=(url)=>url?`<span onclick="window.open('${url}','_blank')" title="Ver imagem" style="cursor:pointer;font-size:16px">👁️</span>`:'—';
   if(_entFiltro==='em_analise'){
-    theadHtml='<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>PIX</th><th>Data cadastro</th><th>Ações</th></tr>';
+    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>PIX</th><th>Data cadastro</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
-      ?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
+      ?'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_perfil)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_cnh)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_crlv)}</td>
         <td>${e.telefone||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${e.cpf||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${[e.modal_veiculo,e.modelo_veiculo].filter(Boolean).join(' ')||'—'}</td>
@@ -2501,11 +2505,14 @@ async function _renderEntregadoresTab(el){
       </tr>`).join('');
   } else {
     const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'fila');
-    theadHtml='<tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>Atualizado</th><th>Ações</th></tr>';
+    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>Atualizado</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
-      ?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
+      ?'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_perfil)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_cnh)}</td>
+        <td style="text-align:center">${_fotoBtn(e.foto_crlv)}</td>
         <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
