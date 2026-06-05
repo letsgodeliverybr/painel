@@ -2456,12 +2456,7 @@ async function _renderClientesTab(el){
 
 async function _renderEntregadoresTab(el){
   const _entQuery='?select=*&order=updated_at.desc';
-  const _entUrl=`${SB_URL}/rest/v1/entregadores${_entQuery}`;
-  console.log('[entregadores] chamando db() | URL →', _entUrl);
-  console.log('[entregadores] SB_KEY usado →', SB_KEY);
   const data=await db('entregadores','GET',null,_entQuery);
-  console.log('[entregadores] resultado bruto →', JSON.stringify(data));
-  console.log(`[entregadores] filtro="${_entFiltro}" | total=${data.length}`,data.map(e=>({id:e.id?.substring(0,8),nome:e.nome,aprovado:e.aprovado,status_cadastro:e.status_cadastro})));
   const contEmAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
   const badge=contEmAnalise>0?`<span style="background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;vertical-align:middle">${contEmAnalise}</span>`:'';
   const btnFiltro=(id,label)=>{
