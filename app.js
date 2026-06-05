@@ -2455,7 +2455,7 @@ async function _renderClientesTab(el){
 }
 
 async function _renderEntregadoresTab(el){
-  const _entQuery='?select=*,foto_perfil,foto_cnh,foto_crlv,foto_comprovante_residencia&order=updated_at.desc';
+  const _entQuery='?select=*&order=updated_at.desc';
   const _entUrl=`${SB_URL}/rest/v1/entregadores${_entQuery}`;
   console.log('[entregadores] chamando db() | URL →', _entUrl);
   console.log('[entregadores] SB_KEY usado →', SB_KEY);
