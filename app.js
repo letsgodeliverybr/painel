@@ -2055,8 +2055,8 @@ function renderPedidosLista(){
                 ${motoboy.telefone?`<div style="font-size:11px;color:var(--sb-text2)">${motoboy.telefone}</div>`:''}
               </div>
               <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
-                ${p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
-                ${txLoja>0?`<div style="color:#60a5fa;font-weight:700">Loja R$ ${txLoja.toFixed(2)}</div>`:''}
+                ${currentPerfil!=='loja'&&p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
+                ${currentPerfil!=='loja'&&txLoja>0?`<div style="color:#60a5fa;font-weight:700">Loja R$ ${txLoja.toFixed(2)}</div>`:''}
                 ${txMoto!==null&&currentPerfil!=='loja'?`<div style="color:#10b981;font-weight:700">Moto R$ ${txMoto.toFixed(2)}</div>`:''}
                 ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
               </div>
