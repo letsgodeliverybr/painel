@@ -1273,6 +1273,13 @@ async function _criarEntregaRapida(){
   const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   console.log('[CR] geo resultado:', geo);
   if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
+  if((!_crLastDistKm)&&geo){
+    const _lojaParaDist=allLojas.find(l=>l.id===lojaId);
+    if(_lojaParaDist?.latitude&&_lojaParaDist?.longitude){
+      _crLastDistKm=parseFloat(calcularDistancia(_lojaParaDist.latitude,_lojaParaDist.longitude,geo.lat,geo.lng).toFixed(2));
+      console.log('[CR] distância calculada no momento de criar:', _crLastDistKm, 'km');
+    }
+  }
   const _distKm=_crLastDistKm||0;
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
