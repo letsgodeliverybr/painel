@@ -1263,16 +1263,20 @@ async function _criarEntregaRapida(){
   // Lê value mesmo se o select estiver disabled (perfil loja)
   const selCrEl=document.getElementById('cr-loja-id');
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
-  console.log('[CR] lojaId lido:', lojaId, '| disabled:', selCrEl?.disabled, '| perfil:', currentPerfil);
+  console.log('[CR] loja_id:', lojaId, '| el.value:', selCrEl?.value, '| disabled:', selCrEl?.disabled, '| currentUser.loja_id:', currentUser?.loja_id, '| perfil:', currentPerfil);
+  console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
+  console.log('[CR] geo resultado:', geo);
+  if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,nome_cliente:cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:0,pontos:4,distancia_km:0,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
-  const result=await db('pedidos','POST',pedido);
+  let result=null;
+  try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
   console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
@@ -1287,7 +1291,7 @@ async function _criarEntregaRapida(){
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
   }else{
-    console.error('[CR] falha ao criar entrega — resultado:', result, '| pedido enviado:', pedido);
+    console.error('[CR] falha ao criar entrega — result:', result, '| pedido:', pedido);
     showNotif('Erro','Falha ao criar entrega','var(--red)');
   }
 }
