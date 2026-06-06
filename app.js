@@ -1251,7 +1251,7 @@ async function _crCalcularTaxa(){
   spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
 }
 function _crCalcularTaxaDebounce(){clearTimeout(_crCalcTimer);_crCalcTimer=setTimeout(_crCalcularTaxa,700);}
-function _criarEntregaRapidaToggle(){
+async function _criarEntregaRapidaToggle(){
   _crRetornoAtivo=!_crRetornoAtivo;
   const track=document.getElementById('cr-retorno-track');
   const thumb=document.getElementById('cr-retorno-thumb');
@@ -1260,8 +1260,11 @@ function _criarEntregaRapidaToggle(){
   if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
   if(lbl){lbl.textContent=_crRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
   if(_crLastDistKm!==null){
+    const selCrEl=document.getElementById('cr-loja-id');
+    const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
+    const faixas=await _getFaixasCobranca(lojaId);
     const spanTaxa=document.getElementById('cr-dist-taxa');
-    const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
+    const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixas);
     if(spanTaxa)spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
   } else {
     _crCalcularTaxa();
