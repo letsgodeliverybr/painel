@@ -3900,7 +3900,7 @@ async function verFaturaCobranca(cobId){
   const tdV='padding:14px 12px;text-align:right;font-size:14px;font-weight:700';
   const invoice=`<div id="fatura-doc" style="background:#ffffff;color:#111111;color-scheme:light;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
     <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
-      <div style="display:flex;align-items:center;gap:12px"><img src="https://raw.githubusercontent.com/letsgodeliverybr/painel/main/logo.jpeg" height="50" style="object-fit:contain;display:block"/><div><div style="color:#1A56DB;font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.3px">Let's Go Delivery</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px;margin-top:2px">DELIVERY</div></div></div>
+      <img src="https://raw.githubusercontent.com/letsgodeliverybr/painel/main/logo.jpeg" height="50" style="object-fit:contain;display:block;border-radius:8px;background:#fff;padding:4px"/>
       <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
     </div>
     <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
