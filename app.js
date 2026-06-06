@@ -3811,7 +3811,7 @@ async function _buscarCobrancasPendentes(){
         <td>${c.qtd_pedidos||'—'}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
-        <td><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+        <td style="display:flex;gap:6px"><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
   _renderHistoricoCobrancas(inicio,fim);
@@ -3861,6 +3861,82 @@ async function recusarCobranca(id){
   document.getElementById(`cob-row-${id}`)?.remove();
   showNotif('❌ Cobrança recusada','','var(--red)');
   _buscarCobrancasPendentes();
+}
+
+async function verFaturaCobranca(cobId){
+  let modal=document.getElementById('modal-fatura-cobranca');
+  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
+  modal.style.display='flex';
+  modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;text-align:center;color:var(--text3);min-width:260px"><div style="font-size:32px;margin-bottom:12px">⏳</div>Carregando fatura...</div>';
+  modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
+  const [cobRes,configs]=await Promise.all([
+    db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome)&limit=1`),
+    db('configuracoes','GET',null,'?select=chave,valor&limit=200')
+  ]);
+  const c=Array.isArray(cobRes)?cobRes[0]:null;
+  if(!c){modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;text-align:center;color:var(--red)">Cobrança não encontrada</div>';return;}
+  const lojaNome=c.lojas?.nome||'—';
+  const dataInicio=c.data_inicio||'—';
+  const dataFim=c.data_fim||'—';
+  const valorTotal=parseFloat(c.valor_total)||0;
+  const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
+  const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
+  let pedidosData=[];
+  if(c.loja_id&&iniISO&&fimISO){
+    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
+    pedidosData=Array.isArray(res)?res:[];
+  }
+  const cfgMap={};
+  (Array.isArray(configs)?configs:[]).forEach(x=>{cfgMap[x.chave]=x.valor;});
+  const payKeys=Object.entries(cfgMap).filter(([k])=>/pix|banco|pagamento|conta|agencia|titular/i.test(k));
+  const dataEmissao=new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
+  const pedidosRows=pedidosData.map((p,i)=>{
+    const dataP=p.finalizado_em||p.updated_at;
+    const end=p.endereco_entrega||p.endereco||'—';
+    const taxa=(parseFloat(p.taxa_entrega)||0).toFixed(2);
+    return`<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:8px 10px;font-weight:600;color:#374151">#${p.numero||(i+1)}</td><td style="padding:8px 10px;font-size:12px;color:#6b7280">${formatarDataHora(dataP)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;max-width:220px;word-break:break-word">${end}</td><td style="padding:8px 10px;font-weight:700;color:#1d4ed8;text-align:right">R$ ${taxa}</td></tr>`;
+  }).join('');
+  const payHtml=payKeys.length>0
+    ?payKeys.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:13px;color:#6b7280;text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="font-size:13px;font-weight:600;color:#111827">${v}</span></div>`).join('')
+    :'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:12px">Nenhuma informação de pagamento cadastrada em configurações</div>';
+  const invoiceInner=`<div style="background:#fff;border-radius:12px;width:100%;max-width:720px">
+    <div style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;padding:28px 32px;border-radius:12px 12px 0 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div><div style="font-size:24px;font-weight:800;letter-spacing:-.5px">FATURA</div><div style="font-size:13px;opacity:.85;margin-top:4px">Emitida em ${dataEmissao}</div></div>
+        <div style="text-align:right"><div style="font-size:28px;font-weight:800">R$ ${valorTotal.toFixed(2)}</div><div style="font-size:12px;opacity:.85">Total a pagar</div></div>
+      </div>
+    </div>
+    <div style="padding:20px 32px;border-bottom:1px solid #e5e7eb;background:#f9fafb">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Loja</div><div style="font-size:14px;font-weight:700;color:#111827">${lojaNome}</div></div>
+        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Período</div><div style="font-size:13px;color:#374151">${dataInicio} – ${dataFim}</div></div>
+        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Pedidos</div><div style="font-size:14px;font-weight:700;color:#111827">${pedidosData.length||c.qtd_pedidos||'—'}</div></div>
+      </div>
+    </div>
+    <div style="padding:24px 32px">
+      <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:12px">Detalhamento dos Pedidos</div>
+      ${pedidosData.length>0?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f3f4f6"><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Nº</th><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Data</th><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Endereço</th><th style="padding:10px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead><tbody>${pedidosRows}</tbody><tfoot><tr style="background:#eff6ff"><td colspan="3" style="padding:12px 10px;font-weight:700;color:#1d4ed8;text-align:right;font-size:14px">TOTAL GERAL</td><td style="padding:12px 10px;font-weight:800;color:#1d4ed8;text-align:right;font-size:16px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot></table></div>`:'<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px">Detalhes dos pedidos não disponíveis para este período</div>'}
+    </div>
+    <div style="padding:0 32px 24px">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px">
+        <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:12px">💳 Dados Bancários para Pagamento</div>
+        ${payHtml}
+      </div>
+    </div>
+    <div style="padding:16px 32px 24px;display:flex;gap:12px;justify-content:flex-end;border-top:1px solid #e5e7eb">
+      <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:10px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
+      <button onclick="_imprimirFatura()" style="padding:10px 24px;border:none;border-radius:8px;background:#1d4ed8;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir</button>
+    </div>
+  </div>`;
+  modal.innerHTML=`<div id="fatura-modal-inner" style="width:100%;max-width:720px">${invoiceInner}</div>`;
+  modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
+}
+
+function _imprimirFatura(){
+  const inner=document.getElementById('fatura-modal-inner');if(!inner)return;
+  const w=window.open('','_blank','width=820,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatura</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;background:#fff;color:#111}@media print{body{margin:0}button{display:none!important}}</style></head><body>${inner.innerHTML}</body></html>`);
+  w.document.close();w.focus();w.print();
 }
 
 let _configAba='cliente';
