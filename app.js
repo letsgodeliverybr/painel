@@ -2486,6 +2486,11 @@ async function criarPedido(){
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
+    if(currentPerfil==='loja'&&finalLojaId&&taxa>0){
+      const _agora=new Date().toISOString();
+      await db('creditos_lojas','POST',{loja_id:finalLojaId,tipo:'debito',valor:taxa,observacoes:`Entrega #${numero}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
+      _carregarSaldoTopbar();
+    }
     const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
     if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
     showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
