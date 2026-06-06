@@ -35,6 +35,7 @@ const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 let _faixasPagamento=[];
 let _faixasCobranca=[];
 let _faixasCachePorTabela={};
+let _tabelasPrecoCache=[];
 let _saldoLojaAtual=0;
 let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
@@ -4088,9 +4089,11 @@ async function carregarTabelasPreco(){
   const el=document.getElementById('tabelas-lista'),btnNovo=document.getElementById('tp-btn-novo');if(!el)return;
   if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_tabAba==='pagamento'?'➕ Novo Pagamento':'➕ Nova Cobrança';btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
+  _tabelasPrecoCache=tabelas;
   tabelas.forEach(t=>console.log('[FAIXAS] tabela id:',t.id,'nome:',t.nome));
-  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixas('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}','${t.tipo||'cobranca'}')">📊 Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">✏️</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">📋</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">📊 Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">✏️</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">📋</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
 }
+function verFaixasTabela(id){const t=_tabelasPrecoCache.find(x=>x.id===id);if(t)verFaixas(t.id,t.nome,t.tipo||'cobranca');}
 async function verFaixas(tabelaId,tabelaNome,tipo){
   const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelaId}&order=km_de.asc`);
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
