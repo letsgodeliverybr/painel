@@ -3901,8 +3901,7 @@ async function verFaturaCobranca(cobId){
   const valorTotal=parseFloat(c.valor_total)||0;
   const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
   const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
-  const _rawId=String(c.id||'');
-  const numFatura=c.numero_fatura!=null?String(c.numero_fatura).padStart(7,'0'):_rawId.replace(/\D/g,'').slice(-7).padStart(7,'0');
+  const numFatura=String(c.numero_fatura||'').padStart(7,'0');
   const hoje=new Date();
   const dataEmissao=hoje.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
   const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+2);
