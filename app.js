@@ -1314,13 +1314,18 @@ async function _criarEntregaRapida(){
   console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
+    if(currentPerfil==='loja'&&lojaId){
+      const _agora=new Date().toISOString();
+      await db('creditos_lojas','POST',{loja_id:lojaId,tipo:'debito',valor:_taxaEntrega,observacoes:`Entrega #${numFinal}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
+      _carregarSaldoTopbar();
+    }
     if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
     document.getElementById('cr-numero').value='';
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-gorjeta').value='';
-    _crRetornoAtivo=false;_crLastDistKm=null;
+    _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
