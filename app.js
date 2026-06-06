@@ -35,6 +35,9 @@ const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 let _faixasPagamento=[];
 let _faixasCobranca=[];
 let _faixasCachePorTabela={};
+let _saldoLojaAtual=0;
+let _debitosRegistrados=new Set();
+let _crLastTaxa=0;
 
 function _calcTaxaMotoboy(p){
   if(!_faixasPagamento.length) return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
@@ -1247,8 +1250,10 @@ async function _crCalcularTaxa(){
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
   const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixasCr);
+  _crLastTaxa=taxa;
   spanKm.textContent=`${distKm} km`;
   spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
+  _atualizarBtnCriarEntrega();
 }
 function _crCalcularTaxaDebounce(){clearTimeout(_crCalcTimer);_crCalcTimer=setTimeout(_crCalcularTaxa,700);}
 async function _criarEntregaRapidaToggle(){
@@ -1265,7 +1270,9 @@ async function _criarEntregaRapidaToggle(){
     const faixas=await _getFaixasCobranca(lojaId);
     const spanTaxa=document.getElementById('cr-dist-taxa');
     const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixas);
+    _crLastTaxa=taxa;
     if(spanTaxa)spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
+    _atualizarBtnCriarEntrega();
   } else {
     _crCalcularTaxa();
   }
@@ -1283,6 +1290,7 @@ async function _criarEntregaRapida(){
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
+  if(currentPerfil==='loja'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
@@ -1496,9 +1504,17 @@ async function _carregarSaldoTopbar(){
       const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
       const totD=arr.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
       const saldo=totC-totD;
+      _saldoLojaAtual=saldo;
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
+      let alertBanner=document.getElementById('saldo-alerta-banner');
+      if(saldo<100){
+        if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
+        alertBanner.textContent='⚠️ Saldo baixo! Recarregue seu saldo para continuar criando entregas.';
+        alertBanner.style.display='block';
+      }else if(alertBanner){alertBanner.style.display='none';}
+      _atualizarBtnCriarEntrega();
     } else if(currentPerfil==='adm'){
       const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
       const total=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
@@ -1507,12 +1523,27 @@ async function _carregarSaldoTopbar(){
     }
   }catch(_){}
 }
+function _atualizarBtnCriarEntrega(){
+  if(currentPerfil!=='loja')return;
+  const btn=document.getElementById('btn-criar-entrega');
+  if(!btn)return;
+  const insuficiente=_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa);
+  btn.disabled=insuficiente;
+  btn.style.setProperty('background',insuficiente?'#6b7280':'#1A56DB','important');
+  btn.style.cursor=insuficiente?'not-allowed':'pointer';
+  btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':'➕ Criar Entrega';
+}
 
 async function confirmarPagamento(pedidoId){
   const _p=allPedidos.find(x=>x.id===pedidoId);
   const patch={pagamento_confirmado:true,pagamento_confirmado_em:new Date().toISOString(),status:'finalizado',status_detalhado:'finalizado',finalizado_em:new Date().toISOString(),updated_at:new Date().toISOString()};
   if(_p&&(_p.motoboy_id||_p.entregador_id)&&_p.taxa_entrega_motoboy==null)patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0);
   await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
+  if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)){
+    const agora=new Date().toISOString();
+    await db('creditos_lojas','POST',{loja_id:_p.loja_id,tipo:'debito',valor:parseFloat(_p.taxa_entrega)||0,observacoes:`Entrega #${_p.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
+    _debitosRegistrados.add(pedidoId);
+  }
   await logAcao('pagamento_confirmado',{pedido_id:pedidoId});
   showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');await atualizarTudo();
 }
@@ -1714,7 +1745,7 @@ function renderMapaPage(){
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
-          <button onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
+          <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
