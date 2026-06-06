@@ -3865,22 +3865,31 @@ async function recusarCobranca(id){
 
 async function verFaturaCobranca(cobId){
   let modal=document.getElementById('modal-fatura-cobranca');
-  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
+  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
   modal.style.display='flex';
-  modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;text-align:center;color:var(--text3);min-width:260px"><div style="font-size:32px;margin-bottom:12px">⏳</div>Carregando fatura...</div>';
+  modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:36px;margin-bottom:12px">⏳</div><div style="font-size:14px;font-weight:600">Carregando fatura...</div></div>';
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
   const [cobRes,configs]=await Promise.all([
-    db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome)&limit=1`),
+    db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`),
     db('configuracoes','GET',null,'?select=chave,valor&limit=200')
   ]);
   const c=Array.isArray(cobRes)?cobRes[0]:null;
-  if(!c){modal.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;text-align:center;color:var(--red)">Cobrança não encontrada</div>';return;}
-  const lojaNome=c.lojas?.nome||'—';
+  if(!c){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Cobrança não encontrada</div>';return;}
+  const loja=c.lojas||{};
+  const lojaNome=loja.nome||'—';
+  const lojaEndereco=loja.endereco||'';
+  const lojaEmail=loja.email||'';
   const dataInicio=c.data_inicio||'—';
   const dataFim=c.data_fim||'—';
   const valorTotal=parseFloat(c.valor_total)||0;
   const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
   const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
+  const numFatura=String(c.id||'').substring(0,8).toUpperCase();
+  const hoje=new Date();
+  const dataEmissao=hoje.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
+  const dtVenc=c.data_fim?new Date(c.data_fim+'T00:00:00-03:00'):new Date();
+  dtVenc.setDate(dtVenc.getDate()+7);
+  const vencimento=dtVenc.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
     const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
@@ -3889,54 +3898,68 @@ async function verFaturaCobranca(cobId){
   const cfgMap={};
   (Array.isArray(configs)?configs:[]).forEach(x=>{cfgMap[x.chave]=x.valor;});
   const payKeys=Object.entries(cfgMap).filter(([k])=>/pix|banco|pagamento|conta|agencia|titular/i.test(k));
-  const dataEmissao=new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
-  const pedidosRows=pedidosData.map((p,i)=>{
-    const dataP=p.finalizado_em||p.updated_at;
-    const end=p.endereco_entrega||p.endereco||'—';
-    const taxa=(parseFloat(p.taxa_entrega)||0).toFixed(2);
-    return`<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:8px 10px;font-weight:600;color:#374151">#${p.numero||(i+1)}</td><td style="padding:8px 10px;font-size:12px;color:#6b7280">${formatarDataHora(dataP)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;max-width:220px;word-break:break-word">${end}</td><td style="padding:8px 10px;font-weight:700;color:#1d4ed8;text-align:right">R$ ${taxa}</td></tr>`;
-  }).join('');
   const payHtml=payKeys.length>0
-    ?payKeys.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:13px;color:#6b7280;text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="font-size:13px;font-weight:600;color:#111827">${v}</span></div>`).join('')
-    :'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:12px">Nenhuma informação de pagamento cadastrada em configurações</div>';
-  const invoiceInner=`<div style="background:#fff;border-radius:12px;width:100%;max-width:720px">
-    <div style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;padding:28px 32px;border-radius:12px 12px 0 0">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-        <div><div style="font-size:24px;font-weight:800;letter-spacing:-.5px">FATURA</div><div style="font-size:13px;opacity:.85;margin-top:4px">Emitida em ${dataEmissao}</div></div>
-        <div style="text-align:right"><div style="font-size:28px;font-weight:800">R$ ${valorTotal.toFixed(2)}</div><div style="font-size:12px;opacity:.85">Total a pagar</div></div>
+    ?`<table style="width:100%;border-collapse:collapse">${payKeys.map(([k,v])=>`<tr><td style="padding:7px 0;font-size:13px;color:#6b7280;text-transform:capitalize;width:50%">${k.replace(/_/g,' ')}</td><td style="padding:7px 0;font-size:13px;font-weight:700;color:#111827;text-align:right">${v}</td></tr>`).join('')}</table>`
+    :'<div style="color:#9ca3af;font-size:13px;padding:8px 0">Cadastre os dados de pagamento em Configurações</div>';
+  const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
+  const logoSvg=`<div style="display:flex;align-items:center;gap:11px"><div style="background:#1A56DB;border-radius:9px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🛵</div><div><div style="color:#fff;font-size:17px;font-weight:800;line-height:1.15">Let's Go</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px;margin-top:1px">DELIVERY</div></div></div>`;
+  const invoice=`<div id="fatura-doc" style="background:#fff;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif">
+    <div style="background:#1A56DB;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      ${logoSvg}
+      <div style="text-align:right"><div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#93c5fd;font-size:12px;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
+    </div>
+    <div style="background:#eff6ff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #dbeafe">
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitida em:</span> ${dataEmissao}</div>
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Vencimento:</span> <span style="color:#dc2626;font-weight:700">${vencimento}</span></div>
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Período:</span> ${dataInicio} – ${dataFim}</div>
+    </div>
+    <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Cliente</div>
+        <div style="font-size:18px;font-weight:800;color:#111827;margin-bottom:5px">${lojaNome}</div>
+        ${lojaEndereco?`<div style="font-size:13px;color:#6b7280;margin-bottom:3px">📍 ${lojaEndereco}</div>`:''}
+        ${lojaEmail?`<div style="font-size:13px;color:#6b7280">✉️ ${lojaEmail}</div>`:''}
+      </div>
+      <div style="text-align:right;min-width:140px">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Total a pagar</div>
+        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${valorTotal.toFixed(2)}</div>
       </div>
     </div>
-    <div style="padding:20px 32px;border-bottom:1px solid #e5e7eb;background:#f9fafb">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Loja</div><div style="font-size:14px;font-weight:700;color:#111827">${lojaNome}</div></div>
-        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Período</div><div style="font-size:13px;color:#374151">${dataInicio} – ${dataFim}</div></div>
-        <div><div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Pedidos</div><div style="font-size:14px;font-weight:700;color:#111827">${pedidosData.length||c.qtd_pedidos||'—'}</div></div>
-      </div>
+    <div style="padding:20px 32px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções de pagamento</div>
+      ${payHtml}
     </div>
-    <div style="padding:24px 32px">
-      <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:12px">Detalhamento dos Pedidos</div>
-      ${pedidosData.length>0?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f3f4f6"><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Nº</th><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Data</th><th style="padding:10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Endereço</th><th style="padding:10px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead><tbody>${pedidosRows}</tbody><tfoot><tr style="background:#eff6ff"><td colspan="3" style="padding:12px 10px;font-weight:700;color:#1d4ed8;text-align:right;font-size:14px">TOTAL GERAL</td><td style="padding:12px 10px;font-weight:800;color:#1d4ed8;text-align:right;font-size:16px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot></table></div>`:'<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px">Detalhes dos pedidos não disponíveis para este período</div>'}
+    <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb">
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Serviços</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f3f4f6"><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;width:36px">#</th><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Serviços</th><th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Quantidade</th><th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:14px 12px;font-size:13px;color:#9ca3af">1</td><td style="padding:14px 12px;font-size:14px;font-weight:600;color:#111827">Entregas</td><td style="padding:14px 12px;text-align:center;font-size:14px;color:#374151">${qtdPedidos}</td><td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:700;color:#1A56DB">R$ ${valorTotal.toFixed(2)}</td></tr>
+          <tr><td style="padding:14px 12px;font-size:13px;color:#9ca3af">2</td><td style="padding:14px 12px;font-size:14px;font-weight:600;color:#111827">Esperas</td><td style="padding:14px 12px;text-align:center;font-size:14px;color:#374151">0</td><td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:600;color:#9ca3af">R$ 0,00</td></tr>
+        </tbody>
+        <tfoot><tr style="background:#eff6ff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot>
+      </table>
     </div>
-    <div style="padding:0 32px 24px">
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px">
-        <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:12px">💳 Dados Bancários para Pagamento</div>
-        ${payHtml}
-      </div>
+    <div style="background:#1A56DB;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="color:#fff;font-size:13px;font-weight:700">Let's Go Delivery</div>
+      <div style="color:#93c5fd;font-size:11px">Obrigado pela parceria!</div>
     </div>
-    <div style="padding:16px 32px 24px;display:flex;gap:12px;justify-content:flex-end;border-top:1px solid #e5e7eb">
-      <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:10px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
-      <button onclick="_imprimirFatura()" style="padding:10px 24px;border:none;border-radius:8px;background:#1d4ed8;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir</button>
+    <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e5e7eb;background:#fff">
+      <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
+      <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir</button>
     </div>
   </div>`;
-  modal.innerHTML=`<div id="fatura-modal-inner" style="width:100%;max-width:720px">${invoiceInner}</div>`;
+  modal.innerHTML=invoice;
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
 }
 
 function _imprimirFatura(){
-  const inner=document.getElementById('fatura-modal-inner');if(!inner)return;
-  const w=window.open('','_blank','width=820,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatura</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;background:#fff;color:#111}@media print{body{margin:0}button{display:none!important}}</style></head><body>${inner.innerHTML}</body></html>`);
-  w.document.close();w.focus();w.print();
+  const doc=document.getElementById('fatura-doc');if(!doc)return;
+  const clone=doc.cloneNode(true);
+  const actions=clone.querySelector('#fatura-actions');if(actions)actions.remove();
+  const w=window.open('','_blank','width=860,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatura — Let's Go Delivery</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;background:#f3f4f6;padding:24px}@media print{body{background:#fff;padding:0}}</style></head><body>${clone.outerHTML}</body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),600);
 }
 
 let _configAba='cliente';
