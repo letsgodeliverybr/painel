@@ -1424,7 +1424,8 @@ function _posicionarDropdown(dd,anchorEl){
 function abrirDropdownStatus(event,pedidoId){
   event.stopPropagation();
   const wrapper=document.getElementById('badge-wrapper-'+pedidoId);if(!wrapper)return;
-  const itens=TODOS_STATUS.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedido('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
+  const statusVisiveis=currentPerfil==='loja'?TODOS_STATUS.filter(s=>s.key!=='cancelado'):TODOS_STATUS;
+  const itens=statusVisiveis.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedido('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
   const dd=_criarDropdown(pedidoId,itens);
   _posicionarDropdown(dd,wrapper);
 }
@@ -1432,7 +1433,8 @@ function fecharDropdownStatus(){if(_dropdownAberto){_dropdownAberto.remove();_dr
 function abrirDropdownStatusTabela(event,pedidoId){
   event.stopPropagation();
   const anchor=event.currentTarget;
-  const itens=TODOS_STATUS.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoTabela('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
+  const statusVisiveis=currentPerfil==='loja'?TODOS_STATUS.filter(s=>s.key!=='cancelado'):TODOS_STATUS;
+  const itens=statusVisiveis.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoTabela('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
   const dd=_criarDropdown(pedidoId,itens);
   _posicionarDropdown(dd,anchor);
 }
@@ -1447,7 +1449,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
+  if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
@@ -1467,7 +1469,7 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
-  if(novoStatus==='cancelado')showNotif('❌ Pedido cancelado','','var(--red)');
+  if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
@@ -1477,6 +1479,14 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   await atualizarTudo();
 }
 
+async function _estornarDebitoEntrega(pedido){
+  if(!pedido?.loja_id||!pedido?.numero)return;
+  const existing=await db('creditos_lojas','GET',null,`?loja_id=eq.${pedido.loja_id}&tipo=eq.debito&observacoes=ilike.*%23${pedido.numero}&limit=1`);
+  if(!existing||!existing.length)return;
+  const agora=new Date().toISOString();
+  await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
+  _carregarSaldoTopbar();
+}
 function _notificarPedidoPronto(){
   fetch(`${SB_URL}/functions/v1/notify-novo-pedido`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({tipo:'novo_pedido'})}).catch(e=>console.warn('[FCM] falha ao notificar:',e));
 }
@@ -2486,6 +2496,7 @@ async function criarPedido(){
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
+    console.log('[DEBITO] perfil:', currentPerfil, 'loja:', finalLojaId, 'taxa:', taxa);
     if(currentPerfil==='loja'&&finalLojaId&&taxa>0){
       const _agora=new Date().toISOString();
       await db('creditos_lojas','POST',{loja_id:finalLojaId,tipo:'debito',valor:taxa,observacoes:`Entrega #${numero}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
