@@ -34,6 +34,7 @@ const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 let _faixasPagamento=[];
 let _faixasCobranca=[];
+let _faixasCachePorTabela={};
 
 function _calcTaxaMotoboy(p){
   if(!_faixasPagamento.length) return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
@@ -46,15 +47,26 @@ function _calcTaxaMotoboy(p){
   valor+=(parseFloat(p.gorjeta)||0);
   return Math.round(valor*100)/100;
 }
-function _calcTaxaLoja(p){
-  if(!_faixasCobranca.length) return parseFloat(p.taxa_entrega)||0;
+function _calcTaxaLoja(p,faixasOverride){
+  const faixas=faixasOverride||_faixasCobranca;
+  if(!faixas.length) return parseFloat(p.taxa_entrega)||0;
   const km=parseFloat(p.distancia_km)||1;
-  const faixa=_faixasCobranca.find(f=>km<=parseFloat(f.km_ate))||_faixasCobranca[_faixasCobranca.length-1];
+  const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
   if(!faixa) return parseFloat(p.taxa_entrega)||0;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
   valor+=(parseFloat(p.preco_dinamico)||0);
   return Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
+}
+async function _getFaixasCobranca(lojaId){
+  if(!lojaId) return _faixasCobranca;
+  const loja=allLojas.find(l=>l.id===lojaId);
+  const tabId=loja?.tabela_cobranca_id||null;
+  if(!tabId) return _faixasCobranca;
+  if(_faixasCachePorTabela[tabId]) return _faixasCachePorTabela[tabId];
+  const res=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabId}&order=km_ate.asc`);
+  _faixasCachePorTabela[tabId]=Array.isArray(res)?res:[];
+  return _faixasCachePorTabela[tabId];
 }
 let _precoDinTimers={};
 let _precoDinValores={cliente:0,entregador:0};
@@ -1233,7 +1245,8 @@ async function _crCalcularTaxa(){
   if(!geo){spanKm.textContent='';spanTaxa.textContent='';return;}
   const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
   _crLastDistKm=distKm;
-  const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
+  const faixasCr=await _getFaixasCobranca(lojaId);
+  const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixasCr);
   spanKm.textContent=`${distKm} km`;
   spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
 }
@@ -1281,7 +1294,8 @@ async function _criarEntregaRapida(){
     }
   }
   const _distKm=_crLastDistKm||0;
-  const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0});
+  const _faixasCr=await _getFaixasCobranca(lojaId);
+  const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},_faixasCr);
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
@@ -3020,6 +3034,8 @@ ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione..
 ${r2(fi('Telefone',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('Celular',inp('el-celular',l.celular,'(16) 99999-9999')))}
 ${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${sec('Tabelas de Preço')}
+${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelas.filter(t=>t.tipo==='cobranca').map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelas.filter(t=>t.tipo==='pagamento').map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -3055,6 +3071,8 @@ async function salvarEdicaoLoja(lojaId){
     telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
     pessoa_juridica:pj===''?null:pj==='true',
     ativo:g('el-ativo')==='true',
+    tabela_cobranca_id:g('el-tabela-cobranca')||null,
+    tabela_pagamento_id:g('el-tabela-pagamento')||null,
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
@@ -3069,6 +3087,8 @@ async function salvarEdicaoLoja(lojaId){
   const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
   await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
+  // invalida cache de faixas para a loja editada
+  const _lojaEdit=allLojas.find(l=>l.id===lojaId);if(_lojaEdit){_lojaEdit.tabela_cobranca_id=update.tabela_cobranca_id;_lojaEdit.tabela_pagamento_id=update.tabela_pagamento_id;if(update.tabela_cobranca_id)delete _faixasCachePorTabela[update.tabela_cobranca_id];}
   if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');renderLojasPage();},1200);
 }
