@@ -3865,14 +3865,11 @@ async function recusarCobranca(id){
 
 async function verFaturaCobranca(cobId){
   let modal=document.getElementById('modal-fatura-cobranca');
-  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
+  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
   modal.style.display='flex';
   modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:36px;margin-bottom:12px">⏳</div><div style="font-size:14px;font-weight:600">Carregando fatura...</div></div>';
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
-  const [cobRes,configs]=await Promise.all([
-    db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`),
-    db('configuracoes','GET',null,'?select=chave,valor&limit=200')
-  ]);
+  const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`);
   const c=Array.isArray(cobRes)?cobRes[0]:null;
   if(!c){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Cobrança não encontrada</div>';return;}
   const loja=c.lojas||{};
@@ -3884,31 +3881,29 @@ async function verFaturaCobranca(cobId){
   const valorTotal=parseFloat(c.valor_total)||0;
   const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
   const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
-  const numFatura=String(c.id||'').substring(0,8).toUpperCase();
+  const numFatura=c.numero_fatura!=null?String(c.numero_fatura).padStart(7,'0'):String(c.id||'').padStart(7,'0');
   const hoje=new Date();
   const dataEmissao=hoje.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
-  const dtVenc=c.data_fim?new Date(c.data_fim+'T00:00:00-03:00'):new Date();
-  dtVenc.setDate(dtVenc.getDate()+7);
+  const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+3);
   const vencimento=dtVenc.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
-    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
+    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
     pedidosData=Array.isArray(res)?res:[];
   }
-  const cfgMap={};
-  (Array.isArray(configs)?configs:[]).forEach(x=>{cfgMap[x.chave]=x.valor;});
-  const payKeys=Object.entries(cfgMap).filter(([k])=>/pix|banco|pagamento|conta|agencia|titular/i.test(k));
-  const payHtml=payKeys.length>0
-    ?`<table style="width:100%;border-collapse:collapse">${payKeys.map(([k,v])=>`<tr><td style="padding:7px 0;font-size:13px;color:#6b7280;text-transform:capitalize;width:50%">${k.replace(/_/g,' ')}</td><td style="padding:7px 0;font-size:13px;font-weight:700;color:#111827;text-align:right">${v}</td></tr>`).join('')}</table>`
-    :'<div style="color:#9ca3af;font-size:13px;padding:8px 0">Cadastre os dados de pagamento em Configurações</div>';
   const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
-  const logoSvg=`<div style="display:flex;align-items:center;gap:11px"><div style="background:#1A56DB;border-radius:9px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🛵</div><div><div style="color:#fff;font-size:17px;font-weight:800;line-height:1.15">Let's Go</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px;margin-top:1px">DELIVERY</div></div></div>`;
-  const invoice=`<div id="fatura-doc" style="background:#fff;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif">
-    <div style="background:#1A56DB;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      ${logoSvg}
-      <div style="text-align:right"><div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#93c5fd;font-size:12px;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
+  const totalGorjetas=pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0);
+  const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
+  const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
+  const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
+  const tdV='padding:14px 12px;text-align:right;font-size:14px;font-weight:700';
+  const logoHtml=`<div style="display:flex;align-items:center;gap:12px"><img src="https://painel.letsgodelivery.com.br/logo.png" alt="Let's Go Delivery" style="height:44px;width:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div style="display:none;align-items:center;gap:10px"><div style="background:#1A56DB;border-radius:9px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div><div><div style="color:#1A56DB;font-size:17px;font-weight:800;line-height:1.15">Let's Go</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px">DELIVERY</div></div></div></div>`;
+  const invoice=`<div id="fatura-doc" style="background:#fff;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
+    <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
+      ${logoHtml}
+      <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
     </div>
-    <div style="background:#eff6ff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #dbeafe">
+    <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitida em:</span> ${dataEmissao}</div>
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Vencimento:</span> <span style="color:#dc2626;font-weight:700">${vencimento}</span></div>
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Período:</span> ${dataInicio} – ${dataFim}</div>
@@ -3916,7 +3911,7 @@ async function verFaturaCobranca(cobId){
     <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
       <div>
         <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Cliente</div>
-        <div style="font-size:18px;font-weight:800;color:#111827;margin-bottom:5px">${lojaNome}</div>
+        <div style="font-size:18px;font-weight:800;color:#111;margin-bottom:5px">${lojaNome}</div>
         ${lojaEndereco?`<div style="font-size:13px;color:#6b7280;margin-bottom:3px">📍 ${lojaEndereco}</div>`:''}
         ${lojaEmail?`<div style="font-size:13px;color:#6b7280">✉️ ${lojaEmail}</div>`:''}
       </div>
@@ -3925,24 +3920,28 @@ async function verFaturaCobranca(cobId){
         <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${valorTotal.toFixed(2)}</div>
       </div>
     </div>
-    <div style="padding:20px 32px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
+    <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
       <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções de pagamento</div>
-      ${payHtml}
+      <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px">
+        <span style="font-size:18px">💠</span>
+        <div><div style="font-size:11px;font-weight:600;color:#0369a1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">PIX</div><div style="font-size:15px;font-weight:800;color:#0c4a6e;letter-spacing:.3px">CNPJ: 54.039.529/0001-48</div></div>
+      </div>
     </div>
     <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb">
       <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Serviços</div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="background:#f3f4f6"><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;width:36px">#</th><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Serviços</th><th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Quantidade</th><th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead>
         <tbody>
-          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:14px 12px;font-size:13px;color:#9ca3af">1</td><td style="padding:14px 12px;font-size:14px;font-weight:600;color:#111827">Entregas</td><td style="padding:14px 12px;text-align:center;font-size:14px;color:#374151">${qtdPedidos}</td><td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:700;color:#1A56DB">R$ ${valorTotal.toFixed(2)}</td></tr>
-          <tr><td style="padding:14px 12px;font-size:13px;color:#9ca3af">2</td><td style="padding:14px 12px;font-size:14px;font-weight:600;color:#111827">Esperas</td><td style="padding:14px 12px;text-align:center;font-size:14px;color:#374151">0</td><td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:600;color:#9ca3af">R$ 0,00</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">1</td><td style="${tdS}">Entregas</td><td style="${tdQ}">${qtdPedidos}</td><td style="${tdV};color:#1A56DB">R$ ${valorTotal.toFixed(2)}</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">2</td><td style="${tdS}">Esperas</td><td style="${tdQ}">0</td><td style="${tdV};color:#9ca3af">R$ 0,00</td></tr>
+          <tr><td style="${tdN}">3</td><td style="${tdS}">Gorjetas</td><td style="${tdQ}">${pedidosData.filter(p=>parseFloat(p.gorjeta)>0).length}</td><td style="${tdV};color:${totalGorjetas>0?'#059669':'#9ca3af'}">R$ ${totalGorjetas.toFixed(2)}</td></tr>
         </tbody>
-        <tfoot><tr style="background:#eff6ff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot>
+        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
-    <div style="background:#1A56DB;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <div style="color:#fff;font-size:13px;font-weight:700">Let's Go Delivery</div>
-      <div style="color:#93c5fd;font-size:11px">Obrigado pela parceria!</div>
+    <div style="background:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid #e5e7eb">
+      <div style="color:#111;font-size:13px;font-weight:700">Let's Go Delivery</div>
+      <div style="color:#6b7280;font-size:11px">Obrigado pela parceria!</div>
     </div>
     <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
