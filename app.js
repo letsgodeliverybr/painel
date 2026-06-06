@@ -3959,9 +3959,8 @@ async function verFaturaCobranca(cobId){
         <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
-    <div style="background:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid #e5e7eb">
-      <div style="color:#111;font-size:13px;font-weight:700">Let's Go Delivery</div>
-      <div style="color:#6b7280;font-size:11px">Obrigado pela parceria!</div>
+    <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
+      <div style="color:#1A56DB;font-weight:700;font-size:12px;letter-spacing:.3px">#LetsGoDelivery &nbsp;&nbsp; #CadaKmUmSonho &nbsp;&nbsp; #ObrigadoPelaParceria</div>
     </div>
     <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
