@@ -3898,10 +3898,9 @@ async function verFaturaCobranca(cobId){
   const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
   const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
   const tdV='padding:14px 12px;text-align:right;font-size:14px;font-weight:700';
-  const logoHtml=`<div style="display:flex;align-items:center;gap:12px"><img src="https://painel.letsgodelivery.com.br/logo.png" alt="Let's Go Delivery" style="height:44px;width:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div style="display:none;align-items:center;gap:10px"><div style="background:#1A56DB;border-radius:9px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div><div><div style="color:#1A56DB;font-size:17px;font-weight:800;line-height:1.15">Let's Go</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px">DELIVERY</div></div></div></div>`;
   const invoice=`<div id="fatura-doc" style="background:#ffffff;color:#111111;color-scheme:light;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
     <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
-      ${logoHtml}
+      <div><div style="color:#1A56DB;font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.3px">Let's Go Delivery</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px;margin-top:2px">DELIVERY</div></div>
       <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
     </div>
     <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
