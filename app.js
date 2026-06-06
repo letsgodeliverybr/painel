@@ -3315,13 +3315,13 @@ async function _scBuscar(){
   if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
   const tipoBadge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Crédito</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Débito</span>`;
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Loja</th><th>Tipo</th><th>Valor</th><th>Descrição</th></tr></thead>
+    <thead><tr><th>Data</th><th>Loja</th><th>Tipo</th><th>Valor</th><th>Observações</th></tr></thead>
     <tbody>${data.map(r=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(r.created_at)}</td>
       <td style="font-weight:600;color:var(--text)">${r.lojas?.nome||'—'}</td>
       <td>${tipoBadge(r.tipo)}</td>
       <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
-      <td style="color:var(--text2);font-size:12px">${r.descricao||'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}</td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
