@@ -3344,10 +3344,12 @@ async function _scSalvar(){
   const data=document.getElementById('sc-m-data')?.value;
   const tipo=document.getElementById('sc-m-tipo')?.value;
   const valor=parseFloat(document.getElementById('sc-m-valor')?.value||0);
-  const descricao=(document.getElementById('sc-m-obs')?.value||'').trim();
+  const observacoes=(document.getElementById('sc-m-obs')?.value||'').trim();
   if(!loja_id||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha loja, data, tipo e valor','var(--yellow)');return;}
   const agora=new Date().toISOString();
-  const res=await db('creditos_lojas','POST',{loja_id,tipo,valor,descricao,data,created_at:agora,updated_at:agora});
+  const payload={loja_id,tipo,valor,observacoes,data,created_at:agora,updated_at:agora};
+  console.log('[creditos_lojas] POST payload:', payload);
+  const res=await db('creditos_lojas','POST',payload);
   if(res&&(Array.isArray(res)?res.length>0:res.id)){
     showNotif('✅ Registro salvo com sucesso!','');
     document.getElementById('modal-sc').style.display='none';
