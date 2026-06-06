@@ -1488,10 +1488,23 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
 
 async function _carregarSaldoTopbar(){
   try{
-    const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
-    const total=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     const el=document.getElementById('topbar-saldo'),val=document.getElementById('saldo-valor');
-    if(el&&val){val.textContent=total.toLocaleString('pt-BR',{minimumFractionDigits:2});el.style.display='flex';}
+    if(!el||!val)return;
+    if(currentPerfil==='loja'&&currentUser?.loja_id){
+      const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${currentUser.loja_id}`);
+      const arr=Array.isArray(rows)?rows:[];
+      const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+      const totD=arr.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+      const saldo=totC-totD;
+      val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      val.style.color=saldo>=0?'#4ade80':'#f87171';
+      el.style.display='flex';
+    } else if(currentPerfil==='adm'){
+      const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
+      const total=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+      val.textContent=total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      el.style.display='flex';
+    }
   }catch(_){}
 }
 
@@ -1979,6 +1992,7 @@ async function atualizarTudo(){
   setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosHoje);setVal('ms-cancelados',canceladosHoje);
   renderPedidosLista();if(map)atualizarMarcadores();
   carregarTabelaMapa();
+  if(currentPerfil==='loja')_carregarSaldoTopbar();
 }
 
 let _wsRealtime=null,_wsHeartbeat=null,_wsReconTimer=null;
