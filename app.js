@@ -3865,8 +3865,8 @@ async function recusarCobranca(id){
 
 async function verFaturaCobranca(cobId){
   let modal=document.getElementById('modal-fatura-cobranca');
-  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';document.body.appendChild(modal);}
-  modal.style.display='flex';
+  if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';document.body.appendChild(modal);}
+  modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';
   modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:36px;margin-bottom:12px">⏳</div><div style="font-size:14px;font-weight:600">Carregando fatura...</div></div>';
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
   const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`);
@@ -3881,10 +3881,11 @@ async function verFaturaCobranca(cobId){
   const valorTotal=parseFloat(c.valor_total)||0;
   const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
   const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
-  const numFatura=c.numero_fatura!=null?String(c.numero_fatura).padStart(7,'0'):String(c.id||'').padStart(7,'0');
+  const _rawId=String(c.id||'');
+  const numFatura=c.numero_fatura!=null?String(c.numero_fatura).padStart(7,'0'):_rawId.replace(/\D/g,'').slice(-7).padStart(7,'0');
   const hoje=new Date();
   const dataEmissao=hoje.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
-  const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+3);
+  const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+2);
   const vencimento=dtVenc.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
@@ -3898,7 +3899,7 @@ async function verFaturaCobranca(cobId){
   const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
   const tdV='padding:14px 12px;text-align:right;font-size:14px;font-weight:700';
   const logoHtml=`<div style="display:flex;align-items:center;gap:12px"><img src="https://painel.letsgodelivery.com.br/logo.png" alt="Let's Go Delivery" style="height:44px;width:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div style="display:none;align-items:center;gap:10px"><div style="background:#1A56DB;border-radius:9px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div><div><div style="color:#1A56DB;font-size:17px;font-weight:800;line-height:1.15">Let's Go</div><div style="color:#f97316;font-size:9px;font-weight:700;letter-spacing:3px">DELIVERY</div></div></div></div>`;
-  const invoice=`<div id="fatura-doc" style="background:#fff;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
+  const invoice=`<div id="fatura-doc" style="background:#ffffff;color:#111111;color-scheme:light;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
     <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
       ${logoHtml}
       <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
