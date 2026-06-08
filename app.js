@@ -1255,7 +1255,7 @@ async function _crCalcularTaxa(){
   const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
-  const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixasCr);
+  const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_precoDinValores['cliente']||0},faixasCr);
   _crLastTaxa=taxa;
   spanKm.textContent=`${distKm} km`;
   spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
@@ -1275,7 +1275,7 @@ async function _criarEntregaRapidaToggle(){
     const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
     const faixas=await _getFaixasCobranca(lojaId);
     const spanTaxa=document.getElementById('cr-dist-taxa');
-    const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},faixas);
+    const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_precoDinValores['cliente']||0},faixas);
     _crLastTaxa=taxa;
     if(spanTaxa)spanTaxa.textContent=`R$ ${taxa.toFixed(2)}`;
     _atualizarBtnCriarEntrega();
@@ -1313,10 +1313,12 @@ async function _criarEntregaRapida(){
   }
   const _distKm=_crLastDistKm||0;
   const _faixasCr=await _getFaixasCobranca(lojaId);
-  const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},_faixasCr);
+  const _pdCliente=_precoDinValores['cliente']||0;
+  const _pdEntregador=_precoDinValores['entregador']||0;
+  const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente},_faixasCr);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
-  const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:0,preco_dinamico:0})??null;
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
+  const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:0,preco_dinamico:_pdEntregador})??null;
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -1389,7 +1391,7 @@ async function calcularTaxaAuto(){
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
   const faixasLoja=await _getFaixasCobranca(lojaHid.value);
   if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km</span>`;return;}
-  const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},faixasLoja);
+  const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:_precoDinValores['cliente']||0,taxa_entrega:0},faixasLoja);
   document.getElementById('np-taxa').value=valorTaxa.toFixed(2);
   if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km → Taxa: R$ ${valorTaxa.toFixed(2)}</span>`;
 }
@@ -2510,12 +2512,14 @@ async function criarPedido(){
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
   const _faixasLojaPed=await _getFaixasCobranca(finalLojaId);
-  const taxa=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:taxaInput},_faixasLojaPed):taxaInput;
+  const _pdC=_precoDinValores['cliente']||0;
+  const _pdE=_precoDinValores['entregador']||0;
+  const taxa=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:_pdC,taxa_entrega:taxaInput},_faixasLojaPed):taxaInput;
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
-  const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0})??null;
+  const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:_pdE})??null;
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
