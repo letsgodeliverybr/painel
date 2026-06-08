@@ -1387,15 +1387,11 @@ async function calcularTaxaAuto(){
   if(!geo){if(fb)fb.innerHTML='';document.getElementById('np-km').value='—';return;}
   const distKm=calcularDistancia(lojaLat,lojaLng,geo.lat,geo.lng);
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
-  const tabelas=await db('tabelas_preco','GET',null,'?tipo=eq.cobranca&ativa=eq.true&limit=1');
-  if(!tabelas.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km</span>`;return;}
-  const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelas[0].id}&order=km_de.asc`);
-  const faixa=faixas.find(f=>distKm>=parseFloat(f.km_de)&&distKm<=parseFloat(f.km_ate));
-  if(faixa){
-    const valorFaixa=_npRetornoAtivo?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
-    document.getElementById('np-taxa').value=valorFaixa.toFixed(2);
-    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km → Taxa: R$ ${valorFaixa.toFixed(2)}</span>`;
-  }else{if(fb)fb.innerHTML=`<span style="color:#f59e0b">⚠️ ${distKm.toFixed(2)} km — fora das faixas, informe a taxa</span>`;}
+  const faixasLoja=await _getFaixasCobranca(lojaHid.value);
+  if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km</span>`;return;}
+  const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},faixasLoja);
+  document.getElementById('np-taxa').value=valorTaxa.toFixed(2);
+  if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km → Taxa: R$ ${valorTaxa.toFixed(2)}</span>`;
 }
 
 const TODOS_STATUS=[
@@ -2491,7 +2487,7 @@ async function criarPedido(){
   const numero=(document.getElementById('np-numero')||{}).value||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const descricao=(document.getElementById('np-descricao')||{}).value||'';
   const cliente=(document.getElementById('np-cliente')||{}).value||'';
-  const taxa=parseFloat((document.getElementById('np-taxa')||{}).value)||0;
+  const taxaInput=parseFloat((document.getElementById('np-taxa')||{}).value)||0;
   const gorjeta=parseFloat((document.getElementById('np-gorjeta')||{}).value)||0;
   const pontos=parseInt((document.getElementById('np-pontos')||{}).value)||4;
   const lojaIdSel=document.getElementById('np-loja-id')?.value||currentUser?.loja_id||null;
@@ -2513,6 +2509,8 @@ async function criarPedido(){
   let latLoja=-21.1775,lngLoja=-47.8103;
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
+  const _faixasLojaPed=await _getFaixasCobranca(finalLojaId);
+  const taxa=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:taxaInput},_faixasLojaPed):taxaInput;
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:false,gorjeta:0,preco_dinamico:0})??null;
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
