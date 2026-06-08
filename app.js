@@ -3032,10 +3032,10 @@ function _iniciarBarraPrecoDin(tipo,ativadoEm){
 async function _desativarPrecoDinamico(tipo){
   _precoDinValores[tipo]=0;
   localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
-  const input=document.getElementById(`preco-din-valor-${tipo}`);
-  if(input)input.value='0.00';
-  const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
-  if(existing&&existing.length>0)await db('configuracoes','PATCH',{valor:'0',updated_at:new Date().toISOString()},`?chave=eq.preco_dinamico_${tipo}`);
+  // Limpa só o timestamp de ativação para que o input mantenha o último valor usado
+  const agora=new Date().toISOString();
+  const existingTs=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}_ativado_em`);
+  if(existingTs&&existingTs.length>0)await db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.preco_dinamico_${tipo}_ativado_em`);
   showNotif('⏰ Preço dinâmico desativado automaticamente','','var(--text2)');
 }
 
