@@ -1835,7 +1835,14 @@ function carregarTabelaMapa(){
 }
 
 let _tabelaScrollFiltered=[],_tabelaScrollOffset=0,_tabelaScrollObserver=null;
+let _tabelaFaixasPorLoja={};
 const _TABELA_PAGE=20;
+
+async function _preCarregarFaixasLojas(pedidos){
+  const ids=[...new Set(pedidos.map(p=>p.loja_id).filter(Boolean))];
+  const entries=await Promise.all(ids.map(async id=>[id,await _getFaixasCobranca(id)]));
+  _tabelaFaixasPorLoja=Object.fromEntries(entries);
+}
 
 function _buildTabelaRows(filtered,from){
   const to=Math.min(from+_TABELA_PAGE,filtered.length);
@@ -1849,7 +1856,7 @@ function _buildTabelaRows(filtered,from){
     const ent=allMotoboys.find(e=>e.id===entId);
     const hora=p.created_at?formatarHora(p.created_at):'—';
     const endereco=p.endereco_entrega||p.endereco||'—';
-    const taxaMotoboy=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);const taxaCobrada=_calcTaxaLoja(p);
+    const taxaMotoboy=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -1887,7 +1894,7 @@ function _tabelaAnexarSentinela(){
   _tabelaScrollObserver.observe(sentinel);
 }
 
-function renderTabelaMapa(){
+async function renderTabelaMapa(){
   if(_tabelaScrollObserver){_tabelaScrollObserver.disconnect();_tabelaScrollObserver=null;}
   const el=document.getElementById('tabela-mapa-body');if(!el)return;
   const busca=(_tabelaFiltros.busca||'').toLowerCase();
@@ -1898,6 +1905,7 @@ function renderTabelaMapa(){
   _tabelaScrollFiltered=filtered;_tabelaScrollOffset=0;
   const _cols=currentPerfil==='loja'?10:11;
   if(!filtered.length){el.innerHTML=`<tr><td colspan="${_cols}" style="text-align:center;padding:20px;color:#555">Nenhum pedido encontrado</td></tr>`;return;}
+  await _preCarregarFaixasLojas(filtered);
   el.innerHTML=_buildTabelaRows(filtered,0);
   _tabelaScrollOffset=Math.min(_TABELA_PAGE,filtered.length);
   _tabelaAnexarSentinela();
