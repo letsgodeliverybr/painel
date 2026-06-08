@@ -1857,7 +1857,7 @@ function _buildTabelaRows(filtered,from){
     const ent=allMotoboys.find(e=>e.id===entId);
     const hora=p.created_at?formatarHora(p.created_at):'—';
     const endereco=p.endereco_entrega||p.endereco||'—';
-    const taxaMotoboy=_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:p.gorjeta||0,preco_dinamico:p.preco_dinamico||0})??parseFloat(p.taxa_motoboy??0)||null;const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
+    const taxaMotoboy=_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:p.gorjeta||0,preco_dinamico:p.preco_dinamico||0})??(parseFloat(p.taxa_motoboy)||null);const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
