@@ -64,7 +64,11 @@ function _calcTaxaLoja(p,faixasOverride){
 }
 async function _getFaixasCobranca(lojaId){
   if(!lojaId) return _faixasCobranca;
-  const loja=allLojas.find(l=>l.id===lojaId);
+  let loja=allLojas.find(l=>l.id===lojaId);
+  if(!loja){
+    const _r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,tabela_cobranca_id&limit=1`).catch(()=>[]);
+    loja=Array.isArray(_r)&&_r[0]?_r[0]:null;
+  }
   const tabId=loja?.tabela_cobranca_id||null;
   if(!tabId) return _faixasCobranca;
   if(_faixasCachePorTabela[tabId]) return _faixasCachePorTabela[tabId];
