@@ -83,6 +83,7 @@ const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(d
 const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
 const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
 const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
+function formatarDataBR(data){if(!data)return'—';if(typeof data==='string'){const m=data.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;}const d=data instanceof Date?data:new Date(data);if(isNaN(d))return'—';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});}
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
@@ -3981,16 +3982,16 @@ async function verFaturaCobranca(cobId){
   const lojaNome=loja.nome||'—';
   const lojaEndereco=loja.endereco||'';
   const lojaEmail=loja.email||'';
-  const dataInicio=c.data_inicio||'—';
-  const dataFim=c.data_fim||'—';
+  const dataInicio=formatarDataBR(c.data_inicio);
+  const dataFim=formatarDataBR(c.data_fim);
   const valorTotal=parseFloat(c.valor_total)||0;
   const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
   const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
   const numFatura=String(c.numero_fatura||'').padStart(7,'0');
   const hoje=new Date();
-  const dataEmissao=hoje.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
+  const dataEmissao=formatarDataBR(hoje);
   const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+2);
-  const vencimento=dtVenc.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
+  const vencimento=formatarDataBR(dtVenc);
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
     const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
