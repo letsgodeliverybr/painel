@@ -1291,7 +1291,8 @@ async function _criarEntregaRapida(){
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
-  if(currentPerfil==='loja'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
+  const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
+  if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
   const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
@@ -1526,8 +1527,11 @@ async function _carregarSaldoTopbar(){
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
+      let lojaAtualSaldo=allLojas.find(l=>l.id===currentUser?.loja_id);
+      if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
+      const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
       let alertBanner=document.getElementById('saldo-alerta-banner');
-      if(saldo<100){
+      if(_tipoCobrancaSaldo==='credito'&&saldo<100){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
         alertBanner.textContent='⚠️ Saldo baixo! Recarregue seu saldo para continuar criando entregas.';
         alertBanner.style.display='block';
@@ -1545,7 +1549,9 @@ function _atualizarBtnCriarEntrega(){
   if(currentPerfil!=='loja')return;
   const btn=document.getElementById('btn-criar-entrega');
   if(!btn)return;
-  const insuficiente=_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa);
+  const _lojaBtn=allLojas.find(l=>l.id===currentUser?.loja_id);
+  const _tipoBtn=_lojaBtn?.tipo_cobranca||'faturamento';
+  const insuficiente=_tipoBtn==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa));
   btn.disabled=insuficiente;
   btn.style.setProperty('background',insuficiente?'#6b7280':'#1A56DB','important');
   btn.style.cursor=insuficiente?'not-allowed':'pointer';
