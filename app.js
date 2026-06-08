@@ -4006,11 +4006,15 @@ async function verFaturaCobranca(cobId){
   const vencimento=formatarDataBR(dtVenc);
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
-    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
+    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta,distancia_km,com_retorno,retorno,preco_dinamico&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
     pedidosData=Array.isArray(res)?res:[];
   }
+  const faixasLoja=await _getFaixasCobranca(c.loja_id);
+  const totalEntregas=pedidosData.length>0
+    ?Math.round(pedidosData.reduce((acc,p)=>acc+(_calcTaxaLoja(p,faixasLoja)-(parseFloat(p.gorjeta)||0)),0)*100)/100
+    :(parseFloat(c.valor_total)||0);
   const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
-  const totalGorjetas=pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0);
+  const totalGorjetas=Math.round(pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0)*100)/100;
   const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
   const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
   const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
@@ -4034,7 +4038,7 @@ async function verFaturaCobranca(cobId){
       </div>
       <div style="text-align:right;min-width:140px">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Total a pagar</div>
-        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${valorTotal.toFixed(2)}</div>
+        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${totalEntregas.toFixed(2)}</div>
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
@@ -4049,11 +4053,11 @@ async function verFaturaCobranca(cobId){
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="background:#f3f4f6"><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;width:36px">#</th><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Serviços</th><th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Quantidade</th><th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead>
         <tbody>
-          <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">1</td><td style="${tdS}">Entregas</td><td style="${tdQ}">${qtdPedidos}</td><td style="${tdV};color:#1A56DB">R$ ${valorTotal.toFixed(2)}</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">1</td><td style="${tdS}">Entregas</td><td style="${tdQ}">${qtdPedidos}</td><td style="${tdV};color:#1A56DB">R$ ${totalEntregas.toFixed(2)}</td></tr>
           <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">2</td><td style="${tdS}">Esperas</td><td style="${tdQ}">0</td><td style="${tdV};color:#9ca3af">R$ 0,00</td></tr>
           <tr><td style="${tdN}">3</td><td style="${tdS}">Gorjetas</td><td style="${tdQ}">${pedidosData.filter(p=>parseFloat(p.gorjeta)>0).length}</td><td style="${tdV};color:${totalGorjetas>0?'#059669':'#9ca3af'}">R$ ${totalGorjetas.toFixed(2)}</td></tr>
         </tbody>
-        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorTotal.toFixed(2)}</td></tr></tfoot>
+        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${totalEntregas.toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
     <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
