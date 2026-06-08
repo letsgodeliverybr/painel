@@ -1315,7 +1315,7 @@ async function _criarEntregaRapida(){
   const _faixasCr=await _getFaixasCobranca(lojaId);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0},_faixasCr);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
-  const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:false,gorjeta:0,preco_dinamico:0})??null;
+  const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:0,preco_dinamico:0})??null;
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
@@ -1857,7 +1857,7 @@ function _buildTabelaRows(filtered,from){
     const ent=allMotoboys.find(e=>e.id===entId);
     const hora=p.created_at?formatarHora(p.created_at):'—';
     const endereco=p.endereco_entrega||p.endereco||'—';
-    const taxaMotoboy=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
+    const taxaMotoboy=_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:p.gorjeta||0,preco_dinamico:p.preco_dinamico||0})??parseFloat(p.taxa_motoboy??0)||null;const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -2512,7 +2512,7 @@ async function criarPedido(){
   const _faixasLojaPed=await _getFaixasCobranca(finalLojaId);
   const taxa=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:taxaInput},_faixasLojaPed):taxaInput;
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
-  const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:false,gorjeta:0,preco_dinamico:0})??null;
+  const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0})??null;
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
