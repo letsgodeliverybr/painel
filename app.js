@@ -1523,6 +1523,14 @@ async function _carregarSaldoTopbar(){
     const el=document.getElementById('topbar-saldo'),val=document.getElementById('saldo-valor');
     if(!el||!val)return;
     if(currentPerfil==='loja'&&currentUser?.loja_id){
+      let lojaAtualSaldo=allLojas.find(l=>l.id===currentUser?.loja_id);
+      if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
+      const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
+      if(_tipoCobrancaSaldo!=='credito'){
+        el.style.display='none';_saldoLojaAtual=0;
+        const _ab=document.getElementById('saldo-alerta-banner');if(_ab)_ab.style.display='none';
+        _atualizarBtnCriarEntrega();return;
+      }
       const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${currentUser.loja_id}`);
       const arr=Array.isArray(rows)?rows:[];
       const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
@@ -1532,11 +1540,8 @@ async function _carregarSaldoTopbar(){
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
-      let lojaAtualSaldo=allLojas.find(l=>l.id===currentUser?.loja_id);
-      if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
-      const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
       let alertBanner=document.getElementById('saldo-alerta-banner');
-      if(_tipoCobrancaSaldo==='credito'&&saldo<100){
+      if(saldo<100){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
         alertBanner.textContent='⚠️ Saldo baixo! Recarregue seu saldo para continuar criando entregas.';
         alertBanner.style.display='block';
