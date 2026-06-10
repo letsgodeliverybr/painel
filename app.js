@@ -3307,9 +3307,17 @@ async function renderFinanceiroPage(aba){
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
     {id:'credito',icon:'💳',label:'Créditos'},
   ];
+  const hoje=_dataHojeBrasilia();
+  const _inpStyle='padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
+  const _lblStyle='display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.4px';
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div><label style="${_lblStyle}">DATA INÍCIO</label><input type="date" id="fin-data-inicio" value="${hoje}" style="${_inpStyle}"/></div>
+        <div><label style="${_lblStyle}">DATA FIM</label><input type="date" id="fin-data-fim" value="${hoje}" style="${_inpStyle}"/></div>
+        <button onclick="_buscarFinanceiro()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fin-faturamento" style="font-size:22px">—</div></div>
         <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fin-despesas" style="font-size:22px">—</div></div>
@@ -3320,7 +3328,7 @@ async function renderFinanceiroPage(aba){
       </div>
       <div id="financeiro-content"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div>`;
-  _carregarResumoFinanceiro();
+  _buscarFinanceiro();
   if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
   else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
   else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
@@ -3457,6 +3465,29 @@ async function _scSalvar(){
     _scBuscar();
   } else {
     showNotif('❌ Erro ao salvar','Verifique as permissões da tabela creditos_lojas no Supabase','var(--red)');
+  }
+}
+
+async function _buscarFinanceiro(){
+  const ini=document.getElementById('fin-data-inicio')?.value;
+  const fim=document.getElementById('fin-data-fim')?.value;
+  if(!ini||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const inicioISO=_inicioDiaBrasilia(ini);
+  const fimISO=_fimDiaBrasilia(fim);
+  const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
+  if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
+  const pedidos=await db('pedidos','GET',null,`?status=eq.finalizado&created_at=gte.${inicioISO}&created_at=lte.${fimISO}&select=taxa_entrega,taxa_entrega_motoboy`);
+  const arr=Array.isArray(pedidos)?pedidos:[];
+  const faturamento=arr.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0),0);
+  const despesas=arr.reduce((s,p)=>s+(parseFloat(p.taxa_entrega_motoboy)||0),0);
+  const lucro=faturamento-despesas;
+  if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
+  if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
+  if(e3){e3.textContent=`R$ ${Math.abs(lucro).toFixed(2)}`;e3.style.color=lucro>=0?'var(--green)':'var(--red)';}
+  if(_financeiroAba==='gerar-cobranca'){
+    const gcIni=document.getElementById('gc-data-inicio'),gcFim=document.getElementById('gc-data-fim');
+    if(gcIni)gcIni.value=ini;if(gcFim)gcFim.value=fim;
+    _buscarCobrancas();
   }
 }
 
@@ -3838,7 +3869,7 @@ async function _buscarCobrancas(){
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,cobrancasExistentes]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&or=(and(finalizado_em.gte.${inicioISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${inicioISO},updated_at.lte.${fimISO}))&select=loja_id,taxa_entrega`),
+    db('pedidos','GET',null,`?status=eq.finalizado&created_at=gte.${inicioISO}&created_at=lte.${fimISO}&select=loja_id,taxa_entrega`),
     db('lojas','GET',null,'?select=id,nome'),
     db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=loja_id`)
   ]);
