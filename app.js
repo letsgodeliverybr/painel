@@ -2784,8 +2784,9 @@ async function _setCadastroStatus(entId,novoStatus){
 }
 
 async function excluirEntregador(id,nome){
-  if(!confirm(`Tem certeza que deseja excluir o entregador "${nome}"?\nEsta ação não pode ser desfeita.`))return;
+  if(!confirm(`Excluir permanentemente?\nO histórico de pedidos será mantido.`))return;
   await db('entregadores','DELETE',null,`?id=eq.${id}`);
+  await fetch(`${SB_URL}/rest/v1/rpc/delete_auth_user`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({user_id:id})}).catch(()=>{});
   showNotif('🗑️ Entregador excluído','','var(--red)');
   renderCadastrosPage('entregadores');
 }
@@ -3090,10 +3091,10 @@ async function renderNovoPedidoPage(){
 }
 
 async function renderPedidosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Entregador</th><th>Código</th><th>Data</th></tr></thead><tbody id="tbody-pedidos"></tbody></table></div></div></div>`;
-  const [pedidos,entregadores]=await Promise.all([db('pedidos','GET',null,`?order=created_at.desc&limit=100${_lojaFiltro()}`),db('entregadores','GET',null,'?select=id,nome')]);
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Entregador</th><th>Loja</th><th>Código</th><th>Data</th></tr></thead><tbody id="tbody-pedidos"></tbody></table></div></div></div>`;
+  const [pedidos,entregadores,lojas]=await Promise.all([db('pedidos','GET',null,`?order=created_at.desc&limit=100${_lojaFiltro()}`),db('entregadores','GET',null,'?select=id,nome'),db('lojas','GET',null,'?select=id,nome')]);
   const tbody=document.getElementById('tbody-pedidos');if(!tbody)return;
-  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>{const sk=getStatusKey(p);const ent=entregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>{const sk=getStatusKey(p);const ent=entregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=lojas.find(l=>l.id===p.loja_id);return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
