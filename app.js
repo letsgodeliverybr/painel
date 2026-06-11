@@ -3555,13 +3555,7 @@ async function _carregarResumoFinanceiro(){
 
   _saquesPendentesCount=Array.isArray(saquesPendentes)?saquesPendentes.length:0;
   renderNavSidebar(_navAtivo);
-
-  const e1=document.getElementById('fin-faturamento');
-  const e2=document.getElementById('fin-despesas');
-  const e3=document.getElementById('fin-lucro');
-  if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
-  if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
-  if(e3){e3.textContent=`R$ ${Math.abs(lucro).toFixed(2)}`;e3.style.color=lucro>=0?'var(--green)':'var(--red)';}
+  _buscarFinanceiro();
 }
 
 // ── GERAR PAGAMENTO ──
