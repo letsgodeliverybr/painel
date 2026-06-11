@@ -3854,7 +3854,7 @@ function _renderGerarCobranca(){
 
 async function _carregarHistoricoCobrancas(append){
   const el=document.getElementById('gc-historico');if(!el)return;
-  const rows=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=eq.pendente&order=created_at.desc&limit=${_gcHistoricoPageSize}&offset=${_gcHistoricoOffset}`);
+  const rows=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=in.(pago,pendente,aprovado)&order=created_at.desc&limit=${_gcHistoricoPageSize}&offset=${_gcHistoricoOffset}`);
   const data=Array.isArray(rows)?rows:[];
   if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
   const html=data.map(c=>`<tr>
