@@ -3355,17 +3355,9 @@ async function renderFinanceiroPage(aba){
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
     {id:'credito',icon:'💳',label:'Créditos'},
   ];
-  const hoje=_dataHojeBrasilia();
-  const _inpStyle='padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
-  const _lblStyle='display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.4px';
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
-      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
-        <div><label style="${_lblStyle}">DATA INÍCIO</label><input type="date" id="fin-data-inicio" value="${hoje}" style="${_inpStyle}"/></div>
-        <div><label style="${_lblStyle}">DATA FIM</label><input type="date" id="fin-data-fim" value="${hoje}" style="${_inpStyle}"/></div>
-        <button onclick="_buscarFinanceiro()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
-      </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fin-faturamento" style="font-size:22px">—</div></div>
         <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fin-despesas" style="font-size:22px">—</div></div>
@@ -3521,28 +3513,21 @@ async function _scSalvar(){
 }
 
 async function _buscarFinanceiro(){
-  const ini=document.getElementById('fin-data-inicio')?.value;
-  const fim=document.getElementById('fin-data-fim')?.value;
-  if(!ini||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
-  const inicioISO=_inicioDiaBrasilia(ini);
-  const fimISO=_fimDiaBrasilia(fim);
   const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
   if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
-  const [cobrancas,saques]=await Promise.all([
-    db('cobrancas_lojas','GET',null,`?select=valor_total,lojas(tipo_cobranca)&status=eq.pago&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`),
-    db('saques','GET',null,`?select=valor_liquido,valor&status=eq.pago&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`)
+  const [cobrancas,saques,creditos]=await Promise.all([
+    db('cobrancas_lojas','GET',null,'?select=valor_total,lojas(tipo_cobranca)&status=eq.pago'),
+    db('saques','GET',null,'?select=valor_liquido,valor&status=eq.pago'),
+    db('creditos_lojas','GET',null,'?select=valor&tipo=eq.credito'),
   ]);
-  const faturamento=(Array.isArray(cobrancas)?cobrancas:[]).filter(r=>r.lojas?.tipo_cobranca==='faturamento').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const fatCobrancas=(Array.isArray(cobrancas)?cobrancas:[]).filter(r=>r.lojas?.tipo_cobranca==='faturamento').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const fatCreditos=(Array.isArray(creditos)?creditos:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const faturamento=fatCobrancas+fatCreditos;
   const despesas=(Array.isArray(saques)?saques:[]).reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
   const lucro=faturamento-despesas;
   if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
   if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
   if(e3){e3.textContent=`R$ ${Math.abs(lucro).toFixed(2)}`;e3.style.color=lucro>=0?'var(--green)':'var(--red)';}
-  if(_financeiroAba==='gerar-cobranca'){
-    const gcIni=document.getElementById('gc-data-inicio'),gcFim=document.getElementById('gc-data-fim');
-    if(gcIni)gcIni.value=ini;if(gcFim)gcFim.value=fim;
-    _buscarCobrancas();
-  }
 }
 
 async function _carregarResumoFinanceiro(){
