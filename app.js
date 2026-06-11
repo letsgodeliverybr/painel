@@ -3528,10 +3528,12 @@ async function _buscarFinanceiro(){
   const fimISO=_fimDiaBrasilia(fim);
   const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
   if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
-  const pedidos=await db('pedidos','GET',null,`?status=eq.finalizado&created_at=gte.${inicioISO}&created_at=lte.${fimISO}&select=taxa_entrega,taxa_entrega_motoboy`);
-  const arr=Array.isArray(pedidos)?pedidos:[];
-  const faturamento=arr.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0),0);
-  const despesas=arr.reduce((s,p)=>s+(parseFloat(p.taxa_entrega_motoboy)||0),0);
+  const [cobrancas,saques]=await Promise.all([
+    db('cobrancas_lojas','GET',null,`?select=valor_total&status=in.(aprovado,pago)&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`),
+    db('saques','GET',null,`?select=valor_liquido,valor&status=eq.pago&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`)
+  ]);
+  const faturamento=(Array.isArray(cobrancas)?cobrancas:[]).reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const despesas=(Array.isArray(saques)?saques:[]).reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
   const lucro=faturamento-despesas;
   if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
   if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
