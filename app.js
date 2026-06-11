@@ -3529,10 +3529,10 @@ async function _buscarFinanceiro(){
   const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
   if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
   const [cobrancas,saques]=await Promise.all([
-    db('cobrancas_lojas','GET',null,`?select=valor_total&status=in.(aprovado,pago)&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`),
+    db('cobrancas_lojas','GET',null,`?select=valor_total,lojas(tipo_cobranca)&status=eq.pago&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`),
     db('saques','GET',null,`?select=valor_liquido,valor&status=eq.pago&updated_at=gte.${inicioISO}&updated_at=lte.${fimISO}`)
   ]);
-  const faturamento=(Array.isArray(cobrancas)?cobrancas:[]).reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const faturamento=(Array.isArray(cobrancas)?cobrancas:[]).filter(r=>r.lojas?.tipo_cobranca==='faturamento').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
   const despesas=(Array.isArray(saques)?saques:[]).reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
   const lucro=faturamento-despesas;
   if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
@@ -3655,31 +3655,18 @@ async function _calcularPagamentos(){
   const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
   const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
-  const [pedidos,entregadores,saquesPendentes,saquesPagos]=await Promise.all([
+  const [pedidos,entregadores]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
-    db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
-    db('saques','GET',null,'?status=eq.pago&select=entregador_id,valor'),
   ]);
   const arr=Array.isArray(pedidos)?pedidos:[];
-  const comPendente=new Set((Array.isArray(saquesPendentes)?saquesPendentes:[]).map(s=>s.entregador_id));
-  // total já pago por entregador
-  const totalPago={};
-  (Array.isArray(saquesPagos)?saquesPagos:[]).forEach(s=>{
-    totalPago[s.entregador_id]=(totalPago[s.entregador_id]||0)+(parseFloat(s.valor)||0);
-  });
   _gpResultados={};
   arr.forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
-    if(comPendente.has(eid))return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
     _gpResultados[eid].total+=_calcTaxaMotoboy(p)??(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
+    _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
     _gpResultados[eid].qtd++;
-  });
-  // desconta saques já pagos e remove saldo zero/negativo
-  Object.keys(_gpResultados).forEach(eid=>{
-    _gpResultados[eid].total=Math.round((_gpResultados[eid].total-(totalPago[eid]||0))*100)/100;
-    if(_gpResultados[eid].total<=0)delete _gpResultados[eid];
   });
   const rows=Object.values(_gpResultados);
   if(!lista)return;
@@ -3994,8 +3981,9 @@ function _renderAprovarCobrancas(){
       </div>
       <div id="ac-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
-    <div id="ac-historico-wrap"></div>`;
+    <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando histórico...</div></div>`;
   _buscarCobrancasPendentes();
+  _renderHistoricoCobrancas();
 }
 
 async function _buscarCobrancasPendentes(){
