@@ -3446,7 +3446,7 @@ async function _scBuscar(){
   const ini=document.getElementById('sc-f-ini')?.value;
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
-  let qs='?select=*,lojas(nome)&order=created_at.desc&limit=200';
+  let qs='?select=*,lojas(nome)&manual=eq.true&order=created_at.desc&limit=500';
   if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
   if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
   if(tipo==='credito')qs+='&tipo=eq.credito';
@@ -3495,8 +3495,7 @@ async function _scSalvar(){
   const observacoes=(document.getElementById('sc-m-obs')?.value||'').trim();
   if(!loja_id||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha loja, data, tipo e valor','var(--yellow)');return;}
   const agora=new Date().toISOString();
-  const payload={loja_id,tipo,valor,observacoes,data,created_at:agora,updated_at:agora};
-  console.log('[creditos_lojas] POST payload:', payload);
+  const payload={loja_id,tipo,valor,observacoes,data,manual:true,created_at:agora,updated_at:agora};
   const res=await db('creditos_lojas','POST',payload);
   if(res&&(Array.isArray(res)?res.length>0:res.id)){
     showNotif('✅ Registro salvo com sucesso!','');
