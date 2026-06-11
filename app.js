@@ -3517,12 +3517,13 @@ async function _buscarFinanceiro(){
   const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro'),e4=document.getElementById('fin-mercadoria');
   if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';if(e4)e4.textContent='...';
   const [cobrancas,saques,creditos,pedidos]=await Promise.all([
-    db('cobrancas_lojas','GET',null,'?select=valor_total,lojas(tipo_cobranca)&status=in.(pago,aprovado)'),
+    db('cobrancas_lojas','GET',null,'?select=id,valor_total&status=in.(pago,aprovado)'),
     db('saques','GET',null,'?select=valor_liquido,valor&status=eq.pago'),
     db('creditos_lojas','GET',null,'?select=valor&tipo=eq.credito'),
     db('pedidos','GET',null,'?select=valor&status=eq.finalizado'),
   ]);
-  const fatCobrancas=(Array.isArray(cobrancas)?cobrancas:[]).filter(r=>r.lojas?.tipo_cobranca==='faturamento').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
+  const seen=new Set();
+  const fatCobrancas=(Array.isArray(cobrancas)?cobrancas:[]).reduce((s,r)=>{if(seen.has(r.id))return s;seen.add(r.id);return s+(parseFloat(r.valor_total)||0);},0);
   const fatCreditos=(Array.isArray(creditos)?creditos:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const faturamento=fatCobrancas+fatCreditos;
   const despesas=(Array.isArray(saques)?saques:[]).reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
