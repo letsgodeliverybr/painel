@@ -3107,10 +3107,11 @@ async function renderPedidosPage(){
         <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Buscar</button>
       </div>
     </div></div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">TODOS OS PEDIDOS</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
       <div class="stat-card"><div class="stat-label">FINALIZADOS</div><div class="stat-value" id="fp-card-finalizados" style="font-size:26px;color:var(--green)">—</div></div>
       <div class="stat-card"><div class="stat-label">CANCELADOS</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-valor" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th><th>Cobrado</th><th>Pago</th><th>Status</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
@@ -3138,10 +3139,11 @@ async function _buscarPedidosAdmin(){
   const _res=await db('pedidos','GET',null,qs);let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
-  const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados');
+  const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_cv=document.getElementById('fp-card-valor');
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=arr.filter(p=>getStatusKey(p)==='finalizado').length;
   if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
+  if(_cv)_cv.textContent='R$ '+arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0).toFixed(2);
   tbody.innerHTML=arr.length===0?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>':arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobrado=parseFloat(p.taxa_entrega)>0?'R$ '+parseFloat(p.taxa_entrega).toFixed(2):'—';const pago=parseFloat(p.taxa_motoboy)>0?'R$ '+parseFloat(p.taxa_motoboy).toFixed(2):'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td><td style="font-size:12px;color:var(--text2)">${cobrado}</td><td style="font-size:12px;color:var(--text2)">${pago}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
