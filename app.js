@@ -3868,17 +3868,13 @@ async function _buscarCobrancas(){
   const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const [pedidos,lojas,cobrancasExistentes]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&created_at=gte.${inicioISO}&created_at=lte.${fimISO}&select=loja_id,taxa_entrega`),
+  const [pedidos,lojas]=await Promise.all([
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega`),
     db('lojas','GET',null,'?select=id,nome'),
-    db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&select=loja_id`)
   ]);
-  // Lojas que já têm cobrança gerada (pendente ou paga) no período — excluir da lista
-  const jaCobradasSet=new Set((Array.isArray(cobrancasExistentes)?cobrancasExistentes:[]).map(c=>c.loja_id));
   _gcResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
     const lid=p.loja_id;if(!lid)return;
-    if(jaCobradasSet.has(lid))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=parseFloat(p.taxa_entrega)||0;
     _gcResultados[lid].qtd++;
