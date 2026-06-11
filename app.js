@@ -3634,14 +3634,16 @@ async function _calcularPagamentos(){
   const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
   const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
-  const [pedidos,entregadores]=await Promise.all([
+  const [pedidos,entregadores,jaPagos]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
+    db('saques','GET',null,`?select=entregador_id&data_inicio=eq.${dataIni}&data_fim=eq.${dataFim}&status=in.(pendente,pago,aprovado)`),
   ]);
+  const jaPagosSet=new Set((Array.isArray(jaPagos)?jaPagos:[]).map(r=>r.entregador_id));
   const arr=Array.isArray(pedidos)?pedidos:[];
   _gpResultados={};
   arr.forEach(p=>{
-    const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
+    const eid=p.motoboy_id||p.entregador_id;if(!eid||jaPagosSet.has(eid))return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
     _gpResultados[eid].total+=_calcTaxaMotoboy(p)??(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
     _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
@@ -3895,13 +3897,15 @@ async function _buscarCobrancas(){
   const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const [pedidos,lojas]=await Promise.all([
+  const [pedidos,lojas,jaGeradas]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega`),
     db('lojas','GET',null,'?select=id,nome'),
+    db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
+  const jaGeradasSet=new Set((Array.isArray(jaGeradas)?jaGeradas:[]).map(r=>r.loja_id));
   _gcResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
-    const lid=p.loja_id;if(!lid)return;
+    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=parseFloat(p.taxa_entrega)||0;
     _gcResultados[lid].qtd++;
