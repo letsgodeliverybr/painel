@@ -3516,7 +3516,7 @@ async function _buscarFinanceiro(){
   const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
   if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
   const [cobrancas,saques,creditos]=await Promise.all([
-    db('cobrancas_lojas','GET',null,'?select=valor_total,lojas(tipo_cobranca)&status=eq.pago'),
+    db('cobrancas_lojas','GET',null,'?select=valor_total,lojas(tipo_cobranca)&status=in.(pago,aprovado)'),
     db('saques','GET',null,'?select=valor_liquido,valor&status=eq.pago'),
     db('creditos_lojas','GET',null,'?select=valor&tipo=eq.credito'),
   ]);
