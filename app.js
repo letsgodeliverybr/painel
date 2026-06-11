@@ -3107,11 +3107,10 @@ async function renderPedidosPage(){
         <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Buscar</button>
       </div>
     </div></div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">TODOS OS PEDIDOS</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
       <div class="stat-card"><div class="stat-label">FINALIZADOS</div><div class="stat-value" id="fp-card-finalizados" style="font-size:26px;color:var(--green)">—</div></div>
       <div class="stat-card"><div class="stat-label">CANCELADOS</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-valor" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th><th>Cobrado</th><th>Pago</th><th>Status</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
@@ -3139,11 +3138,10 @@ async function _buscarPedidosAdmin(){
   const _res=await db('pedidos','GET',null,qs);let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
-  const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_cv=document.getElementById('fp-card-valor');
+  const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados');
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=arr.filter(p=>getStatusKey(p)==='finalizado').length;
   if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
-  if(_cv)_cv.textContent='R$ '+arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0).toFixed(2);
   tbody.innerHTML=arr.length===0?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>':arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobrado=parseFloat(p.taxa_entrega)>0?'R$ '+parseFloat(p.taxa_entrega).toFixed(2):'—';const pago=parseFloat(p.taxa_motoboy)>0?'R$ '+parseFloat(p.taxa_motoboy).toFixed(2):'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td><td style="font-size:12px;color:var(--text2)">${cobrado}</td><td style="font-size:12px;color:var(--text2)">${pago}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
@@ -3360,10 +3358,11 @@ async function renderFinanceiroPage(aba){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fin-faturamento" style="font-size:22px">—</div></div>
         <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fin-despesas" style="font-size:22px">—</div></div>
         <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="fin-lucro" style="font-size:22px">—</div></div>
+        <div class="stat-card"><div class="stat-label">Valor Mercadoria</div><div class="stat-value" id="fin-mercadoria" style="font-size:22px;color:var(--accent)">—</div></div>
       </div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
@@ -3515,21 +3514,24 @@ async function _scSalvar(){
 }
 
 async function _buscarFinanceiro(){
-  const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro');
-  if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';
-  const [cobrancas,saques,creditos]=await Promise.all([
+  const e1=document.getElementById('fin-faturamento'),e2=document.getElementById('fin-despesas'),e3=document.getElementById('fin-lucro'),e4=document.getElementById('fin-mercadoria');
+  if(e1)e1.textContent='...';if(e2)e2.textContent='...';if(e3)e3.textContent='...';if(e4)e4.textContent='...';
+  const [cobrancas,saques,creditos,pedidos]=await Promise.all([
     db('cobrancas_lojas','GET',null,'?select=valor_total,lojas(tipo_cobranca)&status=in.(pago,aprovado)'),
     db('saques','GET',null,'?select=valor_liquido,valor&status=eq.pago'),
     db('creditos_lojas','GET',null,'?select=valor&tipo=eq.credito'),
+    db('pedidos','GET',null,'?select=valor&status=eq.finalizado'),
   ]);
   const fatCobrancas=(Array.isArray(cobrancas)?cobrancas:[]).filter(r=>r.lojas?.tipo_cobranca==='faturamento').reduce((s,r)=>s+(parseFloat(r.valor_total)||0),0);
   const fatCreditos=(Array.isArray(creditos)?creditos:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const faturamento=fatCobrancas+fatCreditos;
   const despesas=(Array.isArray(saques)?saques:[]).reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
   const lucro=faturamento-despesas;
+  const mercadoria=(Array.isArray(pedidos)?pedidos:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   if(e1)e1.textContent=`R$ ${faturamento.toFixed(2)}`;
   if(e2)e2.textContent=`R$ ${despesas.toFixed(2)}`;
   if(e3){e3.textContent=`R$ ${Math.abs(lucro).toFixed(2)}`;e3.style.color=lucro>=0?'var(--green)':'var(--red)';}
+  if(e4)e4.textContent=`R$ ${mercadoria.toFixed(2)}`;
 }
 
 async function _carregarResumoFinanceiro(){
