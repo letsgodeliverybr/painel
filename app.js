@@ -3647,9 +3647,16 @@ function _gpCarregarMais(){_carregarHistoricoSaques(true);}
 async function _calcularPagamentos(){
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const dataIni=document.getElementById('gp-data-inicio')?.value;
+  const dataFim=document.getElementById('gp-data-fim')?.value;
+  if(!dataIni||!dataFim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  const horaIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
+  const horaFim=document.getElementById('gp-hora-fim')?.value||'23:59';
+  const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
+  const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
   const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
   const [pedidos,entregadores,saquesPendentes,saquesPagos]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&select=${selectFields}`),
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
     db('saques','GET',null,'?status=eq.pendente&select=entregador_id'),
     db('saques','GET',null,'?status=eq.pago&select=entregador_id,valor'),
