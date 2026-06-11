@@ -3445,23 +3445,21 @@ function _scTrocarAba(aba){
 
 async function _scBuscar(){
   const wrap=document.getElementById('sc-tabela');if(!wrap)return;
-  // Sub-aba entregadores: tabela não disponível ainda
-  if(_scSubAba!=='lojas'){
-    wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px">🚧</div><div style="font-size:15px;font-weight:600">Em breve</div><div style="font-size:13px;margin-top:8px">Módulo de créditos de entregadores em desenvolvimento</div></div></div>';
-    return;
-  }
   wrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div>';
+  const isLojas=_scSubAba==='lojas';
+  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
+  const joinField=isLojas?'lojas':'entregadores';
   const nome=(document.getElementById('sc-f-nome')?.value||'').toLowerCase();
   const ini=document.getElementById('sc-f-ini')?.value;
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
-  let qs='?select=*,lojas(nome)&manual=eq.true&order=created_at.desc&limit=500';
+  let qs=`?select=*,${joinField}(nome)&order=created_at.desc&limit=500`;
   if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
   if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
   if(tipo==='credito')qs+='&tipo=eq.credito';
   else if(tipo==='debito')qs+='&tipo=eq.debito';
-  const rows=await db('creditos_lojas','GET',null,qs);
-  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r.lojas?.nome||'').toLowerCase().includes(nome));
+  const rows=await db(tabela,'GET',null,qs);
+  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r[joinField]?.nome||'').toLowerCase().includes(nome));
   const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const saldo=totC-totD;
@@ -3471,11 +3469,12 @@ async function _scBuscar(){
   if(e3){e3.textContent=`R$ ${Math.abs(saldo).toFixed(2)}`;e3.style.color=saldo>=0?'#10b981':'#ef4444';}
   if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
   const tipoBadge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Crédito</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Débito</span>`;
+  const colLabel=isLojas?'Loja':'Entregador';
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Loja</th><th>Tipo</th><th>Valor</th><th>Observações</th></tr></thead>
+    <thead><tr><th>Data</th><th>${colLabel}</th><th>Tipo</th><th>Valor</th><th>Observações</th></tr></thead>
     <tbody>${data.map(r=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(r.created_at)}</td>
-      <td style="font-weight:600;color:var(--text)">${r.lojas?.nome||'—'}</td>
+      <td style="font-weight:600;color:var(--text)">${r[joinField]?.nome||'—'}</td>
       <td>${tipoBadge(r.tipo)}</td>
       <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
       <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}</td>
@@ -3484,34 +3483,40 @@ async function _scBuscar(){
 }
 
 async function _scAbrirModal(id){
-  const lojas=await db('lojas','GET',null,'?select=id,nome&order=nome.asc');
+  const isLojas=_scSubAba==='lojas';
+  const entidades=await db(isLojas?'lojas':'entregadores','GET',null,'?select=id,nome&order=nome.asc');
   const sel=document.getElementById('sc-m-ent');
   if(sel){
-    sel.innerHTML=(Array.isArray(lojas)?lojas:[]).map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+    sel.innerHTML=(Array.isArray(entidades)?entidades:[]).map(e=>`<option value="${e.id}">${e.nome||e.id?.substring(0,8)}</option>`).join('');
     if(id){const opt=sel.querySelector(`option[value="${id}"]`);if(opt)opt.selected=true;}
   }
+  const lblWrap=document.getElementById('sc-modal-entidade-wrap');
+  if(lblWrap){const lbl=lblWrap.querySelector('label');if(lbl)lbl.textContent=isLojas?'LOJA':'ENTREGADOR';}
   const titulo=document.getElementById('sc-modal-titulo');
-  if(titulo)titulo.textContent='Cadastrar Crédito / Débito';
+  if(titulo)titulo.textContent=`Cadastrar Crédito / Débito — ${isLojas?'Loja':'Entregador'}`;
   const modal=document.getElementById('modal-sc');
   if(modal)modal.style.display='flex';
 }
 
 async function _scSalvar(){
-  const loja_id=document.getElementById('sc-m-ent')?.value;
+  const isLojas=_scSubAba==='lojas';
+  const entId=document.getElementById('sc-m-ent')?.value;
   const data=document.getElementById('sc-m-data')?.value;
   const tipo=document.getElementById('sc-m-tipo')?.value;
   const valor=parseFloat(document.getElementById('sc-m-valor')?.value||0);
   const observacoes=(document.getElementById('sc-m-obs')?.value||'').trim();
-  if(!loja_id||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha loja, data, tipo e valor','var(--yellow)');return;}
+  if(!entId||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha todos os campos obrigatórios','var(--yellow)');return;}
   const agora=new Date().toISOString();
-  const payload={loja_id,tipo,valor,observacoes,data,manual:true,created_at:agora,updated_at:agora};
-  const res=await db('creditos_lojas','POST',payload);
+  const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
+  const fkField=isLojas?'loja_id':'entregador_id';
+  const payload={[fkField]:entId,tipo,valor,observacoes,data,created_at:agora,updated_at:agora};
+  const res=await db(tabela,'POST',payload);
   if(res&&(Array.isArray(res)?res.length>0:res.id)){
     showNotif('✅ Registro salvo com sucesso!','');
     document.getElementById('modal-sc').style.display='none';
     _scBuscar();
   } else {
-    showNotif('❌ Erro ao salvar','Verifique as permissões da tabela creditos_lojas no Supabase','var(--red)');
+    showNotif('❌ Erro ao salvar',`Verifique as permissões da tabela ${tabela} no Supabase`,'var(--red)');
   }
 }
 
