@@ -3968,7 +3968,7 @@ function _renderAprovarCobrancas(){
     </div></div>
     <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando histórico...</div></div>`;
   _buscarCobrancasPendentes();
-  _renderHistoricoCobrancas(hoje,hoje);
+  _renderHistoricoCobrancas();
 }
 
 async function _buscarCobrancasPendentes(){
@@ -4011,7 +4011,7 @@ async function _renderHistoricoCobrancas(inicio,fim){
     ?`?select=*,lojas(nome)&status=in.(pago,recusado)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=updated_at.desc&limit=50`
     :`?select=*,lojas(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30`;
   const hist=await db('cobrancas_lojas','GET',null,qs);
-  if(!hist||!hist.length){wrap.innerHTML='';return;}
+  if(!hist||!hist.length){wrap.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Nenhum histórico encontrado</div>';return;}
   const badge=c=>c.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Cobranças</div>
