@@ -3605,7 +3605,7 @@ async function _carregarHistoricoSaques(append){
     <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
     <td>${s.qtd_pedidos??'—'}</td>
     <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor)||0).toFixed(2)}</td>
-    <td style="font-size:12px;color:var(--text2)">${s.data_inicio&&s.data_fim?`${s.data_inicio} – ${s.data_fim}`:formatarData(s.created_at)}</td>
+    <td style="font-size:12px;color:var(--text2)">${s.data_inicio&&s.data_fim?`${formatarDataBR(s.data_inicio)} – ${formatarDataBR(s.data_fim)}`:formatarData(s.created_at)}</td>
     <td>${statusBadge(s.status)}</td>
   </tr>`).join('');
   if(append){
@@ -3865,7 +3865,7 @@ async function _carregarHistoricoCobrancas(append){
   if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
   const html=data.map(c=>`<tr>
     <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
-    <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+    <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
     <td>${c.qtd_pedidos??'—'}</td>
     <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td>
@@ -3968,7 +3968,7 @@ function _renderAprovarCobrancas(){
     </div></div>
     <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando histórico...</div></div>`;
   _buscarCobrancasPendentes();
-  _renderHistoricoCobrancas();
+  _renderHistoricoCobrancas(hoje,hoje);
 }
 
 async function _buscarCobrancasPendentes(){
@@ -3994,7 +3994,7 @@ async function _buscarCobrancasPendentes(){
       <tbody>${cobrancas.map(c=>{const loja=c.lojas||{};return`<tr id="cob-row-${c.id}">
         <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
-        <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
         <td>${c.qtd_pedidos||'—'}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
@@ -4020,7 +4020,7 @@ async function _renderHistoricoCobrancas(inicio,fim){
       <tbody>${hist.map(c=>`<tr>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
-        <td style="font-size:12px;color:var(--text2)">${c.data_inicio||'—'} – ${c.data_fim||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
         <td>${badge(c)}</td>
       </tr>`).join('')}</tbody>
