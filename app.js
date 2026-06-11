@@ -3594,7 +3594,7 @@ async function _carregarHistoricoSaques(append){
   const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
   const rows=Array.isArray(saques)?saques:[];
   if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum pagamento gerado ainda</div>';return;}
-  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
+  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='aprovado'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Aprovado</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
   const html=rows.map(s=>`<tr>
     <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
     <td>${s.qtd_pedidos??'—'}</td>
@@ -3859,19 +3859,21 @@ async function _carregarHistoricoCobrancas(append){
   const rows=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=in.(pago,pendente,aprovado)&order=created_at.desc&limit=${_gcHistoricoPageSize}&offset=${_gcHistoricoOffset}`);
   const data=Array.isArray(rows)?rows:[];
   if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
+  const _gcBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='aprovado'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Aprovado</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
   const html=data.map(c=>`<tr>
     <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
     <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
     <td>${c.qtd_pedidos??'—'}</td>
     <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td>
+    <td>${_gcBadge(c.status)}</td>
   </tr>`).join('');
   if(append){
     const tbody=el.querySelector('tbody');
     if(tbody)tbody.insertAdjacentHTML('beforeend',html);
   }else{
     el.innerHTML=`<div style="overflow-x:auto;max-height:400px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th></tr></thead>
+      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Status</th></tr></thead>
       <tbody>${html}</tbody>
     </table></div>
     ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
