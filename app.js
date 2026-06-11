@@ -3962,13 +3962,20 @@ function _renderAprovarCobrancas(){
           <input type="date" id="ac-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
           <input type="date" id="ac-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
-        <button onclick="_buscarCobrancasPendentes()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+        <button onclick="_buscarAprovarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
       <div id="ac-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
     <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando histórico...</div></div>`;
   _buscarCobrancasPendentes();
   _renderHistoricoCobrancas();
+}
+
+function _buscarAprovarCobrancas(){
+  const inicio=document.getElementById('ac-data-inicio')?.value;
+  const fim=document.getElementById('ac-data-fim')?.value;
+  _buscarCobrancasPendentes();
+  _renderHistoricoCobrancas(inicio,fim);
 }
 
 async function _buscarCobrancasPendentes(){
@@ -3981,7 +3988,6 @@ async function _buscarCobrancasPendentes(){
   if(!pendWrap)return;
   if(!cobrancas||!cobrancas.length){
     pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma cobrança pendente no período</div></div>`;
-    _renderHistoricoCobrancas(inicio,fim);
     return;
   }
   pendWrap.innerHTML=`
@@ -4001,7 +4007,6 @@ async function _buscarCobrancasPendentes(){
         <td style="display:flex;gap:6px"><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
-  _renderHistoricoCobrancas(inicio,fim);
 }
 
 async function _renderHistoricoCobrancas(inicio,fim){
