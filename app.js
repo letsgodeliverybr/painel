@@ -68,14 +68,13 @@ function _calcTaxaLoja(p,faixasOverride){
   const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
   if(!faixa) return parseFloat(p.taxa_entrega)||0;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
+  const base=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno)||0;
   const pd=parseFloat(p.preco_dinamico)||0;
-  valor+=pd;
-  const result=Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
+  const result=Math.round((base+pd+(parseFloat(p.gorjeta)||0))*100)/100;
   const tsStr=_precoDinTs['cliente']||localStorage.getItem('_pdAtivadoEm_cliente');
   const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
   const ativo=_precoDinValores['cliente']>0&&expiry>Date.now();
-  console.log(`[PD] _calcTaxaLoja pd_aplicado=${pd} result=${result} | valor=${_precoDinValores['cliente']} timestamp=${tsStr} minutos_restantes=${ativo?Math.round((expiry-Date.now())/60000):0} ativo=${ativo}`);
+  console.log(`[PD] _calcTaxaLoja base=${base} preco_dinamico=${pd} ativo=${ativo} total=${result} | estado: valor=${_precoDinValores['cliente']} timestamp=${tsStr} minutos_restantes=${ativo?Math.round((expiry-Date.now())/60000):0}`);
   return result;
 }
 async function _getFaixasCobranca(lojaId){
