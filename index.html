@@ -217,11 +217,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 <div class="nav-overlay" id="nav-overlay" onclick="fecharNavSidebar()"></div>
 <div class="nav-sidebar" id="nav-sidebar">
   <div class="nav-sidebar-header">
-    <div class="nav-sidebar-logo">🛵</div>
-    <div>
-      <div style="font-size:14px;font-weight:800;color:var(--text)">Lets Go</div>
-      <div style="font-size:9px;color:var(--orange);letter-spacing:2px;font-weight:600">DELIVERY</div>
-    </div>
+    <img src="img/logo.png" alt="Lets Go Delivery" style="height:38px;width:auto;object-fit:contain;display:block;"/>
     <button onclick="fecharNavSidebar()" style="margin-left:auto;background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;">✕</button>
   </div>
   <div class="nav-sidebar-body" id="nav-sidebar-body"></div>
@@ -238,8 +234,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
       </svg>
     </button>
     <div class="topbar-logo" style="cursor:pointer" onclick="abrirNavSidebar()">
-      <div class="topbar-logo-icon">🛵</div>
-      <div><div class="topbar-logo-text">Lets Go</div><span class="topbar-logo-sub">DELIVERY</span></div>
+      <img src="img/logo.png" alt="Lets Go Delivery" style="height:34px;width:auto;object-fit:contain;display:block;"/>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-left:14px;">
       <button id="btn-novo-pedido" onclick="abrirModal('modal-pedido')" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
