@@ -2206,10 +2206,7 @@ function renderPedidosLista(){
           <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
             style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;user-select:none;color:#fff;padding:0;gap:3px;overflow:hidden">
             ${isSel?'<span style="font-size:22px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
-              `<div style="width:100%;flex:1;overflow:hidden;display:flex;flex-direction:column">
-                <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:42px;object-fit:cover;display:block;">
-                ${motoboy?.nome?`<div style="background:#1a3a1a;padding:2px 4px;text-align:center"><a href="https://wa.me/55${(motoboy.telefone||'').replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:9px;color:#4ade80;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;text-decoration:none">${motoboy.nome.split(' ')[0]}</a></div>`:`<div style="background:#111;padding:2px 4px;text-align:center"><span style="font-size:9px;color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${loja?.telefone||''}</span></div>`}
-              </div>`
+              `<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;display:block;">`
             }
           </div>
           <div style="flex:1;min-width:0;overflow:hidden">
