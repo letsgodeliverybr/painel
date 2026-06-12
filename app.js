@@ -3092,19 +3092,25 @@ async function _fetchPdAtual(lojaId){
   const agora=Date.now();
   [['cliente',rv,rts],['entregador',rvE,rtsE]].forEach(([tipo,r,rt])=>{
     const v=parseFloat(r[0]?.valor||0);
-    const tsStr=rt[0]?.valor||null;
-    const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+    const tsStrDB=rt[0]?.valor||null;
+    // fallback: se banco não tem timestamp, usa memória ou localStorage (pode ocorrer se o save do ativado_em falhou)
+    const tsStr=tsStrDB||_precoDinTs[tipo]||localStorage.getItem(`_pdAtivadoEm_${tipo}`);
+    const expiry=tsStr?_tsUtc(tsStr)+120*60*1000:0;
     const ativo=v>0&&expiry>agora;
-    _precoDinValores[tipo]=ativo?v:0;
-    _precoDinTs[tipo]=ativo?tsStr:null;
-    if(ativo)localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
-    else localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
+    if(ativo){
+      // DB confirmou ativo — atualiza memória
+      _precoDinValores[tipo]=v;
+      _precoDinTs[tipo]=tsStr;
+      localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
+    }
+    // se DB retornar inativo, NÃO zera a memória — mantém estado atual
+    // (evita apagar estado válido quando banco tem dado incompleto)
     const min=ativo?Math.round((expiry-agora)/60000):0;
-    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts=${tsStr} ativo=${ativo} min_restantes=${min}`);
+    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts_db=${tsStrDB} ts_usado=${tsStr} ativo=${ativo} min_restantes=${min}`);
   });
   const pdC=_getPdCliente(lojaId);
   const pdE=_getPdEntregador(lojaId);
-  console.log(`[PD fetch] lojaId=${lojaId} => cliente=${pdC} entregador=${pdE} (fonte: configuracoes live)`);
+  console.log(`[PD fetch] lojaId=${lojaId} => cliente=${pdC} entregador=${pdE}`);
   return {cliente:pdC,entregador:pdE};
 }
 
