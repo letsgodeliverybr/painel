@@ -16,7 +16,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Operação'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Operação'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'logs',icon:'📋',label:'Logs'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Operação'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Operação'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
@@ -1725,7 +1725,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage};
   if(pages[id])pages[id]();
 }
 
@@ -2552,8 +2552,6 @@ function renderCadastrosPage(aba){
     {id:'entregadores',icon:'🛵', label:'Entregadores'},
     {id:'usuarios',    icon:'👥', label:'Usuários'},
     {id:'precificacao',icon:'💰', label:'Cobrança e Pagamento'},
-    {id:'preco-din',   icon:'📈', label:'Preço Dinâmico'},
-    {id:'preco-din-ent',icon:'📈',label:'Preço Din. Entregador'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -2570,7 +2568,7 @@ function renderCadastrosPage(aba){
 async function _renderCadastrosConteudo(aba){
   _cadastrosAba=aba;
   // Atualiza estilo das abas
-  ['clientes','entregadores','usuarios','precificacao','preco-din','preco-din-ent'].forEach(id=>{
+  ['clientes','entregadores','usuarios','precificacao'].forEach(id=>{
     const el=document.getElementById('cad-aba-'+id);
     if(!el)return;
     el.style.borderBottom=id===aba?'2px solid var(--accent)':'2px solid transparent';
@@ -2587,10 +2585,6 @@ async function _renderCadastrosConteudo(aba){
     await _renderUsuariosTab(el);
   } else if(aba==='precificacao'){
     await _renderPrecificacaoTab(el);
-  } else if(aba==='preco-din'){
-    _renderPrecoDinamicoTab(el,'cliente');
-  } else if(aba==='preco-din-ent'){
-    _renderPrecoDinamicoTab(el,'entregador');
   }
 }
 
@@ -2950,6 +2944,39 @@ async function _renderPrecificacaoTab(el){
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><div id="tp-btn-novo"></div></div>
     <div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
   _tabAba='cobranca';await carregarTabelasPreco();
+}
+
+function renderPrecoDinamicoPage(){
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header"><div class="page-title">📈 Preço Dinâmico</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div id="pd-wrap-cliente"></div>
+        <div id="pd-wrap-entregador"></div>
+      </div>
+    </div>`;
+  _renderPrecoDinamicoTab(document.getElementById('pd-wrap-cliente'),'cliente');
+  _renderPrecoDinamicoTab(document.getElementById('pd-wrap-entregador'),'entregador');
+}
+
+async function _inicializarPrecoDinamico(){
+  const [rv1,rv2,rts1,rts2]=await Promise.all([
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente_ativado_em'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_ativado_em'),
+  ]);
+  [['cliente',rv1,rts1],['entregador',rv2,rts2]].forEach(([tipo,rv,rts])=>{
+    const valor=parseFloat(rv[0]?.valor||0);
+    const tsStr=rts[0]?.valor;
+    if(valor>0&&tsStr&&new Date(tsStr).getTime()+120*60*1000>Date.now()){
+      _precoDinValores[tipo]=valor;
+      localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
+    }else{
+      _precoDinValores[tipo]=0;
+      localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
+    }
+  });
 }
 
 function _renderPrecoDinamicoTab(el,tipo){
@@ -4333,6 +4360,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil!=='suporte'?'flex':'none';
     renderTabs();setTimeout(()=>{goTab('mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
+    _inicializarPrecoDinamico();
   }catch(e){sessionStorage.removeItem('lg_user');}
 });
 
