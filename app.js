@@ -3090,27 +3090,34 @@ async function _fetchPdAtual(lojaId){
     db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
   ]);
   const agora=Date.now();
+  let pdC=0,pdE=0;
   [['cliente',rv,rts],['entregador',rvE,rtsE]].forEach(([tipo,r,rt])=>{
     const v=parseFloat(r[0]?.valor||0);
     const tsStrDB=rt[0]?.valor||null;
-    // fallback: se banco não tem timestamp, usa memória ou localStorage (pode ocorrer se o save do ativado_em falhou)
     const tsStr=tsStrDB||_precoDinTs[tipo]||localStorage.getItem(`_pdAtivadoEm_${tipo}`);
     const expiry=tsStr?_tsUtc(tsStr)+120*60*1000:0;
     const ativo=v>0&&expiry>agora;
+    const min=ativo?Math.round((expiry-agora)/60000):0;
+    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts_db=${tsStrDB} ts_usado=${tsStr} expiry=${expiry} agora=${agora} ativo=${ativo} min_restantes=${min}`);
     if(ativo){
-      // DB confirmou ativo — atualiza memória
       _precoDinValores[tipo]=v;
       _precoDinTs[tipo]=tsStr;
       localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
+      if(tipo==='cliente')pdC=v; else pdE=v;
     }
-    // se DB retornar inativo, NÃO zera a memória — mantém estado atual
-    // (evita apagar estado válido quando banco tem dado incompleto)
-    const min=ativo?Math.round((expiry-agora)/60000):0;
-    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts_db=${tsStrDB} ts_usado=${tsStr} ativo=${ativo} min_restantes=${min}`);
   });
-  const pdC=_getPdCliente(lojaId);
-  const pdE=_getPdEntregador(lojaId);
-  console.log(`[PD fetch] lojaId=${lojaId} => cliente=${pdC} entregador=${pdE}`);
+  // verifica PD por cidade (carregado no startup) — sobrescreve global se mais específico
+  const loja=allLojas.find(l=>l.id===lojaId);
+  const cidade=loja?.cidade;
+  if(cidade){
+    const cfgC=_pdCidades[cidade];
+    if(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora){
+      if(!cfgC.lojas||cfgC.lojas.length===0||cfgC.lojas.includes(lojaId))pdC=cfgC.valor;
+    }
+    const cfgE=_pdCidadesEnt[cidade];
+    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora)pdE=cfgE.valor;
+  }
+  console.log(`[PD fetch] lojaId=${lojaId} cidade=${cidade||'?'} => cliente=${pdC} entregador=${pdE}`);
   return {cliente:pdC,entregador:pdE};
 }
 
