@@ -8,6 +8,10 @@ function corStatus(status){
   const cores={'agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
   return cores[status]||'#6b7280';
 }
+// Supabase pode retornar timestamps sem sufixo de fuso (ex: "2026-06-12T15:00:00").
+// JavaScript trata isso como hora local, causando offset de 3h no UTC-3.
+// Esta função força interpretação como UTC adicionando 'Z' quando necessário.
+function _tsUtc(ts){const s=ts||'';return new Date(s.includes('Z')||s.includes('+')?s:s+'Z').getTime();}
 
 let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},realtimeInterval=null;
@@ -1603,9 +1607,9 @@ function abrirInfoPedido(pedidoId){
   const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
   const sk=p.status_detalhado||p.status||'';
   const cor=corStatus(sk);
-  const previsaoMs=new Date(p.created_at).getTime()+30*60*1000;
+  const previsaoMs=_tsUtc(p.created_at)+30*60*1000;
   const restanteMs=previsaoMs-Date.now();
-  const restanteTxt=restanteMs>0?`${Math.min(30,Math.floor(restanteMs/60000))}min restantes`:'Atrasado';
+  const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
   const txMoto=_calcTaxaMotoboy(p);
   const stepsDone=(s)=>['aceito','chegou_local','em_rota','chegou_destino','retornando','finalizado'].includes(s);
   const stepsA=(s)=>['em_rota','chegou_destino','retornando','finalizado'].includes(s);
@@ -1635,7 +1639,7 @@ function abrirInfoPedido(pedidoId){
         <div style="font-size:12px;font-weight:700;color:${restanteMs>0?'#10b981':'#ef4444'}">${restanteTxt}</div>
       </div>
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
-        ${step(true,'Criado')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
+        ${step(true,'Em Preparo')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
       </div>
       ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens do Pedido</div>
         <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
@@ -2146,13 +2150,13 @@ function renderPedidosLista(){
       const stepDone=_stepMap[sk]??0;
       const _dot=(i)=>{const done=i<=stepDone;return`<div style="width:14px;height:14px;border-radius:50%;background:${done?'#1A56DB':'var(--sb-border)'};border:2px solid ${done?'#1A56DB':'var(--sb-text3)'};flex-shrink:0"></div>`;};
       const _line=(i)=>`<div style="flex:1;height:2px;background:${i<stepDone?'#1A56DB':'var(--sb-border)'};margin:0 2px"></div>`;
-      const _labels=['Criado','Coletado','A caminho','Entregue'];
+      const _labels=['Em Preparo','Coletado','A caminho','Entregue'];
       const progressBar=`<div style="margin-bottom:12px">
         <div style="display:flex;align-items:center;margin-bottom:4px">${_dot(0)}${_line(0)}${_dot(1)}${_line(1)}${_dot(2)}${_line(2)}${_dot(3)}</div>
         <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
       </div>`;
-      const previsaoMs=new Date(p.created_at).getTime()+30*60*1000;
-      const restanteMin=Math.min(30,Math.round((previsaoMs-Date.now())/60000));
+      const previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+      const restanteMin=Math.round((previsaoMs-Date.now())/60000);
       const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
       const itens=Array.isArray(p.itens)?p.itens:[];
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
