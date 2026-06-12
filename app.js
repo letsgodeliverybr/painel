@@ -1459,8 +1459,9 @@ async function calcularTaxaAuto(){
   const {cliente:_pdNp,entregador:_pdNpE}=await _fetchPdAtual(lojaHid.value);
   _npPdC=_pdNp;
   _npPdE=_pdNpE;
-  const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:_pdNp,taxa_entrega:0},faixasLoja);
-  console.log(`[calcularTaxaAuto] pd_cliente=${_pdNp} pd_entregador=${_pdNpE} valorTaxa=${valorTaxa.toFixed(2)}`);
+  const taxaBase=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},faixasLoja);
+  const valorTaxa=Math.round((taxaBase+_pdNp)*100)/100;
+  console.log(`[calcularTaxaAuto] taxa_base=${taxaBase} pd_cliente=${_pdNp} taxa_exibida=${valorTaxa.toFixed(2)}`);
   document.getElementById('np-taxa').value=valorTaxa.toFixed(2);
   const _npBadge=document.getElementById('np-pd-badge');
   if(_npBadge)_npBadge.style.display='none';
