@@ -2981,28 +2981,27 @@ async function renderPrecoDinamicoPage(){
 }
 
 async function _inicializarPrecoDinamico(){
-  const [rv1,rv2,rts1,rts2,rcidades]=await Promise.all([
+  const [rv1,rv2,rts1,rts2,rpdc,rpdce]=await Promise.all([
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente'),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador'),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente_ativado_em'),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_ativado_em'),
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cidades'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
   ]);
   [['cliente',rv1,rts1],['entregador',rv2,rts2]].forEach(([tipo,rv,rts])=>{
     const valor=parseFloat(rv[0]?.valor||0);
+    _precoDinValores[tipo]=valor; // sempre carrega o valor, independente do timer
     const tsStr=rts[0]?.valor;
     if(valor>0&&tsStr&&new Date(tsStr).getTime()+120*60*1000>Date.now()){
-      _precoDinValores[tipo]=valor;
       localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
     }else{
-      _precoDinValores[tipo]=0;
       localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
+      if(valor<=0||!tsStr) _precoDinValores[tipo]=0;
     }
   });
-  if(rcidades&&rcidades[0]){
-    _pdCidades=rcidades[0].preco_dinamico_por_cidade||{};
-    _pdCidadesEnt=rcidades[0].preco_dinamico_entregador_por_cidade||{};
-  }
+  try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
+  try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
 }
 
 function _getPdCliente(lojaId){
@@ -3070,13 +3069,13 @@ function _renderPrecoDinamicoTab(el,tipo){
   ]).then(([dataValor,dataAtivado])=>{
     const input=document.getElementById(`preco-din-valor-${tipo}`);
     const valor=parseFloat(dataValor[0]?.valor||0);
-    if(input)input.value=valor.toFixed(2);
+    if(input&&valor>0)input.value=valor.toFixed(2); // só sobrescreve se há valor real
     if(valor>0&&dataAtivado[0]?.valor){
       _precoDinValores[tipo]=valor;
       _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
       localStorage.setItem(_lsKey,dataAtivado[0].valor);
-    }else{_precoDinValores[tipo]=0;localStorage.removeItem(_lsKey);}
-  });
+    }else{localStorage.removeItem(_lsKey);}
+  }).catch(e=>console.error('[PD] erro ao carregar '+tipo,e));
 }
 
 function _iniciarBarraPrecoDin(tipo,ativadoEm){
@@ -3126,66 +3125,85 @@ async function salvarPrecoDinamico(tipo){
   const valor=parseFloat(input?.value)||0;
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const agora=new Date().toISOString();
-  // Upsert valor
-  const existing=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`);
-  if(existing&&existing.length>0){
-    await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.preco_dinamico_${tipo}`);
-  }else{
-    await db('configuracoes','POST',{chave:`preco_dinamico_${tipo}`,valor:String(valor),created_at:agora,updated_at:agora});
-  }
-  // Upsert timestamp de ativação (somente quando ligando)
-  if(valor>0){
-    const chaveTs=`preco_dinamico_${tipo}_ativado_em`;
-    const existingTs=await db('configuracoes','GET',null,`?chave=eq.${chaveTs}`);
-    if(existingTs&&existingTs.length>0){
-      await db('configuracoes','PATCH',{valor:agora,updated_at:agora},`?chave=eq.${chaveTs}`);
+  const chave=`preco_dinamico_${tipo}`;
+  const payload={valor:String(valor),updated_at:agora};
+  console.log('[PD] salvar tipo='+tipo+' valor='+valor+' payload=',JSON.stringify(payload));
+  try{
+    // Upsert valor
+    const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
+    let res;
+    if(existing&&existing.length>0){
+      res=await db('configuracoes','PATCH',payload,`?chave=eq.${chave}`);
     }else{
-      await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
+      res=await db('configuracoes','POST',{chave,valor:String(valor),created_at:agora,updated_at:agora});
     }
-    _precoDinValores[tipo]=valor;
-    localStorage.setItem(`_pdAtivadoEm_${tipo}`,agora);
-    _iniciarBarraPrecoDin(tipo,new Date(agora));
-  }else{
-    _precoDinValores[tipo]=0;
-    localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
-    if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
-    const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
-    if(wrap)wrap.style.display='none';
+    if(!res||res.length===0) console.error('[PD] PATCH/POST retornou vazio — possível erro de permissão ou RLS. tipo='+tipo);
+    else console.log('[PD] salvo com sucesso:',res[0]);
+    // Upsert timestamp de ativação
+    if(valor>0){
+      const chaveTs=`${chave}_ativado_em`;
+      const existingTs=await db('configuracoes','GET',null,`?chave=eq.${chaveTs}`);
+      let resTs;
+      if(existingTs&&existingTs.length>0){
+        resTs=await db('configuracoes','PATCH',{valor:agora,updated_at:agora},`?chave=eq.${chaveTs}`);
+      }else{
+        resTs=await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
+      }
+      if(!resTs||resTs.length===0) console.error('[PD] falha ao salvar timestamp. chaveTs='+chaveTs);
+      _precoDinValores[tipo]=valor;
+      localStorage.setItem(`_pdAtivadoEm_${tipo}`,agora);
+      _iniciarBarraPrecoDin(tipo,new Date(agora));
+    }else{
+      _precoDinValores[tipo]=0;
+      localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
+      if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
+      const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
+      if(wrap)wrap.style.display='none';
+    }
+    if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
+    showNotif('✅ Preço dinâmico salvo!','');
+  }catch(e){
+    console.error('[PD] exceção ao salvar tipo='+tipo,e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
   }
-  if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
-  showNotif('✅ Preço dinâmico salvo!','');
 }
 
 async function _pdSelecionarCidade(cidade){
   const wrap=document.getElementById('pd-cidade-content');
   if(!wrap)return;
   if(!cidade){wrap.innerHTML='';return;}
-  wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;color:var(--text3);font-size:13px">Carregando...</div>';
-  const [lojasCidade,entregadores,rcidades]=await Promise.all([
-    db('lojas','GET',null,`?ativo=eq.true&cidade=eq.${encodeURIComponent(cidade)}&select=id,nome&order=nome.asc`),
-    db('motoboys','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cidades'),
-  ]);
-  const row=rcidades&&rcidades[0];
-  _pdCidades=row?.preco_dinamico_por_cidade||{};
-  _pdCidadesEnt=row?.preco_dinamico_entregador_por_cidade||{};
-  const cidCfgC=_pdCidades[cidade]||{valor:0,lojas:[]};
-  const cidCfgE=_pdCidadesEnt[cidade]||{valor:0,entregadores:[]};
-  wrap.innerHTML='';
-  const wC=document.createElement('div');const wE=document.createElement('div');
-  wrap.appendChild(wC);wrap.appendChild(wE);
-  _renderPdCidadeCard(wC,'cliente',cidade,lojasCidade||[],cidCfgC);
-  _renderPdCidadeCard(wE,'entregador',cidade,entregadores||[],cidCfgE);
+  wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;color:var(--text3);font-size:13px">⏳ Carregando...</div>';
+  try{
+    const [lojasCidade,entregadores,rpdc,rpdce]=await Promise.all([
+      db('lojas','GET',null,`?ativo=eq.true&cidade=eq.${encodeURIComponent(cidade)}&select=id,nome&order=nome.asc`),
+      db('motoboys','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
+      db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
+      db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
+    ]);
+    console.log('[PD-cidade] lojas=',lojasCidade?.length,'entregadores=',entregadores?.length,'rpdc=',rpdc,'rpdce=',rpdce);
+    try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
+    try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
+    const cidCfgC=_pdCidades[cidade]||{valor:0,lojas:[]};
+    const cidCfgE=_pdCidadesEnt[cidade]||{valor:0,entregadores:[]};
+    wrap.innerHTML=`<div id="pd-cid-wrap-cliente"></div><div id="pd-cid-wrap-entregador"></div>`;
+    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-cliente'),'cliente',cidade,lojasCidade||[],cidCfgC);
+    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-entregador'),'entregador',cidade,entregadores||[],cidCfgE);
+  }catch(e){
+    console.error('[PD-cidade] erro ao carregar cidade='+cidade,e);
+    wrap.innerHTML=`<div style="grid-column:1/-1;padding:20px;color:var(--red);font-size:13px">❌ Erro ao carregar dados da cidade. Veja o console.</div>`;
+  }
 }
 
 function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg){
   const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
   const entLabel=tipo==='cliente'?'Lojas (vazio = todas da cidade)':'Entregadores (vazio = todos da cidade)';
-  const cidKey=`${tipo}_${encodeURIComponent(cidade)}`;
+  const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
+  const cidKey=`${tipo}_${cidSafe}`;
   const multiId=`pd-cid-multi-${cidKey}`;
+  const searchId=`pd-cid-busca-${cidKey}`;
   const selecionados=cfg[tipo==='cliente'?'lojas':'entregadores']||[];
   const valor=parseFloat(cfg.valor)||0;
-  const optionsHtml=entidades.map(e=>`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionados.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
+  const optionsHtml=entidades.map(e=>`<label class="pd-cid-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionados.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   el.innerHTML=`
     <div class="card">
       <div class="card-header"><span class="card-title">📈 ${label} · ${cidade}</span></div>
@@ -3204,12 +3222,14 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg){
         </div>
         <div class="fi" style="margin-bottom:14px">
           <label style="margin-bottom:6px;display:block">${entLabel}</label>
-          <div id="${multiId}" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--surface2)">
+          <input type="text" id="${searchId}" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value)"
+            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
+          <div id="${multiId}" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
             ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum encontrado</div>'}
           </div>
         </div>
         <div id="pd-cid-feedback-${cidKey}" style="margin-bottom:10px;font-size:12px"></div>
-        <button class="btn-modal-primary" onclick="_salvarPdCidade('${tipo}',decodeURIComponent('${encodeURIComponent(cidade)}'),'${multiId}')">💾 Salvar</button>
+        <button class="btn-modal-primary" onclick="_salvarPdCidade('${tipo}','${cidSafe}','${cidade}','${multiId}')">💾 Salvar</button>
       </div>
     </div>`;
   if(valor>0&&cfg.ativado_em){
@@ -3218,8 +3238,18 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg){
   }
 }
 
-async function _salvarPdCidade(tipo,cidade,multiId){
-  const cidKey=`${tipo}_${encodeURIComponent(cidade)}`;
+function _pdFiltrarOpcoes(multiId,busca){
+  const q=(busca||'').trim().toLowerCase();
+  const wrap=document.getElementById(multiId);
+  if(!wrap)return;
+  wrap.querySelectorAll('.pd-cid-opt').forEach(lbl=>{
+    const nome=lbl.textContent.toLowerCase();
+    lbl.style.display=(!q||nome.includes(q))?'':'none';
+  });
+}
+
+async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
+  const cidKey=`${tipo}_${cidSafe}`;
   const input=document.getElementById(`pd-cid-valor-${cidKey}`);
   const fb=document.getElementById(`pd-cid-feedback-${cidKey}`);
   const valor=parseFloat(input?.value)||0;
@@ -3227,36 +3257,46 @@ async function _salvarPdCidade(tipo,cidade,multiId){
   const selecionados=checks.map(c=>c.value);
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const agora=new Date().toISOString();
-  const cidCol=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
+  const chave=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
   const mem=tipo==='cliente'?_pdCidades:_pdCidadesEnt;
   const entry=tipo==='cliente'
     ?{valor,ativado_em:valor>0?agora:null,lojas:selecionados}
     :{valor,ativado_em:valor>0?agora:null,entregadores:selecionados};
   const newMap={...mem,[cidade]:entry};
   if(tipo==='cliente')_pdCidades=newMap;else _pdCidadesEnt=newMap;
-  const existing=await db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cidades');
-  if(existing&&existing.length>0){
-    await db('configuracoes','PATCH',{[cidCol]:newMap,updated_at:agora},'?chave=eq.preco_dinamico_cidades');
-  }else{
-    await db('configuracoes','POST',{chave:'preco_dinamico_cidades',valor:'',preco_dinamico_por_cidade:tipo==='cliente'?newMap:{},preco_dinamico_entregador_por_cidade:tipo==='entregador'?newMap:{},created_at:agora,updated_at:agora});
+  const payload={valor:JSON.stringify(newMap),updated_at:agora};
+  console.log('[PD-cidade] salvar tipo='+tipo+' cidade='+cidade+' valor='+valor+' payload=',JSON.stringify(payload));
+  try{
+    const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
+    let res;
+    if(existing&&existing.length>0){
+      res=await db('configuracoes','PATCH',payload,`?chave=eq.${chave}`);
+    }else{
+      res=await db('configuracoes','POST',{chave,valor:JSON.stringify(newMap),created_at:agora,updated_at:agora});
+    }
+    if(!res||res.length===0) console.error('[PD-cidade] PATCH/POST retornou vazio — possível erro de permissão. chave='+chave);
+    else console.log('[PD-cidade] salvo com sucesso:',res[0]);
+    if(valor>0){
+      _iniciarBarraPdCidade(tipo,cidade,new Date(agora));
+    }else{
+      if(_pdCidTimers[cidKey]){clearInterval(_pdCidTimers[cidKey]);delete _pdCidTimers[cidKey];}
+      const ww=document.getElementById(`pd-cid-barra-wrap-${cidKey}`);
+      if(ww)ww.style.display='none';
+    }
+    if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
+    showNotif(`✅ Preço dinâmico ${cidade} salvo!`,'');
+  }catch(e){
+    console.error('[PD-cidade] exceção ao salvar tipo='+tipo+' cidade='+cidade,e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
   }
-  if(valor>0){
-    _iniciarBarraPdCidade(tipo,cidade,new Date(agora));
-  }else{
-    const tk=`${tipo}_${encodeURIComponent(cidade)}`;
-    if(_pdCidTimers[tk]){clearInterval(_pdCidTimers[tk]);delete _pdCidTimers[tk];}
-    const ww=document.getElementById(`pd-cid-barra-wrap-${cidKey}`);
-    if(ww)ww.style.display='none';
-  }
-  if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
-  showNotif(`✅ Preço dinâmico ${cidade} salvo!`,'');
 }
 
 function _iniciarBarraPdCidade(tipo,cidade,ativadoEm){
-  const tk=`${tipo}_${encodeURIComponent(cidade)}`;
+  const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
+  const tk=`${tipo}_${cidSafe}`;
   if(_pdCidTimers[tk])clearInterval(_pdCidTimers[tk]);
   const DURACAO=120*60*1000;
-  const cidKey=`${tipo}_${encodeURIComponent(cidade)}`;
+  const cidKey=`${tipo}_${cidSafe}`;
   const wrap=document.getElementById(`pd-cid-barra-wrap-${cidKey}`);
   const barra=document.getElementById(`pd-cid-barra-${cidKey}`);
   const timerEl=document.getElementById(`pd-cid-timer-${cidKey}`);
@@ -3287,9 +3327,9 @@ function _iniciarBarraPdCidade(tipo,cidade,ativadoEm){
 async function _desativarPdCidade(tipo,cidade){
   const mem=tipo==='cliente'?_pdCidades:_pdCidadesEnt;
   if(mem[cidade]){mem[cidade].valor=0;mem[cidade].ativado_em=null;}
-  const cidCol=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
+  const chave=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
   const agora=new Date().toISOString();
-  await db('configuracoes','PATCH',{[cidCol]:mem,updated_at:agora},'?chave=eq.preco_dinamico_cidades');
+  await db('configuracoes','PATCH',{valor:JSON.stringify(mem),updated_at:agora},`?chave=eq.${chave}`);
   showNotif(`⏰ Preço dinâmico ${cidade} desativado automaticamente`,'','var(--text2)');
 }
 
