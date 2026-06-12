@@ -50,15 +50,11 @@ function _calcTaxaMotoboy(p){
   const faixa=_faixasPagamento.find(f=>km<=parseFloat(f.km_ate))||_faixasPagamento[_faixasPagamento.length-1];
   if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
+  const valorFaixa=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno);
   const pd=parseFloat(p.preco_dinamico)||0;
-  valor+=pd;
-  valor+=(parseFloat(p.gorjeta)||0);
-  const result=Math.round(valor*100)/100;
-  const tsStr=_precoDinTs['entregador']||localStorage.getItem('_pdAtivadoEm_entregador');
-  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
-  const ativo=_precoDinValores['entregador']>0&&expiry>Date.now();
-  console.log(`[PD] _calcTaxaMotoboy pd_aplicado=${pd} result=${result} | valor=${_precoDinValores['entregador']} timestamp=${tsStr} minutos_restantes=${ativo?Math.round((expiry-Date.now())/60000):0} ativo=${ativo}`);
+  const gorjeta=parseFloat(p.gorjeta)||0;
+  const result=Math.round((valorFaixa+pd+gorjeta)*100)/100;
+  console.log(`[calcTaxaMotoboy] distancia_km=${km} faixa_encontrada=km_ate:${faixa.km_ate} valor_faixa=${valorFaixa} pd_aplicado=${pd} gorjeta=${gorjeta} valor_calculado=${result}`);
   return result;
 }
 function _calcTaxaLoja(p,faixasOverride){
