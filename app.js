@@ -51,9 +51,15 @@ function _calcTaxaMotoboy(p){
   if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
-  valor+=(parseFloat(p.preco_dinamico)||0);
+  const pd=parseFloat(p.preco_dinamico)||0;
+  valor+=pd;
   valor+=(parseFloat(p.gorjeta)||0);
-  return Math.round(valor*100)/100;
+  const result=Math.round(valor*100)/100;
+  const tsStr=_precoDinTs['entregador']||localStorage.getItem('_pdAtivadoEm_entregador');
+  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+  const ativo=_precoDinValores['entregador']>0&&expiry>Date.now();
+  console.log(`[PD] _calcTaxaMotoboy pd_aplicado=${pd} result=${result} | valor=${_precoDinValores['entregador']} timestamp=${tsStr} minutos_restantes=${ativo?Math.round((expiry-Date.now())/60000):0} ativo=${ativo}`);
+  return result;
 }
 function _calcTaxaLoja(p,faixasOverride){
   const faixas=faixasOverride||_faixasCobranca;
@@ -63,8 +69,14 @@ function _calcTaxaLoja(p,faixasOverride){
   if(!faixa) return parseFloat(p.taxa_entrega)||0;
   const temRetorno=!!(p.retorno||p.com_retorno);
   let valor=temRetorno?parseFloat(faixa.valor_com_retorno):parseFloat(faixa.valor_sem_retorno);
-  valor+=(parseFloat(p.preco_dinamico)||0);
-  return Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
+  const pd=parseFloat(p.preco_dinamico)||0;
+  valor+=pd;
+  const result=Math.round((valor+(parseFloat(p.gorjeta)||0))*100)/100;
+  const tsStr=_precoDinTs['cliente']||localStorage.getItem('_pdAtivadoEm_cliente');
+  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+  const ativo=_precoDinValores['cliente']>0&&expiry>Date.now();
+  console.log(`[PD] _calcTaxaLoja pd_aplicado=${pd} result=${result} | valor=${_precoDinValores['cliente']} timestamp=${tsStr} minutos_restantes=${ativo?Math.round((expiry-Date.now())/60000):0} ativo=${ativo}`);
+  return result;
 }
 async function _getFaixasCobranca(lojaId){
   if(!lojaId) return _faixasCobranca;
@@ -83,6 +95,11 @@ async function _getFaixasCobranca(lojaId){
 let _precoDinTimers={};
 let _precoDinValores={cliente:0,entregador:0};
 let _precoDinTs={cliente:null,entregador:null};
+// Chaves reais na tabela configuracoes:
+//   cliente   → preco_dinamico / preco_dinamico_ativado_em
+//   entregador → preco_dinamico_entregador / preco_dinamico_entregador_ativado_em
+function _pdChave(tipo){return tipo==='cliente'?'preco_dinamico':`preco_dinamico_${tipo}`;}
+function _pdChaveTs(tipo){return tipo==='cliente'?'preco_dinamico_ativado_em':`preco_dinamico_${tipo}_ativado_em`;}
 let _pdCidades={}; // {cidade: {valor, ativado_em, lojas:[]}}
 let _pdCidadesEnt={}; // {cidade: {valor, ativado_em, entregadores:[]}}
 let _pdCidTimers={}; // keyed by `${tipo}_${cidade}`
@@ -2985,10 +3002,10 @@ async function renderPrecoDinamicoPage(){
 
 async function _inicializarPrecoDinamico(){
   const [rv1,rv2,rts1,rts2,rpdc,rpdce]=await Promise.all([
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente'),
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador'),
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_cliente_ativado_em'),
-    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_ativado_em'),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave('cliente')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave('entregador')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('cliente')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
   ]);
@@ -3085,8 +3102,8 @@ function _renderPrecoDinamicoTab(el,tipo){
   }
   // Carrega valor atual e timestamp de ativação do banco
   Promise.all([
-    db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}`),
-    db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}_ativado_em`)
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave(tipo)}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs(tipo)}`)
   ]).then(([dataValor,dataAtivado])=>{
     const input=document.getElementById(`preco-din-valor-${tipo}`);
     const valor=parseFloat(dataValor[0]?.valor||0);
@@ -3141,8 +3158,8 @@ async function _desativarPrecoDinamico(tipo){
   localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
   // Limpa só o timestamp de ativação para que o input mantenha o último valor usado
   const agora=new Date().toISOString();
-  const existingTs=await db('configuracoes','GET',null,`?chave=eq.preco_dinamico_${tipo}_ativado_em`);
-  if(existingTs&&existingTs.length>0)await db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.preco_dinamico_${tipo}_ativado_em`);
+  const existingTs=await db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs(tipo)}`);
+  if(existingTs&&existingTs.length>0)await db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.${_pdChaveTs(tipo)}`);
   showNotif('⏰ Preço dinâmico desativado automaticamente','','var(--text2)');
 }
 
@@ -3152,9 +3169,9 @@ async function salvarPrecoDinamico(tipo){
   const valor=parseFloat(input?.value)||0;
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const agora=new Date().toISOString();
-  const chave=`preco_dinamico_${tipo}`;
+  const chave=_pdChave(tipo);
   const payload={valor:String(valor),updated_at:agora};
-  console.log('[PD] salvar tipo='+tipo+' valor='+valor+' payload=',JSON.stringify(payload));
+  console.log('[PD] salvar tipo='+tipo+' chave='+chave+' valor='+valor+' payload=',JSON.stringify(payload));
   try{
     // Upsert valor
     const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
@@ -3164,11 +3181,11 @@ async function salvarPrecoDinamico(tipo){
     }else{
       res=await db('configuracoes','POST',{chave,valor:String(valor),created_at:agora,updated_at:agora});
     }
-    if(!res||res.length===0) console.error('[PD] PATCH/POST retornou vazio — possível erro de permissão ou RLS. tipo='+tipo);
+    if(!res||res.length===0) console.error('[PD] PATCH/POST retornou vazio — possível erro de permissão ou RLS. chave='+chave);
     else console.log('[PD] salvo com sucesso:',res[0]);
     // Upsert timestamp de ativação
     if(valor>0){
-      const chaveTs=`${chave}_ativado_em`;
+      const chaveTs=_pdChaveTs(tipo);
       const existingTs=await db('configuracoes','GET',null,`?chave=eq.${chaveTs}`);
       let resTs;
       if(existingTs&&existingTs.length>0){
