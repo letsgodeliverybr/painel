@@ -78,6 +78,7 @@ async function _getFaixasCobranca(lojaId){
 }
 let _precoDinTimers={};
 let _precoDinValores={cliente:0,entregador:0};
+let _precoDinTs={cliente:null,entregador:null};
 let _pdCidades={}; // {cidade: {valor, ativado_em, lojas:[]}}
 let _pdCidadesEnt={}; // {cidade: {valor, ativado_em, entregadores:[]}}
 let _pdCidTimers={}; // keyed by `${tipo}_${cidade}`
@@ -2989,13 +2990,19 @@ async function _inicializarPrecoDinamico(){
   ]);
   [['cliente',rv1,rts1],['entregador',rv2,rts2]].forEach(([tipo,rv,rts])=>{
     const valor=parseFloat(rv[0]?.valor||0);
-    _precoDinValores[tipo]=valor; // sempre carrega o valor, independente do timer
     const tsStr=rts[0]?.valor;
-    if(valor>0&&tsStr&&new Date(tsStr).getTime()+120*60*1000>Date.now()){
+    const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+    const ativo=valor>0&&expiry>Date.now();
+    const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
+    console.log(`[PD] init tipo=${tipo} valor=${valor} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
+    if(ativo){
+      _precoDinValores[tipo]=valor;
+      _precoDinTs[tipo]=tsStr;
       localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
     }else{
+      _precoDinValores[tipo]=0;
+      _precoDinTs[tipo]=null;
       localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
-      if(valor<=0||!tsStr) _precoDinValores[tipo]=0;
     }
   });
   try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
@@ -3011,7 +3018,13 @@ function _getPdCliente(lojaId){
       if(!cfg.lojas||cfg.lojas.length===0||cfg.lojas.includes(lojaId)) return cfg.valor;
     }
   }
-  return _precoDinValores['cliente']||0;
+  const v=_precoDinValores['cliente']||0;
+  const tsStr=_precoDinTs['cliente']||localStorage.getItem('_pdAtivadoEm_cliente');
+  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+  const ativo=v>0&&expiry>Date.now();
+  const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
+  console.log(`[PD] _getPdCliente lojaId=${lojaId} valor=${v} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
+  return ativo?v:0;
 }
 
 function _getPdEntregador(lojaId){
@@ -3021,7 +3034,13 @@ function _getPdEntregador(lojaId){
     const cfg=_pdCidadesEnt[cidade];
     if(cfg&&cfg.valor>0&&cfg.ativado_em&&new Date(cfg.ativado_em).getTime()+120*60*1000>Date.now()) return cfg.valor;
   }
-  return _precoDinValores['entregador']||0;
+  const v=_precoDinValores['entregador']||0;
+  const tsStr=_precoDinTs['entregador']||localStorage.getItem('_pdAtivadoEm_entregador');
+  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+  const ativo=v>0&&expiry>Date.now();
+  const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
+  console.log(`[PD] _getPdEntregador lojaId=${lojaId} valor=${v} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
+  return ativo?v:0;
 }
 
 function _renderPrecoDinamicoTab(el,tipo){
@@ -3068,11 +3087,16 @@ function _renderPrecoDinamicoTab(el,tipo){
     const input=document.getElementById(`preco-din-valor-${tipo}`);
     const valor=parseFloat(dataValor[0]?.valor||0);
     if(input&&valor>0)input.value=valor.toFixed(2); // só sobrescreve se há valor real
-    if(valor>0&&dataAtivado[0]?.valor){
+    if(valor>0&&dataAtivado[0]?.valor&&new Date(dataAtivado[0].valor).getTime()+120*60*1000>Date.now()){
       _precoDinValores[tipo]=valor;
-      _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
+      _precoDinTs[tipo]=dataAtivado[0].valor;
       localStorage.setItem(_lsKey,dataAtivado[0].valor);
-    }else{localStorage.removeItem(_lsKey);}
+      _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
+    }else{
+      _precoDinValores[tipo]=0;
+      _precoDinTs[tipo]=null;
+      localStorage.removeItem(_lsKey);
+    }
   }).catch(e=>console.error('[PD] erro ao carregar '+tipo,e));
 }
 
@@ -3109,6 +3133,7 @@ function _iniciarBarraPrecoDin(tipo,ativadoEm){
 
 async function _desativarPrecoDinamico(tipo){
   _precoDinValores[tipo]=0;
+  _precoDinTs[tipo]=null;
   localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
   // Limpa só o timestamp de ativação para que o input mantenha o último valor usado
   const agora=new Date().toISOString();
@@ -3148,11 +3173,14 @@ async function salvarPrecoDinamico(tipo){
         resTs=await db('configuracoes','POST',{chave:chaveTs,valor:agora,created_at:agora,updated_at:agora});
       }
       if(!resTs||resTs.length===0) console.error('[PD] falha ao salvar timestamp. chaveTs='+chaveTs);
+      else console.log('[PD] timestamp de ativação salvo: '+agora);
       _precoDinValores[tipo]=valor;
+      _precoDinTs[tipo]=agora;
       localStorage.setItem(`_pdAtivadoEm_${tipo}`,agora);
       _iniciarBarraPrecoDin(tipo,new Date(agora));
     }else{
       _precoDinValores[tipo]=0;
+      _precoDinTs[tipo]=null;
       localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
       if(_precoDinTimers[tipo]){clearInterval(_precoDinTimers[tipo]);delete _precoDinTimers[tipo];}
       const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
