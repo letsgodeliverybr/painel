@@ -1605,7 +1605,7 @@ function abrirInfoPedido(pedidoId){
   const cor=corStatus(sk);
   const previsaoMs=new Date(p.created_at).getTime()+30*60*1000;
   const restanteMs=previsaoMs-Date.now();
-  const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
+  const restanteTxt=restanteMs>0?`${Math.min(30,Math.floor(restanteMs/60000))}min restantes`:'Atrasado';
   const txMoto=_calcTaxaMotoboy(p);
   const stepsDone=(s)=>['aceito','chegou_local','em_rota','chegou_destino','retornando','finalizado'].includes(s);
   const stepsA=(s)=>['em_rota','chegou_destino','retornando','finalizado'].includes(s);
@@ -2152,7 +2152,7 @@ function renderPedidosLista(){
         <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
       </div>`;
       const previsaoMs=new Date(p.created_at).getTime()+30*60*1000;
-      const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+      const restanteMin=Math.min(30,Math.round((previsaoMs-Date.now())/60000));
       const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
       const itens=Array.isArray(p.itens)?p.itens:[];
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
