@@ -1311,12 +1311,13 @@ async function _crCalcularTaxa(){
   const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
-  const _pdCr=_getPdCliente(lojaId);
+  const {cliente:_pdCr}=await _fetchPdAtual(lojaId);
   const taxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCr},faixasCr);
   _crLastTaxa=taxa;
   spanKm.textContent=`${distKm} km`;
   const _gorjetaCr=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
   spanTaxa.textContent=`R$ ${(taxa+_gorjetaCr).toFixed(2)}`;
+  console.log(`[_crCalcularTaxa] pd_cliente=${_pdCr} taxa_exibida=${(taxa+_gorjetaCr).toFixed(2)}`);
   const _crBadge=document.getElementById('cr-pd-badge');
   if(_crBadge)_crBadge.style.display='none';
   _atualizarBtnCriarEntrega();
@@ -1335,7 +1336,7 @@ async function _criarEntregaRapidaToggle(){
     const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
     const faixas=await _getFaixasCobranca(lojaId);
     const spanTaxa=document.getElementById('cr-dist-taxa');
-    const _pdCrT=_getPdCliente(lojaId);
+    const {cliente:_pdCrT}=await _fetchPdAtual(lojaId);
     const taxa=_calcTaxaLoja({distancia_km:_crLastDistKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCrT},faixas);
     _crLastTaxa=taxa;
     const _gorjetaCrT=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
@@ -1377,11 +1378,11 @@ async function _criarEntregaRapida(){
   }
   const _distKm=_crLastDistKm||0;
   const _faixasCr=await _getFaixasCobranca(lojaId);
-  const _pdCliente=_getPdCliente(lojaId);
-  const _pdEntregador=_getPdEntregador(lojaId);
+  const {cliente:_pdCliente,entregador:_pdEntregador}=await _fetchPdAtual(lojaId);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente},_faixasCr);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador})||_taxaEntrega||null;
+  console.log(`[_criarEntregaRapida] pd_cliente=${_pdCliente} pd_entregador=${_pdEntregador} taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
@@ -1455,10 +1456,11 @@ async function calcularTaxaAuto(){
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
   const faixasLoja=await _getFaixasCobranca(lojaHid.value);
   if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km</span>`;return;}
-  const _pdNp=_getPdCliente(lojaHid.value);
+  const {cliente:_pdNp,entregador:_pdNpE}=await _fetchPdAtual(lojaHid.value);
   _npPdC=_pdNp;
-  _npPdE=_getPdEntregador(lojaHid.value);
+  _npPdE=_pdNpE;
   const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:_pdNp,taxa_entrega:0},faixasLoja);
+  console.log(`[calcularTaxaAuto] pd_cliente=${_pdNp} pd_entregador=${_pdNpE} valorTaxa=${valorTaxa.toFixed(2)}`);
   document.getElementById('np-taxa').value=valorTaxa.toFixed(2);
   const _npBadge=document.getElementById('np-pd-badge');
   if(_npBadge)_npBadge.style.display='none';
@@ -2583,8 +2585,7 @@ async function criarPedido(){
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
   const _faixasLojaPed=await _getFaixasCobranca(finalLojaId);
-  const _pdC=_npPdC;
-  const _pdE=_npPdE;
+  const {cliente:_pdC,entregador:_pdE}=await _fetchPdAtual(finalLojaId);
   const _taxaBase=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},_faixasLojaPed):taxaInput;
   const taxa=taxaInput>0?taxaInput:Math.round((_taxaBase+_pdC)*100)/100;
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
@@ -3078,6 +3079,32 @@ async function _inicializarPrecoDinamico(){
   });
   try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
   try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
+}
+
+async function _fetchPdAtual(lojaId){
+  const [rv,rvE,rts,rtsE]=await Promise.all([
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave('cliente')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave('entregador')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('cliente')}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
+  ]);
+  const agora=Date.now();
+  [['cliente',rv,rts],['entregador',rvE,rtsE]].forEach(([tipo,r,rt])=>{
+    const v=parseFloat(r[0]?.valor||0);
+    const tsStr=rt[0]?.valor||null;
+    const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
+    const ativo=v>0&&expiry>agora;
+    _precoDinValores[tipo]=ativo?v:0;
+    _precoDinTs[tipo]=ativo?tsStr:null;
+    if(ativo)localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
+    else localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
+    const min=ativo?Math.round((expiry-agora)/60000):0;
+    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts=${tsStr} ativo=${ativo} min_restantes=${min}`);
+  });
+  const pdC=_getPdCliente(lojaId);
+  const pdE=_getPdEntregador(lojaId);
+  console.log(`[PD fetch] lojaId=${lojaId} => cliente=${pdC} entregador=${pdE} (fonte: configuracoes live)`);
+  return {cliente:pdC,entregador:pdE};
 }
 
 function _getPdCliente(lojaId){
