@@ -1010,6 +1010,37 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       .mapa-stat-val { color: #ffffff !important; }
       .mapa-stat-label { color: #aaaaaa !important; }
     }
+    /* Google Places Autocomplete — corrige texto cortado no dropdown */
+    .pac-container {
+      min-width: 320px !important;
+      max-width: min(560px, 96vw) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25) !important;
+      z-index: 10000 !important;
+      font-family: Inter, sans-serif !important;
+    }
+    .pac-item {
+      white-space: normal !important;
+      height: auto !important;
+      min-height: 36px !important;
+      padding: 8px 12px !important;
+      line-height: 1.4 !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+    }
+    .pac-item-query {
+      white-space: normal !important;
+      font-size: 13px !important;
+    }
+    .pac-matched {
+      font-weight: 700 !important;
+    }
+    .pac-secondary-text {
+      white-space: normal !important;
+      font-size: 11px !important;
+    }
   `;
   document.head.appendChild(style);
 })();
