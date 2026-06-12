@@ -2981,6 +2981,7 @@ async function _inicializarPrecoDinamico(){
 
 function _renderPrecoDinamicoTab(el,tipo){
   const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
+  const _valorMemoria=_precoDinValores[tipo]||0;
   el.innerHTML=`
     <div class="card" style="max-width:520px">
       <div class="card-header"><span class="card-title">📈 Preço Dinâmico — ${label}</span></div>
@@ -2992,7 +2993,7 @@ function _renderPrecoDinamicoTab(el,tipo){
         <div class="fi" style="margin-bottom:8px">
           <label>Valor extra (R$)</label>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <input type="number" id="preco-din-valor-${tipo}" step="0.01" placeholder="0.00" style="max-width:160px"/>
+            <input type="number" id="preco-din-valor-${tipo}" step="0.01" placeholder="0.00" value="${_valorMemoria>0?_valorMemoria.toFixed(2):''}" style="max-width:160px"/>
             <div id="preco-din-barra-wrap-${tipo}" style="flex:1;min-width:160px;display:none">
               <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden;margin-bottom:4px">
                 <div id="preco-din-barra-${tipo}" style="height:100%;border-radius:6px;width:100%;background:#10b981;transition:width 1s linear"></div>
