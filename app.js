@@ -2206,7 +2206,7 @@ function renderPedidosLista(){
           <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
             style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':squareBg};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;user-select:none;color:#fff;padding:4px;gap:3px;overflow:hidden">
             ${isSel?'<span style="font-size:22px;font-weight:900">✓</span>':
-              `<span style="font-size:20px">🛵</span>
+              `<img src="img/logo.png" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
               ${loja?.telefone?`<span style="font-size:9px;color:rgba(255,255,255,.85);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58px;text-align:center">${loja.telefone}</span>`:''}
               ${motoboy?.nome?`<a href="https://wa.me/55${(motoboy.telefone||'').replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="font-size:9px;color:#4ade80;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58px;text-align:center;text-decoration:none">${motoboy.nome.split(' ')[0]}</a>`:''}`
             }
