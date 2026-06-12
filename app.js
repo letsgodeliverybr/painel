@@ -2168,17 +2168,17 @@ function renderPedidosLista(){
             ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}</div>`:''}
           </div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
+          ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
+            <div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${loja.nome||'—'}</div>
+            ${loja.telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📞 ${loja.telefone}</a></div>`:''}
+            ${loja.endereco?`<div style="font-size:11px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loja.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${loja.endereco}</a></div>`:''}
+          </div>`:''}
           <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('👤 Cliente')}
             ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
             ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${telefone}</a></div>`:''}
             ${(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
             ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
           </div>
-          ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
-            <div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${loja.nome||'—'}</div>
-            ${loja.telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📞 ${loja.telefone}</a></div>`:''}
-            ${loja.endereco?`<div style="font-size:11px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loja.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${loja.endereco}</a></div>`:''}
-          </div>`:''}
           ${motoboy?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🛵 Entregador')}
             <div style="display:flex;align-items:center;gap:8px">
               <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
