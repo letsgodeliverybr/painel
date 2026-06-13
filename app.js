@@ -3113,10 +3113,11 @@ async function _inicializarPrecoDinamico(){
   [['cliente',rv1,rts1],['entregador',rv2,rts2]].forEach(([tipo,rv,rts])=>{
     const valor=parseFloat(rv[0]?.valor||0);
     const tsStr=rts[0]?.valor;
-    const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
-    const ativo=valor>0&&expiry>Date.now();
-    const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
-    console.log(`[PD] init tipo=${tipo} valor=${valor} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
+    const expiry=tsStr?_tsUtc(tsStr)+120*60*1000:0;
+    const nowMs=Date.now();
+    const ativo=valor>0&&expiry>nowMs;
+    const minRestantes=ativo?Math.round((expiry-nowMs)/60000):0;
+    console.log(`[PD] init tipo=${tipo} valor=${valor} timestamp_salvo_utc=${tsStr||'(none)'} now_utc=${new Date(nowMs).toISOString()} diferenca_ms=${tsStr?nowMs-_tsUtc(tsStr):0} minutos_restantes=${minRestantes} ativo=${ativo}`);
     if(ativo){
       _precoDinValores[tipo]=valor;
       _precoDinTs[tipo]=tsStr;
@@ -3169,52 +3170,58 @@ async function _fetchPdAtual(lojaId){
     if(cidAtC){
       const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
       const aplicavel=aplicaveisC.length===0||aplicaveisC.includes(lojaId);
-      console.log(`[PD fetch] cidade=${cidade} cfgC.valor=${cfgC.valor} aplicaveisC=${JSON.stringify(aplicaveisC)} lojaId=${lojaId} aplicavel=${aplicavel} → ${aplicavel?'usa cidade':'mantém global='+pdGlobalC}`);
-      if(aplicavel){pdC=cfgC.valor;origemC='cidade';}
+      console.log(`[PD fetch] cidade=${cidade} cfgC.valor=${cfgC.valor} aplicaveisC=${JSON.stringify(aplicaveisC)} lojaId=${lojaId} aplicavel=${aplicavel} pd_global=${pdGlobalC} → ${aplicavel?'soma cidade '+cfgC.valor+' ao global':'mantém global='+pdGlobalC}`);
+      if(aplicavel){pdC=pdGlobalC+cfgC.valor;origemC=pdGlobalC>0?'global+cidade':'cidade';}
     }else{
       console.log(`[PD fetch] cidade=${cidade} PD cidade inativo (cfgC.valor=${cfgC?.valor||0}) → mantém pd_global=${pdGlobalC}`);
     }
     const cfgE=_pdCidadesEnt[cidade];
-    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=cfgE.valor;origemE='cidade';}
+    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=pdGlobalE+cfgE.valor;origemE=pdGlobalE>0?'global+cidade':'cidade';}
   }else{
     console.log(`[PD fetch] lojaId=${lojaId} sem cidade (migration pendente?) → aplica pd_global=${pdGlobalC}`);
   }
-  console.log(`[PD fetch] resultado_final lojaId=${lojaId} cidade=${cidade||'—'} pd_global_cliente=${pdGlobalC} pd_cidade_aplicavel=${origemC==='cidade'?pdC:0} resultado_cliente=${pdC}(${origemC}) resultado_entregador=${pdE}(${origemE})`);
+  const pdCidadeC=origemC&&origemC.includes('cidade')?pdC-pdGlobalC:0;
+  const pdCidadeE=origemE&&origemE.includes('cidade')?pdE-pdGlobalE:0;
+  console.log(`[PD fetch] resultado_final lojaId=${lojaId} cidade=${cidade||'—'} pd_global_cliente=${pdGlobalC} pd_cidade_cliente=${pdCidadeC} pd_total_cliente=${pdC}(${origemC}) pd_global_entregador=${pdGlobalE} pd_cidade_entregador=${pdCidadeE} pd_total_entregador=${pdE}(${origemE})`);
   return {cliente:pdC,entregador:pdE,origemCliente:origemC,origemEntregador:origemE};
 }
 
 function _getPdCliente(lojaId){
-  const loja=allLojas.find(l=>l.id===lojaId);
-  const cidade=loja?.cidade;
-  if(cidade){
-    const cfg=_pdCidades[cidade];
-    if(cfg&&cfg.valor>0&&cfg.ativado_em&&new Date(cfg.ativado_em).getTime()+120*60*1000>Date.now()){
-      if(!cfg.lojas||cfg.lojas.length===0||cfg.lojas.includes(lojaId)) return cfg.valor;
-    }
-  }
   const v=_precoDinValores['cliente']||0;
   const tsStr=_precoDinTs['cliente']||localStorage.getItem('_pdAtivadoEm_cliente');
   const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
   const ativo=v>0&&expiry>Date.now();
+  const globalPd=ativo?v:0;
+  const loja=allLojas.find(l=>l.id===lojaId);
+  const cidade=loja?.cidade;
+  let cidadePd=0;
+  if(cidade){
+    const cfg=_pdCidades[cidade];
+    if(cfg&&cfg.valor>0&&cfg.ativado_em&&_tsUtc(cfg.ativado_em)+120*60*1000>Date.now()){
+      if(!cfg.lojas||cfg.lojas.length===0||cfg.lojas.includes(lojaId)) cidadePd=cfg.valor;
+    }
+  }
   const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
-  console.log(`[PD] _getPdCliente lojaId=${lojaId} valor=${v} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
-  return ativo?v:0;
+  console.log(`[PD] _getPdCliente lojaId=${lojaId} global=${globalPd} cidade=${cidadePd} total=${globalPd+cidadePd} minutos_restantes=${minRestantes}`);
+  return globalPd+cidadePd;
 }
 
 function _getPdEntregador(lojaId){
-  const loja=allLojas.find(l=>l.id===lojaId);
-  const cidade=loja?.cidade;
-  if(cidade){
-    const cfg=_pdCidadesEnt[cidade];
-    if(cfg&&cfg.valor>0&&cfg.ativado_em&&new Date(cfg.ativado_em).getTime()+120*60*1000>Date.now()) return cfg.valor;
-  }
   const v=_precoDinValores['entregador']||0;
   const tsStr=_precoDinTs['entregador']||localStorage.getItem('_pdAtivadoEm_entregador');
   const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
   const ativo=v>0&&expiry>Date.now();
+  const globalPd=ativo?v:0;
+  const loja=allLojas.find(l=>l.id===lojaId);
+  const cidade=loja?.cidade;
+  let cidadePd=0;
+  if(cidade){
+    const cfg=_pdCidadesEnt[cidade];
+    if(cfg&&cfg.valor>0&&cfg.ativado_em&&_tsUtc(cfg.ativado_em)+120*60*1000>Date.now()) cidadePd=cfg.valor;
+  }
   const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
-  console.log(`[PD] _getPdEntregador lojaId=${lojaId} valor=${v} timestamp_ativacao=${tsStr} minutos_restantes=${minRestantes} ativo=${ativo}`);
-  return ativo?v:0;
+  console.log(`[PD] _getPdEntregador lojaId=${lojaId} global=${globalPd} cidade=${cidadePd} total=${globalPd+cidadePd} minutos_restantes=${minRestantes}`);
+  return globalPd+cidadePd;
 }
 
 function _renderPrecoDinamicoTab(el,tipo){
@@ -3248,7 +3255,7 @@ function _renderPrecoDinamicoTab(el,tipo){
   const _lsKey=`_pdAtivadoEm_${tipo}`;
   const _lsVal=localStorage.getItem(_lsKey);
   if(_lsVal){
-    const _lsDate=new Date(_lsVal);
+    const _lsDate=new Date(_tsUtc(_lsVal));
     const _restante=_lsDate.getTime()+120*60*1000-Date.now();
     if(_restante>0){_iniciarBarraPrecoDin(tipo,_lsDate);}
     else{localStorage.removeItem(_lsKey);}
@@ -3261,11 +3268,11 @@ function _renderPrecoDinamicoTab(el,tipo){
     const input=document.getElementById(`preco-din-valor-${tipo}`);
     const valor=parseFloat(dataValor[0]?.valor||0);
     if(input&&valor>0)input.value=valor.toFixed(2); // só sobrescreve se há valor real
-    if(valor>0&&dataAtivado[0]?.valor&&new Date(dataAtivado[0].valor).getTime()+120*60*1000>Date.now()){
+    if(valor>0&&dataAtivado[0]?.valor&&_tsUtc(dataAtivado[0].valor)+120*60*1000>Date.now()){
       _precoDinValores[tipo]=valor;
       _precoDinTs[tipo]=dataAtivado[0].valor;
       localStorage.setItem(_lsKey,dataAtivado[0].valor);
-      _iniciarBarraPrecoDin(tipo,new Date(dataAtivado[0].valor));
+      _iniciarBarraPrecoDin(tipo,new Date(_tsUtc(dataAtivado[0].valor)));
     }else{
       _precoDinValores[tipo]=0;
       _precoDinTs[tipo]=null;
@@ -3277,6 +3284,9 @@ function _renderPrecoDinamicoTab(el,tipo){
 function _iniciarBarraPrecoDin(tipo,ativadoEm){
   if(_precoDinTimers[tipo])clearInterval(_precoDinTimers[tipo]);
   const DURACAO=120*60*1000;
+  const nowMs=Date.now();
+  const difMs=nowMs-ativadoEm.getTime();
+  console.log(`[PD timer global] tipo=${tipo} timestamp_salvo_utc=${ativadoEm.toISOString()} now_utc=${new Date(nowMs).toISOString()} diferenca_ms=${difMs} minutos_restantes=${Math.floor((ativadoEm.getTime()+DURACAO-nowMs)/60000)}`);
   const wrap=document.getElementById(`preco-din-barra-wrap-${tipo}`);
   const barra=document.getElementById(`preco-din-barra-${tipo}`);
   const timerEl=document.getElementById(`preco-din-timer-${tipo}`);
@@ -3443,8 +3453,8 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
       </div>
     </div>`;
   if(valor>0&&cfg.ativado_em){
-    const restante=new Date(cfg.ativado_em).getTime()+120*60*1000-Date.now();
-    if(restante>0)_iniciarBarraPdCidade(tipo,cidade,new Date(cfg.ativado_em));
+    const restante=_tsUtc(cfg.ativado_em)+120*60*1000-Date.now();
+    if(restante>0)_iniciarBarraPdCidade(tipo,cidade,new Date(_tsUtc(cfg.ativado_em)));
   }
 }
 
@@ -3542,6 +3552,9 @@ function _iniciarBarraPdCidade(tipo,cidade,ativadoEm){
   if(_pdCidTimers[tk])clearInterval(_pdCidTimers[tk]);
   const DURACAO=120*60*1000;
   const cidKey=`${tipo}_${cidSafe}`;
+  const nowMs=Date.now();
+  const difMs=nowMs-ativadoEm.getTime();
+  console.log(`[PD timer cidade] tipo=${tipo} cidade=${cidade} timestamp_salvo_utc=${ativadoEm.toISOString()} now_utc=${new Date(nowMs).toISOString()} diferenca_ms=${difMs} minutos_restantes=${Math.floor((ativadoEm.getTime()+DURACAO-nowMs)/60000)}`);
   const wrap=document.getElementById(`pd-cid-barra-wrap-${cidKey}`);
   const barra=document.getElementById(`pd-cid-barra-${cidKey}`);
   const timerEl=document.getElementById(`pd-cid-timer-${cidKey}`);
