@@ -3828,18 +3828,11 @@ async function renderFinanceiroPage(aba){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
-        <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fin-faturamento" style="font-size:22px">—</div></div>
-        <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fin-despesas" style="font-size:22px">—</div></div>
-        <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="fin-lucro" style="font-size:22px">—</div></div>
-        <div class="stat-card"><div class="stat-label">Valor Mercadoria</div><div class="stat-value" id="fin-mercadoria" style="font-size:22px;color:var(--accent)">—</div></div>
-      </div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
       </div>
       <div id="financeiro-content"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div>`;
-  _buscarFinanceiro();
   if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
   else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
   else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
