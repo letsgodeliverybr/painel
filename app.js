@@ -95,9 +95,12 @@ let _precoDinTs={cliente:null,entregador:null};
 //   entregador → preco_dinamico_entregador / preco_dinamico_entregador_ativado_em
 function _pdChave(tipo){return tipo==='cliente'?'preco_dinamico':`preco_dinamico_${tipo}`;}
 function _pdChaveTs(tipo){return tipo==='cliente'?'preco_dinamico_ativado_em':`preco_dinamico_${tipo}_ativado_em`;}
-let _pdCidades={}; // {cidade: {valor, ativado_em, lojas:[]}}
-let _pdCidadesEnt={}; // {cidade: {valor, ativado_em, entregadores:[]}}
+let _pdCidades={}; // {cidade: {valor, ativado_em}}
+let _pdCidadesEnt={}; // {cidade: {valor, ativado_em}}
+let _pdCidadesAplicaveis={}; // {cidade: [loja_id,...]}
+let _pdCidadesAplicaveisEnt={}; // {cidade: [motoboy_id,...]}
 let _pdCidTimers={}; // keyed by `${tipo}_${cidade}`
+function _cidadeSufixo(c){return{'Ribeirão Preto':'RP','São José dos Campos':'SJC','Campinas':'CAMPI'}[c]||'';}
 
 // ── BRASÍLIA TIMEZONE HELPERS ──
 // Supabase retorna timestamps sem 'Z'; sem o sufixo o browser trata como horário local,
@@ -3049,13 +3052,15 @@ async function renderPrecoDinamicoPage(){
 }
 
 async function _inicializarPrecoDinamico(){
-  const [rv1,rv2,rts1,rts2,rpdc,rpdce]=await Promise.all([
+  const [rv1,rv2,rts1,rts2,rpdc,rpdce,raplic,raplicE]=await Promise.all([
     db('configuracoes','GET',null,`?chave=eq.${_pdChave('cliente')}`),
     db('configuracoes','GET',null,`?chave=eq.${_pdChave('entregador')}`),
     db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('cliente')}`),
     db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
     db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_lojas_aplicaveis_cidade'),
+    db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregadores_aplicaveis_cidade'),
   ]);
   [['cliente',rv1,rts1],['entregador',rv2,rts2]].forEach(([tipo,rv,rts])=>{
     const valor=parseFloat(rv[0]?.valor||0);
@@ -3076,6 +3081,8 @@ async function _inicializarPrecoDinamico(){
   });
   try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
   try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
+  try{_pdCidadesAplicaveis=JSON.parse(raplic[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveis={};}
+  try{_pdCidadesAplicaveisEnt=JSON.parse(raplicE[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveisEnt={};}
 }
 
 async function _fetchPdAtual(lojaId){
@@ -3108,7 +3115,8 @@ async function _fetchPdAtual(lojaId){
   if(cidade){
     const cfgC=_pdCidades[cidade];
     if(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora){
-      if(!cfgC.lojas||cfgC.lojas.length===0||cfgC.lojas.includes(lojaId))pdC=cfgC.valor;
+      const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
+      if(aplicaveisC.length===0||aplicaveisC.includes(lojaId))pdC=cfgC.valor;
     }
     const cfgE=_pdCidadesEnt[cidade];
     if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora)pdE=cfgE.valor;
@@ -3308,34 +3316,41 @@ async function _pdSelecionarCidade(cidade){
   if(!cidade){wrap.innerHTML='';return;}
   wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;color:var(--text3);font-size:13px">⏳ Carregando...</div>';
   try{
-    const [lojasCidade,entregadores,rpdc,rpdce]=await Promise.all([
-      db('lojas','GET',null,`?ativo=eq.true&cidade=eq.${encodeURIComponent(cidade)}&select=id,nome&order=nome.asc`),
-      db('motoboys','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
+    const sfx=_cidadeSufixo(cidade);
+    const [lojasCidade,entregadores,rpdc,rpdce,raplic,raplicE]=await Promise.all([
+      db('lojas','GET',null,`?ativo=eq.true&nome=like.*- ${sfx}*&select=id,nome&order=nome.asc`),
+      db('motoboys','GET',null,`?ativo=eq.true${sfx?`&nome=like.*- ${sfx}*`:''}&select=id,nome&order=nome.asc`),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
+      db('configuracoes','GET',null,'?chave=eq.preco_dinamico_lojas_aplicaveis_cidade'),
+      db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregadores_aplicaveis_cidade'),
     ]);
     console.log('[PD-cidade] lojas=',lojasCidade?.length,'entregadores=',entregadores?.length,'rpdc=',rpdc,'rpdce=',rpdce);
     try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
     try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
-    const cidCfgC=_pdCidades[cidade]||{valor:0,lojas:[]};
-    const cidCfgE=_pdCidadesEnt[cidade]||{valor:0,entregadores:[]};
+    try{_pdCidadesAplicaveis=JSON.parse(raplic[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveis={};}
+    try{_pdCidadesAplicaveisEnt=JSON.parse(raplicE[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveisEnt={};}
+    const cidCfgC=_pdCidades[cidade]||{valor:0};
+    const cidCfgE=_pdCidadesEnt[cidade]||{valor:0};
+    const cidAplicC=_pdCidadesAplicaveis[cidade]||[];
+    const cidAplicE=_pdCidadesAplicaveisEnt[cidade]||[];
     wrap.innerHTML=`<div id="pd-cid-wrap-cliente"></div><div id="pd-cid-wrap-entregador"></div>`;
-    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-cliente'),'cliente',cidade,lojasCidade||[],cidCfgC);
-    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-entregador'),'entregador',cidade,entregadores||[],cidCfgE);
+    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-cliente'),'cliente',cidade,lojasCidade||[],cidCfgC,cidAplicC);
+    _renderPdCidadeCard(document.getElementById('pd-cid-wrap-entregador'),'entregador',cidade,entregadores||[],cidCfgE,cidAplicE);
   }catch(e){
     console.error('[PD-cidade] erro ao carregar cidade='+cidade,e);
     wrap.innerHTML=`<div style="grid-column:1/-1;padding:20px;color:var(--red);font-size:13px">❌ Erro ao carregar dados da cidade. Veja o console.</div>`;
   }
 }
 
-function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg){
+function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
   const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
-  const entLabel=tipo==='cliente'?'Lojas (vazio = todas da cidade)':'Entregadores (vazio = todos da cidade)';
+  const entLabel=tipo==='cliente'?'Aplicar em (vazio = todas as lojas)':'Aplicar em (vazio = todos os entregadores)';
   const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
   const cidKey=`${tipo}_${cidSafe}`;
   const multiId=`pd-cid-multi-${cidKey}`;
   const searchId=`pd-cid-busca-${cidKey}`;
-  const selecionados=cfg[tipo==='cliente'?'lojas':'entregadores']||[];
+  const selecionados=aplicaveis||[];
   const valor=parseFloat(cfg.valor)||0;
   const optionsHtml=entidades.map(e=>`<label class="pd-cid-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionados.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   el.innerHTML=`
@@ -3391,25 +3406,37 @@ async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
   const selecionados=checks.map(c=>c.value);
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const agora=new Date().toISOString();
+  // chave principal: armazena valor + timer (sem lista de aplicáveis)
   const chave=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
   const mem=tipo==='cliente'?_pdCidades:_pdCidadesEnt;
-  const entry=tipo==='cliente'
-    ?{valor,ativado_em:valor>0?agora:null,lojas:selecionados}
-    :{valor,ativado_em:valor>0?agora:null,entregadores:selecionados};
+  const entry={valor,ativado_em:valor>0?agora:null};
   const newMap={...mem,[cidade]:entry};
   if(tipo==='cliente')_pdCidades=newMap;else _pdCidadesEnt=newMap;
   const payload={valor:JSON.stringify(newMap),updated_at:agora};
-  console.log('[PD-cidade] salvar tipo='+tipo+' cidade='+cidade+' valor='+valor+' payload=',JSON.stringify(payload));
+  // chave aplicáveis: armazena IDs selecionados separadamente
+  const chaveAplic=tipo==='cliente'?'preco_dinamico_lojas_aplicaveis_cidade':'preco_dinamico_entregadores_aplicaveis_cidade';
+  const memAplic=tipo==='cliente'?_pdCidadesAplicaveis:_pdCidadesAplicaveisEnt;
+  const newAplic={...memAplic,[cidade]:selecionados};
+  if(tipo==='cliente')_pdCidadesAplicaveis=newAplic;else _pdCidadesAplicaveisEnt=newAplic;
+  const payloadAplic={valor:JSON.stringify(newAplic),updated_at:agora};
+  console.log('[PD-cidade] salvar tipo='+tipo+' cidade='+cidade+' valor='+valor+' aplicaveis='+selecionados.length);
   try{
-    const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
-    let res;
-    if(existing&&existing.length>0){
-      res=await db('configuracoes','PATCH',payload,`?chave=eq.${chave}`);
-    }else{
-      res=await db('configuracoes','POST',{chave,valor:JSON.stringify(newMap),created_at:agora,updated_at:agora});
-    }
-    if(!res||res.length===0) console.error('[PD-cidade] PATCH/POST retornou vazio — possível erro de permissão. chave='+chave);
-    else console.log('[PD-cidade] salvo com sucesso:',res[0]);
+    const [existing,existingAplic]=await Promise.all([
+      db('configuracoes','GET',null,`?chave=eq.${chave}`),
+      db('configuracoes','GET',null,`?chave=eq.${chaveAplic}`),
+    ]);
+    const [res,resAplic]=await Promise.all([
+      existing&&existing.length>0
+        ?db('configuracoes','PATCH',payload,`?chave=eq.${chave}`)
+        :db('configuracoes','POST',{chave,valor:JSON.stringify(newMap),created_at:agora,updated_at:agora}),
+      existingAplic&&existingAplic.length>0
+        ?db('configuracoes','PATCH',payloadAplic,`?chave=eq.${chaveAplic}`)
+        :db('configuracoes','POST',{chave:chaveAplic,valor:JSON.stringify(newAplic),created_at:agora,updated_at:agora}),
+    ]);
+    if(!res||res.length===0) console.error('[PD-cidade] PATCH/POST retornou vazio. chave='+chave);
+    else console.log('[PD-cidade] salvo:',res[0]);
+    if(!resAplic||resAplic.length===0) console.error('[PD-cidade] PATCH/POST retornou vazio. chave='+chaveAplic);
+    else console.log('[PD-cidade] aplicáveis salvo:',resAplic[0]);
     if(valor>0){
       _iniciarBarraPdCidade(tipo,cidade,new Date(agora));
     }else{
