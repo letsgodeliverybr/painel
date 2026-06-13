@@ -1377,12 +1377,12 @@ async function _criarEntregaRapida(){
   }
   const _distKm=_crLastDistKm||0;
   const _faixasCr=await _getFaixasCobranca(lojaId);
-  const {cliente:_pdCliente,entregador:_pdEntregador}=await _fetchPdAtual(lojaId);
+  const {cliente:_pdCliente,entregador:_pdEntregador,origemCliente:_pdOrigemCr}=await _fetchPdAtual(lojaId);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente},_faixasCr);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador})||_taxaEntrega||null;
-  console.log(`[_criarEntregaRapida] pd_cliente=${_pdCliente} pd_entregador=${_pdEntregador} taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,recebido_em:agora,codigo_confirmacao:null};
+  console.log(`[_criarEntregaRapida] pd_cliente=${_pdCliente}(${_pdOrigemCr}) pd_entregador=${_pdEntregador} taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -1951,7 +1951,7 @@ function _buildTabelaRows(filtered,from){
         `<span title="${entId?'Entregador alocado':'Sem entregador'}" style="${entId?'':'opacity:.25'}">🛵</span>`,
         p.com_retorno?`<span title="Com retorno">↩️</span>`:'',
         parseFloat(p.gorjeta)>0?`<span title="Com gorjeta">🎁</span>`:'',
-        parseFloat(p.preco_dinamico)>0?`<span title="Taxa dinâmica ativa">☔</span>`:'',
+        parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção global">📅</span>`:`<span title="Taxa dinâmica (cidade)">☔</span>`):'',
       ].join('')}</span>`,'text-align:center;padding:3px 5px',rowBg)}
     </tr>`;
   }).join('');
@@ -2592,15 +2592,15 @@ async function criarPedido(){
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
   const _faixasLojaPed=await _getFaixasCobranca(finalLojaId);
-  const {cliente:_pdC,entregador:_pdE}=await _fetchPdAtual(finalLojaId);
+  const {cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}=await _fetchPdAtual(finalLojaId);
   const _taxaBase=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},_faixasLojaPed):taxaInput;
   const taxa=taxaInput>0?taxaInput:Math.round((_taxaBase+_pdC)*100)/100;
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdE})||taxa||null;
-  console.log(`[criarPedido] taxa_base=${_taxaBase} pd_cliente=${_pdC} pd_entregador=${_pdE} taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
+  console.log(`[criarPedido] taxa_base=${_taxaBase} pd_cliente=${_pdC}(${_pdOrigemNp}) pd_entregador=${_pdE} taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
@@ -3100,7 +3100,7 @@ async function _fetchPdAtual(lojaId){
     db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
   ]);
   const agora=Date.now();
-  let pdC=0,pdE=0;
+  let pdC=0,pdE=0,origemC=null,origemE=null;
   [['cliente',rv,rts],['entregador',rvE,rtsE]].forEach(([tipo,r,rt])=>{
     const v=parseFloat(r[0]?.valor||0);
     const tsStrDB=rt[0]?.valor||null;
@@ -3113,7 +3113,7 @@ async function _fetchPdAtual(lojaId){
       _precoDinValores[tipo]=v;
       _precoDinTs[tipo]=tsStr;
       localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
-      if(tipo==='cliente')pdC=v; else pdE=v;
+      if(tipo==='cliente'){pdC=v;origemC='global';}else{pdE=v;origemE='global';}
     }
   });
   // verifica PD por cidade (carregado no startup) — sobrescreve global se mais específico
@@ -3123,13 +3123,13 @@ async function _fetchPdAtual(lojaId){
     const cfgC=_pdCidades[cidade];
     if(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora){
       const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
-      if(aplicaveisC.length===0||aplicaveisC.includes(lojaId))pdC=cfgC.valor;
+      if(aplicaveisC.length===0||aplicaveisC.includes(lojaId)){pdC=cfgC.valor;origemC='cidade';}
     }
     const cfgE=_pdCidadesEnt[cidade];
-    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora)pdE=cfgE.valor;
+    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=cfgE.valor;origemE='cidade';}
   }
-  console.log(`[PD fetch] lojaId=${lojaId} cidade=${cidade||'?'} => cliente=${pdC} entregador=${pdE}`);
-  return {cliente:pdC,entregador:pdE};
+  console.log(`[PD fetch] lojaId=${lojaId} cidade=${cidade||'?'} => cliente=${pdC}(${origemC}) entregador=${pdE}(${origemE})`);
+  return {cliente:pdC,entregador:pdE,origemCliente:origemC,origemEntregador:origemE};
 }
 
 function _getPdCliente(lojaId){
