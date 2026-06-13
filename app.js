@@ -3123,19 +3123,29 @@ async function _fetchPdAtual(lojaId){
       if(tipo==='cliente'){pdC=v;origemC='global';}else{pdE=v;origemE='global';}
     }
   });
-  // verifica PD por cidade (carregado no startup) — sobrescreve global se mais específico
+  // PD global calculado — nunca filtrado por aplicáveis de cidade
+  const pdGlobalC=pdC,pdGlobalE=pdE;
+  console.log(`[PD fetch] global => pd_cliente=${pdGlobalC}(${origemC}) pd_entregador=${pdGlobalE}(${origemE})`);
+  // verifica PD por cidade (carregado no startup) — sobrescreve global apenas se cidade PD estiver ativo E loja/entregador na lista
   const loja=allLojas.find(l=>l.id===lojaId);
   const cidade=loja?.cidade;
   if(cidade){
     const cfgC=_pdCidades[cidade];
-    if(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora){
+    const cidAtC=!!(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora);
+    if(cidAtC){
       const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
-      if(aplicaveisC.length===0||aplicaveisC.includes(lojaId)){pdC=cfgC.valor;origemC='cidade';}
+      const aplicavel=aplicaveisC.length===0||aplicaveisC.includes(lojaId);
+      console.log(`[PD fetch] cidade=${cidade} cfgC.valor=${cfgC.valor} aplicaveisC=${JSON.stringify(aplicaveisC)} lojaId=${lojaId} aplicavel=${aplicavel} → ${aplicavel?'usa cidade':'mantém global='+pdGlobalC}`);
+      if(aplicavel){pdC=cfgC.valor;origemC='cidade';}
+    }else{
+      console.log(`[PD fetch] cidade=${cidade} PD cidade inativo (cfgC.valor=${cfgC?.valor||0}) → mantém pd_global=${pdGlobalC}`);
     }
     const cfgE=_pdCidadesEnt[cidade];
     if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=cfgE.valor;origemE='cidade';}
+  }else{
+    console.log(`[PD fetch] lojaId=${lojaId} sem cidade (migration pendente?) → aplica pd_global=${pdGlobalC}`);
   }
-  console.log(`[PD fetch] lojaId=${lojaId} cidade=${cidade||'?'} => cliente=${pdC}(${origemC}) entregador=${pdE}(${origemE})`);
+  console.log(`[PD fetch] resultado_final lojaId=${lojaId} cidade=${cidade||'—'} pd_global_cliente=${pdGlobalC} pd_cidade_aplicavel=${origemC==='cidade'?pdC:0} resultado_cliente=${pdC}(${origemC}) resultado_entregador=${pdE}(${origemE})`);
   return {cliente:pdC,entregador:pdE,origemCliente:origemC,origemEntregador:origemE};
 }
 
