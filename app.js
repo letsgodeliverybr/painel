@@ -1947,7 +1947,12 @@ function _buildTabelaRows(filtered,from){
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(`<span style="color:#BBB">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`,'',rowBg)}
       ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
-      ${TD(`<span style="font-size:12px;${entId?'':'opacity:.25'}"">🛵</span>`,'text-align:center;padding:3px 5px',rowBg)}
+      ${TD(`<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px">${[
+        `<span title="${entId?'Entregador alocado':'Sem entregador'}" style="${entId?'':'opacity:.25'}">🛵</span>`,
+        p.com_retorno?`<span title="Com retorno">↩️</span>`:'',
+        parseFloat(p.gorjeta)>0?`<span title="Com gorjeta">🎁</span>`:'',
+        parseFloat(p.preco_dinamico)>0?`<span title="Taxa dinâmica ativa">☔</span>`:'',
+      ].join('')}</span>`,'text-align:center;padding:3px 5px',rowBg)}
     </tr>`;
   }).join('');
 }
