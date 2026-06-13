@@ -20,7 +20,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'logs',icon:'📋',label:'Logs'}];
@@ -1811,7 +1811,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage};
   if(pages[id])pages[id]();
 }
 
@@ -3826,6 +3826,125 @@ async function carregarRelatorio(){
   const sc={};pedidos.forEach(p=>{const s=getStatusKey(p);sc[s]=(sc[s]||0)+1;});
   const total=pedidos.length||1;const colors={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',entregue:'#475569',cancelado:'#EF4444'};
   document.getElementById('status-bars').innerHTML=pedidos.length===0?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido no período</div>':Object.entries(sc).map(([s,n])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${STATUS_LABEL[s]||s}</span><span style="font-weight:700">${n}</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${colors[s]||'#475569'};height:100%;width:${(n/total*100).toFixed(1)}%;border-radius:4px"></div></div></div>`).join('');
+}
+
+async function renderAuditoriaPage(){
+  if(currentPerfil!=='adm'){showNotif('Sem acesso','','var(--red)');return;}
+  const hoje=_dataHojeBrasilia();
+  const inputStyle='padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;outline:none';
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header" style="flex-wrap:wrap;gap:10px">
+        <div class="page-title">🔍 Auditoria</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--text3);font-weight:600">De</label>
+          <input type="date" id="aud-de" value="${hoje}" style="${inputStyle}"/>
+          <label style="font-size:12px;color:var(--text3);font-weight:600">Até</label>
+          <input type="date" id="aud-ate" value="${hoje}" style="${inputStyle}"/>
+          <button class="btn-sm btn-primary-sm" onclick="_runAuditoria()">🔍 Verificar</button>
+        </div>
+      </div>
+      <div id="aud-resultado" style="margin-top:4px">
+        <div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">⏳ Carregando...</div>
+      </div>
+    </div>`;
+  _runAuditoria();
+}
+async function _runAuditoria(){
+  const el=document.getElementById('aud-resultado');if(!el)return;
+  const de=document.getElementById('aud-de')?.value||_dataHojeBrasilia();
+  const ate=document.getElementById('aud-ate')?.value||_dataHojeBrasilia();
+  el.innerHTML=`<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">⏳ Verificando ${de===ate?de:de+' → '+ate}...</div>`;
+  try{
+    const ini=_inicioDiaBrasilia(de),fim=_fimDiaBrasilia(ate);
+    const pedidos=await db('pedidos','GET',null,`?created_at=gte.${ini}&created_at=lte.${fim}&order=created_at.asc&limit=1000`);
+    if(!Array.isArray(pedidos)){el.innerHTML=`<div class="card" style="padding:20px;color:var(--red)">❌ Erro ao buscar pedidos.</div>`;return;}
+    const problemas=[];
+
+    // CHECK 1 — Consistência de cálculo
+    const lojaIdsChk=[...new Set(pedidos.map(p=>p.loja_id).filter(Boolean))];
+    const faixasCobMap={},faixasPagMap={};
+    await Promise.all(lojaIdsChk.map(async id=>{
+      faixasCobMap[id]=await _getFaixasCobranca(id);
+      faixasPagMap[id]=await _getFaixasPagamento(id);
+    }));
+    for(const p of pedidos){
+      if((p.status_detalhado||p.status)==='cancelado'||!p.distancia_km)continue;
+      const fc=faixasCobMap[p.loja_id]||_faixasCobranca;
+      const fp=faixasPagMap[p.loja_id]||_faixasPagamento;
+      const pd=parseFloat(p.preco_dinamico)||0;
+      const expEntrega=_calcTaxaLoja({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:0,preco_dinamico:pd,taxa_entrega:0,loja_id:p.loja_id},fc);
+      const expMotoboy=_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:parseFloat(p.gorjeta)||0,preco_dinamico:pd,loja_id:p.loja_id},fp);
+      const lojaNome=allLojas.find(l=>l.id===p.loja_id)?.nome||p.loja_id?.substring(0,8)||'?';
+      const savedE=parseFloat(p.taxa_entrega)||0;
+      const savedM=parseFloat(p.taxa_motoboy);
+      if(Math.abs(savedE-expEntrega)>0.05)
+        problemas.push({tipo:'CÁLCULO',descricao:`#${p.numero} (${lojaNome}) — Cobrança: esperado R$${expEntrega.toFixed(2)}, salvo R$${savedE.toFixed(2)}, diferença R$${(savedE-expEntrega).toFixed(2)}`,pedidoId:p.id,numero:p.numero,cor:'#f59e0b'});
+      if(!isNaN(savedM)&&expMotoboy!==null&&Math.abs(savedM-expMotoboy)>0.05)
+        problemas.push({tipo:'CÁLCULO',descricao:`#${p.numero} (${lojaNome}) — Motoboy: esperado R$${expMotoboy.toFixed(2)}, salvo R$${savedM.toFixed(2)}, diferença R$${(savedM-expMotoboy).toFixed(2)}`,pedidoId:p.id,numero:p.numero,cor:'#f59e0b'});
+    }
+
+    // CHECK 2 — Duplicados (mesmo número + mesma loja + < 5 min)
+    const grpDup={};
+    for(const p of pedidos){
+      const k=`${p.numero||''}__${p.loja_id||''}`;
+      if(!grpDup[k])grpDup[k]=[];
+      grpDup[k].push(p);
+    }
+    for(const arr of Object.values(grpDup)){
+      if(arr.length<2)continue;
+      for(let i=0;i<arr.length;i++){for(let j=i+1;j<arr.length;j++){
+        const diff=Math.abs(_tsUtc(arr[i].created_at)-_tsUtc(arr[j].created_at));
+        if(diff<5*60*1000){
+          const lojaNome=allLojas.find(l=>l.id===arr[i].loja_id)?.nome||'?';
+          problemas.push({tipo:'DUPLICADO',descricao:`#${arr[i].numero} (${lojaNome}) — Dois pedidos com mesmo número criados com ${Math.round(diff/1000)}s de diferença`,pedidoId:arr[i].id,numero:arr[i].numero,cor:'#ef4444'});
+        }
+      }}
+    }
+
+    // CHECK 3 — Lojas faturamento sem cobrança no período
+    const pedidosFin=pedidos.filter(p=>getStatusKey(p)==='finalizado');
+    const lojasFatIds=new Set(allLojas.filter(l=>(l.tipo_cobranca||'faturamento')==='faturamento').map(l=>l.id));
+    const lojaComPedFat=[...new Set(pedidosFin.filter(p=>lojasFatIds.has(p.loja_id)).map(p=>p.loja_id))];
+    if(lojaComPedFat.length){
+      const cobs=await db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago,aprovado)&created_at=gte.${ini}&created_at=lte.${fim}&select=loja_id`).catch(()=>[]);
+      const cobLojaIds=new Set((Array.isArray(cobs)?cobs:[]).map(c=>c.loja_id));
+      for(const lid of lojaComPedFat){
+        if(!cobLojaIds.has(lid)){
+          const lojaNome=allLojas.find(l=>l.id===lid)?.nome||lid?.substring(0,8)||'?';
+          const qtd=pedidosFin.filter(p=>p.loja_id===lid).length;
+          problemas.push({tipo:'COBRANÇA',descricao:`${lojaNome} — ${qtd} pedido(s) finalizado(s) sem cobrança_loja registrada no período`,pedidoId:pedidosFin.find(p=>p.loja_id===lid)?.id,numero:pedidosFin.find(p=>p.loja_id===lid)?.numero,cor:'#8b5cf6'});
+        }
+      }
+    }
+
+    // CHECK 4 — Entregadores sem saque no período
+    const entComPedFin=[...new Set(pedidosFin.map(p=>p.motoboy_id||p.entregador_id).filter(Boolean))];
+    if(entComPedFin.length){
+      const saques=await db('saques','GET',null,`?status=in.(pago,aprovado,pendente)&created_at=gte.${ini}&created_at=lte.${fim}&select=entregador_id`).catch(()=>[]);
+      const saqueEntIds=new Set((Array.isArray(saques)?saques:[]).map(s=>s.entregador_id));
+      for(const eid of entComPedFin){
+        if(!saqueEntIds.has(eid)){
+          const ent=allMotoboys.find(e=>e.id===eid);
+          const qtd=pedidosFin.filter(p=>(p.motoboy_id||p.entregador_id)===eid).length;
+          problemas.push({tipo:'PAGAMENTO',descricao:`${ent?.nome||eid?.substring(0,8)||'?'} — ${qtd} pedido(s) finalizado(s) sem pagamento gerado no período`,pedidoId:pedidosFin.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.id,numero:pedidosFin.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.numero,cor:'#06b6d4'});
+        }
+      }
+    }
+
+    if(!problemas.length){
+      el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center;color:var(--green);font-size:15px;font-weight:700">✅ Nenhum problema encontrado no período (${pedidos.length} pedido(s) verificado(s))</div></div>`;
+      return;
+    }
+    const badgeHtml=(pr)=>`<span style="display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;background:${pr.cor}22;color:${pr.cor};border:1px solid ${pr.cor}44;white-space:nowrap">${pr.tipo}</span>`;
+    const btnVer=(pr)=>pr.pedidoId?`<button onclick="goTab('mapa');setTimeout(()=>_irParaPedido('${pr.pedidoId}'),600)" style="padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Ver #${pr.numero||'?'}</button>`:'—';
+    el.innerHTML=`<div class="card"><div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span style="font-weight:700;font-size:14px">⚠️ ${problemas.length} problema(s) encontrado(s) em ${pedidos.length} pedido(s)</span></div><div style="overflow-x:auto"><table><thead><tr><th>Tipo</th><th>Descrição</th><th></th></tr></thead><tbody>
+      ${problemas.map(pr=>`<tr><td style="white-space:nowrap">${badgeHtml(pr)}</td><td style="font-size:13px;color:var(--text2)">${pr.descricao}</td><td>${btnVer(pr)}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  }catch(e){
+    console.error('[Auditoria] erro:',e);
+    el.innerHTML=`<div class="card"><div style="padding:20px;color:var(--red);font-size:13px">❌ Erro ao rodar verificações: ${e?.message||String(e)}</div></div>`;
+  }
 }
 
 async function renderLogsPage(){
