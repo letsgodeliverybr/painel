@@ -3568,7 +3568,7 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">FATURAMENTO</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">DESPESAS</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro" style="font-size:22px">—</div></div>
-      <div class="stat-card"><div class="stat-label">ENTREGADORES</div><div class="stat-value" id="fp-card-ent" style="font-size:26px;color:var(--text2)">—</div></div>
+      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th>${currentPerfil!=='loja'?'<th>Pago</th>':''}<th>Cobrado</th>${currentPerfil!=='loja'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil!=='loja'?13:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
@@ -3597,12 +3597,12 @@ async function _buscarPedidosAdmin(){
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
   const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_ck=document.getElementById('fp-card-km');
-  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cLucro=document.getElementById('fp-card-lucro'),_cEnt=document.getElementById('fp-card-ent');
+  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cLucro=document.getElementById('fp-card-lucro'),_cMerc=document.getElementById('fp-card-merc');
   const finalizados=arr.filter(p=>getStatusKey(p)==='finalizado');
   const fat=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0),0);
   const desp=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
   const lucro=fat-desp;
-  const entIds=new Set(finalizados.map(p=>p.motoboy_id||p.entregador_id).filter(Boolean));
+  const merc=arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=finalizados.length;
   if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
@@ -3610,7 +3610,7 @@ async function _buscarPedidosAdmin(){
   if(_cFat)_cFat.textContent='R$ '+fat.toFixed(2);
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
   if(_cLucro){_cLucro.textContent='R$ '+Math.abs(lucro).toFixed(2);_cLucro.style.color=lucro>=0?'var(--green)':'var(--red)';}
-  if(_cEnt)_cEnt.textContent=entIds.size;
+  if(_cMerc)_cMerc.textContent='R$ '+merc.toFixed(2);
   const _isLoja=currentPerfil==='loja';
   tbody.innerHTML=arr.length===0?`<tr><td colspan="${_isLoja?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=parseFloat(p.taxa_entrega)||0;const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_isLoja?'':` <td style="font-size:12px;color:var(--text2)">${pago}</td>`}<td style="font-size:12px;color:var(--text2)">${cobrado}</td>${_isLoja?'':` <td style="font-size:12px;text-align:right">${lucroStr}</td>`}<td style="font-size:12px;text-align:center">${_iconsLogistica(p,!!(p.motoboy_id||p.entregador_id))}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
