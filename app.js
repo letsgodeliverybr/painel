@@ -1805,8 +1805,8 @@ function goTab(id){
 function renderMapaPage(){
   _sidebarBusca='';filterStatus='todos';_pedidosSelecionados=new Set();
   const _thMapa=currentPerfil==='loja'
-    ?['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Taxa Cobrada','Onde Cobrar','Status','Logística']
-    :['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Taxa Motoboy','Taxa Cobrada','Onde Cobrar','Status','Logística'];
+    ?['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Taxa Cobrada','Logística','Onde Cobrar','Status']
+    :['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Taxa Motoboy','Taxa Cobrada','Lucro','Logística','Onde Cobrar','Status'];
   document.getElementById('app-body').innerHTML=`
     <div class="sidebar-pedidos sb-dark" id="sidebar-mapa">
       <div class="sb-header-dark">
@@ -1944,6 +1944,7 @@ function _buildTabelaRows(filtered,from){
     const endereco=p.endereco_entrega||p.endereco||'—';
     const taxaMotoboy=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
     const kmStr=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';
+    const lucroMapa=taxaCobrada-(taxaMotoboy??0);const lucroMapaStr=taxaCobrada>0?`<span style="font-weight:700;color:${lucroMapa>=0?'#4ade80':'#ef4444'}">${fmtR$(lucroMapa)}</span>`:'—';
     return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
       ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
       ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
@@ -1954,9 +1955,10 @@ function _buildTabelaRows(filtered,from){
       ${TD(`<span style="color:#BBB;font-size:11px">${kmStr}</span>`,'',rowBg)}
       ${currentPerfil!=='loja'?TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg):''}
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
+      ${currentPerfil!=='loja'?TD(lucroMapaStr,'text-align:right',rowBg):''}
+      ${TD(_iconsLogistica(p),'text-align:center;padding:3px 5px',rowBg)}
       ${TD(`<span style="color:#BBB">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`,'',rowBg)}
       ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
-      ${TD(_iconsLogistica(p),'text-align:center;padding:3px 5px',rowBg)}
     </tr>`;
   }).join('');
 }
@@ -1964,10 +1966,10 @@ function _buildTabelaRows(filtered,from){
 function _tabelaAnexarSentinela(){
   const el=document.getElementById('tabela-mapa-body');if(!el)return;
   if(_tabelaScrollOffset>=_tabelaScrollFiltered.length){
-    el.insertAdjacentHTML('beforeend',`<tr><td colspan="11" style="text-align:center;padding:12px;color:#555;font-size:12px;background:#2D2D2D">✓ Todos os pedidos carregados</td></tr>`);
+    el.insertAdjacentHTML('beforeend',`<tr><td colspan="13" style="text-align:center;padding:12px;color:#555;font-size:12px;background:#2D2D2D">✓ Todos os pedidos carregados</td></tr>`);
     return;
   }
-  el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="11" style="padding:10px;text-align:center;background:#2D2D2D"><div style="width:20px;height:20px;border:2px solid #3A3A3A;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
+  el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="13" style="padding:10px;text-align:center;background:#2D2D2D"><div style="width:20px;height:20px;border:2px solid #3A3A3A;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
   const sentinel=document.getElementById('tabela-sentinel');if(!sentinel)return;
   const root=el.parentElement?.parentElement;
   _tabelaScrollObserver=new IntersectionObserver(entries=>{
