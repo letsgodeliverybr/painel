@@ -23,11 +23,11 @@ let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Pedidos'},{id:'motoboys',icon:'🛵',label:'Motoboys'}];
+const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 let _sidebarBusca='';
 const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
@@ -1175,7 +1175,7 @@ async function abrirModal(id){
         if(_rb)_rb.style.background='#3a3a3a';if(_rl){_rl.textContent='Sem retorno';_rl.style.color='#888888';}
         return;
       }
-      const isAdm=currentPerfil==='adm';
+      const isAdm=currentPerfil==='adm'||currentPerfil==='suporte';
       const lojas=isAdm?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
       _npLojasData=lojas;
       const lojaNome=!isAdm?(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||'Minha Loja'):'';
@@ -1618,7 +1618,7 @@ async function _carregarSaldoTopbar(){
         alertBanner.style.display='block';
       }else if(alertBanner){alertBanner.style.display='none';}
       _atualizarBtnCriarEntrega();
-    } else if(currentPerfil==='adm'){
+    } else if(currentPerfil==='adm'||currentPerfil==='suporte'){
       const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
       const total=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
       val.textContent=total.toLocaleString('pt-BR',{minimumFractionDigits:2});
@@ -3061,6 +3061,8 @@ async function renderPrecoDinamicoPage(){
       o.value=c;o.textContent=c;
       sel.appendChild(o);
     });
+    const defaultCidade=cidades.includes('Ribeirão Preto')?'Ribeirão Preto':cidades[0]||'';
+    if(defaultCidade){sel.value=defaultCidade;_pdSelecionarCidade(defaultCidade);}
   }
 }
 
