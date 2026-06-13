@@ -1921,13 +1921,13 @@ async function _preCarregarFaixasLojas(pedidos){
   _tabelaFaixasPorLoja=Object.fromEntries(entries);
 }
 
-function _iconsLogistica(p,temEntregador){
-  return`<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px">${[
-    `<span title="${temEntregador?'Entregador alocado':'Sem entregador'}" style="${temEntregador?'':'opacity:.25'}">🛵</span>`,
-    p.com_retorno?`<span title="Com retorno">↩️</span>`:'',
+function _iconsLogistica(p){
+  const icons=[
+    p.com_retorno?`<span title="Com retorno">🔄</span>`:'',
     parseFloat(p.gorjeta)>0?`<span title="Com gorjeta">🎁</span>`:'',
-    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção global">📅</span>`:`<span title="Taxa dinâmica (cidade)">☔</span>`):'',
-  ].join('')}</span>`;
+    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção global">📅</span>`:`<span title="Taxa dinâmica (cidade)">🌧️</span>`):'',
+  ].filter(Boolean);
+  return icons.length?`<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px">${icons.join('')}</span>`:'—';
 }
 
 function _buildTabelaRows(filtered,from){
@@ -1956,7 +1956,7 @@ function _buildTabelaRows(filtered,from){
       ${TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg)}
       ${TD(`<span style="color:#BBB">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`,'',rowBg)}
       ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
-      ${TD(_iconsLogistica(p,!!entId),'text-align:center;padding:3px 5px',rowBg)}
+      ${TD(_iconsLogistica(p),'text-align:center;padding:3px 5px',rowBg)}
     </tr>`;
   }).join('');
 }
@@ -3612,7 +3612,7 @@ async function _buscarPedidosAdmin(){
   if(_cLucro){_cLucro.textContent='R$ '+Math.abs(lucro).toFixed(2);_cLucro.style.color=lucro>=0?'var(--green)':'var(--red)';}
   if(_cMerc)_cMerc.textContent='R$ '+merc.toFixed(2);
   const _isLoja=currentPerfil==='loja';
-  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_isLoja?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=parseFloat(p.taxa_entrega)||0;const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_isLoja?'':` <td style="font-size:12px;color:var(--text2)">${pago}</td>`}<td style="font-size:12px;color:var(--text2)">${cobrado}</td>${_isLoja?'':` <td style="font-size:12px;text-align:right">${lucroStr}</td>`}<td style="font-size:12px;text-align:center">${_iconsLogistica(p,!!(p.motoboy_id||p.entregador_id))}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_isLoja?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=parseFloat(p.taxa_entrega)||0;const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_isLoja?'':` <td style="font-size:12px;color:var(--text2)">${pago}</td>`}<td style="font-size:12px;color:var(--text2)">${cobrado}</td>${_isLoja?'':` <td style="font-size:12px;text-align:right">${lucroStr}</td>`}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
