@@ -3316,10 +3316,9 @@ async function _pdSelecionarCidade(cidade){
   if(!cidade){wrap.innerHTML='';return;}
   wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;color:var(--text3);font-size:13px">⏳ Carregando...</div>';
   try{
-    const sfx=_cidadeSufixo(cidade);
     const [lojasCidade,entregadores,rpdc,rpdce,raplic,raplicE]=await Promise.all([
-      db('lojas','GET',null,`?ativo=eq.true&nome=like.*- ${sfx}*&select=id,nome&order=nome.asc`),
-      db('motoboys','GET',null,`?ativo=eq.true${sfx?`&nome=like.*- ${sfx}*`:''}&select=id,nome&order=nome.asc`),
+      db('lojas','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
+      db('motoboys','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_lojas_aplicaveis_cidade'),
