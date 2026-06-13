@@ -2663,13 +2663,16 @@ async function criarPedido(){
 let _cadastrosAba='clientes';
 
 function renderCadastrosPage(aba){
-  _cadastrosAba=aba||_cadastrosAba||'clientes';
-  const abas=[
+  const todasAbas=[
     {id:'clientes',    icon:'🏪', label:'Clientes'},
     {id:'entregadores',icon:'🛵', label:'Entregadores'},
     {id:'usuarios',    icon:'👥', label:'Usuários'},
     {id:'precificacao',icon:'💰', label:'Cobrança e Pagamento'},
   ];
+  const abas=currentPerfil==='suporte'?todasAbas.filter(a=>a.id==='entregadores'):todasAbas;
+  const defaultAba=currentPerfil==='suporte'?'entregadores':'clientes';
+  _cadastrosAba=aba||_cadastrosAba||defaultAba;
+  if(!abas.find(a=>a.id===_cadastrosAba)) _cadastrosAba=abas[0].id;
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">🗂️ Cadastros</div></div>
