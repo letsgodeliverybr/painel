@@ -3318,13 +3318,14 @@ async function _pdSelecionarCidade(cidade){
   try{
     const [lojasCidade,entregadores,rpdc,rpdce,raplic,raplicE]=await Promise.all([
       db('lojas','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
-      db('motoboys','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
+      db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_por_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregador_por_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_lojas_aplicaveis_cidade'),
       db('configuracoes','GET',null,'?chave=eq.preco_dinamico_entregadores_aplicaveis_cidade'),
     ]);
-    console.log('[PD-cidade] lojas=',lojasCidade?.length,'entregadores=',entregadores?.length,'rpdc=',rpdc,'rpdce=',rpdce);
+    console.log('[PD-cidade] lojas=',lojasCidade?.length,'entregadores=',entregadores?.length);
+    console.log('[PD-cidade] lista entregadores completa:',entregadores?.map(e=>e.nome));
     try{_pdCidades=JSON.parse(rpdc[0]?.valor||'{}');}catch(e){_pdCidades={};}
     try{_pdCidadesEnt=JSON.parse(rpdce[0]?.valor||'{}');}catch(e){_pdCidadesEnt={};}
     try{_pdCidadesAplicaveis=JSON.parse(raplic[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveis={};}
@@ -3369,8 +3370,11 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
           </div>
         </div>
         <div class="fi" style="margin-bottom:14px">
-          <label style="margin-bottom:6px;display:block">${entLabel}</label>
-          <input type="text" id="${searchId}" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value)"
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">${entLabel}</label>
+            <span onclick="_pdSelecionarTodos('${multiId}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none" id="pd-cid-selall-${cidKey}">Selecionar todos</span>
+          </div>
+          <input type="text" id="${searchId}" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value,'${cidKey}')"
             style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
           <div id="${multiId}" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
             ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum encontrado</div>'}
@@ -3386,14 +3390,37 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
   }
 }
 
-function _pdFiltrarOpcoes(multiId,busca){
+function _pdFiltrarOpcoes(multiId,busca,cidKey){
   const q=(busca||'').trim().toLowerCase();
   const wrap=document.getElementById(multiId);
   if(!wrap)return;
+  const visiveis=[];
   wrap.querySelectorAll('.pd-cid-opt').forEach(lbl=>{
     const nome=lbl.textContent.toLowerCase();
-    lbl.style.display=(!q||nome.includes(q))?'':'none';
+    const vis=!q||nome.includes(q);
+    lbl.style.display=vis?'':'none';
+    if(vis)visiveis.push(lbl.querySelector('input[type=checkbox]'));
   });
+  if(cidKey){
+    const selAllEl=document.getElementById(`pd-cid-selall-${cidKey}`);
+    if(selAllEl){
+      const todosChecked=visiveis.length>0&&visiveis.every(cb=>cb?.checked);
+      selAllEl.textContent=todosChecked?'Desmarcar todos':'Selecionar todos';
+    }
+  }
+}
+
+function _pdSelecionarTodos(multiId){
+  const wrap=document.getElementById(multiId);
+  if(!wrap)return;
+  const visiveis=[...wrap.querySelectorAll('.pd-cid-opt')].filter(lbl=>lbl.style.display!=='none');
+  const cbs=visiveis.map(lbl=>lbl.querySelector('input[type=checkbox]')).filter(Boolean);
+  const todosChecked=cbs.length>0&&cbs.every(cb=>cb.checked);
+  cbs.forEach(cb=>cb.checked=!todosChecked);
+  // atualiza label via hack: dispara evento no primeiro checkbox para re-checar estado
+  const cidKey=wrap.id.replace('pd-cid-multi-','');
+  const selAllEl=document.getElementById(`pd-cid-selall-${cidKey}`);
+  if(selAllEl)selAllEl.textContent=todosChecked?'Selecionar todos':'Desmarcar todos';
 }
 
 async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
