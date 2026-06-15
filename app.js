@@ -3330,10 +3330,17 @@ async function _desativarPrecoDinamico(tipo){
   _precoDinValores[tipo]=0;
   _precoDinTs[tipo]=null;
   localStorage.removeItem(`_pdAtivadoEm_${tipo}`);
-  // Limpa só o timestamp de ativação para que o input mantenha o último valor usado
+  const inp=document.getElementById(`preco-din-valor-${tipo}`);
+  if(inp)inp.value='0';
   const agora=new Date().toISOString();
-  const existingTs=await db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs(tipo)}`);
-  if(existingTs&&existingTs.length>0)await db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.${_pdChaveTs(tipo)}`);
+  const [existingVal,existingTs]=await Promise.all([
+    db('configuracoes','GET',null,`?chave=eq.${_pdChave(tipo)}`),
+    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs(tipo)}`),
+  ]);
+  await Promise.all([
+    existingVal&&existingVal.length>0?db('configuracoes','PATCH',{valor:'0',updated_at:agora},`?chave=eq.${_pdChave(tipo)}`):Promise.resolve(),
+    existingTs&&existingTs.length>0?db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.${_pdChaveTs(tipo)}`):Promise.resolve(),
+  ]);
   showNotif('⏰ Preço dinâmico desativado automaticamente','','var(--text2)');
 }
 
@@ -3598,6 +3605,9 @@ async function _desativarPdCidade(tipo,cidade){
   if(mem[cidade]){mem[cidade].valor=0;mem[cidade].ativado_em=null;}
   const chave=tipo==='cliente'?'preco_dinamico_por_cidade':'preco_dinamico_entregador_por_cidade';
   const agora=new Date().toISOString();
+  const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
+  const inp=document.getElementById(`pd-cid-valor-${tipo}_${cidSafe}`);
+  if(inp)inp.value='0';
   await db('configuracoes','PATCH',{valor:JSON.stringify(mem),updated_at:agora},`?chave=eq.${chave}`);
   showNotif(`⏰ Preço dinâmico ${cidade} desativado automaticamente`,'','var(--text2)');
 }
