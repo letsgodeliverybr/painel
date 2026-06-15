@@ -2635,7 +2635,10 @@ async function criarPedido(){
   const finalLojaId=lojaIdSel;
   let latLoja=-21.1775,lngLoja=-47.8103;
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
-  const distKm=parseFloat(calcularDistancia(latLoja,lngLoja,geo.lat,geo.lng).toFixed(2));
+  let latOrigem=latLoja,lngOrigem=lngLoja,origemUsada='loja',geoColeta=null;
+  if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
+  const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
+  console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
   const _taxaBase=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0,loja_id:finalLojaId},_faixasLojaPed):taxaInput;
   const taxa=taxaInput>0?taxaInput:Math.round((_taxaBase+_pdC)*100)/100;
@@ -2645,6 +2648,7 @@ async function criarPedido(){
   const statusInicial=agendarOn?'agendado':'recebido';
   const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
+  if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
   if(agendarOn&&agendadoParaVal)pedido.agendado_para=new Date(agendadoParaVal).toISOString();
