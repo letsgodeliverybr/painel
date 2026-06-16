@@ -45,33 +45,34 @@ let _saldoLojaAtual=0;
 let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
 
+// Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
+function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta){
+  const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
+  if(!faixa)return null;
+  const base=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno)||0;
+  return Math.round((base+(parseFloat(pd)||0)+(parseFloat(gorjeta)||0))*100)/100;
+}
 function _calcTaxaMotoboy(p,faixasOverride){
   const faixas=faixasOverride||_faixasPagamento;
-  if(!faixas.length) return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
+  if(!faixas.length)return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
   const km=parseFloat(p.distancia_km)||1;
-  const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
-  if(!faixa) return null;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  const valorFaixa=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno);
-  const pd=parseFloat(p.preco_dinamico)||0;
-  const gorjeta=parseFloat(p.gorjeta)||0;
-  const result=Math.round((valorFaixa+pd+gorjeta)*100)/100;
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta);
+  if(result===null)return null;
   const tabelaPag=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
-  console.log(`[calcTaxaMotoboy] loja_id=${p.loja_id||'?'} tabela_pagamento=${tabelaPag} distancia_km=${km} faixa_encontrada=km_ate:${faixa.km_ate} valor_faixa=${valorFaixa} pd_aplicado=${pd} gorjeta=${gorjeta} total=${result}`);
+  console.log(`[calcTaxaMotoboy] loja_id=${p.loja_id||'?'} tabela_pagamento=${tabelaPag} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} gorjeta=${parseFloat(p.gorjeta)||0} total=${result}`);
   return result;
 }
 function _calcTaxaLoja(p,faixasOverride){
   const faixas=faixasOverride||_faixasCobranca;
-  if(!faixas.length) return parseFloat(p.taxa_entrega)||0;
+  if(!faixas.length)return parseFloat(p.taxa_entrega)||0;
   const km=parseFloat(p.distancia_km)||1;
-  const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
-  if(!faixa) return parseFloat(p.taxa_entrega)||0;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  const base=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno)||0;
-  const pd=parseFloat(p.preco_dinamico)||0;
-  const result=Math.round((base+pd+(parseFloat(p.gorjeta)||0))*100)/100;
+  // gorjeta entra na cobrança da loja: cliente paga junto ao pedido, loja repassa na fatura
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta);
+  if(result===null)return parseFloat(p.taxa_entrega)||0;
   const tabelaCob=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
-  console.log(`[calcTaxaLoja] loja_id=${p.loja_id||'?'} tabela_cobranca=${tabelaCob} distancia_km=${km} faixa_encontrada=km_ate:${faixa?.km_ate} valor_base=${base} pd_aplicado=${pd} total=${result}`);
+  console.log(`[calcTaxaLoja] loja_id=${p.loja_id||'?'} tabela_cobranca=${tabelaCob} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} total=${result}`);
   return result;
 }
 async function _getFaixasCobranca(lojaId){
@@ -1471,9 +1472,8 @@ async function calcularTaxaAuto(){
   const {cliente:_pdNp,entregador:_pdNpE}=await _fetchPdAtual(lojaHid.value);
   _npPdC=_pdNp;
   _npPdE=_pdNpE;
-  const taxaBase=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0},faixasLoja);
-  const valorTaxa=Math.round((taxaBase+_pdNp)*100)/100;
-  console.log(`[calcularTaxaAuto] taxa_base=${taxaBase} pd_cliente=${_pdNp} taxa_exibida=${valorTaxa.toFixed(2)}`);
+  const valorTaxa=_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdNp},faixasLoja);
+  console.log(`[calcularTaxaAuto] pd_cliente=${_pdNp} taxa_exibida=${valorTaxa.toFixed(2)}`);
   document.getElementById('np-taxa').value=valorTaxa.toFixed(2);
   const _npBadge=document.getElementById('np-pd-badge');
   if(_npBadge)_npBadge.style.display='none';
@@ -2640,10 +2640,10 @@ async function criarPedido(){
   const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
   console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
-  const _taxaBase=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:0,preco_dinamico:0,taxa_entrega:0,loja_id:finalLojaId},_faixasLojaPed):taxaInput;
-  const taxa=taxaInput>0?taxaInput:Math.round((_taxaBase+_pdC)*100)/100;
+  const taxaCalculada=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,loja_id:finalLojaId},_faixasLojaPed):Math.round((_pdC||0)*100)/100;
+  const taxa=taxaInput>0?taxaInput:taxaCalculada;
   const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdE,loja_id:finalLojaId},_faixasPagNp)||taxa||null;
-  console.log(`[criarPedido] loja_id=${finalLojaId} taxa_base=${_taxaBase} pd_cliente=${_pdC}(${_pdOrigemNp}) pd_entregador=${_pdE} taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
+  console.log(`[criarPedido] loja_id=${finalLojaId} taxa_calculada=${taxaCalculada} pd_cliente=${_pdC}(${_pdOrigemNp}) pd_entregador=${_pdE} taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdE,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
