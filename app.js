@@ -4303,7 +4303,7 @@ async function _calcularPagamentos(){
   const horaFim=document.getElementById('gp-hora-fim')?.value||'23:59';
   const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
   const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
-  const selectFields='motoboy_id,entregador_id,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno';
+  const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
   const [pedidos,entregadores,jaPagos]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
@@ -4311,11 +4311,13 @@ async function _calcularPagamentos(){
   ]);
   const jaPagosSet=new Set((Array.isArray(jaPagos)?jaPagos:[]).map(r=>r.entregador_id));
   const arr=Array.isArray(pedidos)?pedidos:[];
+  await _preCarregarFaixasLojas(arr);
   _gpResultados={};
   arr.forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid||jaPagosSet.has(eid))return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
-    _gpResultados[eid].total+=_calcTaxaMotoboy(p)??(parseFloat(p.taxa_entrega||0)+parseFloat(p.gorjeta||0));
+    const tx=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):(_calcTaxaMotoboy(p,_tabelaFaixasPagPorLoja[p.loja_id])??(parseFloat(p.taxa_entrega_motoboy??p.taxa_entrega??0)+parseFloat(p.gorjeta||0)));
+    _gpResultados[eid].total+=tx;
     _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
     _gpResultados[eid].qtd++;
   });
@@ -4390,6 +4392,7 @@ async function _gerarPagamento(){
   for(const eid of selecionados){
     const r=_gpResultados[eid];if(!r)continue;
     const valor=Math.round(r.total*100)/100;
+    console.log(`[gerarPagamento] entregador_id=${eid} periodo_inicio=${inicio} periodo_fim=${fim} total_calculado=${valor} qtd_pedidos=${r.qtd}`);
     const res=await db('saques','POST',{entregador_id:eid,valor,status:'pendente',qtd_pedidos:r.qtd,data_inicio:inicio,data_fim:fim,created_at:agora,updated_at:agora});
     if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
   }
