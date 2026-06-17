@@ -3936,9 +3936,14 @@ async function _runAuditoria(){
       if((p.status_detalhado||p.status)==='cancelado'||!p.distancia_km)continue;
       const fc=faixasCobMap[p.loja_id]||_faixasCobranca;
       const fp=faixasPagMap[p.loja_id]||_faixasPagamento;
-      const pd=parseFloat(p.preco_dinamico)||0;
-      const expEntrega=_calcTaxaLoja({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:0,preco_dinamico:pd,taxa_entrega:0,loja_id:p.loja_id},fc);
-      const expMotoboy=_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:parseFloat(p.gorjeta)||0,preco_dinamico:pd,loja_id:p.loja_id},fp);
+      // preco_dinamico armazena o PD do CLIENTE (sobrescrito por _aplicarPrecoDinamico)
+      const pdCliente=parseFloat(p.preco_dinamico)||0;
+      const expEntrega=_calcTaxaLoja({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:0,preco_dinamico:pdCliente,taxa_entrega:0,loja_id:p.loja_id},fc);
+      // taxa_entrega_motoboy foi calculado com o PD do ENTREGADOR (diferente do PD do cliente)
+      // quando disponível, é o valor de referência correto para validar taxa_motoboy
+      const expMotoboy=p.taxa_entrega_motoboy!=null
+        ?parseFloat(p.taxa_entrega_motoboy)
+        :_calcTaxaMotoboy({distancia_km:p.distancia_km,com_retorno:p.com_retorno,gorjeta:parseFloat(p.gorjeta)||0,preco_dinamico:pdCliente,loja_id:p.loja_id},fp);
       const lojaNome=allLojas.find(l=>l.id===p.loja_id)?.nome||p.loja_id?.substring(0,8)||'?';
       const savedE=parseFloat(p.taxa_entrega)||0;
       const savedM=parseFloat(p.taxa_motoboy);
