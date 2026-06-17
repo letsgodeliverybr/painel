@@ -2947,7 +2947,7 @@ async function abrirEditarEntregador(entId){
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
-${row2(fi('E-mail',`<input value="${(e.email||'').replace(/"/g,'&quot;')}" readonly style="background:var(--surface2);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:not-allowed"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Para alterar o email entre em contato com o suporte</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
+${row2(fi('E-mail',`<input id="ee-email" type="email" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
 ${row1(fi('Código de Cadastro',inp('ee-codigo-cadastro',e.codigo_cadastro,'')))}
 ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
@@ -2972,6 +2972,32 @@ async function salvarEdicaoEntregador(entId){
   const fb=document.getElementById('ee-feedback');
   const g=(id)=>document.getElementById(id)?.value||'';
   const dispVal=document.getElementById('ee-disponivel')?.value;
+  const emailEl=document.getElementById('ee-email');
+  const novoEmail=(emailEl?.value||'').trim().toLowerCase();
+  const emailOriginal=(emailEl?.getAttribute('data-original-email')||'').trim().toLowerCase();
+  const emailMudou=novoEmail&&novoEmail!==emailOriginal;
+
+  if(emailMudou){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(novoEmail)){
+      if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail inválido.</span>';return;
+    }
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando e-mail…</span>';
+    try{
+      const r=await fetch(`${SB_URL}/functions/v1/update-entregador-email`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
+        body:JSON.stringify({entregador_id:entId,email_atual:emailOriginal,novo_email:novoEmail})
+      });
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok){
+        if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao atualizar e-mail: ${data.error||r.status}</span>`;
+        showNotif('❌ Falha ao atualizar e-mail','','var(--red)');return;
+      }
+    }catch(e){
+      if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro de conexão ao atualizar e-mail.</span>';return;
+    }
+  }
+
   const update={
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
     codigo_cadastro:g('ee-codigo-cadastro')||null,
@@ -2987,6 +3013,7 @@ async function salvarEdicaoEntregador(entId){
     maquina_cartao:document.getElementById('ee-maquina-cartao')?.checked||false,
     updated_at:new Date().toISOString()
   };
+  if(emailMudou)update.email=novoEmail;
   if(dispVal==='bloqueado'){update.status='bloqueado';update.aprovado=false;update.disponivel=false;}
   console.log('[salvarEdicaoEntregador] campos enviados ao banco:', update);
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
