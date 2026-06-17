@@ -2314,9 +2314,6 @@ function renderPedidosLista(){
                 ${motoboy.telefone?`<div style="font-size:11px;color:var(--sb-text2)">${motoboy.telefone}</div>`:''}
               </div>
               <div style="font-size:11px;color:var(--sb-text3);text-align:right;line-height:1.8;flex-shrink:0">
-                ${currentPerfil!=='loja'&&currentPerfil!=='suporte'&&p.distancia_km?`<div>📏 ${p.distancia_km}km</div>`:''}
-                ${currentPerfil!=='loja'&&currentPerfil!=='suporte'&&txLoja>0?`<div style="color:#60a5fa;font-weight:700">Loja R$ ${txLoja.toFixed(2)}</div>`:''}
-                ${txMoto!==null&&currentPerfil!=='loja'&&currentPerfil!=='suporte'?`<div style="color:#10b981;font-weight:700">Moto R$ ${txMoto.toFixed(2)}</div>`:''}
                 ${p.gorjeta>0?`<div style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</div>`:''}
               </div>
             </div>
