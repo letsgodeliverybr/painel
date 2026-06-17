@@ -3918,6 +3918,12 @@ async function _runAuditoria(){
   el.innerHTML=`<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">⏳ Verificando ${de===ate?de:de+' → '+ate}...</div>`;
   try{
     const ini=_inicioDiaBrasilia(de),fim=_fimDiaBrasilia(ate);
+    // Segunda-feira da semana atual (00:00 Brasília) — ciclo semanal só cobre semanas fechadas
+    const _hojeStr=_dataHojeBrasilia();const [_yy,_mm,_dd]=_hojeStr.split('-').map(Number);
+    const _dUtc=new Date(Date.UTC(_yy,_mm-1,_dd));const _dow=_dUtc.getUTCDay();
+    const _diasDesdeSegunda=_dow===0?6:_dow-1;
+    const _segundaStr=new Date(Date.UTC(_yy,_mm-1,_dd-_diasDesdeSegunda)).toISOString().slice(0,10);
+    const segundaAtualInicio=_inicioDiaBrasilia(_segundaStr);
     const pedidos=await db('pedidos','GET',null,`?created_at=gte.${ini}&created_at=lte.${fim}&order=created_at.asc&limit=1000`);
     if(!Array.isArray(pedidos)){el.innerHTML=`<div class="card" style="padding:20px;color:var(--red)">❌ Erro ao buscar pedidos.</div>`;return;}
     const problemas=[];
@@ -3970,30 +3976,32 @@ async function _runAuditoria(){
 
     // CHECK 3 — Lojas faturamento sem cobrança no período
     const pedidosFin=pedidos.filter(p=>getStatusKey(p)==='finalizado');
+    // Ciclo semanal (Gerar Cobranças/Pagamentos) só cobre semanas fechadas; ignora semana atual
+    const pedidosFinSemanaFechada=pedidosFin.filter(p=>p.created_at<segundaAtualInicio);
     const lojasFatIds=new Set(allLojas.filter(l=>(l.tipo_cobranca||'faturamento')==='faturamento').map(l=>l.id));
-    const lojaComPedFat=[...new Set(pedidosFin.filter(p=>lojasFatIds.has(p.loja_id)).map(p=>p.loja_id))];
+    const lojaComPedFat=[...new Set(pedidosFinSemanaFechada.filter(p=>lojasFatIds.has(p.loja_id)).map(p=>p.loja_id))];
     if(lojaComPedFat.length){
       const cobs=await db('cobrancas_lojas','GET',null,`?status=in.(pendente,pago,aprovado)&created_at=gte.${ini}&created_at=lte.${fim}&select=loja_id`).catch(()=>[]);
       const cobLojaIds=new Set((Array.isArray(cobs)?cobs:[]).map(c=>c.loja_id));
       for(const lid of lojaComPedFat){
         if(!cobLojaIds.has(lid)){
           const lojaNome=allLojas.find(l=>l.id===lid)?.nome||lid?.substring(0,8)||'?';
-          const qtd=pedidosFin.filter(p=>p.loja_id===lid).length;
-          problemas.push({tipo:'COBRANÇA',descricao:`${lojaNome} — ${qtd} pedido(s) finalizado(s) sem cobrança_loja registrada no período`,pedidoId:pedidosFin.find(p=>p.loja_id===lid)?.id,numero:pedidosFin.find(p=>p.loja_id===lid)?.numero,cor:'#8b5cf6'});
+          const qtd=pedidosFinSemanaFechada.filter(p=>p.loja_id===lid).length;
+          problemas.push({tipo:'COBRANÇA',descricao:`${lojaNome} — ${qtd} pedido(s) finalizado(s) sem cobrança_loja registrada no período`,pedidoId:pedidosFinSemanaFechada.find(p=>p.loja_id===lid)?.id,numero:pedidosFinSemanaFechada.find(p=>p.loja_id===lid)?.numero,cor:'#8b5cf6'});
         }
       }
     }
 
     // CHECK 4 — Entregadores sem saque no período
-    const entComPedFin=[...new Set(pedidosFin.map(p=>p.motoboy_id||p.entregador_id).filter(Boolean))];
+    const entComPedFin=[...new Set(pedidosFinSemanaFechada.map(p=>p.motoboy_id||p.entregador_id).filter(Boolean))];
     if(entComPedFin.length){
       const saques=await db('saques','GET',null,`?status=in.(pago,aprovado,pendente)&created_at=gte.${ini}&created_at=lte.${fim}&select=entregador_id`).catch(()=>[]);
       const saqueEntIds=new Set((Array.isArray(saques)?saques:[]).map(s=>s.entregador_id));
       for(const eid of entComPedFin){
         if(!saqueEntIds.has(eid)){
           const ent=allMotoboys.find(e=>e.id===eid);
-          const qtd=pedidosFin.filter(p=>(p.motoboy_id||p.entregador_id)===eid).length;
-          problemas.push({tipo:'PAGAMENTO',descricao:`${ent?.nome||eid?.substring(0,8)||'?'} — ${qtd} pedido(s) finalizado(s) sem pagamento gerado no período`,pedidoId:pedidosFin.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.id,numero:pedidosFin.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.numero,cor:'#06b6d4'});
+          const qtd=pedidosFinSemanaFechada.filter(p=>(p.motoboy_id||p.entregador_id)===eid).length;
+          problemas.push({tipo:'PAGAMENTO',descricao:`${ent?.nome||eid?.substring(0,8)||'?'} — ${qtd} pedido(s) finalizado(s) sem pagamento gerado no período`,pedidoId:pedidosFinSemanaFechada.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.id,numero:pedidosFinSemanaFechada.find(p=>(p.motoboy_id||p.entregador_id)===eid)?.numero,cor:'#06b6d4'});
         }
       }
     }
