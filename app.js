@@ -4354,24 +4354,35 @@ async function _calcularPagamentos(){
   const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
   const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
   const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
-  const [pedidos,entregadores,jaPagos]=await Promise.all([
+  const [pedidos,entregadores,saquesPeriodo]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
-    db('saques','GET',null,`?select=entregador_id&data_inicio=eq.${dataIni}&data_fim=eq.${dataFim}&status=in.(pendente,pago,aprovado)`),
+    db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=lte.${dataFim}&data_fim=gte.${dataIni}&status=neq.cancelado`),
   ]);
-  const jaPagosSet=new Set((Array.isArray(jaPagos)?jaPagos:[]).map(r=>r.entregador_id));
+  // Soma tudo já pago/pendente com overlap no período (avulsos + fechamentos anteriores)
+  const saquesPorEid={};
+  (Array.isArray(saquesPeriodo)?saquesPeriodo:[]).forEach(s=>{
+    if(!s.entregador_id)return;
+    saquesPorEid[s.entregador_id]=(saquesPorEid[s.entregador_id]||0)+parseFloat(s.valor_bruto||s.valor||0);
+  });
   const arr=Array.isArray(pedidos)?pedidos:[];
   await _preCarregarFaixasLojas(arr);
   _gpResultados={};
   arr.forEach(p=>{
-    const eid=p.motoboy_id||p.entregador_id;if(!eid||jaPagosSet.has(eid))return;
-    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0};}
+    const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
+    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0};}
     const tx=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):(_calcTaxaMotoboy(p,_tabelaFaixasPagPorLoja[p.loja_id])??(parseFloat(p.taxa_entrega_motoboy??p.taxa_entrega??0)+parseFloat(p.gorjeta||0)));
     _gpResultados[eid].total+=tx;
     _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
     _gpResultados[eid].qtd++;
   });
-  const rows=Object.values(_gpResultados);
+  // Desconta saques já realizados no período; oculta entregadores totalmente quitados
+  Object.keys(_gpResultados).forEach(eid=>{
+    const jaRetirado=Math.round((saquesPorEid[eid]||0)*100)/100;
+    _gpResultados[eid].jaRetirado=jaRetirado;
+    _gpResultados[eid].total=Math.max(0,Math.round((_gpResultados[eid].total-jaRetirado)*100)/100);
+  });
+  const rows=Object.values(_gpResultados).filter(r=>r.total>0);
   if(!lista)return;
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com saldo a pagar</div></div>`;return;}
   lista.innerHTML=`
@@ -4380,11 +4391,12 @@ async function _calcularPagamentos(){
       <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💳 Gerar Pagamento</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Total a Pagar</th><th>Chave PIX</th><th>Tipo PIX</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total a Pagar</th><th>Chave PIX</th><th>Tipo PIX</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gp-cb" value="${r.entregador.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.entregador.nome||'—'}</td>
         <td>${r.qtd}</td>
+        <td style="color:${r.jaRetirado>0?'#f59e0b':'var(--text3)'};">${r.jaRetirado>0?`R$ ${r.jaRetirado.toFixed(2)}`:'—'}</td>
         <td style="font-weight:700;color:#10b981">R$ ${r.total.toFixed(2)}</td>
         <td style="font-family:monospace;font-size:12px">${r.entregador.chave_pix||'—'}</td>
         <td>${r.entregador.tipo_chave_pix||'—'}</td>
