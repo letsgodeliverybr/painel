@@ -21,11 +21,11 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
-const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
+const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 let _sidebarBusca='';
@@ -1834,7 +1834,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -5009,6 +5009,269 @@ async function renderLojaRelatorioPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📈 Relatório</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="lr-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="lr-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="lr-fat" style="color:var(--accent)">—</div></div></div></div>`;
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}`):[];
   document.getElementById('lr-total').textContent=pedidos.length;document.getElementById('lr-ent').textContent=pedidos.filter(p=>p.status==='finalizado'||p.status==='entregue').length;document.getElementById('lr-fat').textContent='R$'+pedidos.reduce((s,p)=>s+(p.valor||0),0).toFixed(2);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MEU CARDÁPIO — tela para perfil 'loja'
+// ═══════════════════════════════════════════════════════════
+let _mcCatSelecionada=null;
+let _mcCategorias=[];
+let _mcProdutos=[];
+
+async function renderMeuCardapioPage(){
+  const lojaId=currentUser?.loja_id;
+  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">🍽️ Meu Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  document.getElementById('app-body').innerHTML=`
+  <div class="alt-page">
+    <div class="page-header">
+      <div class="page-title">🍽️ Meu Cardápio</div>
+    </div>
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;height:calc(100vh - 120px);min-height:400px">
+      <!-- Coluna esquerda: categorias -->
+      <div class="card" style="display:flex;flex-direction:column;gap:0;overflow:hidden;padding:0">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;font-size:14px">Categorias</span>
+          <button onclick="_mcAbrirModalCategoria()" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">+ Nova</button>
+        </div>
+        <div id="mc-cat-lista" style="flex:1;overflow-y:auto;padding:8px"></div>
+      </div>
+      <!-- Coluna direita: produtos -->
+      <div class="card" style="display:flex;flex-direction:column;gap:0;overflow:hidden;padding:0">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <span id="mc-prod-titulo" style="font-weight:700;font-size:14px;color:var(--text3)">← Selecione uma categoria</span>
+          <button id="mc-btn-novo-prod" onclick="_mcAbrirModalProduto()" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">+ Novo Produto</button>
+        </div>
+        <div id="mc-prod-lista" style="flex:1;overflow-y:auto;padding:8px"></div>
+      </div>
+    </div>
+  </div>`;
+  _mcCatSelecionada=null;
+  await _mcCarregarCategorias();
+}
+
+async function _mcCarregarCategorias(){
+  const lojaId=currentUser?.loja_id;if(!lojaId)return;
+  _mcCategorias=await db('cardapio_categorias','GET',null,`?loja_id=eq.${lojaId}&order=ordem.asc,created_at.asc`)||[];
+  const el=document.getElementById('mc-cat-lista');if(!el)return;
+  if(!_mcCategorias.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma categoria.<br>Crie a primeira!</div>';return;}
+  el.innerHTML=_mcCategorias.map(c=>`
+    <div id="mc-cat-${c.id}" onclick="_mcSelecionarCategoria('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .15s${_mcCatSelecionada===c.id?';background:var(--surface2);border-color:var(--accent)':''}">
+      <span style="font-size:18px">📁</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</div>
+        <div style="font-size:11px;color:${c.ativo?'#10b981':'#ef4444'}">${c.ativo?'Ativa':'Inativa'}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+        <button onclick="_mcAbrirModalCategoria('${c.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
+        <button onclick="_mcToggleCategoria('${c.id}',${!c.ativo})" title="${c.ativo?'Desativar':'Ativar'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${c.ativo?'🔴':'🟢'}</button>
+      </div>
+    </div>`).join('');
+}
+
+async function _mcSelecionarCategoria(catId){
+  _mcCatSelecionada=catId;
+  // Destaca a categoria selecionada
+  document.querySelectorAll('[id^="mc-cat-"]').forEach(el=>{el.style.background='';el.style.borderColor='transparent';});
+  const selEl=document.getElementById(`mc-cat-${catId}`);
+  if(selEl){selEl.style.background='var(--surface2)';selEl.style.borderColor='var(--accent)';}
+  const cat=_mcCategorias.find(c=>c.id===catId);
+  const titulo=document.getElementById('mc-prod-titulo');
+  const btnNovo=document.getElementById('mc-btn-novo-prod');
+  if(titulo)titulo.innerHTML=`<span style="color:var(--text)">${cat?.nome||'Produtos'}</span>`;
+  if(btnNovo)btnNovo.style.display='inline-block';
+  await _mcCarregarProdutos(catId);
+}
+
+async function _mcCarregarProdutos(catId){
+  const el=document.getElementById('mc-prod-lista');if(!el)return;
+  el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Carregando...</div>';
+  _mcProdutos=await db('cardapio_produtos','GET',null,`?categoria_id=eq.${catId}&order=ordem.asc,created_at.asc`)||[];
+  if(!_mcProdutos.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum produto nesta categoria.<br>Clique em "+ Novo Produto".</div>';return;}
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:4px">
+    ${_mcProdutos.map(p=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+      ${p.foto_url?`<img src="${p.foto_url}" alt="${p.nome}" style="width:100%;height:120px;object-fit:cover">`:'<div style="width:100%;height:80px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:32px">🍽️</div>'}
+      <div style="padding:10px;flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="font-weight:700;font-size:13px;color:var(--text)">${p.nome}</div>
+        ${p.descricao?`<div style="font-size:11px;color:var(--text3);line-height:1.4">${p.descricao}</div>`:''}
+        <div style="font-size:15px;font-weight:700;color:var(--accent)">R$ ${parseFloat(p.preco||0).toFixed(2)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:6px;border-top:1px solid var(--border)">
+          <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${p.disponivel?'#05966920':'#ef444420'};color:${p.disponivel?'#10b981':'#ef4444'};font-weight:600">${p.disponivel?'Disponível':'Indisponível'}</span>
+          <div style="margin-left:auto;display:flex;gap:4px">
+            <button onclick="_mcToggleProduto('${p.id}',${!p.disponivel})" title="${p.disponivel?'Marcar indisponível':'Marcar disponível'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${p.disponivel?'🔴':'🟢'}</button>
+            <button onclick="_mcAbrirModalProduto('${p.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
+            <button onclick="_mcExcluirProduto('${p.id}','${(p.nome||'').replace(/'/g,"\\'")}')" title="Excluir" style="background:none;border:1px solid #ef4444;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function _mcAbrirModalCategoria(catId){
+  const cat=catId?_mcCategorias.find(c=>c.id===catId):null;
+  const v=x=>(x||'').toString().replace(/"/g,'&quot;');
+  let m=document.getElementById('mc-modal-cat');
+  if(!m){m=document.createElement('div');m.id='mc-modal-cat';m.className='modal-overlay';document.body.appendChild(m);}
+  const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box';
+  m.innerHTML=`<div class="modal" style="max-width:400px">
+    <div class="modal-header"><span class="modal-title">${cat?'✏️ Editar':'➕ Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="fi"><label>Nome da Categoria</label><input id="mc-cat-nome" value="${v(cat?.nome)}" placeholder="Ex: Lanches, Bebidas..." style="${ss}"/></div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="fi"><label>Ordem</label><input id="mc-cat-ordem" type="number" value="${cat?.ordem??0}" min="0" style="${ss}"/></div>
+        <div class="fi"><label>Status</label><select id="mc-cat-ativo" style="${ss}"><option value="true"${cat===null||cat?.ativo?' selected':''}>Ativa</option><option value="false"${cat&&!cat.ativo?' selected':''}>Inativa</option></select></div>
+      </div>
+      <div id="mc-cat-fb" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarCategoria(${catId?`'${catId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div>
+  </div>`;
+  m.classList.add('open');
+  setTimeout(()=>document.getElementById('mc-cat-nome')?.focus(),100);
+}
+
+async function _mcSalvarCategoria(catId){
+  const fb=document.getElementById('mc-cat-fb');
+  const nome=(document.getElementById('mc-cat-nome')?.value||'').trim();
+  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome é obrigatório.</span>';return;}
+  const lojaId=currentUser?.loja_id;if(!lojaId)return;
+  const ordem=parseInt(document.getElementById('mc-cat-ordem')?.value||'0',10);
+  const ativo=document.getElementById('mc-cat-ativo')?.value==='true';
+  if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:13px">⏳ Salvando...</span>';
+  const agora=new Date().toISOString();
+  if(catId){
+    await db('cardapio_categorias','PATCH',{nome,ordem,ativo,updated_at:agora},`?id=eq.${catId}`);
+  } else {
+    await db('cardapio_categorias','POST',{loja_id:lojaId,nome,ordem,ativo,created_at:agora});
+  }
+  document.getElementById('mc-modal-cat')?.classList.remove('open');
+  await _mcCarregarCategorias();
+  if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
+  showNotif(catId?'✅ Categoria atualizada!':'✅ Categoria criada!','');
+}
+
+async function _mcToggleCategoria(catId,novoAtivo){
+  await db('cardapio_categorias','PATCH',{ativo:novoAtivo},`?id=eq.${catId}`);
+  await _mcCarregarCategorias();
+  if(_mcCatSelecionada===catId&&!novoAtivo){
+    const el=document.getElementById('mc-prod-lista');
+    if(el)el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Categoria inativa.</div>';
+  }
+}
+
+function _mcAbrirModalProduto(prodId){
+  const prod=prodId?_mcProdutos.find(p=>p.id===prodId):null;
+  const v=x=>(x||'').toString().replace(/"/g,'&quot;');
+  let m=document.getElementById('mc-modal-prod');
+  if(!m){m=document.createElement('div');m.id='mc-modal-prod';m.className='modal-overlay';document.body.appendChild(m);}
+  const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box';
+  const catOpts=_mcCategorias.map(c=>`<option value="${c.id}"${(prod?.categoria_id||_mcCatSelecionada)===c.id?' selected':''}>${c.nome}</option>`).join('');
+  const fotoAtual=prod?.foto_url||'';
+  m.innerHTML=`<div class="modal" style="max-width:480px">
+    <div class="modal-header"><span class="modal-title">${prod?'✏️ Editar':'➕ Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      <div class="form-row full fi"><label>Categoria</label><select id="mc-prod-cat" style="${ss}">${catOpts}</select></div>
+      <div class="form-row full fi" style="margin-top:10px"><label>Nome do Produto</label><input id="mc-prod-nome" value="${v(prod?.nome)}" placeholder="Ex: X-Burguer Especial" style="${ss}"/></div>
+      <div class="form-row full fi" style="margin-top:10px"><label>Descrição</label><textarea id="mc-prod-desc" placeholder="Ingredientes, observações..." style="${ss};height:70px;resize:vertical">${v(prod?.descricao)}</textarea></div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="fi"><label>Preço (R$)</label><input id="mc-prod-preco" type="number" min="0" step="0.01" value="${parseFloat(prod?.preco||0).toFixed(2)}" style="${ss}"/></div>
+        <div class="fi"><label>Ordem</label><input id="mc-prod-ordem" type="number" min="0" value="${prod?.ordem??0}" style="${ss}"/></div>
+      </div>
+      <div class="fi" style="margin-top:10px"><label>Status</label><select id="mc-prod-disp" style="${ss}"><option value="true"${prod===null||prod?.disponivel?' selected':''}>Disponível</option><option value="false"${prod&&!prod.disponivel?' selected':''}>Indisponível</option></select></div>
+      <div class="fi" style="margin-top:14px">
+        <label>Foto do Produto</label>
+        ${fotoAtual?`<img id="mc-prod-foto-preview" src="${fotoAtual}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px"/>`:
+          `<div id="mc-prod-foto-preview" style="display:none"></div>`}
+        <input type="file" id="mc-prod-foto-file" accept="image/jpeg,image/png,image/webp" onchange="_mcPreviewFoto(this)" style="display:none"/>
+        <input id="mc-prod-foto-url" type="text" value="${v(fotoAtual)}" placeholder="URL da foto ou escolha arquivo abaixo" style="${ss};margin-bottom:6px" oninput="_mcAtualizarPreviewUrl(this.value)"/>
+        <button type="button" onclick="document.getElementById('mc-prod-foto-file').click()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;width:100%">📷 Escolher imagem (máx. 2MB)</button>
+        <div id="mc-prod-foto-status" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+      </div>
+      <div id="mc-prod-fb" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarProduto(${prodId?`'${prodId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div>
+  </div>`;
+  m.classList.add('open');
+  setTimeout(()=>document.getElementById('mc-prod-nome')?.focus(),100);
+}
+
+function _mcPreviewFoto(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>2097152){showNotif('Arquivo muito grande','Máximo 2MB','var(--red)');input.value='';return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const prev=document.getElementById('mc-prod-foto-preview');
+    if(prev){prev.src=e.target.result;prev.style.display='block';prev.style.width='100%';prev.style.maxHeight='140px';prev.style.objectFit='cover';prev.style.borderRadius='8px';prev.style.marginBottom='8px';}
+    const status=document.getElementById('mc-prod-foto-status');
+    if(status)status.innerHTML=`<span style="color:#10b981">✅ ${file.name} pronto para upload</span>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function _mcAtualizarPreviewUrl(url){
+  const prev=document.getElementById('mc-prod-foto-preview');
+  if(!prev)return;
+  if(url){prev.src=url;prev.style.display='block';prev.style.width='100%';prev.style.maxHeight='140px';prev.style.objectFit='cover';prev.style.borderRadius='8px';prev.style.marginBottom='8px';}
+  else{prev.style.display='none';}
+}
+
+async function _mcUploadFoto(file,prodId){
+  const lojaId=currentUser?.loja_id||'sem-loja';
+  const ext=file.name.split('.').pop().toLowerCase();
+  const path=`${lojaId}/${prodId||('novo-'+Date.now())}.${ext}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/cardapio-fotos/${path}`,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type,'x-upsert':'true'},
+    body:file
+  });
+  if(!res.ok)return null;
+  return `${SB_URL}/storage/v1/object/public/cardapio-fotos/${path}`;
+}
+
+async function _mcSalvarProduto(prodId){
+  const fb=document.getElementById('mc-prod-fb');
+  const nome=(document.getElementById('mc-prod-nome')?.value||'').trim();
+  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome é obrigatório.</span>';return;}
+  const lojaId=currentUser?.loja_id;if(!lojaId)return;
+  const catId=document.getElementById('mc-prod-cat')?.value||_mcCatSelecionada;
+  const desc=(document.getElementById('mc-prod-desc')?.value||'').trim();
+  const preco=parseFloat(document.getElementById('mc-prod-preco')?.value||'0')||0;
+  const ordem=parseInt(document.getElementById('mc-prod-ordem')?.value||'0',10);
+  const disponivel=document.getElementById('mc-prod-disp')?.value==='true';
+  if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:13px">⏳ Salvando...</span>';
+
+  // Upload de foto se arquivo selecionado
+  let fotoUrl=(document.getElementById('mc-prod-foto-url')?.value||'').trim();
+  const fileInput=document.getElementById('mc-prod-foto-file');
+  if(fileInput?.files[0]){
+    if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:13px">⏳ Enviando foto...</span>';
+    const url=await _mcUploadFoto(fileInput.files[0],prodId||null);
+    if(url)fotoUrl=url;
+    else{if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:13px">⚠️ Foto não enviada, produto salvo sem ela.</span>';}
+  }
+
+  const agora=new Date().toISOString();
+  const data={loja_id:lojaId,categoria_id:catId||null,nome,descricao:desc||null,preco,foto_url:fotoUrl||null,disponivel,ordem,updated_at:agora};
+  if(prodId){
+    await db('cardapio_produtos','PATCH',data,`?id=eq.${prodId}`);
+  } else {
+    await db('cardapio_produtos','POST',{...data,created_at:agora});
+  }
+  document.getElementById('mc-modal-prod')?.classList.remove('open');
+  if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
+  showNotif(prodId?'✅ Produto atualizado!':'✅ Produto criado!','');
+}
+
+async function _mcToggleProduto(prodId,novoDisp){
+  await db('cardapio_produtos','PATCH',{disponivel:novoDisp,updated_at:new Date().toISOString()},`?id=eq.${prodId}`);
+  if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
+}
+
+async function _mcExcluirProduto(prodId,nome){
+  if(!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`))return;
+  await db('cardapio_produtos','DELETE',null,`?id=eq.${prodId}`);
+  if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
+  showNotif('🗑️ Produto excluído','');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
