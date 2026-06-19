@@ -5274,10 +5274,32 @@ async function _mcExcluirProduto(prodId,nome){
   showNotif('🗑️ Produto excluído','');
 }
 
+function _aplicarRestricaoDominio(){
+  const host=window.location.hostname;
+  const sel=document.getElementById('login-perfil');
+  if(!sel)return;
+  // sistema.letsgodelivery.com.br → só adm e suporte (sem loja)
+  // painel.letsgodelivery.com.br  → só loja (sem adm e suporte)
+  // qualquer outro (localhost, dev) → todos os perfis
+  const esconder=host==='sistema.letsgodelivery.com.br'?['loja']
+    :host==='painel.letsgodelivery.com.br'?['adm','suporte']
+    :[];
+  sel.querySelectorAll('option').forEach(opt=>{
+    opt.hidden=esconder.includes(opt.value);
+    opt.disabled=esconder.includes(opt.value);
+  });
+  // Garante que o valor selecionado seja sempre um visível
+  if(esconder.includes(sel.value)){
+    const primeiro=Array.from(sel.options).find(o=>!o.hidden);
+    if(primeiro)sel.value=primeiro.value;
+  }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.matchMedia('(prefers-color-scheme: dark)').matches){
     document.documentElement.classList.add('dark');
   }
+  _aplicarRestricaoDominio();
   const card=document.querySelector('.login-card');
   if(card){
     if(!document.getElementById('login-logo-wrap')){
