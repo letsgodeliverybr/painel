@@ -3717,7 +3717,7 @@ async function _buscarPedidosAdmin(){
   const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_ck=document.getElementById('fp-card-km');
   const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cLucro=document.getElementById('fp-card-lucro'),_cMerc=document.getElementById('fp-card-merc');
   const finalizados=arr.filter(p=>getStatusKey(p)==='finalizado');
-  const fat=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0),0);
+  const fat=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
   const desp=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
   const lucro=fat-desp;
   const merc=arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
@@ -3732,7 +3732,7 @@ async function _buscarPedidosAdmin(){
   const _showFin=currentPerfil==='adm';
   const _isSup=currentPerfil==='suporte';
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11;
-  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=parseFloat(p.taxa_entrega)||0;const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
@@ -4635,7 +4635,7 @@ async function _buscarCobrancas(){
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,jaGeradas]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega`),
+    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
     db('lojas','GET',null,'?select=id,nome'),
     db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
@@ -4644,7 +4644,7 @@ async function _buscarCobrancas(){
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
     const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
-    _gcResultados[lid].total+=parseFloat(p.taxa_entrega)||0;
+    _gcResultados[lid].total+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
     _gcResultados[lid].qtd++;
   });
   const rows=Object.values(_gcResultados);
@@ -4847,7 +4847,7 @@ async function verFaturaCobranca(cobId){
       </div>
       <div style="text-align:right;min-width:140px">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Total a pagar</div>
-        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${totalEntregas.toFixed(2)}</div>
+        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</div>
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
@@ -4866,7 +4866,7 @@ async function verFaturaCobranca(cobId){
           <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">2</td><td style="${tdS}">Esperas</td><td style="${tdQ}">0</td><td style="${tdV};color:#9ca3af">R$ 0,00</td></tr>
           <tr><td style="${tdN}">3</td><td style="${tdS}">Gorjetas</td><td style="${tdQ}">${pedidosData.filter(p=>parseFloat(p.gorjeta)>0).length}</td><td style="${tdV};color:${totalGorjetas>0?'#059669':'#9ca3af'}">R$ ${totalGorjetas.toFixed(2)}</td></tr>
         </tbody>
-        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${totalEntregas.toFixed(2)}</td></tr></tfoot>
+        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
     <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
