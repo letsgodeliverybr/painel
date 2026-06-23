@@ -20,7 +20,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
@@ -1549,7 +1549,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='aceito')update.aceito_em=agora;
-  if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='recebido')update.recebido_em=agora;
@@ -1569,7 +1569,7 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
-  if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
@@ -1815,6 +1815,7 @@ async function fazerLogin(){
   _carregarSaldoTopbar();
   if(currentPerfil==='adm')_carregarBadgeSaques();
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
+  if(currentPerfil==='adm')_iniciarMonitorWhatsapp();
 }
 function logout(){
   clearInterval(realtimeInterval);pararRoteirizacao();sessionStorage.removeItem('lg_user');
@@ -1834,7 +1835,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -2622,6 +2623,7 @@ async function criarPedido(){
   const numero=(document.getElementById('np-numero')||{}).value||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const descricao=(document.getElementById('np-descricao')||{}).value||'';
   const cliente=(document.getElementById('np-cliente')||{}).value||'';
+  const telefonePedido=(document.getElementById('np-telefone')||{}).value||'';
   const taxaInput=parseFloat((document.getElementById('np-taxa')||{}).value)||0;
   const gorjeta=parseFloat((document.getElementById('np-gorjeta')||{}).value)||0;
   const pontos=parseInt((document.getElementById('np-pontos')||{}).value)||4;
@@ -2656,7 +2658,7 @@ async function criarPedido(){
   console.log(`[criarPedido] origem_usada=${origemUsada} distancia_km=${distKm} faixa_aplicada=km_ate:${_faixaAplicadaNp?.km_ate||'?'} pd_cliente=${_pdC}(${_pdOrigemNp}) taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
@@ -3770,7 +3772,7 @@ ${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" placeholde
 <div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
 ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
-${r2(fi('Telefone',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('Celular',inp('el-celular',l.celular,'(16) 99999-9999')))}
+${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
 ${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
 ${sec('Tabelas de Preço')}
@@ -4891,6 +4893,212 @@ function _imprimirFatura(){
 }
 
 let _configAba='cliente';
+// ---- DISPARO WHATSAPP ----
+let _evolutionCfgCache=null;
+async function _getEvolutionConfig(){
+  if(_evolutionCfgCache)return _evolutionCfgCache;
+  const [urlR,instR,tokenR,msgER,msgFR]=await Promise.all([
+    db('configuracoes','GET',null,'?chave=eq.evolution_api_url'),
+    db('configuracoes','GET',null,'?chave=eq.evolution_api_instance'),
+    db('configuracoes','GET',null,'?chave=eq.evolution_api_token'),
+    db('configuracoes','GET',null,'?chave=eq.whatsapp_msg_em_rota'),
+    db('configuracoes','GET',null,'?chave=eq.whatsapp_msg_financeiro'),
+  ]);
+  _evolutionCfgCache={
+    url:(urlR&&urlR[0]?.valor)||'',
+    instance:(instR&&instR[0]?.valor)||'',
+    token:(tokenR&&tokenR[0]?.valor)||'',
+    msgEmRota:(msgER&&msgER[0]?.valor)||'Olá {cliente}! 🛵 Seu pedido está a caminho!\n\nAcompanhe em tempo real:\n{link}',
+    msgFinanceiro:(msgFR&&msgFR[0]?.valor)||'Olá, {loja}! 👋\n\nSegue a fatura do período de cobrança.\nEm caso de dúvidas entre em contato conosco.\n\nLet\'s Go Delivery',
+  };
+  return _evolutionCfgCache;
+}
+function _evolutionInvalidateCache(){_evolutionCfgCache=null;}
+
+function _waFormatPhone(phone){
+  if(!phone)return null;
+  const d=phone.replace(/\D/g,'');
+  if(!d||d.length<8)return null;
+  return d.startsWith('55')?d:'55'+d;
+}
+
+async function _evolutionSendText(phone,message){
+  const cfg=await _getEvolutionConfig();
+  if(!cfg.url||!cfg.instance||!cfg.token)return false;
+  const number=_waFormatPhone(phone);
+  if(!number)return false;
+  try{
+    const r=await fetch(`${cfg.url}/message/sendText/${cfg.instance}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':cfg.token},
+      body:JSON.stringify({number,text:message}),
+    });
+    if(!r.ok)console.warn('[WA] sendText HTTP',r.status);
+    return r.ok;
+  }catch(e){console.error('[WA] sendText erro:',e);return false;}
+}
+
+async function _dispararWhatsappEmRota(pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  if(!p?.telefone)return;
+  const cfg=await _getEvolutionConfig();
+  if(!cfg.url||!cfg.instance||!cfg.token)return;
+  const link=window.location.origin+window.location.pathname+'?rastrear='+pedidoId;
+  const msg=cfg.msgEmRota
+    .replace(/{cliente}/g,p.cliente||'Cliente')
+    .replace(/{link}/g,link)
+    .replace(/{numero}/g,p.numero||p.id?.substring(0,6)||'');
+  const ok=await _evolutionSendText(p.telefone,msg);
+  if(ok)showNotif('📲 WhatsApp enviado!',p.cliente||'','#22c55e');
+}
+
+async function _dispararWhatsappFinanceiro(manual=true){
+  const cfg=await _getEvolutionConfig();
+  if(!cfg.url||!cfg.instance||!cfg.token){
+    if(manual)showNotif('⚠️ API não configurada','Vá em Disparo WhatsApp → Configuração API','var(--yellow)');
+    return;
+  }
+  const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
+  const alvo=lojas.filter(l=>l.celular);
+  if(!alvo.length){if(manual)showNotif('ℹ️ Sem lojas com WhatsApp Financeiro','','var(--text2)');return;}
+  if(manual){const conf=confirm(`Disparar mensagem financeira para ${alvo.length} loja(s)?`);if(!conf)return;}
+  let ok=0,err=0;
+  for(const l of alvo){
+    const msg=cfg.msgFinanceiro.replace(/{loja}/g,l.nome||'');
+    const sent=await _evolutionSendText(l.celular,msg);
+    if(sent)ok++;else err++;
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  if(manual)showNotif(`📲 Financeiro enviado!`,`${ok} loja(s)${err?' · '+err+' erro(s)':''}`,ok>0?'#22c55e':'var(--red)');
+  else console.log(`[WA] Financeiro auto: ${ok} ok, ${err} erros`);
+}
+
+let _waCronInterval=null;
+function _iniciarMonitorWhatsapp(){
+  if(_waCronInterval)return;
+  _waCronInterval=setInterval(()=>{
+    const now=new Date();
+    if(now.getDay()!==1||now.getHours()!==8||now.getMinutes()!==1)return;
+    const key=`wa_fin_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
+    if(localStorage.getItem(key))return;
+    localStorage.setItem(key,'1');
+    _dispararWhatsappFinanceiro(false);
+  },60000);
+}
+
+async function _upsertConfigWa(chave,valor){
+  const agora=new Date().toISOString();
+  const ex=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
+  if(ex&&ex.length)await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.${chave}`);
+  else await db('configuracoes','POST',{chave,valor:String(valor),created_at:agora,updated_at:agora});
+}
+
+async function _salvarMsgWhatsapp(tipo){
+  const isEmRota=tipo==='em_rota';
+  const chave=isEmRota?'whatsapp_msg_em_rota':'whatsapp_msg_financeiro';
+  const elId=isEmRota?'wa-msg-em-rota':'wa-msg-fin';
+  const fbId=isEmRota?'wa-emrota-fb':'wa-fin-fb';
+  const msg=(document.getElementById(elId)?.value||'').trim();
+  const fb=document.getElementById(fbId);
+  if(!msg){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Mensagem não pode ser vazia</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  await _upsertConfigWa(chave,msg);
+  _evolutionInvalidateCache();
+  if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
+  setTimeout(()=>{if(fb&&fb.innerHTML.includes('Salvo'))fb.innerHTML='';},3000);
+}
+
+async function _salvarConfigEvolution(){
+  const url=(document.getElementById('wa-api-url')?.value||'').trim();
+  const inst=(document.getElementById('wa-api-inst')?.value||'').trim();
+  const token=(document.getElementById('wa-api-token')?.value||'').trim();
+  const fb=document.getElementById('wa-cfg-fb');
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  await Promise.all([_upsertConfigWa('evolution_api_url',url),_upsertConfigWa('evolution_api_instance',inst),_upsertConfigWa('evolution_api_token',token)]);
+  _evolutionInvalidateCache();
+  if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
+  setTimeout(()=>{if(fb&&fb.innerHTML.includes('Salvo'))fb.innerHTML='';},3000);
+  showNotif('✅ Configuração salva!','Evolution API configurada','#22c55e');
+}
+
+let _waAba='em-rota';
+async function renderWhatsappPage(){
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header"><div class="page-title">📲 Disparo WhatsApp</div></div>
+      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
+        <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">🛵 Mensagem em Rota</button>
+        <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">💵 Financeiro</button>
+        <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">⚙️ Configuração API</button>
+      </div>
+      <div id="wa-content"></div>
+    </div>`;
+  _waAba='em-rota';
+  _waGoAba('em-rota');
+}
+
+async function _waGoAba(aba){
+  _waAba=aba;
+  const corMap={'em-rota':'var(--accent)','financeiro':'#10b981','config':'#f59e0b'};
+  ['em-rota','financeiro','config'].forEach(id=>{
+    const el=document.getElementById('wat-'+id);if(!el)return;
+    const active=id===aba;
+    el.style.borderBottom=`2px solid ${active?corMap[id]:'transparent'}`;
+    el.style.color=active?corMap[id]:'var(--text3)';
+  });
+  const el=document.getElementById('wa-content');if(!el)return;
+  el.innerHTML='<div style="padding:24px;color:var(--text3)">⏳ Carregando...</div>';
+
+  if(aba==='config'){
+    const [urlR,instR,tokenR]=await Promise.all([
+      db('configuracoes','GET',null,'?chave=eq.evolution_api_url'),
+      db('configuracoes','GET',null,'?chave=eq.evolution_api_instance'),
+      db('configuracoes','GET',null,'?chave=eq.evolution_api_token'),
+    ]);
+    el.innerHTML=`<div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">⚙️ Evolution API</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:18px">Configure o chip para disparo automático de mensagens WhatsApp.</div>
+      <div class="fi" style="margin-bottom:12px"><label>URL da API</label><input id="wa-api-url" placeholder="https://api.seudominio.com" value="${(urlR&&urlR[0]?.valor)||''}"/></div>
+      <div class="fi" style="margin-bottom:12px"><label>Instância</label><input id="wa-api-inst" placeholder="nome-da-instancia" value="${(instR&&instR[0]?.valor)||''}"/></div>
+      <div class="fi" style="margin-bottom:16px"><label>Token (apikey)</label><input id="wa-api-token" type="password" placeholder="••••••••••" value="${(tokenR&&tokenR[0]?.valor)||''}"/></div>
+      <div id="wa-cfg-fb" style="min-height:18px;margin-bottom:12px"></div>
+      <button onclick="_salvarConfigEvolution()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Configuração</button>
+    </div>`;
+    return;
+  }
+
+  if(aba==='em-rota'){
+    const msgR=await db('configuracoes','GET',null,'?chave=eq.whatsapp_msg_em_rota');
+    const msg=(msgR&&msgR[0]?.valor)||'Olá {cliente}! 🛵 Seu pedido está a caminho!\n\nAcompanhe em tempo real:\n{link}';
+    el.innerHTML=`<div class="card" style="max-width:560px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">🛵 Mensagem em Rota</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviada automaticamente ao número do cliente quando o motoboy clicar em <strong>"Em Rota"</strong>. Requer o campo <strong>Telefone</strong> preenchido no pedido.</div>
+      <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-em-rota" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{cliente}</code> nome &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{link}</code> rastreio &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{numero}</code> nº pedido</div>
+      <div id="wa-emrota-fb" style="min-height:18px;margin-bottom:12px"></div>
+      <button onclick="_salvarMsgWhatsapp('em_rota')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Mensagem</button>
+    </div>`;
+    return;
+  }
+
+  if(aba==='financeiro'){
+    const msgR=await db('configuracoes','GET',null,'?chave=eq.whatsapp_msg_financeiro');
+    const msg=(msgR&&msgR[0]?.valor)||'Olá, {loja}! 👋\n\nSegue a fatura do período de cobrança.\nEm caso de dúvidas entre em contato conosco.\n\nLet\'s Go Delivery';
+    el.innerHTML=`<div class="card" style="max-width:560px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">💵 Disparo Financeiro</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviado automaticamente toda <strong>segunda-feira às 08:01</strong> ao campo <strong>"WhatsApp Financeiro"</strong> de cada loja ativa. O painel precisa estar aberto neste horário.</div>
+      <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-fin" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{loja}</code> nome da loja</div>
+      <div id="wa-fin-fb" style="min-height:18px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="_salvarMsgWhatsapp('financeiro')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Mensagem</button>
+        <button onclick="_dispararWhatsappFinanceiro(true)" style="background:#10b981;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">📲 Disparar Agora</button>
+      </div>
+    </div>`;
+    return;
+  }
+}
+
 function renderConfiguracaoPage(aba){
   _configAba=aba||_configAba||'cliente';
   const abas=[
