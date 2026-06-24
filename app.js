@@ -4074,7 +4074,7 @@ async function renderFinanceiroPage(aba){
   _financeiroAba=aba||_financeiroAba||'gerar-cobranca';
   const abas=[
     {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobranças'},
-    {id:'aprovar-cobrancas',icon:'💰',label:'Aprovar Cobranças'},
+    {id:'aprovar-cobrancas',icon:'📲',label:'Enviar Faturas'},
     {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
     {id:'credito',icon:'💳',label:'Créditos'},
@@ -4730,7 +4730,7 @@ async function _buscarCobrancasPendentes(){
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
-      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Marcar como Pago</button>
+      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📲 Aprovar e Enviar Fatura</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
@@ -4775,12 +4775,29 @@ function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>c
 async function _aprovarCobrancasSelecionadas(){
   const ids=[...document.querySelectorAll('.ac-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos uma cobrança','var(--yellow)');return;}
+  const cobRes=await db('cobrancas_lojas','GET',null,`?id=in.(${ids.join(',')})&select=id,loja_id,lojas(nome,celular)`);
+  const cobMap={};
+  (Array.isArray(cobRes)?cobRes:[]).forEach(c=>{cobMap[c.id]=c;});
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
     const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
     if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
   }
-  showNotif(`✅ ${ok} cobrança(s) marcada(s) como pago!`,'');
+  showNotif(`✅ ${ok} cobrança(s) aprovada(s)!`,'');
+  const cfg=await _getEvolutionConfig();
+  if(cfg.url&&cfg.instance&&cfg.token){
+    let wok=0,werr=0;
+    for(const id of ids){
+      const c=cobMap[id];
+      const phone=c?.lojas?.celular;
+      if(!phone)continue;
+      const msg=cfg.msgFinanceiro.replace(/{loja}/g,c.lojas?.nome||'');
+      const sent=await _evolutionSendText(phone,msg);
+      if(sent)wok++;else werr++;
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    if(wok>0||werr>0)showNotif(`📲 Fatura enviada!`,`${wok} loja(s)${werr?' · '+werr+' erro(s)':''}`,wok>0?'#22c55e':'var(--red)');
+  }
   _buscarCobrancasPendentes();
 }
 
