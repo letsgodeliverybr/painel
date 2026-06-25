@@ -20,7 +20,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
@@ -1836,7 +1836,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -4079,7 +4079,6 @@ async function renderFinanceiroPage(aba){
     {id:'aprovar-cobrancas',icon:'📲',label:'Enviar Faturas'},
     {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
-    {id:'credito',icon:'💳',label:'Créditos'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -4092,7 +4091,6 @@ async function renderFinanceiroPage(aba){
   if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
   else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
   else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
-  else if(_financeiroAba==='credito')_renderCredito();
   else _renderAprovarCobrancas();
 }
 
@@ -4143,6 +4141,11 @@ function _renderCredito(){
   _scBuscar();
 }
 
+function renderCreditosPage(){
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">💳 Créditos</div></div><div id="financeiro-content"></div></div>`;
+  _renderCredito();
+}
+
 function _scTrocarAba(aba){
   _scSubAba=aba;
   ['lojas','entregadores'].forEach(id=>{
@@ -4166,13 +4169,14 @@ async function _scBuscar(){
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
   let qs=`?select=*,${joinField}(nome)&order=created_at.desc&limit=500`;
-  qs+='&observacoes=not.ilike.Entrega #*&observacoes=not.ilike.Estorno #*';
   if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
   if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
   if(tipo==='credito')qs+='&tipo=eq.credito';
   else if(tipo==='debito')qs+='&tipo=eq.debito';
   const rows=await db(tabela,'GET',null,qs);
-  const data=(Array.isArray(rows)?rows:[]).filter(r=>!nome||(r[joinField]?.nome||'').toLowerCase().includes(nome));
+  const data=(Array.isArray(rows)?rows:[])
+    .filter(r=>{const obs=r.observacoes||'';return!obs.includes('Entrega #')&&!obs.includes('Estorno #');})
+    .filter(r=>!nome||(r[joinField]?.nome||'').toLowerCase().includes(nome));
   const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const saldo=totC-totD;
