@@ -1645,10 +1645,8 @@ async function _carregarSaldoTopbar(){
         alertBanner.style.display='block';
       }else if(alertBanner){alertBanner.style.display='none';}
       _atualizarBtnCriarEntrega();
-    } else if(currentPerfil==='adm'){
-      const pedidos=await db('pedidos','GET',null,'?status=eq.finalizado');
-      const total=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
-      val.textContent=total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    } else if(currentPerfil==='adm'||currentPerfil==='admin'){
+      val.textContent='0,00';
       el.style.display='flex';
     } else {
       el.style.display='none';
