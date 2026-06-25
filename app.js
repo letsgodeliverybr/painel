@@ -131,6 +131,7 @@ const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Ame
 const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
 const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
+const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return _inicioDiaBrasilia(new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10));};
 const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
 const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);
 
@@ -3715,7 +3716,7 @@ async function renderNovoPedidoPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">➕ Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')"/><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
 }
 
-let _fpLojas=[],_fpEntregadores=[];
+let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
 async function renderPedidosPage(){
   const hoje=_dataHojeBrasilia();
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
@@ -3788,7 +3789,48 @@ async function _buscarPedidosAdmin(){
   const _showFin=currentPerfil==='adm';
   const _isSup=currentPerfil==='suporte';
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11;
-  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td><span class="p-badge b-${sk}">${getStatusLabel(p)}</span></td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  _fpPedidos=arr;
+  const _segundaIni=_inicioSemanaAtualBrasilia();
+  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+}
+const STATUS_RELATORIO=[
+  {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
+  {key:'aceito',         label:'Aceito',            cor:'#eab308'},
+  {key:'em_rota',        label:'Em rota',           cor:'#1A56DB'},
+  {key:'chegou_destino', label:'Chegou no destino', cor:'#7c3aed'},
+  {key:'finalizado',     label:'Finalizado',        cor:'#16a34a'},
+  {key:'cancelado',      label:'Cancelado',         cor:'#ef4444'},
+];
+function abrirDropdownStatusRelatorio(event,pedidoId){
+  event.stopPropagation();
+  const anchor=event.currentTarget;
+  const p=_fpPedidos.find(x=>x.id===pedidoId);
+  if(!p)return;
+  if(p.created_at<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  const itens=STATUS_RELATORIO.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoRelatorio('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
+  const dd=_criarDropdown(pedidoId,itens);
+  _posicionarDropdown(dd,anchor);
+}
+async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
+  fecharDropdownStatus();
+  const p=_fpPedidos.find(x=>x.id===pedidoId);
+  if(!p)return;
+  if(p.created_at<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
+  const agora=new Date().toISOString();
+  const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
+  if(novoStatus==='pronto'){update.pronto_em=agora;update.motoboy_id=null;update.entregador_id=null;}
+  if(novoStatus==='aceito')update.aceito_em=agora;
+  if(novoStatus==='em_rota')update.em_rota_em=agora;
+  if(novoStatus==='finalizado')update.finalizado_em=agora;
+  if(novoStatus==='cancelado'&&currentPerfil==='loja')_estornarDebitoEntrega(p);
+  try{
+    await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+    Object.assign(p,update);
+    await logAcao('alterar_status_relatorio',{pedido_id:pedidoId,novo_status:novoStatus});
+    showNotif('✅ Status alterado',STATUS_LABEL[novoStatus]||novoStatus,'var(--green)');
+  }catch(e){showNotif('❌ Erro ao alterar status','','var(--red)');}
+  _buscarPedidosAdmin();
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
