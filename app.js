@@ -2972,16 +2972,18 @@ async function _setCadastroStatus(entId,novoStatus){
 
 async function excluirEntregador(id,nome){
   if(!confirm(`Excluir permanentemente?\nO histórico de pedidos será mantido.`))return;
+  // Nulifica saques antes de deletar para evitar FK constraint
+  await db('saques','PATCH',{entregador_id:null},`?entregador_id=eq.${id}`).catch(()=>{});
   await db('entregadores','DELETE',null,`?id=eq.${id}`);
-  await fetch(`${SB_URL}/rest/v1/rpc/delete_auth_user`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({user_id:id})}).catch(()=>{});
+  // Deleta auth user via Edge Function (requer service role key)
+  await fetch(`${SB_URL}/functions/v1/delete-entregador`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({entregador_id:id})}).catch(()=>{});
   showNotif('🗑️ Entregador excluído','','var(--red)');
   renderCadastrosPage('entregadores');
 }
 
 async function excluirLoja(id,nome){
   if(!confirm(`Tem certeza que deseja excluir a loja "${nome}"?\nEsta ação não pode ser desfeita.`))return;
-  const usuarios=await db('usuarios_painel','GET',null,`?loja_id=eq.${id}&select=id`);
-  if(Array.isArray(usuarios)&&usuarios.length>0){alert('Não é possível excluir esta loja pois ela possui usuários cadastrados. Remova os usuários primeiro em Cadastros → Usuários.');return;}
+  await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);
   await db('lojas','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Loja excluída','','var(--red)');
   renderCadastrosPage('clientes');
