@@ -4789,9 +4789,10 @@ async function _buscarCobrancasPendentes(){
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const pendWrap=document.getElementById('ac-pendentes-wrap');
   if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const cobrancas=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.desc`);
+  const _rawCobs=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome,tipo_cobranca)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.desc`);
+  const cobrancas=(Array.isArray(_rawCobs)?_rawCobs:[]).filter(c=>c.lojas?.tipo_cobranca!=='credito');
   if(!pendWrap)return;
-  if(!cobrancas||!cobrancas.length){
+  if(!cobrancas.length){
     pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma cobrança pendente no período</div></div>`;
     return;
   }
