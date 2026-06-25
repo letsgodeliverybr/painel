@@ -4175,8 +4175,8 @@ async function _scBuscar(){
   else if(tipo==='debito')qs+='&tipo=eq.debito';
   const rows=await db(tabela,'GET',null,qs);
   const data=(Array.isArray(rows)?rows:[])
-    .filter(r=>{const obs=r.observacoes||'';return!obs.includes('Entrega #')&&!obs.includes('Estorno #');})
-    .filter(r=>!nome||(r[joinField]?.nome||'').toLowerCase().includes(nome));
+    .filter(r=>!nome||(r[joinField]?.nome||'').toLowerCase().includes(nome))
+    .filter(r=>{const obs=(r.observacoes||'').toLowerCase();return!obs.startsWith('entrega #')&&!obs.startsWith('estorno #');});
   const totC=data.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const totD=data.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
   const saldo=totC-totD;
