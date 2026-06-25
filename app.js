@@ -4705,13 +4705,14 @@ async function _buscarCobrancas(){
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,jaGeradas]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
-    db('lojas','GET',null,'?select=id,nome'),
+    db('lojas','GET',null,'?select=id,nome,tipo_cobranca'),
     db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
   const jaGeradasSet=new Set((Array.isArray(jaGeradas)?jaGeradas:[]).map(r=>r.loja_id));
+  const creditoLojas=new Set((Array.isArray(lojas)?lojas:[]).filter(l=>l.tipo_cobranca==='credito').map(l=>l.id));
   _gcResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
-    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid))return;
+    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
     _gcResultados[lid].qtd++;
