@@ -3139,7 +3139,7 @@ async function abrirEditarUsuario(userId){
 
 async function salvarEdicaoUsuario(userId){
   const fb=document.getElementById('eu-feedback');
-  const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null,updated_at:new Date().toISOString()};
+  const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar usuário','','var(--red)');return;}
