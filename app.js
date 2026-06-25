@@ -4361,7 +4361,7 @@ async function _calcularPagamentos(){
   const [pedidos,entregadores,saquesPeriodo]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
-    db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=gte.${dataIni}&data_fim=lte.${dataFim}&status=neq.cancelado`),
+    db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=lte.${dataFim}&data_fim=gt.${dataIni}&status=neq.cancelado`),
   ]);
   // Soma saques gerados DENTRO do período exato (data_inicio >= inicio E data_fim <= fim)
   const saquesPorEid={};
