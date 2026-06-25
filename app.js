@@ -2595,6 +2595,11 @@ async function salvarEdicaoPedido(pedidoId){
 
 async function abrirAlocarMotoboy(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
+  const _lojaAloc=allLojas.find(l=>l.id===p.loja_id);
+  if(!_lojaAloc?.tabela_cobranca_id||!_lojaAloc?.tabela_pagamento_id){
+    alert('Esta loja não tem tabela de cobrança/pagamento cadastrada. Configure em Cadastros → Lojas antes de alocar.');
+    return;
+  }
   const motoboys=await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
   let modal=document.getElementById('modal-alocar-motoboy');
   if(!modal){modal=document.createElement('div');modal.id='modal-alocar-motoboy';modal.className='modal-overlay';document.body.appendChild(modal);}
