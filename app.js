@@ -4166,6 +4166,7 @@ async function _scBuscar(){
   const fim=document.getElementById('sc-f-fim')?.value;
   const tipo=document.getElementById('sc-f-tipo')?.value;
   let qs=`?select=*,${joinField}(nome)&order=created_at.desc&limit=500`;
+  qs+='&observacoes=not.ilike.Entrega #*&observacoes=not.ilike.Estorno #*';
   if(ini)qs+=`&created_at=gte.${_inicioDiaBrasilia(ini)}`;
   if(fim)qs+=`&created_at=lte.${_fimDiaBrasilia(fim)}`;
   if(tipo==='credito')qs+='&tipo=eq.credito';
