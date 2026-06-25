@@ -1368,6 +1368,7 @@ async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
   const numero=(document.getElementById('cr-numero')?.value||'').trim();
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
+  const telefone=(document.getElementById('cr-telefone')?.value||'').trim()||null;
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
   const gorjeta=parseFloat(document.getElementById('cr-gorjeta')?.value)||0;
   // Lê value mesmo se o select estiver disabled (perfil loja)
@@ -1399,7 +1400,7 @@ async function _criarEntregaRapida(){
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
   const _faixaCrSubmit=_faixasCr.find(f=>_distKm<=parseFloat(f.km_ate))||_faixasCr[_faixasCr.length-1];
   console.log(`[_criarEntregaRapida] origem_usada=loja distancia_km=${_distKm} faixa_aplicada=km_ate:${_faixaCrSubmit?.km_ate||'?'} pd_cliente=${_pdCliente}(${_pdOrigemCr}) taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -1414,6 +1415,7 @@ async function _criarEntregaRapida(){
     if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
     document.getElementById('cr-numero').value='';
     document.getElementById('cr-cliente').value='';
+    document.getElementById('cr-telefone').value='';
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-gorjeta').value='';
@@ -1884,6 +1886,7 @@ function renderMapaPage(){
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
+          <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
