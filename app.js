@@ -3797,9 +3797,8 @@ async function renderLojasPage(){
 }
 
 async function abrirEditarLoja(lojaId){
-  const [data,tabelas]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?order=nome.asc')]);
+  const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
-  const _tabOpts=(sel)=>'<option value="">Selecione...</option>'+tabelas.map(t=>`<option value="${t.id}"${t.id===sel?' selected':''}>${t.nome||t.id}</option>`).join('');
   let modal=document.getElementById('modal-editar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
@@ -3822,7 +3821,7 @@ ${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('W
 ${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
 ${sec('Tabelas de Preço')}
-${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelas.filter(t=>t.tipo==='cobranca').map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelas.filter(t=>t.tipo==='pagamento').map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
+${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r1(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`))}
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
