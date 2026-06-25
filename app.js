@@ -2414,6 +2414,7 @@ const _endColetaNorm=(p.endereco_coleta||'').trim().toLowerCase();const _lojaCol
 function selecionarPedido(id){selectedPedidoId=selectedPedidoId===id?null:id;renderPedidosLista();if(selectedPedidoId){const p=allPedidos.find(x=>x.id===selectedPedidoId);if(map&&p&&p.latitude&&p.longitude)map.setView([p.latitude,p.longitude],15,{animate:true});}}
 function fecharDetalhe(){selectedPedidoId=null;renderPedidosLista();}
 function _irParaPedido(id){selecionarPedido(id);setTimeout(()=>destacarMarcador(id),450);}
+function _irParaPedidoHistorico(numero){goTab('pedidos');setTimeout(()=>{const el=document.getElementById('fp-numero');if(el){el.value=numero;_buscarPedidosAdmin();}},800);}
 function destacarMarcador(id){
   const marker=pedidoMarkers[id];if(!marker)return;
   const el=marker.getElement();if(!el)return;
@@ -4089,8 +4090,17 @@ async function _runAuditoria(){
       el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center;color:var(--green);font-size:15px;font-weight:700">✅ Nenhum problema encontrado no período (${pedidos.length} pedido(s) verificado(s))</div></div>`;
       return;
     }
+    const pedidoStatusMap=Object.fromEntries(pedidos.map(p=>[p.id,p.status_detalhado||p.status||'']));
     const badgeHtml=(pr)=>`<span style="display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;background:${pr.cor}22;color:${pr.cor};border:1px solid ${pr.cor}44;white-space:nowrap">${pr.tipo}</span>`;
-    const btnVer=(pr)=>pr.pedidoId?`<button onclick="goTab('mapa');setTimeout(()=>_irParaPedido('${pr.pedidoId}'),600)" style="padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Ver #${pr.numero||'?'}</button>`:'—';
+    const btnVer=(pr)=>{
+      if(!pr.pedidoId)return'—';
+      const st=pedidoStatusMap[pr.pedidoId]||'';
+      const isTerminal=['finalizado','cancelado'].includes(st);
+      const onclick=isTerminal
+        ?`_irParaPedidoHistorico('${(pr.numero||'').replace(/'/g,"\\'")}')`
+        :`goTab('mapa');setTimeout(()=>_irParaPedido('${pr.pedidoId}'),600)`;
+      return`<button onclick="${onclick}" style="padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Ver #${pr.numero||'?'}</button>`;
+    };
     el.innerHTML=`<div class="card"><div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span style="font-weight:700;font-size:14px">⚠️ ${problemas.length} problema(s) encontrado(s) em ${pedidos.length} pedido(s)</span></div><div style="overflow-x:auto"><table><thead><tr><th>Tipo</th><th>Descrição</th><th></th></tr></thead><tbody>
       ${problemas.map(pr=>`<tr><td style="white-space:nowrap">${badgeHtml(pr)}</td><td style="font-size:13px;color:var(--text2)">${pr.descricao}</td><td>${btnVer(pr)}</td></tr>`).join('')}
     </tbody></table></div></div>`;
