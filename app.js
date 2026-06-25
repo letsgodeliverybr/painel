@@ -2425,7 +2425,7 @@ function destacarMarcador(id){
 
 function abrirEditarPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(!p)return;
-  _epRetornoAtivo=!!(p.com_retorno);
+  _epRetornoAtivo=!!(p.com_retorno);_epGeo=null;_epPedidoAtual=p;
   let modal=document.getElementById('modal-editar-pedido');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-pedido';modal.className='modal-overlay';document.body.appendChild(modal);}
   const temColeta=!!(p.endereco_coleta||p.contato_coleta||p.telefone_coleta);
@@ -2441,7 +2441,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
   <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
 </div>
-<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><input id="ep-endereco" value="${esc(p.endereco)}"/></div></div>
+<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div></div></div>
 <div class="form-row">
   <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
   <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
@@ -2455,6 +2455,11 @@ function abrirEditarPedido(pedidoId){
     </div>
   </div>
 </div>
+<div class="form-row">
+  <div class="fi"><label>Taxa Motoboy (R$)</label><input type="number" id="ep-taxa-motoboy" value="${p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy).toFixed(2):''}" placeholder="Auto" step="0.01"/></div>
+  <div class="fi"><label>Preço Dinâmico (R$)</label><input type="number" id="ep-preco-dinamico" value="${parseFloat(p.preco_dinamico)||''}" placeholder="0.00" step="0.01"/></div>
+</div>
+${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R$)</label><input type="number" id="ep-taxa-extra" value="${parseFloat(p.taxa_extra||0).toFixed(2)}" step="0.01"/></div><div class="fi"></div></div>`:''}
 <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="ep-descricao">${esc(p.descricao)}</textarea></div></div>
 <div style="border-top:1px solid var(--border);margin:12px 0 10px;padding-top:10px">
   <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);font-weight:600">
@@ -2478,6 +2483,7 @@ function abrirEditarPedido(pedidoId){
     <div class="form-row full"><div class="fi"><label>Data e hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
   </div>
 </div>
+<div id="ep-recalc-info" style="font-size:12px;color:var(--text2);min-height:14px;margin:2px 0 4px"></div>
 <div id="ep-feedback" style="margin-top:4px"></div>
 </div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -2493,6 +2499,7 @@ function _npToggleRetorno(){
   calcularTaxaAuto();
 }
 let _epRetornoAtivo=false;
+let _epGeo=null,_epPedidoAtual=null;
 function _epToggleRetorno(){
   _epRetornoAtivo=!_epRetornoAtivo;
   const btn=document.getElementById('ep-retorno-btn');
@@ -2509,11 +2516,41 @@ function _epToggleAgendar(){
   const c=document.getElementById('ep-agendar-campos');if(c)c.style.display=on?'block':'none';
   if(on){const inp=document.getElementById('ep-agendado-para');if(inp&&!inp.value){inp.value=_defaultAgendadoBrasilia(30);}}
 }
+async function _epRecalcularTaxas(){
+  const endereco=document.getElementById('ep-endereco')?.value||'';
+  if(!endereco)return;
+  const info=document.getElementById('ep-recalc-info');
+  if(info)info.textContent='📍 Geocodificando...';
+  const geo=await geocodificarEndereco(endereco);
+  if(!geo){if(info)info.textContent='❌ Endereço não encontrado';return;}
+  _epGeo=geo;
+  const p=_epPedidoAtual||{};
+  const lojaId=p.loja_id||null;
+  let latOrigem=-21.1775,lngOrigem=-47.8103;
+  const lojaData=allLojas.find(l=>l.id===lojaId);
+  if(lojaData?.latitude){latOrigem=parseFloat(lojaData.latitude);lngOrigem=parseFloat(lojaData.longitude);}
+  else if(lojaId){const _r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=latitude,longitude&limit=1`);if(_r&&_r[0]?.latitude){latOrigem=parseFloat(_r[0].latitude);lngOrigem=parseFloat(_r[0].longitude);}}
+  const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
+  _epGeo.distKm=distKm;
+  const kmEl=document.getElementById('ep-km');if(kmEl)kmEl.value=distKm;
+  const gorjeta=parseFloat(document.getElementById('ep-gorjeta')?.value)||0;
+  const pd=parseFloat(document.getElementById('ep-preco-dinamico')?.value)||0;
+  const [faixasCob,faixasPag]=await Promise.all([_getFaixasCobranca(lojaId),_getFaixasPagamento(lojaId)]);
+  const sim={distancia_km:distKm,com_retorno:_epRetornoAtivo,gorjeta,preco_dinamico:pd,loja_id:lojaId};
+  const novaTaxaMoto=_calcTaxaMotoboy(sim,faixasPag.length?faixasPag:undefined);
+  const novaTaxaEntrega=_calcTaxaLoja(sim,faixasCob.length?faixasCob:undefined);
+  if(novaTaxaMoto!=null){const el=document.getElementById('ep-taxa-motoboy');if(el)el.value=novaTaxaMoto.toFixed(2);}
+  if(novaTaxaEntrega>0){const el=document.getElementById('ep-taxa');if(el)el.value=novaTaxaEntrega.toFixed(2);}
+  if(info)info.textContent=`✅ ${distKm}km · Taxa loja: R$ ${(novaTaxaEntrega||0).toFixed(2)} · Motoboy: R$ ${(novaTaxaMoto||0).toFixed(2)}`;
+}
 async function salvarEdicaoPedido(pedidoId){
   const fb=document.getElementById('ep-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const coletaOn=document.getElementById('ep-coleta-toggle')?.checked;
   const agendarOn=document.getElementById('ep-agendar-toggle')?.checked;
   const agendadoParaVal=agendarOn?document.getElementById('ep-agendado-para')?.value:null;
+  const _epTaxaMotoEl=document.getElementById('ep-taxa-motoboy');
+  const _epPdEl=document.getElementById('ep-preco-dinamico');
+  const _epTaxaExtraEl=document.getElementById('ep-taxa-extra');
   const update={
     cliente:document.getElementById('ep-cliente')?.value||'',
     endereco:document.getElementById('ep-endereco')?.value||'',
@@ -2521,6 +2558,8 @@ async function salvarEdicaoPedido(pedidoId){
     taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,
     gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,
     com_retorno:_epRetornoAtivo,
+    taxa_motoboy:_epTaxaMotoEl?.value!==''?parseFloat(_epTaxaMotoEl.value):null,
+    preco_dinamico:parseFloat(_epPdEl?.value)||0,
     numero:document.getElementById('ep-numero')?.value||'',
     descricao:document.getElementById('ep-descricao')?.value||'',
     telefone:document.getElementById('ep-telefone')?.value||null,
@@ -2530,6 +2569,8 @@ async function salvarEdicaoPedido(pedidoId){
     agendado_para:agendarOn&&agendadoParaVal?new Date(agendadoParaVal).toISOString():null,
     updated_at:new Date().toISOString(),
   };
+  if(_epTaxaExtraEl)update.taxa_extra=parseFloat(_epTaxaExtraEl.value)||0;
+  if(_epGeo?.distKm){update.latitude=_epGeo.lat;update.longitude=_epGeo.lng;update.distancia_km=_epGeo.distKm;}
   if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
