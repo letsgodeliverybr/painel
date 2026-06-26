@@ -45,7 +45,7 @@ let _saldoLojaAtual=0;
 let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
 
-// Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta + km excedente
+// Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
 function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta,kmAdicionalValor){
   const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
   if(!faixa)return null;
@@ -62,7 +62,7 @@ function _calcTaxaMotoboy(p,faixasOverride){
   if(!faixas.length)return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
   const km=parseFloat(p.distancia_km)||1;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional);
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional||0);
   if(result===null)return null;
   const tabelaPag=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
   console.log(`[calcTaxaMotoboy] loja_id=${p.loja_id||'?'} tabela_pagamento=${tabelaPag} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} gorjeta=${parseFloat(p.gorjeta)||0} total=${result}`);
@@ -74,7 +74,7 @@ function _calcTaxaLoja(p,faixasOverride){
   const km=parseFloat(p.distancia_km)||1;
   const temRetorno=!!(p.retorno||p.com_retorno);
   // gorjeta entra na cobrança da loja: cliente paga junto ao pedido, loja repassa na fatura
-  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional);
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional||0);
   if(result===null)return parseFloat(p.taxa_entrega)||0;
   const tabelaCob=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
   console.log(`[calcTaxaLoja] loja_id=${p.loja_id||'?'} tabela_cobranca=${tabelaCob} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} total=${result}`);
@@ -95,7 +95,7 @@ async function _getFaixasCobranca(lojaId){
     db('tabelas_preco','GET',null,`?id=eq.${tabId}&select=km_adicional_valor&limit=1`)
   ]);
   const arr=Array.isArray(res)?res:[];
-  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||2;
+  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   _faixasCachePorTabela[tabId]=arr;
   return _faixasCachePorTabela[tabId];
 }
@@ -114,7 +114,7 @@ async function _getFaixasPagamento(lojaId){
     db('tabelas_preco','GET',null,`?id=eq.${tabId}&select=km_adicional_valor&limit=1`)
   ]);
   const arr=Array.isArray(res)?res:[];
-  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||2;
+  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   _faixasCachePorTabelaPag[tabId]=arr;
   return _faixasCachePorTabelaPag[tabId];
 }
@@ -2633,7 +2633,8 @@ async function abrirAlocarMotoboy(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
   const _lojaAloc=allLojas.find(l=>l.id===p.loja_id);
   if(!_lojaAloc?.tabela_cobranca_id||!_lojaAloc?.tabela_pagamento_id){
-    showNotif('Loja sem tabela','Configure tabela de cobrança/pagamento em Cadastros → Lojas antes de alocar.','var(--yellow)');return;
+    showNotif('Loja sem tabela','Configure a tabela de cobrança/pagamento em Cadastros → Lojas antes de alocar.','var(--yellow)');
+    return;
   }
   const motoboys=await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
   let modal=document.getElementById('modal-alocar-motoboy');
@@ -5588,11 +5589,19 @@ async function verFaixas(tabelaId,tabelaNome,tipo){
     db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelaId}&order=km_de.asc`),
     db('tabelas_preco','GET',null,`?id=eq.${tabelaId}&select=km_adicional_valor&limit=1`)
   ]);
-  const kmAdicionalAtual=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||2;
-  const ultimoKm=faixas.length?parseFloat(faixas[faixas.length-1].km_ate)||0:0;
+  const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">✏️</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">🗑️</button></td></tr>`).join('')}</tbody></table><div style="margin-top:16px"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">➕ Nova faixa</button></div><div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Taxa por KM Adicional</div><div style="font-size:12px;color:var(--text3);margin-bottom:10px">Cobrado por KM percorrido acima de <strong style="color:var(--text)">${ultimoKm} km</strong> (último range da tabela)</div><div style="display:flex;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="kma-valor" value="${kmAdicionalAtual.toFixed(2)}" step="0.01" min="0" style="background:none;border:none;outline:none;color:var(--text);font-size:14px;font-weight:600;font-family:Inter,sans-serif;width:70px"/><span style="font-size:12px;color:var(--text3)">/km</span></div><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">💾 Salvar</button></div><div style="font-size:11px;color:var(--text3);margin-top:8px">Ex: entrega a ${ultimoKm>0?ultimoKm+3:35}km → taxa da última faixa + ${ultimoKm>0?3:3}km × R$${kmAdicionalAtual.toFixed(2)} = R$${(3*kmAdicionalAtual).toFixed(2)} extra</div></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">✏️</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">🗑️</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">➕ Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">💾</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
+}
+async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
+  const val=parseFloat(document.getElementById('kma-valor')?.value)||0;
+  const res=await dbPatch('tabelas_preco',{km_adicional_valor:val,updated_at:new Date().toISOString()},`?id=eq.${tabelaId}`);
+  if(res===null){showNotif('Erro','Não foi possível salvar','var(--red)');return;}
+  delete _faixasCachePorTabela[tabelaId];
+  delete _faixasCachePorTabelaPag[tabelaId];
+  showNotif('✅ Taxa KM adicional salva!',`R$ ${val.toFixed(2)}/km`);
+  verFaixas(tabelaId,tabelaNome,tipo);
 }
 async function excluirFaixa(faixaId,tabelaId,tabelaNome,tipo){if(!confirm('Excluir?'))return;await db('tabelas_preco_faixas','DELETE',null,`?id=eq.${faixaId}`);showNotif('🗑️ Faixa excluída','','var(--red)');verFaixas(tabelaId,tabelaNome,tipo);}
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
