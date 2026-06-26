@@ -4708,20 +4708,20 @@ async function _carregarHistoricoCobrancas(append){
   const data=Array.isArray(rows)?rows:[];
   if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
   const _gcBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='aprovado'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Aprovado</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
-  const html=data.map(c=>`<tr>
+  const html=data.map(c=>`<tr id="gc-hist-row-${c.id}">
     <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
     <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
     <td>${c.qtd_pedidos??'—'}</td>
     <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td>
-    <td>${_gcBadge(c.status)}</td>
+    <td style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_gcBadge(c.status)}${c.status==='pendente'?`<button onclick="_enviarFaturaHistorico('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📲 Enviar</button>`:''}</td>
   </tr>`).join('');
   if(append){
     const tbody=el.querySelector('tbody');
     if(tbody)tbody.insertAdjacentHTML('beforeend',html);
   }else{
     el.innerHTML=`<div style="overflow-x:auto;max-height:400px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Status</th></tr></thead>
+      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Status / Ações</th></tr></thead>
       <tbody>${html}</tbody>
     </table></div>
     ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
@@ -4736,6 +4736,19 @@ async function _carregarHistoricoCobrancas(append){
 }
 
 function _gcCarregarMais(){_carregarHistoricoCobrancas(true);}
+
+async function _enviarFaturaHistorico(cobId){
+  const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=id,loja_id,lojas(nome,celular)&limit=1`);
+  const c=Array.isArray(cobRes)?cobRes[0]:null;
+  if(!c){showNotif('Erro','Cobrança não encontrada','var(--red)');return;}
+  const cfg=await _getEvolutionConfig();
+  if(!cfg.url||!cfg.instance||!cfg.token){showNotif('⚠️ Evolution API não configurada','','var(--yellow)');return;}
+  const phone=c.lojas?.celular;
+  if(!phone){showNotif('⚠️ Loja sem WhatsApp cadastrado','','var(--yellow)');return;}
+  const msg=cfg.msgFinanceiro.replace(/{loja}/g,c.lojas?.nome||'');
+  const sent=await _evolutionSendText(phone,msg);
+  showNotif(sent?'📲 Fatura enviada!':'❌ Falha ao enviar fatura',c.lojas?.nome||'',sent?'#22c55e':'var(--red)');
+}
 
 async function _buscarCobrancas(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
@@ -4770,50 +4783,17 @@ async function _buscarCobrancas(){
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🏪 Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th><th></th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
         <td>${r.qtd}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${r.total.toFixed(2)}</td>
-        <td><button onclick="_enviarFaturaLoja('${r.loja.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📲 Enviar Fatura</button></td>
       </tr>`).join('')}</tbody>
     </table></div>`;
 }
 
 function _gcToggleAll(checked){document.querySelectorAll('.gc-cb').forEach(cb=>cb.checked=checked);}
-
-async function _enviarFaturaLoja(lid){
-  const inicio=document.getElementById('gc-data-inicio')?.value;
-  const fim=document.getElementById('gc-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione o período antes de enviar','var(--yellow)');return;}
-  const r=_gcResultados[lid];
-  if(!r){showNotif('Atenção','Loja não encontrada nos resultados','var(--yellow)');return;}
-  const agora=new Date().toISOString();
-  const valor=Math.round(r.total*100)/100;
-  // Cria a cobrança já aprovada (status pago)
-  const res=await db('cobrancas_lojas','POST',{loja_id:lid,valor_total:valor,status:'pago',data_inicio:inicio,data_fim:fim,qtd_pedidos:r.qtd,created_at:agora,updated_at:agora});
-  if(!res||(Array.isArray(res)?!res.length:!res.id)){showNotif('Erro','Não foi possível gerar a cobrança','var(--red)');return;}
-  showNotif('✅ Cobrança gerada!','Enviando fatura via WhatsApp...');
-  // Busca celular da loja e envia WhatsApp
-  const cfg=await _getEvolutionConfig();
-  if(cfg.url&&cfg.instance&&cfg.token){
-    const lojaRes=await db('lojas','GET',null,`?id=eq.${lid}&select=nome,celular&limit=1`);
-    const loja=Array.isArray(lojaRes)?lojaRes[0]:null;
-    const phone=loja?.celular;
-    if(phone){
-      const msg=cfg.msgFinanceiro.replace(/{loja}/g,loja?.nome||'');
-      const sent=await _evolutionSendText(phone,msg);
-      showNotif(sent?'📲 Fatura enviada!':'⚠️ Cobrança gerada, mas falha no WhatsApp',loja?.nome||'',sent?'#22c55e':'var(--yellow)');
-    }else{
-      showNotif('✅ Cobrança gerada','Loja sem WhatsApp cadastrado','var(--yellow)');
-    }
-  }else{
-    showNotif('✅ Cobrança gerada','Evolution API não configurada — fatura não enviada','var(--yellow)');
-  }
-  _gcHistoricoOffset=0;
-  _carregarHistoricoCobrancas(false);
-}
 
 async function _gerarCobranca(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
@@ -4876,7 +4856,7 @@ async function _buscarCobrancasPendentes(){
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
-      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📲 Aprovar e Enviar Fatura</button>
+      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionadas</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
@@ -4887,7 +4867,7 @@ async function _buscarCobrancasPendentes(){
         <td>${c.qtd_pedidos||'—'}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
-        <td style="display:flex;gap:6px"><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="_aprovarCobrancaUnica('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar</button><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
 }
@@ -4921,29 +4901,21 @@ function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>c
 async function _aprovarCobrancasSelecionadas(){
   const ids=[...document.querySelectorAll('.ac-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos uma cobrança','var(--yellow)');return;}
-  const cobRes=await db('cobrancas_lojas','GET',null,`?id=in.(${ids.join(',')})&select=id,loja_id,lojas(nome,celular)`);
-  const cobMap={};
-  (Array.isArray(cobRes)?cobRes:[]).forEach(c=>{cobMap[c.id]=c;});
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
     const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
     if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
   }
   showNotif(`✅ ${ok} cobrança(s) aprovada(s)!`,'');
-  const cfg=await _getEvolutionConfig();
-  if(cfg.url&&cfg.instance&&cfg.token){
-    let wok=0,werr=0;
-    for(const id of ids){
-      const c=cobMap[id];
-      const phone=c?.lojas?.celular;
-      if(!phone)continue;
-      const msg=cfg.msgFinanceiro.replace(/{loja}/g,c.lojas?.nome||'');
-      const sent=await _evolutionSendText(phone,msg);
-      if(sent)wok++;else werr++;
-      await new Promise(r=>setTimeout(r,1500));
-    }
-    if(wok>0||werr>0)showNotif(`📲 Fatura enviada!`,`${wok} loja(s)${werr?' · '+werr+' erro(s)':''}`,wok>0?'#22c55e':'var(--red)');
-  }
+  _buscarCobrancasPendentes();
+}
+
+async function _aprovarCobrancaUnica(id){
+  const agora=new Date().toISOString();
+  const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+  if(res===null){showNotif('Erro','Não foi possível aprovar','var(--red)');return;}
+  document.getElementById(`cob-row-${id}`)?.remove();
+  showNotif('✅ Cobrança aprovada!','');
   _buscarCobrancasPendentes();
 }
 
