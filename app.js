@@ -20,7 +20,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
@@ -380,6 +380,8 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       padding: 3px 10px !important;
       font-size: 11px !important;
       font-weight: 600 !important;
+      white-space: nowrap !important;
+      display: inline-block !important;
     }
     .b-agendado        { background:#fff7ed !important; color:#f97316 !important; }
     .b-recebido        { background:#fee2e2 !important; color:#EF4444 !important; }
@@ -1837,7 +1839,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -2741,7 +2743,6 @@ function renderCadastrosPage(aba){
     {id:'clientes',    icon:'🏪', label:'Clientes'},
     {id:'entregadores',icon:'🛵', label:'Entregadores'},
     {id:'usuarios',    icon:'👥', label:'Usuários'},
-    {id:'precificacao',icon:'💰', label:'Cobrança e Pagamento'},
   ];
   const abas=currentPerfil==='suporte'?todasAbas.filter(a=>a.id==='entregadores'):todasAbas;
   const defaultAba=currentPerfil==='suporte'?'entregadores':'clientes';
@@ -2762,7 +2763,7 @@ function renderCadastrosPage(aba){
 async function _renderCadastrosConteudo(aba){
   _cadastrosAba=aba;
   // Atualiza estilo das abas
-  ['clientes','entregadores','usuarios','precificacao'].forEach(id=>{
+  ['clientes','entregadores','usuarios'].forEach(id=>{
     const el=document.getElementById('cad-aba-'+id);
     if(!el)return;
     el.style.borderBottom=id===aba?'2px solid var(--accent)':'2px solid transparent';
@@ -2777,8 +2778,6 @@ async function _renderCadastrosConteudo(aba){
     await _renderEntregadoresTab(el);
   } else if(aba==='usuarios'){
     await _renderUsuariosTab(el);
-  } else if(aba==='precificacao'){
-    await _renderPrecificacaoTab(el);
   }
 }
 
