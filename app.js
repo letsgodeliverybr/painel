@@ -46,18 +46,23 @@ let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
 
 // Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
-function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta){
+function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta,kmAdicionalValor){
   const faixa=faixas.find(f=>km<=parseFloat(f.km_ate))||faixas[faixas.length-1];
   if(!faixa)return null;
   const base=parseFloat(temRetorno?faixa.valor_com_retorno:faixa.valor_sem_retorno)||0;
-  return Math.round((base+(parseFloat(pd)||0)+(parseFloat(gorjeta)||0))*100)/100;
+  let kmExtra=0;
+  if(kmAdicionalValor>0&&faixas.length){
+    const maxKm=parseFloat(faixas[faixas.length-1].km_ate)||0;
+    if(km>maxKm)kmExtra=(km-maxKm)*parseFloat(kmAdicionalValor);
+  }
+  return Math.round((base+kmExtra+(parseFloat(pd)||0)+(parseFloat(gorjeta)||0))*100)/100;
 }
 function _calcTaxaMotoboy(p,faixasOverride){
   const faixas=faixasOverride||_faixasPagamento;
   if(!faixas.length)return p.taxa_entrega_motoboy!=null?parseFloat(p.taxa_entrega_motoboy):null;
   const km=parseFloat(p.distancia_km)||1;
   const temRetorno=!!(p.retorno||p.com_retorno);
-  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta);
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional||0);
   if(result===null)return null;
   const tabelaPag=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
   console.log(`[calcTaxaMotoboy] loja_id=${p.loja_id||'?'} tabela_pagamento=${tabelaPag} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} gorjeta=${parseFloat(p.gorjeta)||0} total=${result}`);
@@ -69,7 +74,7 @@ function _calcTaxaLoja(p,faixasOverride){
   const km=parseFloat(p.distancia_km)||1;
   const temRetorno=!!(p.retorno||p.com_retorno);
   // gorjeta entra na cobrança da loja: cliente paga junto ao pedido, loja repassa na fatura
-  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta);
+  const result=_calcValorFaixa(faixas,km,temRetorno,p.preco_dinamico,p.gorjeta,faixas._kmAdicional||0);
   if(result===null)return parseFloat(p.taxa_entrega)||0;
   const tabelaCob=faixasOverride?`custom(loja:${p.loja_id||'?'})`:`padrão`;
   console.log(`[calcTaxaLoja] loja_id=${p.loja_id||'?'} tabela_cobranca=${tabelaCob} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} total=${result}`);
@@ -85,8 +90,13 @@ async function _getFaixasCobranca(lojaId){
   const tabId=loja?.tabela_cobranca_id||null;
   if(!tabId) return _faixasCobranca;
   if(_faixasCachePorTabela[tabId]) return _faixasCachePorTabela[tabId];
-  const res=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabId}&order=km_ate.asc`);
-  _faixasCachePorTabela[tabId]=Array.isArray(res)?res:[];
+  const [res,tabRes]=await Promise.all([
+    db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabId}&order=km_ate.asc`),
+    db('tabelas_preco','GET',null,`?id=eq.${tabId}&select=km_adicional_valor&limit=1`)
+  ]);
+  const arr=Array.isArray(res)?res:[];
+  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
+  _faixasCachePorTabela[tabId]=arr;
   return _faixasCachePorTabela[tabId];
 }
 async function _getFaixasPagamento(lojaId){
@@ -99,8 +109,13 @@ async function _getFaixasPagamento(lojaId){
   const tabId=loja?.tabela_pagamento_id||null;
   if(!tabId) return _faixasPagamento;
   if(_faixasCachePorTabelaPag[tabId]) return _faixasCachePorTabelaPag[tabId];
-  const res=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabId}&order=km_ate.asc`);
-  _faixasCachePorTabelaPag[tabId]=Array.isArray(res)?res:[];
+  const [res,tabRes]=await Promise.all([
+    db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabId}&order=km_ate.asc`),
+    db('tabelas_preco','GET',null,`?id=eq.${tabId}&select=km_adicional_valor&limit=1`)
+  ]);
+  const arr=Array.isArray(res)?res:[];
+  arr._kmAdicional=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
+  _faixasCachePorTabelaPag[tabId]=arr;
   return _faixasCachePorTabelaPag[tabId];
 }
 let _precoDinTimers={};
@@ -637,16 +652,6 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .badge-loja   { background: linear-gradient(135deg,#10b981,#059669) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
     .badge-suporte{ background: linear-gradient(135deg,#f59e0b,#d97706) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
 
-    /* ── NOTIFICAÇÃO ── */
-    #notif {
-      background: #fff !important;
-      border-radius: 14px !important;
-      box-shadow: 0 8px 30px rgba(0,0,0,.12) !important;
-      border-left: 4px solid var(--green) !important;
-    }
-    #notif-title { color: var(--text) !important; font-weight: 700 !important; }
-    #notif-msg   { color: var(--text2) !important; font-size: 12px !important; }
-
     /* ── LOGIN ── */
     #login-screen {
       background: #1E1E1E !important;
@@ -1173,11 +1178,37 @@ function verificarNovosProtos(pedidos){
 }
 
 function showNotif(title,msg,color='var(--green)'){
-  const el=document.getElementById('notif');
-  document.getElementById('notif-title').textContent=title;
-  document.getElementById('notif-msg').textContent=msg;
-  el.style.borderLeftColor=color;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),4000);
+  const _c=color||'';
+  let type='info';
+  if(_c.includes('green')||_c.includes('22c55e'))type='success';
+  else if(_c.includes('red')||_c.includes('ef4444'))type='error';
+  else if(_c.includes('yellow')||_c.includes('eab308')||_c.includes('f59e0b')||_c.includes('orange')||_c.includes('f97316'))type='warning';
+  const _cf={
+    success:{bg:'#0a1e10',bc:'#22c55e',ic:'#22c55e',tc:'#4ade80',svg:'<polyline points="20 6 9 17 4 12"/>'},
+    error:  {bg:'#1e0a0a',bc:'#ef4444',ic:'#ef4444',tc:'#f87171',svg:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'},
+    warning:{bg:'#1e180a',bc:'#eab308',ic:'#d97706',tc:'#fbbf24',svg:'<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
+    info:   {bg:'#0a0f1e',bc:'#1A56DB',ic:'#1A56DB',tc:'#60a5fa',svg:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/>'},
+  };
+  const cf=_cf[type];
+  const id='_t'+Date.now()+Math.random().toString(36).slice(2,5);
+  let stack=document.getElementById('_toast_stack');
+  if(!stack){
+    stack=document.createElement('div');
+    stack.id='_toast_stack';
+    stack.style.cssText='position:fixed;bottom:30px;right:24px;z-index:9999;display:flex;flex-direction:column-reverse;gap:10px;align-items:flex-end;pointer-events:none';
+    document.body.appendChild(stack);
+  }
+  const toast=document.createElement('div');
+  toast.id=id;
+  toast.style.cssText=`pointer-events:all;min-width:320px;max-width:420px;padding:14px 18px;background:${cf.bg};border:1px solid ${cf.bc}33;border-left:4px solid ${cf.bc};border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);transform:translateX(calc(100% + 32px));opacity:0;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .25s ease;font-family:Inter,sans-serif`;
+  toast.innerHTML=`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/><div style="flex:1;min-width:0;overflow:hidden"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:14px;font-weight:600;color:${cf.tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</span></div><div style="font-size:13px;font-weight:600;color:${cf.tc};margin-bottom:${msg?'3px':'0'}">${title}</div>${msg?`<div style="font-size:12px;color:${cf.tc};opacity:.75;line-height:1.4;word-break:break-word">${msg}</div>`:''}</div><button id="${id}_x" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  stack.appendChild(toast);
+  const dismiss=()=>{toast.style.opacity='0';toast.style.transform='translateX(calc(100% + 32px))';setTimeout(()=>toast.remove(),350);};
+  document.getElementById(id+'_x').addEventListener('click',dismiss);
+  let _dt=setTimeout(dismiss,4000);
+  toast.addEventListener('mouseenter',()=>clearTimeout(_dt));
+  toast.addEventListener('mouseleave',()=>{_dt=setTimeout(dismiss,2000);});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{toast.style.transform='translateX(0)';toast.style.opacity='1';}));
 }
 
 // ═══════════════════════════════════════════════
@@ -1381,12 +1412,14 @@ async function _criarEntregaRapida(){
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
+  if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('cr-numero')?.focus();return;}
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
   if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
-  const numFinal=numero||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
-  const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
-  const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
+  const numFinal=String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
+  const endComNumero=`${endereco}, ${numero}`;
+  const endFinal=complemento?`${endComNumero} - ${complemento}`:endComNumero;
+  const geo=await geocodificarEndereco(endComNumero).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   console.log('[CR] geo resultado:', geo);
   if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
   if((!_crLastDistKm)&&geo){
@@ -1397,7 +1430,7 @@ async function _criarEntregaRapida(){
     }
   }
   const _distKm=_crLastDistKm||0;
-  if(_distKm>32){alert('Para distâncias maiores que 32km, procure o Expansão responsável da região.');return;}
+  if(_distKm>32){showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
   const [_faixasCr,_faixasPagCr,{cliente:_pdCliente,entregador:_pdEntregador,origemCliente:_pdOrigemCr}]=await Promise.all([_getFaixasCobranca(lojaId),_getFaixasPagamento(lojaId),_fetchPdAtual(lojaId)]);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente,loja_id:lojaId},_faixasCr);
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
@@ -1888,7 +1921,7 @@ function renderMapaPage(){
           <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
           <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
-          <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
+          <input id="cr-endereco" placeholder="Rua, bairro" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
@@ -2599,7 +2632,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
   const _lojaAloc=allLojas.find(l=>l.id===p.loja_id);
   if(!_lojaAloc?.tabela_cobranca_id||!_lojaAloc?.tabela_pagamento_id){
-    alert('Esta loja não tem tabela de cobrança/pagamento cadastrada. Configure em Cadastros → Lojas antes de alocar.');
+    showNotif('Loja sem tabela','Configure a tabela de cobrança/pagamento em Cadastros → Lojas antes de alocar.','var(--yellow)');
     return;
   }
   const motoboys=await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
@@ -2701,7 +2734,7 @@ async function criarPedido(){
   if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
   const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
   console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
-  if(distKm>32){if(fb)fb.innerHTML='';alert('Para distâncias maiores que 32km, procure o Expansão responsável da região.');return;}
+  if(distKm>32){if(fb)fb.innerHTML='';showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
   const taxaCalculada=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,loja_id:finalLojaId},_faixasLojaPed):Math.round((_pdC||0)*100)/100;
   // se há coleta, sempre recalcula (preview pode ter usado distância da loja por engano)
@@ -3122,7 +3155,7 @@ async function criarNovoEntregador(){
 
 async function _renderUsuariosTab(el){
   el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
-  const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
+  const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
   tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;}).join('');
@@ -3965,7 +3998,7 @@ async function criarLoja(){
 
 async function renderUsuariosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">👥 Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
-  const data=await db('usuarios_painel','GET',null,'?order=created_at.desc'),lojas=await db('lojas','GET',null,'');
+  const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?formatarDataHora(u.created_at):'—'}</td></tr>`;}).join('');
@@ -5517,10 +5550,23 @@ async function carregarTabelasPreco(){
 }
 function verFaixasTabela(id){const t=_tabelasPrecoCache.find(x=>x.id===id);if(t)verFaixas(t.id,t.nome,t.tipo||'cobranca');}
 async function verFaixas(tabelaId,tabelaNome,tipo){
-  const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelaId}&order=km_de.asc`);
+  const [faixas,tabRes]=await Promise.all([
+    db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${tabelaId}&order=km_de.asc`),
+    db('tabelas_preco','GET',null,`?id=eq.${tabelaId}&select=km_adicional_valor&limit=1`)
+  ]);
+  const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">✏️</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">🗑️</button></td></tr>`).join('')}</tbody></table><div style="margin-top:16px"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">➕ Nova faixa</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">✏️</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">🗑️</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">➕ Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">💾</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
+}
+async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
+  const val=parseFloat(document.getElementById('kma-valor')?.value)||0;
+  const res=await dbPatch('tabelas_preco',{km_adicional_valor:val,updated_at:new Date().toISOString()},`?id=eq.${tabelaId}`);
+  if(res===null){showNotif('Erro','Não foi possível salvar','var(--red)');return;}
+  delete _faixasCachePorTabela[tabelaId];
+  delete _faixasCachePorTabelaPag[tabelaId];
+  showNotif('✅ Taxa KM adicional salva!',`R$ ${val.toFixed(2)}/km`);
+  verFaixas(tabelaId,tabelaNome,tipo);
 }
 async function excluirFaixa(faixaId,tabelaId,tabelaNome,tipo){if(!confirm('Excluir?'))return;await db('tabelas_preco_faixas','DELETE',null,`?id=eq.${faixaId}`);showNotif('🗑️ Faixa excluída','','var(--red)');verFaixas(tabelaId,tabelaNome,tipo);}
 function abrirModalNovaTabela(tipo){
@@ -5872,7 +5918,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const btn=document.getElementById('login-btn');
       if(btn){
         const link=document.createElement('button');link.id='login-forgot';link.type='button';link.textContent='Esqueci minha senha';
-        link.onclick=()=>alert('Entre em contato com o administrador para redefinir sua senha.');
+        link.onclick=()=>showNotif('Redefinir senha','Entre em contato com o administrador para redefinir sua senha.','var(--accent)');
         btn.insertAdjacentElement('afterend',link);
       }
     }
