@@ -1410,6 +1410,7 @@ async function _criarEntregaRapida(){
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
   console.log('[CR] loja_id:', lojaId, '| el.value:', selCrEl?.value, '| disabled:', selCrEl?.disabled, '| currentUser.loja_id:', currentUser?.loja_id, '| perfil:', currentPerfil);
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
+  if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('cr-numero')?.focus();return;}
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('cr-numero')?.focus();return;}
@@ -2705,7 +2706,7 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
 async function criarPedido(){
   const endereco=(document.getElementById('np-endereco')||{}).value||'';
   const valor=parseFloat((document.getElementById('np-valor')||{}).value)||0;
-  const numero=(document.getElementById('np-numero')||{}).value||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
+  const numero=((document.getElementById('np-numero')||{}).value||'').trim()||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const descricao=(document.getElementById('np-descricao')||{}).value||'';
   const cliente=(document.getElementById('np-cliente')||{}).value||'';
   const telefonePedido=(document.getElementById('np-telefone')||{}).value||'';
@@ -2824,18 +2825,22 @@ async function _renderClientesTab(el){
 async function _renderEntregadoresTab(el){
   const _entQuery='?select=*&order=updated_at.desc';
   const data=await db('entregadores','GET',null,_entQuery);
-  const contEmAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
-  const badge=contEmAnalise>0?`<span style="background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;vertical-align:middle">${contEmAnalise}</span>`:'';
-  const btnFiltro=(id,label)=>{
+  const _cTotal=data.length;
+  const _cAprov=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado')).length;
+  const _cAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
+  const _cPend=data.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente'))).length;
+  const _cReprov=data.filter(e=>e.status_cadastro==='reprovado').length;
+  const btnFiltro=(id,label,count)=>{
     const ativo=_entFiltro===id;
-    return `<button onclick="_entSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}</button>`;
+    const cBadge=count>0?` <span style="background:${ativo?'rgba(255,255,255,.3)':'#1A56DB'};color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:2px">${count}</span>`:'';
+    return `<button onclick="_entSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}${cBadge}</button>`;
   };
   const filtroBtns=`
-    ${btnFiltro('todos','Todos')}
-    ${btnFiltro('aprovados','✅ Aprovados')}
-    <button onclick="_entSetFiltro('em_analise')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${_entFiltro==='em_analise'?'#1A56DB':'var(--border)'};background:${_entFiltro==='em_analise'?'#1A56DB':'var(--surface2)'};color:${_entFiltro==='em_analise'?'#fff':'var(--text2)'}">🔍 Em Análise${badge}</button>
-    ${btnFiltro('pendentes','⏳ Pendentes')}
-    ${btnFiltro('reprovados','❌ Reprovados')}`;
+    ${btnFiltro('todos','Todos',_cTotal)}
+    ${btnFiltro('aprovados','✅ Aprovados',_cAprov)}
+    ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
+    ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
+    ${btnFiltro('reprovados','❌ Reprovados',_cReprov)}`;
 
   let filtered;
   if(_entFiltro==='aprovados') filtered=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
@@ -5303,78 +5308,108 @@ function renderConfiguracaoPage(aba){
     </div>`;
 }
 
+const _ss='background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:13px';
 function _renderConfigCliente(){
+  const _dis='opacity:.45;pointer-events:none';
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:560px">
       <div style="padding:24px 28px">
-        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🗺️ Roterizador Automático</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:20px">🗺️ Roterizador Automático</div>
 
         <div style="margin-bottom:20px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)" onclick="document.getElementById('rc-rot-ativo').click()">
-            <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
-            Ativar roterizador automático
-          </label>
-          <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Loja</label>
+          <select id="rc-loja-id" onchange="_rcSelecionarLoja(this.value)" style="${_ss}">
+            <option value="">Selecione a loja...</option>
+          </select>
         </div>
 
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-            <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+        <div id="rc-campos" style="${_dis}">
+          <div style="margin-bottom:20px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)">
+              <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
+              Ativar roterizador para esta loja
+            </label>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
           </div>
-        </div>
 
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
-          <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-        </div>
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+              <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+            </div>
+          </div>
 
-        <div style="margin-bottom:32px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-            <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
+            <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+          </div>
+
+          <div style="margin-bottom:28px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+              <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
+            </div>
           </div>
         </div>
 
         <div id="rc-feedback" style="min-height:18px;margin-bottom:12px"></div>
-        <button onclick="_salvarConfigCliente()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar Configurações</button>
+        <button id="rc-btn-salvar" onclick="_salvarConfigCliente()" disabled style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;opacity:.45">💾 Salvar Configurações</button>
       </div>
     </div>`;
   _carregarConfigCliente();
 }
 
 async function _carregarConfigCliente(){
-  const [ativo,raio,max,espera]=await Promise.all([
-    db('configuracoes','GET',null,'?chave=eq.roterizador_ativo&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_raio_km&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_max_pedidos&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_tempo_espera_seg&limit=1'),
-  ]);
+  const lojas=await db('lojas','GET',null,'?select=id,nome&ativo=eq.true&order=nome.asc');
+  const sel=document.getElementById('rc-loja-id');
+  if(sel&&Array.isArray(lojas)){
+    lojas.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.nome;sel.appendChild(o);});
+  }
+}
+
+async function _rcSelecionarLoja(lojaId){
+  const campos=document.getElementById('rc-campos');
+  const btn=document.getElementById('rc-btn-salvar');
+  const fb=document.getElementById('rc-feedback');
+  if(!lojaId){
+    if(campos)campos.style.cssText='opacity:.45;pointer-events:none';
+    if(btn){btn.disabled=true;btn.style.opacity='.45';}
+    return;
+  }
+  if(campos)campos.style.cssText='';
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Carregando...</span>';
+  const res=await db('lojas','GET',null,`?id=eq.${lojaId}&select=roterizador_ativo,roterizador_raio_km,roterizador_max_pedidos,roterizador_tempo_espera_seg&limit=1`);
+  const l=Array.isArray(res)?res[0]:null;
+  if(fb)fb.innerHTML='';
   const el=(id)=>document.getElementById(id);
-  if(el('rc-rot-ativo'))el('rc-rot-ativo').checked=(Array.isArray(ativo)&&ativo[0])?ativo[0].valor==='true':false;
-  if(el('rc-raio'))el('rc-raio').value=(Array.isArray(raio)&&raio[0])?raio[0].valor:'';
-  if(el('rc-max'))el('rc-max').value=(Array.isArray(max)&&max[0])?max[0].valor:'';
-  if(el('rc-espera'))el('rc-espera').value=(Array.isArray(espera)&&espera[0])?espera[0].valor:'';
+  if(el('rc-rot-ativo'))el('rc-rot-ativo').checked=l?.roterizador_ativo||false;
+  if(el('rc-raio'))el('rc-raio').value=l?.roterizador_raio_km??'';
+  if(el('rc-max'))el('rc-max').value=l?.roterizador_max_pedidos??'';
+  if(el('rc-espera'))el('rc-espera').value=l?.roterizador_tempo_espera_seg??'';
 }
 
 async function _salvarConfigCliente(){
+  const lojaId=document.getElementById('rc-loja-id')?.value;
+  if(!lojaId){showNotif('Atenção','Selecione uma loja antes de salvar','var(--yellow)');return;}
   const fb=document.getElementById('rc-feedback');
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
-  const ativo=document.getElementById('rc-rot-ativo')?.checked?'true':'false';
-  const raio=document.getElementById('rc-raio')?.value?.trim()||'';
-  const max=document.getElementById('rc-max')?.value?.trim()||'';
-  const espera=document.getElementById('rc-espera')?.value?.trim()||'';
-  await Promise.all([
-    _upsertConfigWa('roterizador_ativo',ativo),
-    raio!==''?_upsertConfigWa('roterizador_raio_km',raio):Promise.resolve(),
-    max!==''?_upsertConfigWa('roterizador_max_pedidos',max):Promise.resolve(),
-    espera!==''?_upsertConfigWa('roterizador_tempo_espera_seg',espera):Promise.resolve(),
-  ]);
+  const g=(id)=>document.getElementById(id)?.value?.trim();
+  const raio=g('rc-raio');const max=g('rc-max');const espera=g('rc-espera');
+  const patch={
+    roterizador_ativo:document.getElementById('rc-rot-ativo')?.checked||false,
+    roterizador_raio_km:raio!==''&&raio!==undefined?parseFloat(raio)||null:null,
+    roterizador_max_pedidos:max!==''&&max!==undefined?parseInt(max)||null:null,
+    roterizador_tempo_espera_seg:espera!==''&&espera!==undefined?parseInt(espera)||null:null,
+    updated_at:new Date().toISOString()
+  };
+  const res=await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao salvar</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
@@ -5441,7 +5476,7 @@ function _renderConfigOperacao(){
             <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de reset</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após esse tempo sem aceite, reseta a busca e recomeça do início. Padrão: 10 min.</div>
             <div style="display:flex;align-items:center;gap:8px">
-              ${_inp('op-tempo-reset','10',1,120,1,'90px')}
+              ${_inp('op-tempo-reset','12',1,120,1,'90px')}
               <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
             </div>
           </div>
@@ -5505,7 +5540,7 @@ async function _carregarConfigOperacao(){
   _set('op-raio-busca',cfg['despacho_raio_busca_km']);
   _set('op-raio-limite',cfg['despacho_raio_limite_km'],'32');
   _set('op-tempo-exib',cfg['despacho_tempo_exibicao_seg'],'29');
-  _set('op-tempo-reset',cfg['despacho_tempo_reset_min'],'10');
+  _set('op-tempo-reset',cfg['despacho_tempo_reset_min'],'12');
   _set('op-o1-raio',cfg['despacho_onda_1_raio'],'4');  _set('op-o1-min',cfg['despacho_onda_1_min'],'0');  _set('op-o1-max',cfg['despacho_onda_1_max'],'2');
   _set('op-o2-raio',cfg['despacho_onda_2_raio'],'8');  _set('op-o2-min',cfg['despacho_onda_2_min'],'2');  _set('op-o2-max',cfg['despacho_onda_2_max'],'4');
   _set('op-o3-raio',cfg['despacho_onda_3_raio'],'16'); _set('op-o3-min',cfg['despacho_onda_3_min'],'4');  _set('op-o3-max',cfg['despacho_onda_3_max'],'6');
@@ -5523,7 +5558,7 @@ async function _salvarConfigOperacao(){
     _upsertConfigWa('despacho_raio_busca_km',raio),
     _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
     _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
-    _upsertConfigWa('despacho_tempo_reset_min',g('op-tempo-reset','10')),
+    _upsertConfigWa('despacho_tempo_reset_min',g('op-tempo-reset','12')),
     _upsertConfigWa('despacho_onda_1_raio',g('op-o1-raio','4')),   _upsertConfigWa('despacho_onda_1_min',g('op-o1-min','0')),   _upsertConfigWa('despacho_onda_1_max',g('op-o1-max','2')),
     _upsertConfigWa('despacho_onda_2_raio',g('op-o2-raio','8')),   _upsertConfigWa('despacho_onda_2_min',g('op-o2-min','2')),   _upsertConfigWa('despacho_onda_2_max',g('op-o2-max','4')),
     _upsertConfigWa('despacho_onda_3_raio',g('op-o3-raio','16')),  _upsertConfigWa('despacho_onda_3_min',g('op-o3-min','4')),   _upsertConfigWa('despacho_onda_3_max',g('op-o3-max','6')),
@@ -5569,9 +5604,19 @@ async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
   verFaixas(tabelaId,tabelaNome,tipo);
 }
 async function excluirFaixa(faixaId,tabelaId,tabelaNome,tipo){if(!confirm('Excluir?'))return;await db('tabelas_preco_faixas','DELETE',null,`?id=eq.${faixaId}`);showNotif('🗑️ Faixa excluída','','var(--red)');verFaixas(tabelaId,tabelaNome,tipo);}
+async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
+  const val=parseFloat(document.getElementById('kma-valor')?.value)||0;
+  const res=await dbPatch('tabelas_preco',{km_adicional_valor:val,updated_at:new Date().toISOString()},`?id=eq.${tabelaId}`);
+  if(res===null){showNotif('Erro','Não foi possível salvar','var(--red)');return;}
+  // Invalida cache para forçar recarga com novo km_adicional_valor
+  delete _faixasCachePorTabela[tabelaId];
+  delete _faixasCachePorTabelaPag[tabelaId];
+  showNotif('✅ Taxa KM adicional salva!',`R$ ${val.toFixed(2)}/km`);
+  verFaixas(tabelaId,tabelaNome,tipo);
+}
 function abrirModalNovaTabela(tipo){
   _faixaCount=1;const isPag=tipo==='pagamento',cor=isPag?'#10b981':'var(--accent)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">➕ Faixa</button><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">✅ Cadastrar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">➕ Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">✅ Cadastrar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 let _faixaCount=1;
@@ -5581,7 +5626,8 @@ async function salvarNovaTabela(tipo){
   const nome=document.getElementById('tp-nome').value.trim(),fb=document.getElementById('tp-feedback');
   if(!nome){fb.innerHTML='<div style="color:var(--red);font-size:12px">Informe o nome</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:12px">⏳ Salvando...</div>';
-  const tabela=await db('tabelas_preco','POST',{nome,ativa:true,tipo});
+  const kmAdicional=parseFloat(document.getElementById('tp-km-adicional')?.value)||2;
+  const tabela=await db('tabelas_preco','POST',{nome,ativa:true,tipo,km_adicional_valor:kmAdicional});
   if(!tabela||!tabela[0]){fb.innerHTML='<div style="color:var(--red)">Erro</div>';return;}
   const faixas=[];
   for(let i=0;i<_faixaCount;i++){const el=document.getElementById(`f-ate-${i}`);if(!el)continue;const ate=parseFloat(el.value)||0;if(ate>0)faixas.push({tabela_id:tabela[0].id,km_de:parseFloat(document.getElementById(`f-de-${i}`).value)||0,km_ate:ate,valor_sem_retorno:parseFloat(document.getElementById(`f-sem-${i}`).value)||0,valor_com_retorno:parseFloat(document.getElementById(`f-com-${i}`).value)||0});}
