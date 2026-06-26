@@ -1420,7 +1420,7 @@ async function _criarEntregaRapida(){
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
   if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
-  const numFinal=String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
+  const numFinal=((document.getElementById('cr-numero-pedido')?.value||'').trim())||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   console.log('[CR] geo resultado:', geo);
@@ -1452,6 +1452,7 @@ async function _criarEntregaRapida(){
       _carregarSaldoTopbar();
     }
     if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
+    const _crNpEl=document.getElementById('cr-numero-pedido');if(_crNpEl)_crNpEl.value='';
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-telefone').value='';
     document.getElementById('cr-endereco').value='';
@@ -1919,6 +1920,7 @@ function renderMapaPage(){
         <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto">
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
+          <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
           <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
