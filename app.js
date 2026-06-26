@@ -652,16 +652,6 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .badge-loja   { background: linear-gradient(135deg,#10b981,#059669) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
     .badge-suporte{ background: linear-gradient(135deg,#f59e0b,#d97706) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
 
-    /* ── NOTIFICAÇÃO ── */
-    #notif {
-      background: #fff !important;
-      border-radius: 14px !important;
-      box-shadow: 0 8px 30px rgba(0,0,0,.12) !important;
-      border-left: 4px solid var(--green) !important;
-    }
-    #notif-title { color: var(--text) !important; font-weight: 700 !important; }
-    #notif-msg   { color: var(--text2) !important; font-size: 12px !important; }
-
     /* ── LOGIN ── */
     #login-screen {
       background: #1E1E1E !important;
