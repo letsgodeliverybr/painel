@@ -1173,11 +1173,37 @@ function verificarNovosProtos(pedidos){
 }
 
 function showNotif(title,msg,color='var(--green)'){
-  const el=document.getElementById('notif');
-  document.getElementById('notif-title').textContent=title;
-  document.getElementById('notif-msg').textContent=msg;
-  el.style.borderLeftColor=color;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),4000);
+  const _c=color||'';
+  let type='info';
+  if(_c.includes('green')||_c.includes('22c55e'))type='success';
+  else if(_c.includes('red')||_c.includes('ef4444'))type='error';
+  else if(_c.includes('yellow')||_c.includes('eab308')||_c.includes('f59e0b')||_c.includes('orange')||_c.includes('f97316'))type='warning';
+  const _cf={
+    success:{bg:'#0a1e10',bc:'#22c55e',ic:'#22c55e',tc:'#4ade80',svg:'<polyline points="20 6 9 17 4 12"/>'},
+    error:  {bg:'#1e0a0a',bc:'#ef4444',ic:'#ef4444',tc:'#f87171',svg:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'},
+    warning:{bg:'#1e180a',bc:'#eab308',ic:'#d97706',tc:'#fbbf24',svg:'<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
+    info:   {bg:'#0a0f1e',bc:'#1A56DB',ic:'#1A56DB',tc:'#60a5fa',svg:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/>'},
+  };
+  const cf=_cf[type];
+  const id='_t'+Date.now()+Math.random().toString(36).slice(2,5);
+  let stack=document.getElementById('_toast_stack');
+  if(!stack){
+    stack=document.createElement('div');
+    stack.id='_toast_stack';
+    stack.style.cssText='position:fixed;bottom:30px;right:24px;z-index:9999;display:flex;flex-direction:column-reverse;gap:10px;align-items:flex-end;pointer-events:none';
+    document.body.appendChild(stack);
+  }
+  const toast=document.createElement('div');
+  toast.id=id;
+  toast.style.cssText=`pointer-events:all;min-width:320px;max-width:420px;padding:14px 18px;background:${cf.bg};border:1px solid ${cf.bc}33;border-left:4px solid ${cf.bc};border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);transform:translateX(calc(100% + 32px));opacity:0;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .25s ease;font-family:Inter,sans-serif`;
+  toast.innerHTML=`<div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:${cf.ic};display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${cf.svg}</svg></div><div style="flex:1;min-width:0;overflow:hidden"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="" style="height:16px;width:auto;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'"/><span style="font-size:14px;font-weight:500;color:${cf.tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</span></div>${msg?`<div style="font-size:13px;color:${cf.tc};opacity:.75;line-height:1.4;word-break:break-word">${msg}</div>`:''}</div><button id="${id}_x" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  stack.appendChild(toast);
+  const dismiss=()=>{toast.style.opacity='0';toast.style.transform='translateX(calc(100% + 32px))';setTimeout(()=>toast.remove(),350);};
+  document.getElementById(id+'_x').addEventListener('click',dismiss);
+  let _dt=setTimeout(dismiss,4000);
+  toast.addEventListener('mouseenter',()=>clearTimeout(_dt));
+  toast.addEventListener('mouseleave',()=>{_dt=setTimeout(dismiss,2000);});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{toast.style.transform='translateX(0)';toast.style.opacity='1';}));
 }
 
 // ═══════════════════════════════════════════════
