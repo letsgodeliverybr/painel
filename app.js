@@ -398,20 +398,23 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .b-aguardando  { background:#fef3c7 !important; color:#d97706 !important; }
     .b-entregue    { background:#f1f5f9 !important; color:#64748b !important; }
 
-    /* ── MAPA STATS ── */
-    .mapa-stats {
+    /* ── MAPA STATS — sempre tema claro, ignora dark mode ── */
+    .mapa-stats, .mapa-stat,
+    html.dark .mapa-stats, html.dark .mapa-stat,
+    :root:not(.light) .mapa-stats, :root:not(.light) .mapa-stat {
       background: #ffffff !important;
-      border-radius: 12px !important;
-      border: 1px solid #E5E7EB !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
-      color: #111827 !important;
+      color: #111 !important;
+      border: 1px solid #ddd !important;
     }
-    .mapa-stat-val { color: #111827 !important; font-weight: 800 !important; }
-    .mapa-stat-label { color: #6B7280 !important; font-size: 10px !important; }
-    /* Forçar sempre tema claro na barra de stats e botões flutuantes */
-    html.dark .mapa-stats { background: #ffffff !important; border-color: #E5E7EB !important; box-shadow: 0 2px 8px rgba(0,0,0,.06) !important; color: #111827 !important; }
-    html.dark .mapa-stat-val { color: #111827 !important; }
-    html.dark .mapa-stat-label { color: #6B7280 !important; }
+    .mapa-stats, html.dark .mapa-stats, :root:not(.light) .mapa-stats {
+      border-radius: 8px !important;
+    }
+    .mapa-stat-val,
+    html.dark .mapa-stat-val,
+    :root:not(.light) .mapa-stat-val { color: #111 !important; font-weight: 700 !important; }
+    .mapa-stat-label,
+    html.dark .mapa-stat-label,
+    :root:not(.light) .mapa-stat-label { color: #111 !important; font-size: 10px !important; }
     #btn-filtro-motoboys, #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
     html.dark #btn-filtro-motoboys, html.dark #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
     .leaflet-popup-content-wrapper, html.dark .leaflet-popup-content-wrapper { background: #ffffff !important; color: #111827 !important; box-shadow: 0 4px 16px rgba(0,0,0,.18) !important; border-radius: 10px !important; }
@@ -1024,9 +1027,6 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       td, th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
       input, select, textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
       [class*="modal"] { background: #2D2D2D !important; color: #ffffff !important; }
-      .mapa-stats, .mapa-stat { background: #2D2D2D !important; color: #ffffff !important; }
-      .mapa-stat-val { color: #ffffff !important; }
-      .mapa-stat-label { color: #aaaaaa !important; }
     }
     /* Google Places Autocomplete — corrige texto cortado no dropdown */
     .pac-container {
@@ -1867,10 +1867,10 @@ function renderMapaPage(){
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff;border-bottom:1px solid #e5e7eb">
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#10b981;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111">Finalizados hoje</div></div></div>
-          <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#ef4444;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111">Cancelados hoje</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important">
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Finalizados hoje</div></div></div>
+          <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Cancelados hoje</div></div></div>
         </div>
         <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
@@ -1881,7 +1881,7 @@ function renderMapaPage(){
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto">
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
@@ -3791,7 +3791,7 @@ async function _buscarPedidosAdmin(){
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td><td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
 }
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
