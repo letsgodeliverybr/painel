@@ -1379,6 +1379,7 @@ async function _criarEntregaRapida(){
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
   console.log('[CR] loja_id:', lojaId, '| el.value:', selCrEl?.value, '| disabled:', selCrEl?.disabled, '| currentUser.loja_id:', currentUser?.loja_id, '| perfil:', currentPerfil);
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
+  if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('cr-numero')?.focus();return;}
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
@@ -2672,7 +2673,7 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
 async function criarPedido(){
   const endereco=(document.getElementById('np-endereco')||{}).value||'';
   const valor=parseFloat((document.getElementById('np-valor')||{}).value)||0;
-  const numero=(document.getElementById('np-numero')||{}).value||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
+  const numero=((document.getElementById('np-numero')||{}).value||'').trim();
   const descricao=(document.getElementById('np-descricao')||{}).value||'';
   const cliente=(document.getElementById('np-cliente')||{}).value||'';
   const telefonePedido=(document.getElementById('np-telefone')||{}).value||'';
@@ -2686,6 +2687,7 @@ async function criarPedido(){
   const telefoneColeta=coletaOn?(document.getElementById('np-telefone-coleta')?.value||''):'';
   const agendarOn=document.getElementById('np-agendar-toggle')?.checked;
   const agendadoParaVal=agendarOn?document.getElementById('np-agendado-para')?.value:null;
+  if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('np-numero')?.focus();return;}
   if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
   if(currentPerfil==='adm'&&!lojaIdSel){showNotif('Erro','Selecione a loja','var(--red)');return;}
   if(agendarOn&&!agendadoParaVal){showNotif('Erro','Informe data/hora do agendamento','var(--red)');return;}
