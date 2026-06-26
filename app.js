@@ -1400,7 +1400,6 @@ async function _criarEntregaRapidaToggle(){
 }
 async function _criarEntregaRapida(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
-  const numero=(document.getElementById('cr-numero')?.value||'').trim();
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const telefone=(document.getElementById('cr-telefone')?.value||'').trim()||null;
   const complemento=(document.getElementById('cr-complemento')?.value||'').trim();
@@ -1410,16 +1409,20 @@ async function _criarEntregaRapida(){
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
   console.log('[CR] loja_id:', lojaId, '| el.value:', selCrEl?.value, '| disabled:', selCrEl?.disabled, '| currentUser.loja_id:', currentUser?.loja_id, '| perfil:', currentPerfil);
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
-  if(!numero){showNotif('Campo obrigatório','Por favor, digite o número da residência/local','var(--yellow)');document.getElementById('cr-numero')?.focus();return;}
   if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
-  if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
+  if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');document.getElementById('cr-endereco')?.focus();return;}
+  if(!/\d/.test(endereco)){
+    showNotif('Número obrigatório','Digite o número da residência junto ao endereço (ex: Rua das Flores, 101)','var(--yellow)');
+    const _crEl=document.getElementById('cr-endereco');
+    if(_crEl){_crEl.focus();_crEl.style.borderColor='#ef4444';setTimeout(()=>{_crEl.style.borderColor='#3A3A3A';},2500);}
+    return;
+  }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
   if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
   const numFinal=String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
-  const endComNumero=`${endereco}, ${numero}`;
-  const endFinal=complemento?`${endComNumero} - ${complemento}`:endComNumero;
-  const geo=await geocodificarEndereco(endComNumero).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
+  const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
+  const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   console.log('[CR] geo resultado:', geo);
   if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
   if((!_crLastDistKm)&&geo){
@@ -1449,7 +1452,6 @@ async function _criarEntregaRapida(){
       _carregarSaldoTopbar();
     }
     if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
-    document.getElementById('cr-numero').value='';
     document.getElementById('cr-cliente').value='';
     document.getElementById('cr-telefone').value='';
     document.getElementById('cr-endereco').value='';
@@ -1918,10 +1920,9 @@ function renderMapaPage(){
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
-          <input id="cr-numero" placeholder="Nº" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:60px;font-family:Inter,sans-serif"/>
           <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
           <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
-          <input id="cr-endereco" placeholder="Rua, bairro" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:180px;font-family:Inter,sans-serif"/>
+          <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:210px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
