@@ -5287,7 +5287,7 @@ function _renderConfigCliente(){
 
         <div id="rc-campos" style="${_dis}">
           <div style="margin-bottom:20px">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)" onclick="document.getElementById('rc-rot-ativo').click()">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)">
               <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
               Ativar roterizador para esta loja
             </label>
