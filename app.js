@@ -3873,6 +3873,10 @@ ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r1(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`))}
+${sec('🗺️ Roterizador')}
+<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-rot-ativo" ${l.roterizador_ativo?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
+${r2(fi('Raio de agrupamento (km)',inp('el-rot-raio',l.roterizador_raio_km??'','ex: 1.5','number')),fi('Máximo de pedidos por rota',inp('el-rot-max',l.roterizador_max_pedidos??'','ex: 3','number')))}
+${r1(fi('Tempo de espera para agrupar (segundos)',inp('el-rot-espera',l.roterizador_tempo_espera_seg??'','ex: 60','number')))}
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -3911,6 +3915,10 @@ async function salvarEdicaoLoja(lojaId){
     tabela_cobranca_id:g('el-tabela-cobranca')||null,
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
+    roterizador_ativo:document.getElementById('el-rot-ativo')?.checked||false,
+    roterizador_raio_km:g('el-rot-raio')!==''?parseFloat(g('el-rot-raio'))||null:null,
+    roterizador_max_pedidos:g('el-rot-max')!==''?parseInt(g('el-rot-max'))||null:null,
+    roterizador_tempo_espera_seg:g('el-rot-espera')!==''?parseInt(g('el-rot-espera'))||null:null,
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
