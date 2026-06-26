@@ -398,21 +398,23 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     .b-aguardando  { background:#fef3c7 !important; color:#d97706 !important; }
     .b-entregue    { background:#f1f5f9 !important; color:#64748b !important; }
 
-    /* ── MAPA STATS ── */
-    .mapa-stats, .mapa-stat {
+    /* ── MAPA STATS — sempre tema claro, ignora dark mode ── */
+    .mapa-stats, .mapa-stat,
+    html.dark .mapa-stats, html.dark .mapa-stat,
+    :root:not(.light) .mapa-stats, :root:not(.light) .mapa-stat {
       background: #ffffff !important;
-      color: #111827 !important;
+      color: #111 !important;
+      border: 1px solid #ddd !important;
     }
-    .mapa-stats {
-      border-radius: 12px !important;
-      border: 1px solid #E5E7EB !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+    .mapa-stats, html.dark .mapa-stats, :root:not(.light) .mapa-stats {
+      border-radius: 8px !important;
     }
-    .mapa-stat-label { color: #6B7280 !important; font-size: 10px !important; }
-    /* Forçar sempre tema claro na barra de stats — ignora dark mode */
-    html.dark .mapa-stats, html.dark .mapa-stat { background: #ffffff !important; color: #111827 !important; }
-    html.dark .mapa-stats { border-color: #E5E7EB !important; box-shadow: 0 2px 8px rgba(0,0,0,.06) !important; }
-    html.dark .mapa-stat-label { color: #6B7280 !important; }
+    .mapa-stat-val,
+    html.dark .mapa-stat-val,
+    :root:not(.light) .mapa-stat-val { color: #111 !important; font-weight: 700 !important; }
+    .mapa-stat-label,
+    html.dark .mapa-stat-label,
+    :root:not(.light) .mapa-stat-label { color: #111 !important; font-size: 10px !important; }
     #btn-filtro-motoboys, #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
     html.dark #btn-filtro-motoboys, html.dark #btn-filtro-lojas { background: #ffffff !important; color: #1A56DB !important; }
     .leaflet-popup-content-wrapper, html.dark .leaflet-popup-content-wrapper { background: #ffffff !important; color: #111827 !important; box-shadow: 0 4px 16px rgba(0,0,0,.18) !important; border-radius: 10px !important; }
@@ -1865,10 +1867,10 @@ function renderMapaPage(){
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff;border-bottom:1px solid #e5e7eb">
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#fff !important;color:#111 !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#10b981;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Finalizados hoje</div></div></div>
-          <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#fff !important;color:#111 !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#ef4444;font-weight:700">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Cancelados hoje</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important">
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Finalizados hoje</div></div></div>
+          <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Cancelados hoje</div></div></div>
         </div>
         <button class="mapa-refresh" onclick="atualizarTudo()">↻ Atualizar</button>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
