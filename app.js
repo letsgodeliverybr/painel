@@ -5270,78 +5270,108 @@ function renderConfiguracaoPage(aba){
     </div>`;
 }
 
+const _ss='background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:13px';
 function _renderConfigCliente(){
+  const _dis='opacity:.45;pointer-events:none';
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:560px">
       <div style="padding:24px 28px">
-        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🗺️ Roterizador Automático</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:20px">🗺️ Roterizador Automático</div>
 
         <div style="margin-bottom:20px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)" onclick="document.getElementById('rc-rot-ativo').click()">
-            <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
-            Ativar roterizador automático
-          </label>
-          <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Loja</label>
+          <select id="rc-loja-id" onchange="_rcSelecionarLoja(this.value)" style="${_ss}">
+            <option value="">Selecione a loja...</option>
+          </select>
         </div>
 
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-            <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+        <div id="rc-campos" style="${_dis}">
+          <div style="margin-bottom:20px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)" onclick="document.getElementById('rc-rot-ativo').click()">
+              <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
+              Ativar roterizador para esta loja
+            </label>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
           </div>
-        </div>
 
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
-          <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-        </div>
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+              <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+            </div>
+          </div>
 
-        <div style="margin-bottom:32px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
-            <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
+            <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+          </div>
+
+          <div style="margin-bottom:28px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+              <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
+            </div>
           </div>
         </div>
 
         <div id="rc-feedback" style="min-height:18px;margin-bottom:12px"></div>
-        <button onclick="_salvarConfigCliente()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar Configurações</button>
+        <button id="rc-btn-salvar" onclick="_salvarConfigCliente()" disabled style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;opacity:.45">💾 Salvar Configurações</button>
       </div>
     </div>`;
   _carregarConfigCliente();
 }
 
 async function _carregarConfigCliente(){
-  const [ativo,raio,max,espera]=await Promise.all([
-    db('configuracoes','GET',null,'?chave=eq.roterizador_ativo&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_raio_km&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_max_pedidos&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.roterizador_tempo_espera_seg&limit=1'),
-  ]);
+  const lojas=await db('lojas','GET',null,'?select=id,nome&ativo=eq.true&order=nome.asc');
+  const sel=document.getElementById('rc-loja-id');
+  if(sel&&Array.isArray(lojas)){
+    lojas.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.nome;sel.appendChild(o);});
+  }
+}
+
+async function _rcSelecionarLoja(lojaId){
+  const campos=document.getElementById('rc-campos');
+  const btn=document.getElementById('rc-btn-salvar');
+  const fb=document.getElementById('rc-feedback');
+  if(!lojaId){
+    if(campos)campos.style.cssText='opacity:.45;pointer-events:none';
+    if(btn){btn.disabled=true;btn.style.opacity='.45';}
+    return;
+  }
+  if(campos)campos.style.cssText='';
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Carregando...</span>';
+  const res=await db('lojas','GET',null,`?id=eq.${lojaId}&select=roterizador_ativo,roterizador_raio_km,roterizador_max_pedidos,roterizador_tempo_espera_seg&limit=1`);
+  const l=Array.isArray(res)?res[0]:null;
+  if(fb)fb.innerHTML='';
   const el=(id)=>document.getElementById(id);
-  if(el('rc-rot-ativo'))el('rc-rot-ativo').checked=(Array.isArray(ativo)&&ativo[0])?ativo[0].valor==='true':false;
-  if(el('rc-raio'))el('rc-raio').value=(Array.isArray(raio)&&raio[0])?raio[0].valor:'';
-  if(el('rc-max'))el('rc-max').value=(Array.isArray(max)&&max[0])?max[0].valor:'';
-  if(el('rc-espera'))el('rc-espera').value=(Array.isArray(espera)&&espera[0])?espera[0].valor:'';
+  if(el('rc-rot-ativo'))el('rc-rot-ativo').checked=l?.roterizador_ativo||false;
+  if(el('rc-raio'))el('rc-raio').value=l?.roterizador_raio_km??'';
+  if(el('rc-max'))el('rc-max').value=l?.roterizador_max_pedidos??'';
+  if(el('rc-espera'))el('rc-espera').value=l?.roterizador_tempo_espera_seg??'';
 }
 
 async function _salvarConfigCliente(){
+  const lojaId=document.getElementById('rc-loja-id')?.value;
+  if(!lojaId){showNotif('Atenção','Selecione uma loja antes de salvar','var(--yellow)');return;}
   const fb=document.getElementById('rc-feedback');
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
-  const ativo=document.getElementById('rc-rot-ativo')?.checked?'true':'false';
-  const raio=document.getElementById('rc-raio')?.value?.trim()||'';
-  const max=document.getElementById('rc-max')?.value?.trim()||'';
-  const espera=document.getElementById('rc-espera')?.value?.trim()||'';
-  await Promise.all([
-    _upsertConfigWa('roterizador_ativo',ativo),
-    raio!==''?_upsertConfigWa('roterizador_raio_km',raio):Promise.resolve(),
-    max!==''?_upsertConfigWa('roterizador_max_pedidos',max):Promise.resolve(),
-    espera!==''?_upsertConfigWa('roterizador_tempo_espera_seg',espera):Promise.resolve(),
-  ]);
+  const g=(id)=>document.getElementById(id)?.value?.trim();
+  const raio=g('rc-raio');const max=g('rc-max');const espera=g('rc-espera');
+  const patch={
+    roterizador_ativo:document.getElementById('rc-rot-ativo')?.checked||false,
+    roterizador_raio_km:raio!==''&&raio!==undefined?parseFloat(raio)||null:null,
+    roterizador_max_pedidos:max!==''&&max!==undefined?parseInt(max)||null:null,
+    roterizador_tempo_espera_seg:espera!==''&&espera!==undefined?parseInt(espera)||null:null,
+    updated_at:new Date().toISOString()
+  };
+  const res=await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao salvar</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
@@ -5408,7 +5438,7 @@ function _renderConfigOperacao(){
             <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de reset</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após esse tempo sem aceite, reseta a busca e recomeça do início. Padrão: 10 min.</div>
             <div style="display:flex;align-items:center;gap:8px">
-              ${_inp('op-tempo-reset','10',1,120,1,'90px')}
+              ${_inp('op-tempo-reset','12',1,120,1,'90px')}
               <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
             </div>
           </div>
@@ -5472,7 +5502,7 @@ async function _carregarConfigOperacao(){
   _set('op-raio-busca',cfg['despacho_raio_busca_km']);
   _set('op-raio-limite',cfg['despacho_raio_limite_km'],'32');
   _set('op-tempo-exib',cfg['despacho_tempo_exibicao_seg'],'29');
-  _set('op-tempo-reset',cfg['despacho_tempo_reset_min'],'10');
+  _set('op-tempo-reset',cfg['despacho_tempo_reset_min'],'12');
   _set('op-o1-raio',cfg['despacho_onda_1_raio'],'4');  _set('op-o1-min',cfg['despacho_onda_1_min'],'0');  _set('op-o1-max',cfg['despacho_onda_1_max'],'2');
   _set('op-o2-raio',cfg['despacho_onda_2_raio'],'8');  _set('op-o2-min',cfg['despacho_onda_2_min'],'2');  _set('op-o2-max',cfg['despacho_onda_2_max'],'4');
   _set('op-o3-raio',cfg['despacho_onda_3_raio'],'16'); _set('op-o3-min',cfg['despacho_onda_3_min'],'4');  _set('op-o3-max',cfg['despacho_onda_3_max'],'6');
@@ -5490,7 +5520,7 @@ async function _salvarConfigOperacao(){
     _upsertConfigWa('despacho_raio_busca_km',raio),
     _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
     _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
-    _upsertConfigWa('despacho_tempo_reset_min',g('op-tempo-reset','10')),
+    _upsertConfigWa('despacho_tempo_reset_min',g('op-tempo-reset','12')),
     _upsertConfigWa('despacho_onda_1_raio',g('op-o1-raio','4')),   _upsertConfigWa('despacho_onda_1_min',g('op-o1-min','0')),   _upsertConfigWa('despacho_onda_1_max',g('op-o1-max','2')),
     _upsertConfigWa('despacho_onda_2_raio',g('op-o2-raio','8')),   _upsertConfigWa('despacho_onda_2_min',g('op-o2-min','2')),   _upsertConfigWa('despacho_onda_2_max',g('op-o2-max','4')),
     _upsertConfigWa('despacho_onda_3_raio',g('op-o3-raio','16')),  _upsertConfigWa('despacho_onda_3_min',g('op-o3-min','4')),   _upsertConfigWa('despacho_onda_3_max',g('op-o3-max','6')),
