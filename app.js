@@ -2983,7 +2983,8 @@ async function excluirEntregador(id,nome){
 
 async function excluirLoja(id,nome){
   if(!confirm(`Tem certeza que deseja excluir a loja "${nome}"?\nEsta ação não pode ser desfeita.`))return;
-  await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);
+  try{await db('logs_acoes','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: logs_acoes skip',e);}
+  try{await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: usuarios_painel skip',e);}
   await db('lojas','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Loja excluída','','var(--red)');
   renderCadastrosPage('clientes');
