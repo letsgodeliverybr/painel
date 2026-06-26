@@ -5250,6 +5250,7 @@ function renderConfiguracaoPage(aba){
       </div>
       <div id="config-content"></div>
     </div>`;
+  if(_configAba==='operacao'){_renderConfigOperacao();return;}
   const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
@@ -5258,6 +5259,95 @@ function renderConfiguracaoPage(aba){
       <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
       <div style="color:var(--text2);font-size:14px;line-height:1.6">${abaInfo.desc}</div>
     </div>`;
+}
+
+function _renderConfigOperacao(){
+  document.getElementById('config-content').innerHTML=`
+    <div class="card" style="max-width:560px">
+      <div style="padding:24px 28px">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🛠️ Operação</div>
+
+        <div style="margin-bottom:28px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Modo de Despacho</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Define como os pedidos são enviados aos entregadores disponíveis.</div>
+          <div style="display:flex;gap:10px">
+            <button id="op-modo-todos" onclick="_opSetModo('todos')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
+              📢 Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos os disponíveis recebem ao mesmo tempo</div>
+            </button>
+            <button id="op-modo-sequencial" onclick="_opSetModo('sequencial')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
+              🔄 Sequencial<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Envia um por vez; passa pro próximo se não aceitar</div>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px">
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de Busca de Entregadores</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Raio em km para buscar entregadores disponíveis próximos ao pedido.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="op-raio-busca" min="1" max="200" step="0.5" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px">
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio Limite de Despacho (por cidade)</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Entregadores além deste raio não recebem o pedido, evitando despacho para outra cidade. Padrão: 32 km.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="op-raio-limite" min="1" max="500" step="0.5" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+          </div>
+        </div>
+
+        <div id="op-feedback" style="min-height:18px;margin-bottom:12px"></div>
+        <button onclick="_salvarConfigOperacao()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar Configurações</button>
+      </div>
+    </div>`;
+  _carregarConfigOperacao();
+}
+
+let _opModoAtual='todos';
+function _opSetModo(modo){
+  _opModoAtual=modo;
+  const bTodos=document.getElementById('op-modo-todos');
+  const bSeq=document.getElementById('op-modo-sequencial');
+  if(!bTodos||!bSeq)return;
+  const _acento='var(--accent)',_borda='2px solid '+_acento;
+  bTodos.style.borderColor=modo==='todos'?_acento:'var(--border)';
+  bTodos.style.background=modo==='todos'?'var(--accent-light, #eff6ff)':'var(--surface)';
+  bTodos.style.color=modo==='todos'?_acento:'var(--text)';
+  bSeq.style.borderColor=modo==='sequencial'?_acento:'var(--border)';
+  bSeq.style.background=modo==='sequencial'?'var(--accent-light, #eff6ff)':'var(--surface)';
+  bSeq.style.color=modo==='sequencial'?_acento:'var(--text)';
+}
+
+async function _carregarConfigOperacao(){
+  const [modo,raio,limite]=await Promise.all([
+    db('configuracoes','GET',null,'?chave=eq.modo_despacho&limit=1'),
+    db('configuracoes','GET',null,'?chave=eq.despacho_raio_busca_km&limit=1'),
+    db('configuracoes','GET',null,'?chave=eq.despacho_raio_limite_km&limit=1'),
+  ]);
+  const modoVal=(Array.isArray(modo)&&modo[0])?modo[0].valor:'todos';
+  _opModoAtual=modoVal;
+  _opSetModo(modoVal);
+  const raioEl=document.getElementById('op-raio-busca');
+  const limEl=document.getElementById('op-raio-limite');
+  if(raioEl)raioEl.value=(Array.isArray(raio)&&raio[0])?raio[0].valor:'';
+  if(limEl)limEl.value=(Array.isArray(limite)&&limite[0])?limite[0].valor:'32';
+}
+
+async function _salvarConfigOperacao(){
+  const fb=document.getElementById('op-feedback');
+  const raio=document.getElementById('op-raio-busca')?.value?.trim();
+  const limite=document.getElementById('op-raio-limite')?.value?.trim()||'32';
+  if(!raio){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Informe o raio de busca</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  await Promise.all([
+    _upsertConfigWa('modo_despacho',_opModoAtual),
+    _upsertConfigWa('despacho_raio_busca_km',raio),
+    _upsertConfigWa('despacho_raio_limite_km',limite),
+  ]);
+  if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
+  setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
 
 let _tabAba='cobranca';
