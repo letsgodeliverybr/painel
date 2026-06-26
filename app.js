@@ -5259,6 +5259,7 @@ function renderConfiguracaoPage(aba){
       <div id="config-content"></div>
     </div>`;
   if(_configAba==='operacao'){_renderConfigOperacao();return;}
+  if(_configAba==='cliente'){_renderConfigCliente();return;}
   const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
@@ -5267,6 +5268,82 @@ function renderConfiguracaoPage(aba){
       <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
       <div style="color:var(--text2);font-size:14px;line-height:1.6">${abaInfo.desc}</div>
     </div>`;
+}
+
+function _renderConfigCliente(){
+  document.getElementById('config-content').innerHTML=`
+    <div class="card" style="max-width:560px">
+      <div style="padding:24px 28px">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🗺️ Roterizador Automático</div>
+
+        <div style="margin-bottom:20px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)" onclick="document.getElementById('rc-rot-ativo').click()">
+            <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
+            Ativar roterizador automático
+          </label>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
+          <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+        </div>
+
+        <div style="margin-bottom:32px">
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
+            <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
+          </div>
+        </div>
+
+        <div id="rc-feedback" style="min-height:18px;margin-bottom:12px"></div>
+        <button onclick="_salvarConfigCliente()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar Configurações</button>
+      </div>
+    </div>`;
+  _carregarConfigCliente();
+}
+
+async function _carregarConfigCliente(){
+  const [ativo,raio,max,espera]=await Promise.all([
+    db('configuracoes','GET',null,'?chave=eq.roterizador_ativo&limit=1'),
+    db('configuracoes','GET',null,'?chave=eq.roterizador_raio_km&limit=1'),
+    db('configuracoes','GET',null,'?chave=eq.roterizador_max_pedidos&limit=1'),
+    db('configuracoes','GET',null,'?chave=eq.roterizador_tempo_espera_seg&limit=1'),
+  ]);
+  const el=(id)=>document.getElementById(id);
+  if(el('rc-rot-ativo'))el('rc-rot-ativo').checked=(Array.isArray(ativo)&&ativo[0])?ativo[0].valor==='true':false;
+  if(el('rc-raio'))el('rc-raio').value=(Array.isArray(raio)&&raio[0])?raio[0].valor:'';
+  if(el('rc-max'))el('rc-max').value=(Array.isArray(max)&&max[0])?max[0].valor:'';
+  if(el('rc-espera'))el('rc-espera').value=(Array.isArray(espera)&&espera[0])?espera[0].valor:'';
+}
+
+async function _salvarConfigCliente(){
+  const fb=document.getElementById('rc-feedback');
+  if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  const ativo=document.getElementById('rc-rot-ativo')?.checked?'true':'false';
+  const raio=document.getElementById('rc-raio')?.value?.trim()||'';
+  const max=document.getElementById('rc-max')?.value?.trim()||'';
+  const espera=document.getElementById('rc-espera')?.value?.trim()||'';
+  await Promise.all([
+    _upsertConfigWa('roterizador_ativo',ativo),
+    raio!==''?_upsertConfigWa('roterizador_raio_km',raio):Promise.resolve(),
+    max!==''?_upsertConfigWa('roterizador_max_pedidos',max):Promise.resolve(),
+    espera!==''?_upsertConfigWa('roterizador_tempo_espera_seg',espera):Promise.resolve(),
+  ]);
+  if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
+  setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
 
 function _renderConfigOperacao(){
