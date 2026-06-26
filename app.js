@@ -5347,15 +5347,17 @@ async function _salvarConfigCliente(){
 }
 
 function _renderConfigOperacao(){
+  const _inp=(id,val,min,max,step,w='100px')=>`<input type="number" id="${id}" value="${val}" min="${min}" max="${max}" step="${step}" style="width:${w};padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;text-align:center"/>`;
+  const _ondas=[['1ª','op-o1-raio','op-o1-min','op-o1-max',4,0,2],['2ª','op-o2-raio','op-o2-min','op-o2-max',8,2,4],['3ª','op-o3-raio','op-o3-min','op-o3-max',16,4,6],['4ª','op-o4-raio','op-o4-min','op-o4-max',32,6,8]];
   document.getElementById('config-content').innerHTML=`
-    <div class="card" style="max-width:560px">
+    <div class="card" style="max-width:600px">
       <div style="padding:24px 28px">
         <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🛠️ Operação</div>
 
-        <div style="margin-bottom:28px">
+        <div style="margin-bottom:20px">
           <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Modo de Despacho</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Define como os pedidos são enviados aos entregadores disponíveis.</div>
-          <div style="display:flex;gap:10px">
+          <div style="display:flex;gap:10px;margin-bottom:0">
             <button id="op-modo-todos" onclick="_opSetModo('todos')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
               📢 Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos os disponíveis recebem ao mesmo tempo</div>
             </button>
@@ -5365,7 +5367,54 @@ function _renderConfigOperacao(){
           </div>
         </div>
 
-        <div style="margin-bottom:24px">
+        <div id="op-propagacao-wrap" style="display:none;border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px;background:var(--surface2)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px">Configuração de Propagação</div>
+
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de exibição por entregador</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o pedido fica visível para cada entregador antes de passar ao próximo.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-tempo-exib','29',5,300,1,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">segundos</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Ondas de Propagação por Distância</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Se nenhum entregador aceitar, o pedido é propagado em ondas crescentes de raio.</div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text2);font-weight:700">Onda</th>
+                    <th style="padding:6px 8px;text-align:center;font-size:11px;color:var(--text2);font-weight:700">Raio (km)</th>
+                    <th style="padding:6px 8px;text-align:center;font-size:11px;color:var(--text2);font-weight:700">De (min)</th>
+                    <th style="padding:6px 8px;text-align:center;font-size:11px;color:var(--text2);font-weight:700">Até (min)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${_ondas.map(([lbl,ir,imin,imax,dr,dmin,dmax])=>`<tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px 8px;font-weight:700;color:var(--text)">${lbl}</td>
+                    <td style="padding:8px 8px;text-align:center">${_inp(ir,dr,0,500,0.5,'80px')}</td>
+                    <td style="padding:8px 8px;text-align:center">${_inp(imin,dmin,0,120,1,'70px')}</td>
+                    <td style="padding:8px 8px;text-align:center">${_inp(imax,dmax,0,120,1,'70px')}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de reset</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após esse tempo sem aceite, reseta a busca e recomeça do início. Padrão: 10 min.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-tempo-reset','10',1,120,1,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px">
           <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de Busca de Entregadores</label>
           <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Raio em km para buscar entregadores disponíveis próximos ao pedido.</div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -5395,41 +5444,57 @@ function _opSetModo(modo){
   _opModoAtual=modo;
   const bTodos=document.getElementById('op-modo-todos');
   const bSeq=document.getElementById('op-modo-sequencial');
+  const wrap=document.getElementById('op-propagacao-wrap');
   if(!bTodos||!bSeq)return;
-  const _acento='var(--accent)',_borda='2px solid '+_acento;
+  const _acento='var(--accent)';
   bTodos.style.borderColor=modo==='todos'?_acento:'var(--border)';
   bTodos.style.background=modo==='todos'?'var(--accent-light, #eff6ff)':'var(--surface)';
   bTodos.style.color=modo==='todos'?_acento:'var(--text)';
   bSeq.style.borderColor=modo==='sequencial'?_acento:'var(--border)';
   bSeq.style.background=modo==='sequencial'?'var(--accent-light, #eff6ff)':'var(--surface)';
   bSeq.style.color=modo==='sequencial'?_acento:'var(--text)';
+  if(wrap)wrap.style.display=modo==='sequencial'?'block':'none';
 }
 
 async function _carregarConfigOperacao(){
-  const [modo,raio,limite]=await Promise.all([
-    db('configuracoes','GET',null,'?chave=eq.modo_despacho&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.despacho_raio_busca_km&limit=1'),
-    db('configuracoes','GET',null,'?chave=eq.despacho_raio_limite_km&limit=1'),
-  ]);
-  const modoVal=(Array.isArray(modo)&&modo[0])?modo[0].valor:'todos';
+  const keys=['modo_despacho','despacho_raio_busca_km','despacho_raio_limite_km',
+    'despacho_tempo_exibicao_seg','despacho_tempo_reset_min',
+    'despacho_onda_1_raio','despacho_onda_1_min','despacho_onda_1_max',
+    'despacho_onda_2_raio','despacho_onda_2_min','despacho_onda_2_max',
+    'despacho_onda_3_raio','despacho_onda_3_min','despacho_onda_3_max',
+    'despacho_onda_4_raio','despacho_onda_4_min','despacho_onda_4_max'];
+  const results=await Promise.all(keys.map(k=>db('configuracoes','GET',null,`?chave=eq.${k}&limit=1`)));
+  const cfg={};keys.forEach((k,i)=>{cfg[k]=(Array.isArray(results[i])&&results[i][0])?results[i][0].valor:null;});
+  const modoVal=cfg['modo_despacho']||'todos';
   _opModoAtual=modoVal;
   _opSetModo(modoVal);
-  const raioEl=document.getElementById('op-raio-busca');
-  const limEl=document.getElementById('op-raio-limite');
-  if(raioEl)raioEl.value=(Array.isArray(raio)&&raio[0])?raio[0].valor:'';
-  if(limEl)limEl.value=(Array.isArray(limite)&&limite[0])?limite[0].valor:'32';
+  const _set=(id,val,def='')=>{const el=document.getElementById(id);if(el)el.value=val!==null?val:def;};
+  _set('op-raio-busca',cfg['despacho_raio_busca_km']);
+  _set('op-raio-limite',cfg['despacho_raio_limite_km'],'32');
+  _set('op-tempo-exib',cfg['despacho_tempo_exibicao_seg'],'29');
+  _set('op-tempo-reset',cfg['despacho_tempo_reset_min'],'10');
+  _set('op-o1-raio',cfg['despacho_onda_1_raio'],'4');  _set('op-o1-min',cfg['despacho_onda_1_min'],'0');  _set('op-o1-max',cfg['despacho_onda_1_max'],'2');
+  _set('op-o2-raio',cfg['despacho_onda_2_raio'],'8');  _set('op-o2-min',cfg['despacho_onda_2_min'],'2');  _set('op-o2-max',cfg['despacho_onda_2_max'],'4');
+  _set('op-o3-raio',cfg['despacho_onda_3_raio'],'16'); _set('op-o3-min',cfg['despacho_onda_3_min'],'4');  _set('op-o3-max',cfg['despacho_onda_3_max'],'6');
+  _set('op-o4-raio',cfg['despacho_onda_4_raio'],'32'); _set('op-o4-min',cfg['despacho_onda_4_min'],'6');  _set('op-o4-max',cfg['despacho_onda_4_max'],'8');
 }
 
 async function _salvarConfigOperacao(){
   const fb=document.getElementById('op-feedback');
-  const raio=document.getElementById('op-raio-busca')?.value?.trim();
-  const limite=document.getElementById('op-raio-limite')?.value?.trim()||'32';
+  const g=(id,def='')=>document.getElementById(id)?.value?.trim()||def;
+  const raio=g('op-raio-busca');
   if(!raio){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Informe o raio de busca</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await Promise.all([
     _upsertConfigWa('modo_despacho',_opModoAtual),
     _upsertConfigWa('despacho_raio_busca_km',raio),
-    _upsertConfigWa('despacho_raio_limite_km',limite),
+    _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
+    _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
+    _upsertConfigWa('despacho_tempo_reset_min',g('op-tempo-reset','10')),
+    _upsertConfigWa('despacho_onda_1_raio',g('op-o1-raio','4')),   _upsertConfigWa('despacho_onda_1_min',g('op-o1-min','0')),   _upsertConfigWa('despacho_onda_1_max',g('op-o1-max','2')),
+    _upsertConfigWa('despacho_onda_2_raio',g('op-o2-raio','8')),   _upsertConfigWa('despacho_onda_2_min',g('op-o2-min','2')),   _upsertConfigWa('despacho_onda_2_max',g('op-o2-max','4')),
+    _upsertConfigWa('despacho_onda_3_raio',g('op-o3-raio','16')),  _upsertConfigWa('despacho_onda_3_min',g('op-o3-min','4')),   _upsertConfigWa('despacho_onda_3_max',g('op-o3-max','6')),
+    _upsertConfigWa('despacho_onda_4_raio',g('op-o4-raio','32')),  _upsertConfigWa('despacho_onda_4_min',g('op-o4-min','6')),   _upsertConfigWa('despacho_onda_4_max',g('op-o4-max','8')),
   ]);
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
