@@ -2791,18 +2791,22 @@ async function _renderClientesTab(el){
 async function _renderEntregadoresTab(el){
   const _entQuery='?select=*&order=updated_at.desc';
   const data=await db('entregadores','GET',null,_entQuery);
-  const contEmAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
-  const badge=contEmAnalise>0?`<span style="background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;vertical-align:middle">${contEmAnalise}</span>`:'';
-  const btnFiltro=(id,label)=>{
+  const _cTotal=data.length;
+  const _cAprov=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado')).length;
+  const _cAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
+  const _cPend=data.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente'))).length;
+  const _cReprov=data.filter(e=>e.status_cadastro==='reprovado').length;
+  const btnFiltro=(id,label,count)=>{
     const ativo=_entFiltro===id;
-    return `<button onclick="_entSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}</button>`;
+    const cBadge=count>0?` <span style="background:${ativo?'rgba(255,255,255,.3)':'#1A56DB'};color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:2px">${count}</span>`:'';
+    return `<button onclick="_entSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}${cBadge}</button>`;
   };
   const filtroBtns=`
-    ${btnFiltro('todos','Todos')}
-    ${btnFiltro('aprovados','✅ Aprovados')}
-    <button onclick="_entSetFiltro('em_analise')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${_entFiltro==='em_analise'?'#1A56DB':'var(--border)'};background:${_entFiltro==='em_analise'?'#1A56DB':'var(--surface2)'};color:${_entFiltro==='em_analise'?'#fff':'var(--text2)'}">🔍 Em Análise${badge}</button>
-    ${btnFiltro('pendentes','⏳ Pendentes')}
-    ${btnFiltro('reprovados','❌ Reprovados')}`;
+    ${btnFiltro('todos','Todos',_cTotal)}
+    ${btnFiltro('aprovados','✅ Aprovados',_cAprov)}
+    ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
+    ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
+    ${btnFiltro('reprovados','❌ Reprovados',_cReprov)}`;
 
   let filtered;
   if(_entFiltro==='aprovados') filtered=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
