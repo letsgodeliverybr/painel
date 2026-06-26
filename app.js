@@ -4180,7 +4180,7 @@ async function renderFinanceiroPage(aba){
   _financeiroAba=aba||_financeiroAba||'gerar-cobranca';
   const abas=[
     {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobranças'},
-    {id:'aprovar-cobrancas',icon:'📲',label:'Enviar Faturas'},
+    {id:'aprovar-cobrancas',icon:'📲',label:'Aprovar Faturas'},
     {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
   ];
@@ -4770,17 +4770,48 @@ async function _buscarCobrancas(){
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🏪 Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th><th></th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
         <td>${r.qtd}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${r.total.toFixed(2)}</td>
+        <td><button onclick="_enviarFaturaLoja('${r.loja.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📲 Enviar Fatura</button></td>
       </tr>`).join('')}</tbody>
     </table></div>`;
 }
 
 function _gcToggleAll(checked){document.querySelectorAll('.gc-cb').forEach(cb=>cb.checked=checked);}
+
+async function _enviarFaturaLoja(lid){
+  const inicio=document.getElementById('gc-data-inicio')?.value;
+  const fim=document.getElementById('gc-data-fim')?.value;
+  if(!inicio||!fim){showNotif('Atenção','Selecione o período antes de enviar','var(--yellow)');return;}
+  const r=_gcResultados[lid];
+  if(!r){showNotif('Atenção','Loja não encontrada nos resultados','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const valor=Math.round(r.total*100)/100;
+  const res=await db('cobrancas_lojas','POST',{loja_id:lid,valor_total:valor,status:'pago',data_inicio:inicio,data_fim:fim,qtd_pedidos:r.qtd,created_at:agora,updated_at:agora});
+  if(!res||(Array.isArray(res)?!res.length:!res.id)){showNotif('Erro','Não foi possível gerar a cobrança','var(--red)');return;}
+  showNotif('✅ Cobrança gerada!','Enviando fatura via WhatsApp...');
+  const cfg=await _getEvolutionConfig();
+  if(cfg.url&&cfg.instance&&cfg.token){
+    const lojaRes=await db('lojas','GET',null,`?id=eq.${lid}&select=nome,celular&limit=1`);
+    const loja=Array.isArray(lojaRes)?lojaRes[0]:null;
+    const phone=loja?.celular;
+    if(phone){
+      const msg=cfg.msgFinanceiro.replace(/{loja}/g,loja?.nome||'');
+      const sent=await _evolutionSendText(phone,msg);
+      showNotif(sent?'📲 Fatura enviada!':'⚠️ Cobrança gerada, mas falha no WhatsApp',loja?.nome||'',sent?'#22c55e':'var(--yellow)');
+    }else{
+      showNotif('✅ Cobrança gerada','Loja sem WhatsApp cadastrado','var(--yellow)');
+    }
+  }else{
+    showNotif('✅ Cobrança gerada','Evolution API não configurada — fatura não enviada','var(--yellow)');
+  }
+  _gcHistoricoOffset=0;
+  _carregarHistoricoCobrancas(false);
+}
 
 async function _gerarCobranca(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
