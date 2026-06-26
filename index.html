@@ -150,11 +150,6 @@ tr:hover td{background:var(--surface2);}
 
 /* GOOGLE PLACES AUTOCOMPLETE */
 .pac-container{z-index:2147483647!important;position:fixed!important;pointer-events:all!important;}
-/* NOTIF */
-.notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:14px 18px;min-width:240px;z-index:9999;transform:translateY(120%);transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
-.notif.show{transform:translateY(0);}
-.notif-title{font-size:13px;font-weight:700;margin-bottom:3px;}
-.notif-msg{font-size:12px;color:var(--text2);}
 
 .leaflet-container{background:#1a1c24!important;}
 .leaflet-popup-content-wrapper{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;}
@@ -380,11 +375,6 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 </div>
 
 <!-- NOTIF -->
-<div class="notif" id="notif">
-  <div class="notif-title" id="notif-title"></div>
-  <div class="notif-msg" id="notif-msg"></div>
-</div>
-
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs&libraries=places&language=pt-BR"></script>
 <script src="https://letsgodeliverybr.github.io/painel/app.js"></script>
 </body>

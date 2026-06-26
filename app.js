@@ -1424,7 +1424,7 @@ async function _criarEntregaRapida(){
     }
   }
   const _distKm=_crLastDistKm||0;
-  if(_distKm>32){alert('Para distâncias maiores que 32km, procure o Expansão responsável da região.');return;}
+  if(_distKm>32){showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
   const [_faixasCr,_faixasPagCr,{cliente:_pdCliente,entregador:_pdEntregador,origemCliente:_pdOrigemCr}]=await Promise.all([_getFaixasCobranca(lojaId),_getFaixasPagamento(lojaId),_fetchPdAtual(lojaId)]);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente,loja_id:lojaId},_faixasCr);
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
@@ -2626,8 +2626,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
   const _lojaAloc=allLojas.find(l=>l.id===p.loja_id);
   if(!_lojaAloc?.tabela_cobranca_id||!_lojaAloc?.tabela_pagamento_id){
-    alert('Esta loja não tem tabela de cobrança/pagamento cadastrada. Configure em Cadastros → Lojas antes de alocar.');
-    return;
+    showNotif('Loja sem tabela','Configure tabela de cobrança/pagamento em Cadastros → Lojas antes de alocar.','var(--yellow)');return;
   }
   const motoboys=await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
   let modal=document.getElementById('modal-alocar-motoboy');
@@ -2729,7 +2728,7 @@ async function criarPedido(){
   if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
   const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
   console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
-  if(distKm>32){if(fb)fb.innerHTML='';alert('Para distâncias maiores que 32km, procure o Expansão responsável da região.');return;}
+  if(distKm>32){if(fb)fb.innerHTML='';showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
   const taxaCalculada=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,loja_id:finalLojaId},_faixasLojaPed):Math.round((_pdC||0)*100)/100;
   // se há coleta, sempre recalcula (preview pode ter usado distância da loja por engano)
@@ -5934,7 +5933,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const btn=document.getElementById('login-btn');
       if(btn){
         const link=document.createElement('button');link.id='login-forgot';link.type='button';link.textContent='Esqueci minha senha';
-        link.onclick=()=>alert('Entre em contato com o administrador para redefinir sua senha.');
+        link.onclick=()=>showNotif('Redefinir senha','Entre em contato com o administrador para redefinir sua senha.','var(--accent)');
         btn.insertAdjacentElement('afterend',link);
       }
     }
