@@ -1099,6 +1099,15 @@ async function dbPatch(table,body,filter){
   }catch(e){console.error(`PATCH ${table} exception:`,e);return null;}
 }
 
+async function _criarContaAuth(email,senha){
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/signup`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
+    const data=await r.json();
+    if(!r.ok||!data.user?.id)return{ok:false,error:data.error_description||data.msg||'Verifique o e-mail.'};
+    return{ok:true,userId:data.user.id};
+  }catch{return{ok:false,error:'Erro de conexão.'};}
+}
+
 async function logAcao(acao,detalhes={}){
   if(!currentUser)return;
   await db('logs_acoes','POST',{usuario_id:currentUser.id,acao,detalhes});
@@ -1836,11 +1845,18 @@ async function fazerLogin(){
   errEl.style.display='none';
   if(!email||!senha){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Verificando...';
-  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&senha=eq.${encodeURIComponent(senha)}&perfil=eq.${perfil}&ativo=eq.true`);
+  let session=null;
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
+    if(r.ok)session=await r.json();
+  }catch{}
+  if(!session?.access_token){btn.disabled=false;btn.textContent='Entrar →';errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
+  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true`);
   btn.disabled=false;btn.textContent='Entrar →';
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
-  currentUser=usuarios[0];currentPerfil=currentUser.perfil;
+  currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
+  sessionStorage.setItem('lg_session',JSON.stringify({access_token:session.access_token,refresh_token:session.refresh_token,expires_at:session.expires_at}));
   await logAcao('login',{email,perfil});
   document.getElementById('login-screen').style.display='none';
   const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
@@ -1856,7 +1872,11 @@ async function fazerLogin(){
   if(currentPerfil==='adm')_iniciarMonitorWhatsapp();
 }
 function logout(){
-  clearInterval(realtimeInterval);pararRoteirizacao();sessionStorage.removeItem('lg_user');
+  try{
+    const s=JSON.parse(sessionStorage.getItem('lg_session')||'null');
+    if(s?.access_token)fetch(`${SB_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${s.access_token}`}}).catch(()=>{});
+  }catch{}
+  clearInterval(realtimeInterval);pararRoteirizacao();sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -3149,9 +3169,8 @@ async function criarNovoEntregador(){
   }
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Criando conta…</span>';
   try{
-    const authRes=await fetch(`${SB_URL}/auth/v1/signup`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
-    const authData=await authRes.json();
-    if(!authRes.ok||!authData.user?.id){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${authData.error_description||authData.msg||'Verifique o e-mail.'}</span>`;return;}
+    const auth=await _criarContaAuth(email,senha);
+    if(!auth.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${auth.error}</span>`;return;}
     await db('entregadores','POST',{nome,email,cpf,telefone,disponivel,status:'livre',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
     if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador criado!</span>';
     setTimeout(()=>{document.getElementById('modal-novo-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
@@ -3911,6 +3930,7 @@ ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r1(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`))}
+<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 ${sec('🗺️ Roterizador')}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-rot-ativo" ${l.roterizador_ativo?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
 ${r2(fi('Raio de agrupamento (km)',inp('el-rot-raio',l.roterizador_raio_km??'','ex: 1.5','number')),fi('Máximo de pedidos por rota',inp('el-rot-max',l.roterizador_max_pedidos??'','ex: 3','number')))}
@@ -3950,6 +3970,7 @@ async function salvarEdicaoLoja(lojaId){
     telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
     pessoa_juridica:pj===''?null:pj==='true',
     ativo:g('el-ativo')==='true',
+    ativo_app:document.getElementById('el-ativo-app')?.checked||false,
     tabela_cobranca_id:g('el-tabela-cobranca')||null,
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
@@ -3982,7 +4003,10 @@ async function criarLoja(){
   const nome=document.getElementById('loja-nome').value,telefone=document.getElementById('loja-telefone').value,endereco=document.getElementById('loja-endereco').value,email=document.getElementById('loja-email').value,senha=document.getElementById('loja-senha').value;
   const fb=document.getElementById('loja-feedback');
   if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha nome, e-mail e senha.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
+  const auth=await _criarContaAuth(email,senha);
+  if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
   const tabCobranca=document.getElementById('loja-tabela-cobranca')?.value||null;
   const tabPagamento=document.getElementById('loja-tabela-pagamento')?.value||null;
   let lat=parseFloat(document.getElementById('loja-lat')?.value)||null;
@@ -3993,7 +4017,8 @@ async function criarLoja(){
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
   const tipoCobranca=document.getElementById('loja-tipo-cobranca')?.value||'faturamento';
-  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,latitude:lat,longitude:lng,tipo_cobranca:tipoCobranca});
+  const ativoApp=document.getElementById('loja-ativo-app')?.checked!==false;
+  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,ativo_app:ativoApp,latitude:lat,longitude:lng,tipo_cobranca:tipoCobranca});
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
   await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
@@ -4018,7 +4043,10 @@ async function criarUsuario(){
   const nome=document.getElementById('u-nome').value,email=document.getElementById('u-email').value,senha=document.getElementById('u-senha').value,perfil=document.getElementById('u-perfil').value,lojaId=document.getElementById('u-loja-id').value||null;
   const fb=document.getElementById('u-feedback');
   if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha todos os campos.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
+  const auth=await _criarContaAuth(email,senha);
+  if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
   const result=await db('usuarios_painel','POST',{nome,email,senha,perfil,loja_id:lojaId,ativo:true});
   await logAcao('criar_usuario',{nome,email,perfil});
   if(result&&result.length>0){fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Usuário cadastrado!</div>';showNotif('Usuário criado!',`${nome} (${perfil})`);setTimeout(()=>fecharModal('modal-usuario'),2000);}
@@ -5972,8 +6000,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.addEventListener('DOMContentLoaded',async()=>{
-  const sessao=sessionStorage.getItem('lg_user');if(!sessao)return;
+  const sessao=sessionStorage.getItem('lg_user'),sessaoAuth=sessionStorage.getItem('lg_session');
+  if(!sessao||!sessaoAuth)return;
   try{
+    const {access_token}=JSON.parse(sessaoAuth);
+    const r=await fetch(`${SB_URL}/auth/v1/user`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${access_token}`}});
+    if(!r.ok){sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');return;}
     const user=JSON.parse(sessao);currentUser=user;currentPerfil=user.perfil;
     document.getElementById('login-screen').style.display='none';
     const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
@@ -5985,7 +6017,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     renderTabs();setTimeout(()=>{goTab('mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
     _inicializarPrecoDinamico();
-  }catch(e){sessionStorage.removeItem('lg_user');}
+  }catch(e){sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');}
 });
 
 // ═══════════════════════════════════════════════
