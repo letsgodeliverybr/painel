@@ -4002,15 +4002,15 @@ async function salvarEdicaoLoja(lojaId){
   setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');renderLojasPage();},1200);
 }
 async function criarLoja(){
-  const nome=document.getElementById('loja-nome').value,telefone=document.getElementById('loja-telefone').value,endereco=document.getElementById('loja-endereco').value,email=document.getElementById('loja-email').value,senha=document.getElementById('loja-senha').value;
+  const g=(id)=>document.getElementById(id)?.value||'';
+  const nome=g('loja-nome'),email=g('loja-email'),senha=g('loja-senha');
   const fb=document.getElementById('loja-feedback');
   if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha nome, e-mail e senha.</div>';return;}
   if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const auth=await _criarContaAuth(email,senha);
   if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
-  const tabCobranca=document.getElementById('loja-tabela-cobranca')?.value||null;
-  const tabPagamento=document.getElementById('loja-tabela-pagamento')?.value||null;
+  const endereco=g('loja-endereco');
   let lat=parseFloat(document.getElementById('loja-lat')?.value)||null;
   let lng=parseFloat(document.getElementById('loja-lng')?.value)||null;
   if(endereco&&(!lat||!lng)){
@@ -4018,9 +4018,26 @@ async function criarLoja(){
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
-  const tipoCobranca=document.getElementById('loja-tipo-cobranca')?.value||'faturamento';
-  const ativoApp=document.getElementById('loja-ativo-app')?.checked!==false;
-  const lojas=await db('lojas','POST',{nome,telefone,endereco,email,ativo:true,ativo_app:ativoApp,latitude:lat,longitude:lng,tipo_cobranca:tipoCobranca});
+  const pj=g('loja-pessoa-juridica');
+  const payload={
+    nome,razao_social:g('loja-razao-social'),
+    inscricao_estadual:g('loja-insc-estadual'),inscricao_municipal:g('loja-insc-municipal'),
+    endereco,cep:g('loja-cep'),complemento:g('loja-complemento'),
+    tipo_cliente:g('loja-tipo-cliente')||null,responsavel:g('loja-responsavel'),
+    telefone:g('loja-telefone'),celular:g('loja-celular'),email,
+    pessoa_juridica:pj===''?null:pj==='true',
+    ativo:true,
+    ativo_app:document.getElementById('loja-ativo-app')?.checked||false,
+    tabela_cobranca_id:g('loja-tabela-cobranca')||null,
+    tabela_pagamento_id:g('loja-tabela-pagamento')||null,
+    tipo_cobranca:g('loja-tipo-cobranca')||'faturamento',
+    roterizador_ativo:document.getElementById('loja-rot-ativo')?.checked||false,
+    roterizador_raio_km:g('loja-rot-raio')!==''?parseFloat(g('loja-rot-raio'))||null:null,
+    roterizador_max_pedidos:g('loja-rot-max')!==''?parseInt(g('loja-rot-max'))||null:null,
+    roterizador_tempo_espera_seg:g('loja-rot-espera')!==''?parseInt(g('loja-rot-espera'))||null:null,
+    latitude:lat,longitude:lng
+  };
+  const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
   await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});

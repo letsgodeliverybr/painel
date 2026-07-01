@@ -303,13 +303,33 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
     <div class="modal-body">
       <div class="form-row">
         <div class="fi"><label>Nome da loja</label><input id="loja-nome" placeholder="Ex: Pizzaria Central"/></div>
-        <div class="fi"><label>WhatsApp da Loja</label><input id="loja-telefone" placeholder="(16) 3333-3333"/></div>
+        <div class="fi"><label>Razão Social</label><input id="loja-razao-social" placeholder="Razão social"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>Inscrição Estadual</label><input id="loja-insc-estadual" placeholder="Inscrição estadual"/></div>
+        <div class="fi"><label>Inscrição Municipal</label><input id="loja-insc-municipal" placeholder="Inscrição municipal"/></div>
       </div>
       <div class="form-row full"><div class="fi"><label>Endereço</label><input id="loja-endereco" placeholder="Rua, número, bairro" autocomplete="off" onfocus="iniciarAutocompleteEndereco('loja-endereco','loja-lat','loja-lng','loja-endereco-feedback')"/><input type="hidden" id="loja-lat"/><input type="hidden" id="loja-lng"/></div></div>
       <div id="loja-endereco-feedback" style="font-size:11px;margin:-8px 0 6px;min-height:16px"></div>
       <div class="form-row">
+        <div class="fi"><label>CEP</label><input id="loja-cep" placeholder="CEP"/></div>
+        <div class="fi"><label>Complemento</label><input id="loja-complemento" placeholder="Complemento"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>Tipo de Cliente</label><input id="loja-tipo-cliente" placeholder="Tipo de cliente"/></div>
+        <div class="fi"><label>Responsável</label><input id="loja-responsavel" placeholder="Nome do responsável"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>WhatsApp da Loja</label><input id="loja-telefone" placeholder="(16) 3333-3333"/></div>
+        <div class="fi"><label>Celular</label><input id="loja-celular" placeholder="(16) 99999-9999"/></div>
+      </div>
+      <div class="form-row">
         <div class="fi"><label>E-mail de acesso</label><input id="loja-email" placeholder="loja@email.com"/></div>
         <div class="fi"><label>Senha de acesso</label><input type="password" id="loja-senha" placeholder="Senha para login"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fi"><label>Pessoa Jurídica</label><select id="loja-pessoa-juridica"><option value="">Selecione...</option><option value="true">Sim</option><option value="false">Não</option></select></div>
+        <div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:22px"><input type="checkbox" id="loja-ativo-app" checked style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> APP LET'S GO CLIENTE</label></div>
       </div>
       <div class="form-row">
         <div class="fi"><label>Tabela de Cobrança</label><select id="loja-tabela-cobranca"><option value="">Selecione...</option></select></div>
@@ -318,7 +338,12 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
       <div class="form-row full">
         <div class="fi"><label>Tipo de Cobrança</label><select id="loja-tipo-cobranca"><option value="faturamento">📄 Faturamento</option><option value="credito">💳 Crédito</option></select></div>
       </div>
-      <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="loja-ativo-app" checked style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
+      <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="loja-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
+      <div class="form-row">
+        <div class="fi"><label>Raio de agrupamento (km)</label><input type="number" id="loja-rot-raio" placeholder="ex: 1.5"/></div>
+        <div class="fi"><label>Máximo de pedidos por rota</label><input type="number" id="loja-rot-max" placeholder="ex: 3"/></div>
+      </div>
+      <div class="form-row full"><div class="fi"><label>Tempo de espera para agrupar (segundos)</label><input type="number" id="loja-rot-espera" placeholder="ex: 60"/></div></div>
       <div id="loja-feedback" style="margin-top:4px"></div>
     </div>
     <div class="modal-footer">
