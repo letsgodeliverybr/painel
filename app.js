@@ -3173,7 +3173,8 @@ async function criarNovoEntregador(){
   try{
     const auth=await _criarContaAuth(email,senha);
     if(!auth.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${auth.error}</span>`;return;}
-    await db('entregadores','POST',{nome,email,cpf,telefone,disponivel,status:'livre',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    const criado=await db('entregadores','POST',{id:auth.userId,nome,email,cpf,telefone,disponivel,status:'livre',updated_at:new Date().toISOString()});
+    if(!criado||criado.length===0){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Conta criada no Auth mas falhou ao salvar em entregadores. Veja o console.</span>';return;}
     if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador criado!</span>';
     setTimeout(()=>{document.getElementById('modal-novo-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
   }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
