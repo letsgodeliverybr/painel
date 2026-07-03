@@ -26,65 +26,73 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
   }
 
-  const secret = req.headers.get('x-webhook-secret');
-  if (secret !== WEBHOOK_SECRET) {
-    return json({ error: 'Unauthorized' }, 401);
-  }
-
-  let body: { entregador_id: string; email_atual: string; novo_email: string };
+  // Try/catch global: qualquer exceção não prevista aqui dentro (rede, parsing,
+  // etc.) precisa passar pelo helper json() pra sair com os headers de CORS.
+  // Sem isso, uma exceção não tratada vira um 500 cru do runtime, sem CORS —
+  // e o navegador reporta como "blocked by CORS policy" em vez do erro real.
   try {
-    body = await req.json();
-  } catch {
-    return json({ error: 'Invalid JSON' }, 400);
-  }
+    const secret = req.headers.get('x-webhook-secret');
+    if (secret !== WEBHOOK_SECRET) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
 
-  const { entregador_id, email_atual, novo_email } = body;
-  if (!entregador_id || !email_atual || !novo_email) {
-    return json({ error: 'entregador_id, email_atual e novo_email são obrigatórios' }, 400);
-  }
+    let body: { entregador_id: string; email_atual: string; novo_email: string };
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: 'Invalid JSON' }, 400);
+    }
 
-  const adminHeaders = {
-    'apikey': SERVICE_ROLE_KEY,
-    'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-    'Content-Type': 'application/json',
-  };
+    const { entregador_id, email_atual, novo_email } = body;
+    if (!entregador_id || !email_atual || !novo_email) {
+      return json({ error: 'entregador_id, email_atual e novo_email são obrigatórios' }, 400);
+    }
 
-  // 1. Busca o auth user pelo email atual
-  const listRes = await fetch(
-    `${SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1000`,
-    { headers: adminHeaders }
-  );
-  if (!listRes.ok) {
-    const err = await listRes.text();
-    return json({ error: 'Falha ao buscar usuários Auth', detail: err }, 500);
-  }
-  const listData = await listRes.json();
-  const authUser = (listData.users ?? []).find(
-    (u: { email: string }) => u.email?.toLowerCase() === email_atual.toLowerCase()
-  );
-  if (!authUser) {
-    return json({ error: `Usuário Auth com email "${email_atual}" não encontrado` }, 404);
-  }
+    const adminHeaders = {
+      'apikey': SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+    };
 
-  // 2. Atualiza o email no Supabase Auth
-  const patchRes = await fetch(
-    `${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,
-    { method: 'PUT', headers: adminHeaders, body: JSON.stringify({ email: novo_email }) }
-  );
-  if (!patchRes.ok) {
-    const err = await patchRes.text();
-    return json({ error: 'Falha ao atualizar email no Auth', detail: err }, 500);
-  }
+    // 1. Busca o auth user pelo email atual
+    const listRes = await fetch(
+      `${SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1000`,
+      { headers: adminHeaders }
+    );
+    if (!listRes.ok) {
+      const err = await listRes.text();
+      return json({ error: 'Falha ao buscar usuários Auth', detail: err }, 500);
+    }
+    const listData = await listRes.json();
+    const authUser = (listData.users ?? []).find(
+      (u: { email: string }) => u.email?.toLowerCase() === email_atual.toLowerCase()
+    );
+    if (!authUser) {
+      return json({ error: `Usuário Auth com email "${email_atual}" não encontrado` }, 404);
+    }
 
-  // 3. Atualiza o email na tabela entregadores
-  const dbRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/entregadores?id=eq.${entregador_id}`,
-    { method: 'PATCH', headers: { ...adminHeaders, 'Prefer': 'return=minimal' }, body: JSON.stringify({ email: novo_email, updated_at: new Date().toISOString() }) }
-  );
-  if (!dbRes.ok) {
-    const err = await dbRes.text();
-    return json({ error: 'Email atualizado no Auth mas falhou na tabela entregadores', detail: err }, 500);
-  }
+    // 2. Atualiza o email no Supabase Auth
+    const patchRes = await fetch(
+      `${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,
+      { method: 'PUT', headers: adminHeaders, body: JSON.stringify({ email: novo_email }) }
+    );
+    if (!patchRes.ok) {
+      const err = await patchRes.text();
+      return json({ error: 'Falha ao atualizar email no Auth', detail: err }, 500);
+    }
 
-  return json({ ok: true });
+    // 3. Atualiza o email na tabela entregadores
+    const dbRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/entregadores?id=eq.${entregador_id}`,
+      { method: 'PATCH', headers: { ...adminHeaders, 'Prefer': 'return=minimal' }, body: JSON.stringify({ email: novo_email, updated_at: new Date().toISOString() }) }
+    );
+    if (!dbRes.ok) {
+      const err = await dbRes.text();
+      return json({ error: 'Email atualizado no Auth mas falhou na tabela entregadores', detail: err }, 500);
+    }
+
+    return json({ ok: true });
+  } catch (e) {
+    return json({ error: 'Erro interno inesperado', detail: String(e) }, 500);
+  }
 });
