@@ -2234,8 +2234,8 @@ async function atualizarTudo(){
   const _lf=_lojaFiltro();
   allPedidos=await db('pedidos','GET',null,`?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)${_lf}`);
   _aplicarLockStatus(allPedidos);
-  allMotoboys=await db('entregadores','GET',null,'?disponivel=eq.true');
-  allLojas=await db('lojas','GET',null,'?ativo=eq.true');
+  allMotoboys=await db('entregadores','GET',null,'?disponivel=eq.true&select=id,nome,telefone,cpf,disponivel,status,lat,lng');
+  allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lf}`);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
@@ -3811,7 +3811,7 @@ async function renderPedidosPage(){
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
-  [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,'?select=id,nome,tipo_cobranca&order=nome.asc')]);
+  [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltro()}`)]);
   const fpLoja=document.getElementById('fp-loja');
   const fpEnt=document.getElementById('fp-entregador');
   if(fpLoja)fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
