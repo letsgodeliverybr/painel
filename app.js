@@ -3800,12 +3800,15 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">CANCELADOS</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">TOTAL KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
     </div>
-    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
+    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">FATURAMENTO</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">DESPESAS</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">CUSTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">LUCRO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
     </div>`:''}
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,'?select=id,nome,tipo_cobranca&order=nome.asc')]);
@@ -3826,19 +3829,32 @@ async function _buscarPedidosAdmin(){
   const entId=document.getElementById('fp-entregador')?.value;
   const numBusca=(document.getElementById('fp-numero')?.value||'').trim();
   let qs=`?order=created_at.desc&limit=500${_lojaFiltro()}`;
-  if(dataIni)qs+=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;
-  if(dataFim)qs+=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;
-  if(lojaId)qs+=`&loja_id=eq.${lojaId}`;
-  const _res=await db('pedidos','GET',null,qs);let arr=Array.isArray(_res)?_res:[];
+  let qsCreditos=`?select=tipo,valor,observacoes${_lojaFiltro()}`;
+  if(dataIni){const _g=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;qs+=_g;qsCreditos+=_g;}
+  if(dataFim){const _l=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;qs+=_l;qsCreditos+=_l;}
+  if(lojaId){const _lj=`&loja_id=eq.${lojaId}`;qs+=_lj;qsCreditos+=_lj;}
+  const [_res,_creditosRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos)]);
+  let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
   const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_ck=document.getElementById('fp-card-km');
   const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cLucro=document.getElementById('fp-card-lucro'),_cMerc=document.getElementById('fp-card-merc');
+  const _cCustoMedio=document.getElementById('fp-card-custo-medio'),_cLucroMedio=document.getElementById('fp-card-lucro-medio');
   const finalizados=arr.filter(p=>getStatusKey(p)==='finalizado');
-  const fat=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
+  const fatBase=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
   const desp=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
-  const lucro=fat-desp;
   const merc=arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  // Créditos/débitos avulsos de loja (exclui os automáticos de entrega/estorno,
+  // que já estão contados via taxa_entrega/gorjeta acima — mesmo critério usado
+  // no Faturamento da tela de Relatórios).
+  const _avulsos=(Array.isArray(_creditosRes)?_creditosRes:[]).filter(c=>{
+    const obs=(c.observacoes||'').toLowerCase();
+    return !obs.startsWith('entrega #')&&!obs.startsWith('estorno #');
+  });
+  const _totalCreditos=_avulsos.filter(c=>c.tipo==='credito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  const _totalDebitos=_avulsos.filter(c=>c.tipo==='debito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  const fat=fatBase+_totalCreditos-_totalDebitos;
+  const lucro=fat-desp;
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=finalizados.length;
   if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
@@ -3847,6 +3863,35 @@ async function _buscarPedidosAdmin(){
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
   if(_cLucro){_cLucro.textContent='R$ '+Math.abs(lucro).toFixed(2);_cLucro.style.color=lucro>=0?'var(--green)':'var(--red)';}
   if(_cMerc)_cMerc.textContent='R$ '+merc.toFixed(2);
+  // Custo médio = média do Pago (taxa_motoboy); Lucro médio = média do Lucro
+  // por pedido (Cobrado-Pago), estritamente por entrega — não usa os
+  // créditos/débitos avulsos, que não pertencem a nenhum pedido específico.
+  const _custoMedio=finalizados.length?desp/finalizados.length:0;
+  const _lucroMedio=finalizados.length?(fatBase-desp)/finalizados.length:0;
+  if(_cCustoMedio)_cCustoMedio.textContent='R$ '+_custoMedio.toFixed(2);
+  if(_cLucroMedio){_cLucroMedio.textContent='R$ '+Math.abs(_lucroMedio).toFixed(2);_cLucroMedio.style.color=_lucroMedio>=0?'var(--green)':'var(--red)';}
+  // SLA: pronto_em → finalizado_em, em minutos, só finalizados com ambos os timestamps.
+  const _slaBars=document.getElementById('fp-sla-bars');
+  if(_slaBars){
+    const _comSla=finalizados.filter(p=>p.pronto_em&&p.finalizado_em);
+    const _faixas=[
+      {label:'0 a 30 min',cor:'#16a34a',n:0},
+      {label:'30 a 35 min',cor:'#eab308',n:0},
+      {label:'35 a 40 min',cor:'#f97316',n:0},
+      {label:'Mais de 40 min',cor:'#ef4444',n:0},
+    ];
+    _comSla.forEach(p=>{
+      const _min=(new Date(p.finalizado_em)-new Date(p.pronto_em))/60000;
+      if(_min<=30)_faixas[0].n++;
+      else if(_min<=35)_faixas[1].n++;
+      else if(_min<=40)_faixas[2].n++;
+      else _faixas[3].n++;
+    });
+    const _totalSla=_comSla.length;
+    _slaBars.innerHTML=_totalSla===0
+      ?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com dados de SLA no período</div>'
+      :_faixas.map(f=>{const pct=(f.n/_totalSla*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${f.cor};height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
+  }
   const _showFin=currentPerfil==='adm';
   const _isSup=currentPerfil==='suporte';
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11;
