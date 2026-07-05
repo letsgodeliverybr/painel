@@ -4667,7 +4667,7 @@ async function _cpExcluir(id){
 const _RANKING_PREMIOS=[100,80,70,60,50,40,30,20,15,10];
 async function renderRankingPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div><div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 da semana atual por pontos — só informativo, sem pagamento automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div></div>`;
-  const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&order=pontos_semana.desc&limit=10');
+  const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&pontos_semana=gt.0&order=pontos_semana.desc&limit=10');
   const lista=document.getElementById('ranking-lista');if(!lista)return;
   const arr=Array.isArray(entregadores)?entregadores:[];
   if(!arr.length){lista.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum entregador com pontos ainda</div>';return;}
