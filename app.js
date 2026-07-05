@@ -4338,6 +4338,7 @@ async function renderFinanceiroPage(aba){
     {id:'aprovar-cobrancas',icon:'📲',label:'Aprovar Faturas'},
     {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
     {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
+    {id:'contas-pagar',icon:'🧾',label:'Contas a Pagar'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -4350,6 +4351,7 @@ async function renderFinanceiroPage(aba){
   if(_financeiroAba==='gerar-pagamento')_renderGerarPagamento();
   else if(_financeiroAba==='aprovar-saques')_renderAprovarSaques();
   else if(_financeiroAba==='gerar-cobranca')_renderGerarCobranca();
+  else if(_financeiroAba==='contas-pagar')_renderContasPagar();
   else _renderAprovarCobrancas();
 }
 
@@ -4498,6 +4500,120 @@ async function _scSalvar(){
   } else {
     showNotif('❌ Erro ao salvar',`Verifique as permissões da tabela ${tabela} no Supabase`,'var(--red)');
   }
+}
+
+// ── CONTAS A PAGAR ──
+let _cpEditId=null;
+function _renderContasPagar(){
+  const el=document.getElementById('financeiro-content');if(!el)return;
+  const mesAtual=new Date().toISOString().slice(0,7);
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px" id="cp-form-titulo">Cadastrar Conta a Pagar</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+        <div>${_scLabel('MÊS/ANO')}<input type="month" id="cp-m-competencia" value="${mesAtual}" style="${_scInput()}"/></div>
+        <div style="flex:2;min-width:200px">${_scLabel('DESCRIÇÃO')}<input type="text" id="cp-m-descricao" placeholder="Ex: Aluguel escritório" style="${_scInput()}"/></div>
+        <div>${_scLabel('CATEGORIA')}<select id="cp-m-categoria" style="${_scInput()}">
+          <option value="Aluguel">Aluguel</option><option value="Internet">Internet</option>
+          <option value="Salário">Salário</option><option value="Contador">Contador</option>
+          <option value="Marketing">Marketing</option><option value="Outros">Outros</option>
+        </select></div>
+        <div>${_scLabel('VALOR')}<input type="number" id="cp-m-valor" min="0.01" step="0.01" placeholder="0.00" style="${_scInput()}"/></div>
+        <div>${_scLabel('STATUS')}<select id="cp-m-status" style="${_scInput()}"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+        <div>${_scLabel('VENCIMENTO')}<input type="date" id="cp-m-vencimento" style="${_scInput()}"/></div>
+        <button id="cp-btn-salvar" onclick="_cpSalvar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Salvar</button>
+        <button id="cp-btn-cancelar" onclick="_cpCancelarEdicao()" style="display:none;background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Cancelar</button>
+      </div>
+    </div></div>
+    <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
+      <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+        <div>${_scLabel('FILTRAR POR MÊS')}<input type="month" id="cp-f-mes" style="${_scInput()}"/></div>
+        <button onclick="_cpBuscar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Buscar</button>
+        <button onclick="document.getElementById('cp-f-mes').value='';_cpBuscar()" style="background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Limpar</button>
+      </div>
+    </div></div>
+    <div id="cp-tabela"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
+  `;
+  _cpBuscar();
+}
+async function _cpBuscar(){
+  const wrap=document.getElementById('cp-tabela');if(!wrap)return;
+  wrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div>';
+  const mes=document.getElementById('cp-f-mes')?.value;
+  let qs='?order=competencia.desc,created_at.desc&limit=500';
+  if(mes)qs+=`&competencia=eq.${mes}-01`;
+  const rows=await db('contas_pagar','GET',null,qs);
+  const data=Array.isArray(rows)?rows:[];
+  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma conta cadastrada</div></div>';return;}
+  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:`<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
+  wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
+    <thead><tr><th>Competência</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Vencimento</th><th>Ações</th></tr></thead>
+    <tbody>${data.map(r=>`<tr>
+      <td style="font-size:12px;color:var(--text3)">${(r.competencia||'').slice(0,7)}</td>
+      <td style="font-weight:600;color:var(--text)">${r.descricao||'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${r.categoria||'—'}</td>
+      <td style="font-weight:700;color:var(--text)">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="font-size:12px;color:var(--text3)">${r.vencimento?r.vencimento.split('-').reverse().join('/'):'—'}</td>
+      <td style="white-space:nowrap"><button onclick="_cpEditar('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;margin-right:4px">✏️</button><button onclick="_cpExcluir('${r.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">🗑️</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div></div>`;
+}
+async function _cpSalvar(){
+  const mes=document.getElementById('cp-m-competencia')?.value;
+  const descricao=(document.getElementById('cp-m-descricao')?.value||'').trim();
+  const categoria=document.getElementById('cp-m-categoria')?.value;
+  const valor=parseFloat(document.getElementById('cp-m-valor')?.value||0);
+  const status=document.getElementById('cp-m-status')?.value;
+  const vencimento=document.getElementById('cp-m-vencimento')?.value||null;
+  if(!mes||!descricao||!categoria||!(valor>0)){showNotif('Atenção','Preencha todos os campos obrigatórios','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const payload={competencia:`${mes}-01`,descricao,categoria,valor,status,vencimento,updated_at:agora};
+  let res;
+  if(_cpEditId){res=await dbPatch('contas_pagar',payload,`?id=eq.${_cpEditId}`);}
+  else{payload.created_at=agora;res=await db('contas_pagar','POST',payload);}
+  if(res&&(Array.isArray(res)?res.length>0:res.id)){
+    showNotif('✅ Conta salva com sucesso!','');
+    _cpCancelarEdicao();
+    _cpBuscar();
+  } else {
+    showNotif('❌ Erro ao salvar','Verifique as permissões da tabela contas_pagar no Supabase','var(--red)');
+  }
+}
+async function _cpEditar(id){
+  const rows=await db('contas_pagar','GET',null,`?id=eq.${id}`);
+  const r=Array.isArray(rows)?rows[0]:null;if(!r)return;
+  _cpEditId=id;
+  const g=(sel)=>document.getElementById(sel);
+  if(g('cp-m-competencia'))g('cp-m-competencia').value=(r.competencia||'').slice(0,7);
+  if(g('cp-m-descricao'))g('cp-m-descricao').value=r.descricao||'';
+  if(g('cp-m-categoria'))g('cp-m-categoria').value=r.categoria||'Outros';
+  if(g('cp-m-valor'))g('cp-m-valor').value=r.valor||'';
+  if(g('cp-m-status'))g('cp-m-status').value=r.status||'pendente';
+  if(g('cp-m-vencimento'))g('cp-m-vencimento').value=r.vencimento||'';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Editar Conta a Pagar';
+  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar Edição';
+  if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='inline-block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function _cpCancelarEdicao(){
+  _cpEditId=null;
+  const g=(sel)=>document.getElementById(sel);
+  if(g('cp-m-competencia'))g('cp-m-competencia').value=new Date().toISOString().slice(0,7);
+  if(g('cp-m-descricao'))g('cp-m-descricao').value='';
+  if(g('cp-m-categoria'))g('cp-m-categoria').value='Aluguel';
+  if(g('cp-m-valor'))g('cp-m-valor').value='';
+  if(g('cp-m-status'))g('cp-m-status').value='pendente';
+  if(g('cp-m-vencimento'))g('cp-m-vencimento').value='';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Cadastrar Conta a Pagar';
+  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar';
+  if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='none';
+}
+async function _cpExcluir(id){
+  if(!confirm('Excluir esta conta a pagar?'))return;
+  await db('contas_pagar','DELETE',null,`?id=eq.${id}`);
+  showNotif('🗑️ Conta excluída','','var(--red)');
+  _cpBuscar();
 }
 
 async function _buscarFinanceiro(){
