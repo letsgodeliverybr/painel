@@ -20,10 +20,10 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
@@ -1899,7 +1899,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'ranking':renderRankingPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -4667,6 +4667,254 @@ async function renderRankingPage(){
     <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
     <td style="font-weight:700;color:#22c55e">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2)}</td>
   </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── VAGAS DE MOTOBOY FIXO ──
+let _vagasAno=new Date().getFullYear(),_vagasMes=new Date().getMonth();
+let _vagasDoMes=[],_feriadosCache=[],_vagasLojas=[],_vagasEntregadoresCache=[],_vagasDiaAberto=null;
+
+function _vagasEhFimDeSemanaOuFeriado(dataStr){
+  const dow=new Date(dataStr+'T00:00:00').getDay();
+  const feriado=_feriadosCache.some(f=>f.data===dataStr);
+  return dow===0||dow===6||feriado;
+}
+function _vagasCalcularValor(dataStr){
+  return _vagasEhFimDeSemanaOuFeriado(dataStr)?40:30;
+}
+
+async function renderVagasPage(){
+  const hoje=new Date();
+  _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">🗓️ Vagas Disponíveis</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
+    <div class="card"><div style="padding:16px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
+        <div id="vagas-mes-label" style="font-size:16px;font-weight:700;color:var(--text)">—</div>
+        <button onclick="_vagasMudarMes(1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">›</button>
+      </div>
+      <div id="vagas-calendario"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:var(--text3)">
+        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span> Tem vaga disponível</div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block"></span> Só vagas preenchidas</div>
+      </div>
+    </div></div>
+  </div>`;
+  if(currentPerfil!=='loja'){
+    _vagasLojas=await db('lojas','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc');
+  }
+  await _vagasCarregarMes();
+}
+
+function _vagasMudarMes(delta){
+  _vagasMes+=delta;
+  if(_vagasMes<0){_vagasMes=11;_vagasAno--;}
+  if(_vagasMes>11){_vagasMes=0;_vagasAno++;}
+  _vagasCarregarMes();
+}
+
+async function _vagasCarregarMes(){
+  const cal=document.getElementById('vagas-calendario');if(!cal)return;
+  cal.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div>';
+  const primeiroDia=`${_vagasAno}-${String(_vagasMes+1).padStart(2,'0')}-01`;
+  const ultimoDiaNum=new Date(_vagasAno,_vagasMes+1,0).getDate();
+  const ultimoDia=`${_vagasAno}-${String(_vagasMes+1).padStart(2,'0')}-${String(ultimoDiaNum).padStart(2,'0')}`;
+  const [vagas,feriados]=await Promise.all([
+    db('vagas_motoboy_fixo','GET',null,`?data=gte.${primeiroDia}&data=lte.${ultimoDia}${_lojaFiltro()}&order=data.asc`),
+    db('feriados_importantes','GET',null,'')
+  ]);
+  _vagasDoMes=Array.isArray(vagas)?vagas:[];
+  _feriadosCache=Array.isArray(feriados)?feriados:[];
+  const idsEntregadores=[...new Set(_vagasDoMes.filter(v=>v.entregador_id).map(v=>v.entregador_id))];
+  _vagasEntregadoresCache=idsEntregadores.length?await db('entregadores','GET',null,`?id=in.(${idsEntregadores.join(',')})&select=id,nome`):[];
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const lbl=document.getElementById('vagas-mes-label');if(lbl)lbl.textContent=`${meses[_vagasMes]} ${_vagasAno}`;
+  _vagasRenderCalendario();
+}
+
+function _vagasRenderCalendario(){
+  const cal=document.getElementById('vagas-calendario');if(!cal)return;
+  const primeiroDiaSemana=new Date(_vagasAno,_vagasMes,1).getDay();
+  const totalDias=new Date(_vagasAno,_vagasMes+1,0).getDate();
+  const porDia={};
+  _vagasDoMes.forEach(v=>{(porDia[v.data]=porDia[v.data]||[]).push(v);});
+  const diasSemana=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">`;
+  diasSemana.forEach(d=>{html+=`<div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:6px 0">${d}</div>`;});
+  for(let i=0;i<primeiroDiaSemana;i++){html+=`<div></div>`;}
+  for(let dia=1;dia<=totalDias;dia++){
+    const dataStr=`${_vagasAno}-${String(_vagasMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const vagasDoDia=porDia[dataStr]||[];
+    const temDisponivel=vagasDoDia.some(v=>v.status==='disponivel');
+    const temAlguma=vagasDoDia.length>0;
+    const cor=temDisponivel?'#22c55e':temAlguma?'#6b7280':'transparent';
+    const ehFeriado=_feriadosCache.some(f=>f.data===dataStr);
+    html+=`<div onclick="_vagasAbrirDia('${dataStr}')" style="cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 4px;min-height:56px;background:var(--surface2);position:relative;text-align:center">
+      <div style="font-size:13px;font-weight:600;color:${ehFeriado?'#f59e0b':'var(--text)'}">${dia}</div>
+      ${temAlguma?`<div style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${cor};display:inline-block"></span><span style="font-size:10px;color:var(--text3)">${vagasDoDia.length}</span></div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  cal.innerHTML=html;
+}
+
+function _vagasRenderCard(v){
+  const loja=_vagasLojas.find(l=>l.id===v.loja_id)||allLojas.find(l=>l.id===v.loja_id);
+  const entregador=_vagasEntregadoresCache.find(e=>e.id===v.entregador_id);
+  const badge=v.status==='preenchida'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">Preenchida</span>`:`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">Disponível</span>`;
+  return `<div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px">
+      <div>
+        ${currentPerfil!=='loja'?`<div style="font-size:13px;font-weight:700;color:var(--text)">${loja?.nome||'—'}</div>`:''}
+        <div style="font-size:12px;color:var(--text2)">${v.endereco||'—'}</div>
+        <div style="font-size:12px;color:var(--text3)">${(v.horario_inicio||'').slice(0,5)} - ${(v.horario_fim||'').slice(0,5)} · R$ ${parseFloat(v.valor).toFixed(2)}</div>
+        ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px">🛵 ${entregador?.nome||'Motoboy alocado'}</div>`:''}
+      </div>
+      ${badge}
+    </div>
+    ${v.status==='disponivel'?`<button onclick="_vagasAbrirAlocar('${v.id}')" style="width:100%;margin-top:6px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">👤 Alocar Entregador</button>`:''}
+  </div>`;
+}
+
+function _vagasAbrirDia(dataStr){
+  _vagasDiaAberto=dataStr;
+  let modal=document.getElementById('modal-vagas-dia');
+  if(!modal){modal=document.createElement('div');modal.id='modal-vagas-dia';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const [ano,mes,dia]=dataStr.split('-');
+  const vagasDoDia=_vagasDoMes.filter(v=>v.data===dataStr);
+  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}"><option value="">Selecione a loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('')}</select>`;
+  const valorPrevia=_vagasCalcularValor(dataStr);
+  modal.innerHTML=`<div class="modal" style="max-width:520px">
+    <div class="modal-header"><span class="modal-title">🗓️ ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+      <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
+      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">➕ Nova vaga em ${dia}/${mes}/${ano}</div>
+        ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
+        <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" placeholder="Rua, número, bairro" style="${_scInput()}"/></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+          <div class="fi" style="flex:1"><label>Horário início</label><input type="time" id="vg-horario-inicio" style="${_scInput()}"/></div>
+          <div class="fi" style="flex:1"><label>Horário fim</label><input type="time" id="vg-horario-fim" style="${_scInput()}"/></div>
+        </div>
+        <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
+        <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">✅ Criar Vaga</button>
+        <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
+      </div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+
+async function _vagasSalvar(dataStr){
+  const fb=document.getElementById('vg-feedback');
+  const lojaId=currentPerfil==='loja'?currentUser?.loja_id:document.getElementById('vg-loja')?.value;
+  const endereco=(document.getElementById('vg-endereco')?.value||'').trim();
+  const horarioInicio=document.getElementById('vg-horario-inicio')?.value;
+  const horarioFim=document.getElementById('vg-horario-fim')?.value;
+  if(!lojaId||!endereco||!horarioInicio||!horarioFim){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha todos os campos.</span>';return;}
+  const valor=_vagasCalcularValor(dataStr);
+  const payload={loja_id:lojaId,data:dataStr,endereco,horario_inicio:horarioInicio,horario_fim:horarioFim,valor,status:'disponivel'};
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando...</span>';
+  const res=await db('vagas_motoboy_fixo','POST',payload);
+  if(res&&res.length>0){
+    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Vaga criada!</span>';
+    await _vagasCarregarMes();
+    setTimeout(()=>_vagasAbrirDia(dataStr),300);
+  } else {
+    if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao criar vaga.</span>';
+  }
+}
+
+function _vagasAbrirAlocar(vagaId){
+  let modal=document.getElementById('modal-vagas-alocar');
+  if(!modal){modal=document.createElement('div');modal.id='modal-vagas-alocar';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">👤 Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="fi" style="margin-bottom:12px"><label>CPF do motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
+      <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">🔍 Buscar</button>
+      <div id="va-resultado" style="margin-top:14px"></div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+
+async function _vagasBuscarCpf(vagaId){
+  const cpfDigitado=(document.getElementById('va-cpf')?.value||'').trim();
+  const resultado=document.getElementById('va-resultado');
+  if(!cpfDigitado){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Digite um CPF.</span>';return;}
+  if(resultado)resultado.innerHTML='<span style="color:var(--text3);font-size:13px">Buscando...</span>';
+  const cpfSoDigitos=cpfDigitado.replace(/\D/g,'');
+  // Compara com e sem formatação, mesmo critério já usado no app entregador
+  // pra checar CPF duplicado — cobre qualquer padrão gravado no banco.
+  const rows=await db('entregadores','GET',null,`?or=(cpf.eq.${encodeURIComponent(cpfDigitado)},cpf.eq.${cpfSoDigitos})&select=id,nome,cpf,modal_veiculo&limit=1`);
+  const ent=Array.isArray(rows)&&rows[0]?rows[0]:null;
+  if(!ent){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Nenhum entregador encontrado com esse CPF.</span>';return;}
+  if((ent.modal_veiculo||'').toLowerCase()!=='moto'){
+    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px"><b>${ent.nome}</b> encontrado, mas não está cadastrado com moto (veículo: ${ent.modal_veiculo||'—'}).<br>Vagas fixas exigem motoboy de moto — alocação bloqueada.</div>`;
+    return;
+  }
+  resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Encontrado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${ent.nome}</div></div>
+    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirmar alocação</button>`;
+}
+
+async function _vagasConfirmarAlocar(vagaId,entregadorId){
+  const res=await dbPatch('vagas_motoboy_fixo',{status:'preenchida',entregador_id:entregadorId,updated_at:new Date().toISOString()},`?id=eq.${vagaId}`);
+  if(res===null){showNotif('❌ Erro ao alocar','','var(--red)');return;}
+  showNotif('✅ Entregador alocado!','');
+  document.getElementById('modal-vagas-alocar')?.classList.remove('open');
+  await _vagasCarregarMes();
+  if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto);
+}
+
+async function _vagasAbrirFeriados(){
+  let modal=document.getElementById('modal-feriados');
+  if(!modal){modal=document.createElement('div');modal.id='modal-feriados';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:480px">
+    <div class="modal-header"><span class="modal-title">📅 Feriados Importantes</span><button class="modal-close" onclick="document.getElementById('modal-feriados').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end">
+        <div class="fi" style="flex:1"><label>Data</label><input type="date" id="fer-data" style="${_scInput()}"/></div>
+        <div class="fi" style="flex:1"><label>Descrição (opcional)</label><input type="text" id="fer-descricao" placeholder="Ex: Natal" style="${_scInput()}"/></div>
+      </div>
+      <button onclick="_feriadoSalvar()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px">➕ Adicionar</button>
+      <div id="fer-lista"></div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  await _feriadosBuscar();
+}
+
+async function _feriadosBuscar(){
+  const rows=await db('feriados_importantes','GET',null,'?order=data.asc');
+  _feriadosCache=Array.isArray(rows)?rows:[];
+  const lista=document.getElementById('fer-lista');if(!lista)return;
+  if(!_feriadosCache.length){lista.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum feriado cadastrado.</div>';return;}
+  lista.innerHTML=_feriadosCache.map(f=>{
+    const [ano,mes,dia]=f.data.split('-');
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><span style="font-weight:700;color:var(--text)">${dia}/${mes}/${ano}</span>${f.descricao?` <span style="color:var(--text3);font-size:12px">— ${f.descricao}</span>`:''}</div>
+      <button onclick="_feriadoExcluir('${f.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+async function _feriadoSalvar(){
+  const data=document.getElementById('fer-data')?.value;
+  const descricao=(document.getElementById('fer-descricao')?.value||'').trim()||null;
+  if(!data){showNotif('Atenção','Selecione uma data','var(--yellow)');return;}
+  const res=await db('feriados_importantes','POST',{data,descricao});
+  if(!res||!res.length){showNotif('❌ Erro','Data já cadastrada ou inválida','var(--red)');return;}
+  document.getElementById('fer-data').value='';document.getElementById('fer-descricao').value='';
+  await _feriadosBuscar();
+  if(document.getElementById('vagas-calendario'))_vagasRenderCalendario();
+}
+
+async function _feriadoExcluir(id){
+  if(!confirm('Excluir esse feriado?'))return;
+  await db('feriados_importantes','DELETE',null,`?id=eq.${id}`);
+  await _feriadosBuscar();
+  if(document.getElementById('vagas-calendario'))_vagasRenderCalendario();
 }
 
 async function _buscarFinanceiro(){
