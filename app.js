@@ -144,6 +144,9 @@ const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr)
 function formatarDataBR(data){if(!data)return'—';if(typeof data==='string'){const m=data.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;}const d=data instanceof Date?data:new Date(data);if(isNaN(d))return'—';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});}
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
+// Igual a _lojaFiltro(), mas pra usar direto na tabela lojas — ela não tem
+// coluna loja_id, a própria chave é id.
+const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&id=eq.${currentUser.loja_id}`:'';
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
 const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
 const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return _inicioDiaBrasilia(new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10));};
@@ -2235,7 +2238,7 @@ async function atualizarTudo(){
   allPedidos=await db('pedidos','GET',null,`?order=created_at.desc&limit=200&status=not.in.(cancelado,finalizado)&status_detalhado=not.in.(cancelado,finalizado)${_lf}`);
   _aplicarLockStatus(allPedidos);
   allMotoboys=await db('entregadores','GET',null,'?disponivel=eq.true&select=id,nome,telefone,cpf,disponivel,status,lat,lng');
-  allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lf}`);
+  allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lojaFiltroId()}`);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
@@ -3833,7 +3836,7 @@ async function renderPedidosPage(){
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
-  [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltro()}`)]);
+  [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
   const fpLoja=document.getElementById('fp-loja');
   const fpEnt=document.getElementById('fp-entregador');
   if(fpLoja)fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
