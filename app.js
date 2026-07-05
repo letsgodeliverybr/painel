@@ -2340,8 +2340,28 @@ function renderPedidosLista(){
         <div style="display:flex;align-items:center;margin-bottom:4px">${_dot(0)}${_line(0)}${_dot(1)}${_line(1)}${_dot(2)}${_line(2)}${_dot(3)}</div>
         <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
       </div>`;
-      const previsaoMs=_tsUtc(p.created_at)+30*60*1000;
-      const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+      // Indicador de atraso: baseado em pronto_em (mesmo marco do SLA da tela
+      // Pedidos) quando existir; se o pedido ainda não foi marcado como pronto,
+      // cai no comportamento antigo (baseado em created_at).
+      let previsaoMs,indicadorAtrasoHtml;
+      if(p.pronto_em){
+        const minPassados=(Date.now()-_tsUtc(p.pronto_em))/60000;
+        previsaoMs=_tsUtc(p.pronto_em)+30*60*1000;
+        if(minPassados<=30){
+          const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+          indicadorAtrasoHtml=`<span style="font-weight:700;color:#10b981">${restanteMin}min</span>`;
+        } else if(minPassados<=35){
+          indicadorAtrasoHtml=`<span style="font-weight:700;color:#eab308">+${Math.round(minPassados-30)}min</span>`;
+        } else if(minPassados<=40){
+          indicadorAtrasoHtml=`<span style="font-weight:700;color:#f97316">+${Math.round(minPassados-30)}min</span>`;
+        } else {
+          indicadorAtrasoHtml=`<span style="font-weight:700;color:#ef4444">Atrasado</span>`;
+        }
+      } else {
+        previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+        const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+        indicadorAtrasoHtml=`<span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min':'Atrasado'}</span>`;
+      }
       const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
       const itens=Array.isArray(p.itens)?p.itens:[];
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
@@ -2384,7 +2404,7 @@ function renderPedidosLista(){
           ${progressBar}
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:10px">
             <span style="color:var(--sb-text3)">⏱ Previsão ${formatarHora(new Date(previsaoMs).toISOString())}</span>
-            <span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min':'Atrasado'}</span>
+            ${indicadorAtrasoHtml}
           </div>
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -3804,7 +3824,6 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">FATURAMENTO</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">DESPESAS</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">CONTAS A PAGAR</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO BRUTO</div><div class="stat-value" id="fp-card-lucro-bruto" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro-liquido" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">FATURAMENTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-fat-medio" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">CUSTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
@@ -3847,7 +3866,7 @@ async function _buscarPedidosAdmin(){
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
   const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_ck=document.getElementById('fp-card-km');
-  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cContasPagar=document.getElementById('fp-card-contas-pagar'),_cLucroBruto=document.getElementById('fp-card-lucro-bruto'),_cLucroLiquido=document.getElementById('fp-card-lucro-liquido'),_cMerc=document.getElementById('fp-card-merc');
+  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cContasPagar=document.getElementById('fp-card-contas-pagar'),_cLucroLiquido=document.getElementById('fp-card-lucro-liquido'),_cMerc=document.getElementById('fp-card-merc');
   const _cFatMedio=document.getElementById('fp-card-fat-medio'),_cCustoMedio=document.getElementById('fp-card-custo-medio'),_cLucroMedio=document.getElementById('fp-card-lucro-medio');
   const finalizados=arr.filter(p=>getStatusKey(p)==='finalizado');
   const fatBase=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
@@ -3873,7 +3892,6 @@ async function _buscarPedidosAdmin(){
   if(_cFat)_cFat.textContent='R$ '+fat.toFixed(2);
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
   if(_cContasPagar)_cContasPagar.textContent='R$ '+contasPagarTotal.toFixed(2);
-  if(_cLucroBruto){_cLucroBruto.textContent='R$ '+Math.abs(lucroBruto).toFixed(2);_cLucroBruto.style.color=lucroBruto>=0?'var(--green)':'var(--red)';}
   if(_cLucroLiquido){_cLucroLiquido.textContent='R$ '+Math.abs(lucroLiquido).toFixed(2);_cLucroLiquido.style.color=lucroLiquido>=0?'var(--green)':'var(--red)';}
   if(_cMerc)_cMerc.textContent='R$ '+merc.toFixed(2);
   // Faturamento médio, Custo médio (Pago) e Lucro médio (Cobrado-Pago), todos
