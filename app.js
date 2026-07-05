@@ -4089,16 +4089,31 @@ async function carregarRelatorio(){
   if(ate)filtro+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
   if(lojaId)filtro+=`&loja_id=eq.${lojaId}`;
   filtro+=_lojaFiltro();
+  let filtroCreditos='?select=tipo,valor,observacoes';
+  if(de)filtroCreditos+=`&created_at=gte.${_inicioDiaBrasilia(de)}`;
+  if(ate)filtroCreditos+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
+  if(lojaId)filtroCreditos+=`&loja_id=eq.${lojaId}`;
+  filtroCreditos+=_lojaFiltro();
   const isLoja=currentPerfil==='loja';
-  const [pedidos,motoboys,lojas,usuarios]=await Promise.all([
+  const [pedidos,motoboys,lojas,usuarios,creditosLojas]=await Promise.all([
     db('pedidos','GET',null,filtro),
     isLoja?Promise.resolve([]):db('entregadores','GET',null,''),
     isLoja?Promise.resolve([]):db('lojas','GET',null,''),
     isLoja?Promise.resolve([]):db('usuarios_painel','GET',null,''),
+    db('creditos_lojas','GET',null,filtroCreditos),
   ]);
   document.getElementById('r-total').textContent=pedidos.length;
   document.getElementById('r-ent').textContent=pedidos.filter(p=>p.status==='entregue'||p.status==='finalizado').length;
-  document.getElementById('r-fat').textContent='R$ '+pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0).toFixed(2);
+  // Créditos/débitos avulsos (exclui os automáticos de entrega/estorno, que já
+  // estão contados via pedidos.valor — ver mesmo filtro em _scBuscar).
+  const avulsos=(Array.isArray(creditosLojas)?creditosLojas:[]).filter(c=>{
+    const obs=(c.observacoes||'').toLowerCase();
+    return !obs.startsWith('entrega #')&&!obs.startsWith('estorno #');
+  });
+  const somaPedidos=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  const totalCreditos=avulsos.filter(c=>c.tipo==='credito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  const totalDebitos=avulsos.filter(c=>c.tipo==='debito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  document.getElementById('r-fat').textContent='R$ '+(somaPedidos+totalCreditos-totalDebitos).toFixed(2);
   if(!isLoja){
     document.getElementById('r-moto').textContent=motoboys.length;
     document.getElementById('r-lojas').textContent=lojas.length;
