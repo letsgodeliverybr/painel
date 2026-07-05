@@ -3800,13 +3800,16 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">CANCELADOS</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">TOTAL KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
     </div>
-    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:14px">
+    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">FATURAMENTO</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">DESPESAS</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro" style="font-size:22px">—</div></div>
-      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">CONTAS A PAGAR</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">LUCRO BRUTO</div><div class="stat-value" id="fp-card-lucro-bruto" style="font-size:22px">—</div></div>
+      <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro-liquido" style="font-size:22px">—</div></div>
+      <div class="stat-card"><div class="stat-label">FATURAMENTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-fat-medio" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">CUSTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">LUCRO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
+      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th><th>Valor</th><th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
@@ -3833,13 +3836,19 @@ async function _buscarPedidosAdmin(){
   if(dataIni){const _g=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;qs+=_g;qsCreditos+=_g;}
   if(dataFim){const _l=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;qs+=_l;qsCreditos+=_l;}
   if(lojaId){const _lj=`&loja_id=eq.${lojaId}`;qs+=_lj;qsCreditos+=_lj;}
-  const [_res,_creditosRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos)]);
+  // Contas a pagar: soma as contas 'pago' cuja competência (dia 1 do mês) caia
+  // em qualquer mês tocado pelo período — comparar contra o dia 1 do mês de
+  // dataIni e o dia 1 do mês de dataFim já cobre todo mês entre os dois.
+  const _mesIni=dataIni?dataIni.slice(0,7)+'-01':null;
+  const _mesFim=dataFim?dataFim.slice(0,7)+'-01':null;
+  const qsContasPagar=_mesIni&&_mesFim?`?status=eq.pago&competencia=gte.${_mesIni}&competencia=lte.${_mesFim}`:'?status=eq.pago';
+  const [_res,_creditosRes,_contasPagarRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos),db('contas_pagar','GET',null,qsContasPagar)]);
   let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
   const _ct=document.getElementById('fp-card-total'),_cf=document.getElementById('fp-card-finalizados'),_cc=document.getElementById('fp-card-cancelados'),_ck=document.getElementById('fp-card-km');
-  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cLucro=document.getElementById('fp-card-lucro'),_cMerc=document.getElementById('fp-card-merc');
-  const _cCustoMedio=document.getElementById('fp-card-custo-medio'),_cLucroMedio=document.getElementById('fp-card-lucro-medio');
+  const _cFat=document.getElementById('fp-card-fat'),_cDesp=document.getElementById('fp-card-desp'),_cContasPagar=document.getElementById('fp-card-contas-pagar'),_cLucroBruto=document.getElementById('fp-card-lucro-bruto'),_cLucroLiquido=document.getElementById('fp-card-lucro-liquido'),_cMerc=document.getElementById('fp-card-merc');
+  const _cFatMedio=document.getElementById('fp-card-fat-medio'),_cCustoMedio=document.getElementById('fp-card-custo-medio'),_cLucroMedio=document.getElementById('fp-card-lucro-medio');
   const finalizados=arr.filter(p=>getStatusKey(p)==='finalizado');
   const fatBase=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
   const desp=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
@@ -3854,20 +3863,26 @@ async function _buscarPedidosAdmin(){
   const _totalCreditos=_avulsos.filter(c=>c.tipo==='credito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   const _totalDebitos=_avulsos.filter(c=>c.tipo==='debito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   const fat=fatBase+_totalCreditos-_totalDebitos;
-  const lucro=fat-desp;
+  const lucroBruto=fat-desp;
+  const contasPagarTotal=(Array.isArray(_contasPagarRes)?_contasPagarRes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  const lucroLiquido=lucroBruto-contasPagarTotal;
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=finalizados.length;
   if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
   if(_ck)_ck.textContent=finalizados.reduce((s,p)=>s+(parseFloat(p.distancia_km)||0),0).toFixed(1)+'km';
   if(_cFat)_cFat.textContent='R$ '+fat.toFixed(2);
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
-  if(_cLucro){_cLucro.textContent='R$ '+Math.abs(lucro).toFixed(2);_cLucro.style.color=lucro>=0?'var(--green)':'var(--red)';}
+  if(_cContasPagar)_cContasPagar.textContent='R$ '+contasPagarTotal.toFixed(2);
+  if(_cLucroBruto){_cLucroBruto.textContent='R$ '+Math.abs(lucroBruto).toFixed(2);_cLucroBruto.style.color=lucroBruto>=0?'var(--green)':'var(--red)';}
+  if(_cLucroLiquido){_cLucroLiquido.textContent='R$ '+Math.abs(lucroLiquido).toFixed(2);_cLucroLiquido.style.color=lucroLiquido>=0?'var(--green)':'var(--red)';}
   if(_cMerc)_cMerc.textContent='R$ '+merc.toFixed(2);
-  // Custo médio = média do Pago (taxa_motoboy); Lucro médio = média do Lucro
-  // por pedido (Cobrado-Pago), estritamente por entrega — não usa os
-  // créditos/débitos avulsos, que não pertencem a nenhum pedido específico.
+  // Faturamento médio, Custo médio (Pago) e Lucro médio (Cobrado-Pago), todos
+  // por entrega finalizada — não usam créditos/débitos avulsos nem contas a
+  // pagar, que não pertencem a nenhum pedido específico.
+  const _fatMedio=finalizados.length?fat/finalizados.length:0;
   const _custoMedio=finalizados.length?desp/finalizados.length:0;
   const _lucroMedio=finalizados.length?(fatBase-desp)/finalizados.length:0;
+  if(_cFatMedio)_cFatMedio.textContent='R$ '+_fatMedio.toFixed(2);
   if(_cCustoMedio)_cCustoMedio.textContent='R$ '+_custoMedio.toFixed(2);
   if(_cLucroMedio){_cLucroMedio.textContent='R$ '+Math.abs(_lucroMedio).toFixed(2);_cLucroMedio.style.color=_lucroMedio>=0?'var(--green)':'var(--red)';}
   // SLA: pronto_em → finalizado_em, em minutos, só finalizados com ambos os timestamps.
