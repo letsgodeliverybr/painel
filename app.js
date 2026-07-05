@@ -20,7 +20,7 @@ let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'}];
@@ -1163,15 +1163,22 @@ async function processarAutoPronto(){
 }
 
 async function processarPontosAutomaticos(){
+  // Progressão por tempo sem alocação, a partir de pronto_em (mesmo marco do
+  // SLA) — não created_at. Substitui (não soma) o valor base conforme a
+  // faixa. O congelamento no momento do aceite é feito por trigger no banco
+  // (migrations/add_pontos_progressivos.sql), então aqui só mexemos em
+  // pedidos ainda sem motoboy/entregador alocado.
   const agora=Date.now();
-  const prontos=allPedidos.filter(p=>(p.status_detalhado==='pronto'||p.status==='pronto')&&p.created_at);
+  const prontos=allPedidos.filter(p=>(p.status_detalhado==='pronto'||p.status==='pronto')&&p.pronto_em&&!p.motoboy_id&&!p.entregador_id);
   for(const p of prontos){
-    const minutos=(agora-new Date(p.created_at).getTime())/60000;
-    let novosPontos=null;
-    if(minutos>=40)novosPontos=754;
-    else if(minutos>=25)novosPontos=354;
-    else if(minutos>=10)novosPontos=54;
-    if(novosPontos!==null&&(p.pontos||4)!==novosPontos){
+    const base=p.pontos_base??p.pontos??4;
+    const minutos=(agora-_tsUtc(p.pronto_em))/60000;
+    let novosPontos;
+    if(minutos<10)novosPontos=base;
+    else if(minutos<20)novosPontos=base+150;
+    else if(minutos<30)novosPontos=base+300;
+    else novosPontos=base+700;
+    if((p.pontos??base)!==novosPontos){
       await db('pedidos','PATCH',{pontos:novosPontos,updated_at:new Date().toISOString()},`?id=eq.${p.id}`);
       const el=document.getElementById(`pontos-${p.id}`);if(el)el.textContent=novosPontos;
       p.pontos=novosPontos;
@@ -1451,7 +1458,7 @@ async function _criarEntregaRapida(){
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
   const _faixaCrSubmit=_faixasCr.find(f=>_distKm<=parseFloat(f.km_ate))||_faixasCr[_faixasCr.length-1];
   console.log(`[_criarEntregaRapida] origem_usada=loja distancia_km=${_distKm} faixa_aplicada=km_ate:${_faixaCrSubmit?.km_ate||'?'} pd_cliente=${_pdCliente}(${_pdOrigemCr}) taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -1740,13 +1747,6 @@ async function confirmarPagamento(pedidoId){
   await logAcao('pagamento_confirmado',{pedido_id:pedidoId});
   showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');await atualizarTudo();
 }
-async function alterarPontos(pedidoId,delta){
-  const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
-  const novosPontos=Math.max(0,Math.min(20,(p.pontos||4)+delta));
-  const el=document.getElementById(`pontos-${pedidoId}`);if(el)el.textContent=novosPontos;
-  await db('pedidos','PATCH',{pontos:novosPontos,updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
-  await logAcao('alterar_pontos',{pedido_id:pedidoId,pontos:novosPontos});p.pontos=novosPontos;
-}
 
 const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
 const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',no_local:'#38BDF8',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
@@ -1899,7 +1899,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'ranking':renderRankingPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -2791,7 +2791,7 @@ async function criarPedido(){
   console.log(`[criarPedido] origem_usada=${origemUsada} distancia_km=${distKm} faixa_aplicada=km_ate:${_faixaAplicadaNp?.km_ate||'?'} pd_cliente=${_pdC}(${_pdOrigemNp}) taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,pontos_base:pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
@@ -4650,6 +4650,23 @@ async function _cpExcluir(id){
   await db('contas_pagar','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Conta excluída','','var(--red)');
   _cpBuscar();
+}
+
+// ── RANKING ENTREGADOR ──
+const _RANKING_PREMIOS=[100,80,70,60,50,40,30,20,15,10];
+async function renderRankingPage(){
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div><div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 da semana atual por pontos — só informativo, sem pagamento automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div></div>`;
+  const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&order=pontos_semana.desc&limit=10');
+  const lista=document.getElementById('ranking-lista');if(!lista)return;
+  const arr=Array.isArray(entregadores)?entregadores:[];
+  if(!arr.length){lista.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum entregador com pontos ainda</div>';return;}
+  const medalha=(i)=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}º`;
+  lista.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Posição</th><th>Entregador</th><th>Pontos (semana)</th><th>Prêmio</th></tr></thead><tbody>${arr.map((e,i)=>`<tr>
+    <td style="font-weight:800;font-size:16px">${medalha(i)}</td>
+    <td style="font-weight:600;color:var(--text)">${e.nome||e.id?.substring(0,8)||'—'}</td>
+    <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
+    <td style="font-weight:700;color:#22c55e">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2)}</td>
+  </tr>`).join('')}</tbody></table></div>`;
 }
 
 async function _buscarFinanceiro(){
