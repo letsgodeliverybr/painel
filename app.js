@@ -4682,7 +4682,7 @@ async function renderRankingPage(){
 
 // ── VAGAS DE MOTOBOY FIXO ──
 let _vagasAno=new Date().getFullYear(),_vagasMes=new Date().getMonth();
-let _vagasDoMes=[],_feriadosCache=[],_vagasLojas=[],_vagasEntregadoresCache=[],_vagasDiaAberto=null;
+let _vagasDoMes=[],_feriadosCache=[],_vagasLojas=[],_vagasEntregadoresCache=[],_vagasDiaAberto=null,_vagasMinhaLoja=null;
 
 function _vagasEhFimDeSemanaOuFeriado(dataStr){
   const dow=new Date(dataStr+'T00:00:00').getDay();
@@ -4712,7 +4712,10 @@ async function renderVagasPage(){
     </div></div>
   </div>`;
   if(currentPerfil!=='loja'){
-    _vagasLojas=await db('lojas','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc');
+    _vagasLojas=await db('lojas','GET',null,'?ativo=eq.true&select=id,nome,endereco&order=nome.asc');
+  } else {
+    const minhaLoja=await db('lojas','GET',null,`?id=eq.${currentUser?.loja_id}&select=id,endereco`);
+    _vagasMinhaLoja=Array.isArray(minhaLoja)&&minhaLoja[0]?minhaLoja[0]:null;
   }
   await _vagasCarregarMes();
 }
@@ -4793,7 +4796,8 @@ function _vagasAbrirDia(dataStr){
   if(!modal){modal=document.createElement('div');modal.id='modal-vagas-dia';modal.className='modal-overlay';document.body.appendChild(modal);}
   const [ano,mes,dia]=dataStr.split('-');
   const vagasDoDia=_vagasDoMes.filter(v=>v.data===dataStr);
-  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}"><option value="">Selecione a loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('')}</select>`;
+  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}" onchange="_vagasAtualizarEnderecoLoja()"><option value="">Selecione a loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}" data-endereco="${(l.endereco||'').replace(/"/g,'&quot;')}">${l.nome}</option>`).join('')}</select>`;
+  const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
   modal.innerHTML=`<div class="modal" style="max-width:520px">
     <div class="modal-header"><span class="modal-title">🗓️ ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">✕</button></div>
@@ -4802,12 +4806,14 @@ function _vagasAbrirDia(dataStr){
       <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
         <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">➕ Nova vaga em ${dia}/${mes}/${ano}</div>
         ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
-        <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" placeholder="Rua, número, bairro" style="${_scInput()}"/></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px">
-          <div class="fi" style="flex:1"><label>Horário início</label><input type="time" id="vg-horario-inicio" style="${_scInput()}"/></div>
-          <div class="fi" style="flex:1"><label>Horário fim</label><input type="time" id="vg-horario-fim" style="${_scInput()}"/></div>
+        <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione a loja acima'}" style="${_scInput()};opacity:.7"/></div>
+        <div class="fi" style="margin-bottom:10px"><label>Período</label>
+          <div style="display:flex;gap:16px;margin-top:6px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer"><input type="checkbox" id="vg-periodo-almoco"/> 🍽️ Almoço (10:00–14:00)</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer"><input type="checkbox" id="vg-periodo-jantar"/> 🌙 Jantar (18:00–23:59)</label>
+          </div>
         </div>
-        <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
+        <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente, por vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
         <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">✅ Criar Vaga</button>
         <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
       </div>
@@ -4816,19 +4822,33 @@ function _vagasAbrirDia(dataStr){
   modal.classList.add('open');
 }
 
+function _vagasAtualizarEnderecoLoja(){
+  const sel=document.getElementById('vg-loja');
+  const opt=sel?.selectedOptions?.[0];
+  const campo=document.getElementById('vg-endereco');
+  if(campo)campo.value=opt?.dataset.endereco||'';
+}
+
 async function _vagasSalvar(dataStr){
   const fb=document.getElementById('vg-feedback');
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:document.getElementById('vg-loja')?.value;
   const endereco=(document.getElementById('vg-endereco')?.value||'').trim();
-  const horarioInicio=document.getElementById('vg-horario-inicio')?.value;
-  const horarioFim=document.getElementById('vg-horario-fim')?.value;
-  if(!lojaId||!endereco||!horarioInicio||!horarioFim){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha todos os campos.</span>';return;}
+  const almoco=document.getElementById('vg-periodo-almoco')?.checked;
+  const jantar=document.getElementById('vg-periodo-jantar')?.checked;
+  if(!lojaId||!endereco||(!almoco&&!jantar)){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha todos os campos e marque ao menos um período.</span>';return;}
   const valor=_vagasCalcularValor(dataStr);
-  const payload={loja_id:lojaId,data:dataStr,endereco,horario_inicio:horarioInicio,horario_fim:horarioFim,valor,status:'disponivel'};
+  const periodos=[];
+  if(almoco)periodos.push({horario_inicio:'10:00',horario_fim:'14:00'});
+  if(jantar)periodos.push({horario_inicio:'18:00',horario_fim:'23:59'});
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando...</span>';
-  const res=await db('vagas_motoboy_fixo','POST',payload);
-  if(res&&res.length>0){
-    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Vaga criada!</span>';
+  let erro=false;
+  for(const p of periodos){
+    const payload={loja_id:lojaId,data:dataStr,endereco,horario_inicio:p.horario_inicio,horario_fim:p.horario_fim,valor,status:'disponivel'};
+    const res=await db('vagas_motoboy_fixo','POST',payload);
+    if(!res||res.length===0)erro=true;
+  }
+  if(!erro){
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${periodos.length>1?'Vagas criadas!':'Vaga criada!'}</span>`;
     await _vagasCarregarMes();
     setTimeout(()=>_vagasAbrirDia(dataStr),300);
   } else {
