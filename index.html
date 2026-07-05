@@ -146,6 +146,7 @@ tr:hover td{background:var(--surface2);}
 .fi select option{background:var(--surface2);}
 .fi textarea{resize:vertical;min-height:72px;}
 .btn-modal-primary{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-modal-primary:disabled{opacity:.5;cursor:not-allowed;}
 .btn-modal-cancel{background:none;border:1px solid var(--border);border-radius:9px;padding:11px 18px;color:var(--text2);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
 
 /* GOOGLE PLACES AUTOCOMPLETE */
@@ -288,7 +289,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="fecharModal('modal-pedido')">Cancelar</button>
-      <button class="btn-modal-primary" onclick="criarPedido()">🚀 Criar Pedido</button>
+      <button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">🚀 Criar Pedido</button>
     </div>
   </div>
 </div>
