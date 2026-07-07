@@ -2435,6 +2435,7 @@ function renderPedidosLista(){
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
+                ${(p.motoboy_id||p.entregador_id)?`<button onclick="event.stopPropagation();desalocarMotoboy('${p.id}')" title="Desalocar motoboy" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg></button>`:''}
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${sk==='pronto'?'#e91e8c':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
@@ -2700,6 +2701,22 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');await atualizarTudo();
+}
+
+async function desalocarMotoboy(pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId);
+  if(!p)return;
+  const motoboyIdAnterior=p.motoboy_id||p.entregador_id;
+  if(!motoboyIdAnterior){showNotif('Nenhum motoboy alocado','','var(--yellow)');return;}
+  if(!confirm(`Desalocar o motoboy do pedido #${p.numero||pedidoId.substring(0,6)}?\nO pedido volta a ficar disponível para novo aceite.`))return;
+  const agora=new Date().toISOString();
+  const update={motoboy_id:null,entregador_id:null,status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora};
+  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  Object.assign(p,update);
+  const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
+  await logAcao('desalocar_motoboy',{pedido_id:pedidoId,motoboy_id_anterior:motoboyIdAnterior});
+  showNotif('🔓 Motoboy desalocado','Pedido disponível para novo aceite','var(--yellow)');
+  await atualizarTudo();
 }
 
 function _parsearEnderecoNumerado(val){
@@ -3974,7 +3991,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
-  if(novoStatus==='pronto'){update.pronto_em=agora;update.motoboy_id=null;update.entregador_id=null;}
+  if(novoStatus==='pronto'){update.pronto_em=agora;if(!p.motoboy_id&&!p.entregador_id){update.motoboy_id=null;update.entregador_id=null;}}
   if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota')update.em_rota_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
