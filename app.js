@@ -3869,7 +3869,10 @@ async function renderPedidosPage(){
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
   const fpLoja=document.getElementById('fp-loja');
   const fpEnt=document.getElementById('fp-entregador');
-  if(fpLoja)fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  if(fpLoja){
+    fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+    if(currentPerfil==='loja'&&currentUser?.loja_id){fpLoja.value=currentUser.loja_id;fpLoja.disabled=true;}
+  }
   if(fpEnt)fpEnt.innerHTML='<option value="">Todos</option>'+_fpEntregadores.map(e=>`<option value="${e.id}">${e.nome||e.id?.substring(0,8)}</option>`).join('');
   _buscarPedidosAdmin();
 }
