@@ -1621,6 +1621,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
   const ai=allPedidos.findIndex(p=>p.id===pedidoId);
   if(ai>=0)Object.assign(allPedidos[ai],update);
+  await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:novoStatus,via:'tabela_mapa'});
   renderTabelaMapa();
   renderPedidosLista();
 }
@@ -1667,6 +1668,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const _p=allPedidos.find(x=>x.id===pedidoId);
   if(_p){_p.status='pronto';_p.status_detalhado='pronto';_p.pronto_em=agora;_p.updated_at=agora;}
   if(_p)await _aplicarPrecoDinamico(_p);
+  await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:'pronto',via:'botao_rapido'});
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
   _notificarPedidoPronto();
