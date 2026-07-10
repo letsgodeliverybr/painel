@@ -324,8 +324,13 @@ serve(async () => {
       }
 
       if (modo === "todos") {
+        // Escopado a 'aguardando' (não "qualquer linha que já existiu"): um
+        // pedido aceito e depois desalocado (ou que voltou a ficar
+        // disponível por qualquer outro motivo) tem que poder ser
+        // redespachado. Checar por qualquer status histórico travava esse
+        // pedido pra sempre, mesmo já liberado de volta pro broadcast.
         const jaEnviado = await supabase.from("despacho_fila")
-          .select("id").eq("pedido_id", pedido.id).limit(1);
+          .select("id").eq("pedido_id", pedido.id).eq("status", "aguardando").limit(1);
         logErr(`verificar envio existente do pedido ${pedido.id}`, jaEnviado.error);
         if ((jaEnviado.data?.length || 0) > 0) continue;
 
