@@ -285,40 +285,49 @@ serve(async () => {
       }
 
       if (segundosPassados > tempoReset) {
-        // Fallback modo todos: executa uma vez (onda 99 como sentinel)
-        const { data: jaFallback, error: jaFallbackErr } = await supabase.from("despacho_fila")
-          .select("id").eq("pedido_id", pedido.id).eq("onda", 99).limit(1);
-        logErr(`verificar fallback onda 99 do pedido ${pedido.id}`, jaFallbackErr);
+        // Rede de segurança final (decisão de negócio): depois do tempo de
+        // reset sem aceite em nenhuma onda, dispara pra QUALQUER entregador
+        // disponível que ainda não tenha recebido oferta nenhuma pra esse
+        // pedido (qualquer onda/tentativa anterior, não só 'aguardando' —
+        // ver comentário abaixo), SEM limite de raio. Antes disso ficava
+        // capado em despacho_raio_busca_km (32km) e só rodava uma vez
+        // (sentinel onda=99); um pedido fora desse raio, ou cujos únicos
+        // candidatos não aceitassem, ficava preso pra sempre depois do
+        // timeout. Sem o cap de raio e sem o sentinel de "uma vez só", isso
+        // roda em todo tick subsequente e para sozinho quando não sobrar
+        // mais ninguém pra notificar (disponiveis.length === 0) — inclusive
+        // alcançando quem ficar disponível depois do timeout.
+        const { error: expirarErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
+          .eq("pedido_id", pedido.id).eq("status", "aguardando");
+        logErr(`expirar despacho_fila do pedido ${pedido.id} (fallback)`, expirarErr);
 
-        if ((jaFallback?.length || 0) === 0) {
-          const { error: expirarErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
-            .eq("pedido_id", pedido.id).eq("status", "aguardando");
-          logErr(`expirar despacho_fila do pedido ${pedido.id} (fallback)`, expirarErr);
+        // Todo mundo que já recebeu oferta pra esse pedido em qualquer onda
+        // ou tentativa (não só 'aguardando'): senão o entregador mais
+        // próximo, já expirado, seria oferecido de novo em vez de alcançar
+        // alguém novo.
+        const { data: jaReceberam, error: jaReceberamErr } = await supabase.from("despacho_fila")
+          .select("entregador_id").eq("pedido_id", pedido.id);
+        logErr(`listar quem ja recebeu o pedido ${pedido.id}`, jaReceberamErr);
+        const idsJaReceberam = (jaReceberam || []).map((r: any) => r.entregador_id);
 
-          const { data: jaReceberam, error: jaReceberamErr } = await supabase.from("despacho_fila")
-            .select("entregador_id").eq("pedido_id", pedido.id).eq("status", "aguardando");
-          logErr(`listar quem ja recebeu o pedido ${pedido.id}`, jaReceberamErr);
-          const idsJaReceberam = (jaReceberam || []).map((r: any) => r.entregador_id);
+        const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
+          lat: pedido.latitude, lng: pedido.longitude,
+          raio_km: 40075, // sem limite de raio — metade da circunferência da Terra
+        });
+        logErr(`buscar entregadores no raio (fallback, pedido ${pedido.id})`, entRaioErr);
 
-          const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
-            lat: pedido.latitude, lng: pedido.longitude,
-            raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
+        const disponiveis = (entregadores || []).filter((e: any) => !idsJaReceberam.includes(e.id));
+        for (const e of disponiveis) {
+          const expira = new Date(agora.getTime() + tempoExibicao * 1000);
+          const { error: filaErr } = await supabase.from("despacho_fila").insert({
+            pedido_id: pedido.id, entregador_id: e.id,
+            status: "aguardando", onda: 99, expira_em: expira.toISOString(),
           });
-          logErr(`buscar entregadores no raio (fallback, pedido ${pedido.id})`, entRaioErr);
-
-          const disponiveis = (entregadores || []).filter((e: any) => !idsJaReceberam.includes(e.id));
-          for (const e of disponiveis) {
-            const expira = new Date(agora.getTime() + tempoExibicao * 1000);
-            const { error: filaErr } = await supabase.from("despacho_fila").insert({
-              pedido_id: pedido.id, entregador_id: e.id,
-              status: "aguardando", onda: 99, expira_em: expira.toISOString(),
-            });
-            logErr(`inserir despacho_fila fallback (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
-            const { data: ent, error: entErr } = await supabase.from("entregadores")
-              .select("fcm_token").eq("id", e.id).single();
-            logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
-            if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedido.id, pedido.numero);
-          }
+          logErr(`inserir despacho_fila fallback (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
+          const { data: ent, error: entErr } = await supabase.from("entregadores")
+            .select("fcm_token").eq("id", e.id).single();
+          logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
+          if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedido.id, pedido.numero);
         }
         continue;
       }
@@ -370,8 +379,14 @@ serve(async () => {
           if (minutosPassados <= ondas[i].maxMin) { ondaAtual = ondas[i]; ondaNum = i + 1; break; }
         }
 
+        // Todo mundo que já recebeu oferta pra esse pedido em qualquer onda
+        // anterior (não só 'aguardando'): senão, assim que a oferta do mais
+        // próximo expira (29s), ele deixa de estar "excluído" e volta a ser
+        // o disponiveis[0] de novo — a onda escala em raio mas nunca chega
+        // em ninguém novo, porque o mesmo entregador mais próximo é
+        // reofertado pra sempre em vez do próximo da fila.
         const { data: jaReceberam, error: jaReceberamErr } = await supabase.from("despacho_fila")
-          .select("entregador_id").eq("pedido_id", pedido.id).eq("status", "aguardando");
+          .select("entregador_id").eq("pedido_id", pedido.id);
         logErr(`listar quem ja recebeu o pedido ${pedido.id} (ondas)`, jaReceberamErr);
         const idsJaReceberam = (jaReceberam || []).map((r: any) => r.entregador_id);
 
