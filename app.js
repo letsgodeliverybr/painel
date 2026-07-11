@@ -5881,6 +5881,7 @@ function renderConfiguracaoPage(aba){
     </div>`;
   if(_configAba==='operacao'){_renderConfigOperacao();return;}
   if(_configAba==='cliente'){_renderConfigCliente();return;}
+  if(_configAba==='integracao'){_renderConfigIntegracao();return;}
   const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
@@ -5995,6 +5996,35 @@ async function _salvarConfigCliente(){
   if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao salvar</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
+}
+
+async function _renderConfigIntegracao(){
+  document.getElementById('config-content').innerHTML=`
+    <div class="card" style="max-width:720px;margin:0 auto">
+      <div style="padding:24px 28px">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">🔗 Integração — iFood Logistics</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log de erros da integração (autenticação, polling de pedidos, envio de status de volta pro iFood). Toda falha aparece aqui — nada acontece em silêncio.</div>
+        <div id="ifood-erros-lista" style="font-size:13px;color:var(--text2)">Carregando...</div>
+      </div>
+    </div>`;
+  const logs=await db('logs_acoes','GET',null,'?acao=ilike.ifood_erro*&order=created_at.desc&limit=50');
+  const el=document.getElementById('ifood-erros-lista');
+  if(!el)return;
+  if(!Array.isArray(logs)||logs.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">✅</div>Nenhum erro registrado.</div>`;
+    return;
+  }
+  el.innerHTML=logs.map(l=>{
+    const hora=l.created_at?formatarHora(l.created_at):'—';
+    const acaoLegivel=(l.acao||'').replace(/^ifood_erro_/,'');
+    return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--surface2)">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <span style="font-weight:700;color:#ef4444;font-size:12px">${acaoLegivel}</span>
+        <span style="font-size:11px;color:var(--text3)">${hora}</span>
+      </div>
+      <pre style="font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;margin:0;font-family:monospace">${JSON.stringify(l.detalhes||{},null,2)}</pre>
+    </div>`;
+  }).join('');
 }
 
 function _renderConfigOperacao(){
