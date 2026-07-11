@@ -1457,6 +1457,8 @@ async function _criarEntregaRapida(){
   const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
   console.log('[CR] geo resultado:', geo);
   if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
+  const _dupCr=await _checarEnderecoDuplicadoRecente(lojaId,geo,endereco);
+  if(_dupCr&&!confirm(`Você acabou de criar uma entrega (#${_dupCr.numero}) para este mesmo endereço há poucos minutos.\nDeseja criar outra entrega mesmo assim?`))return;
   if((!_crLastDistKm)&&geo){
     const _lojaParaDist=allLojas.find(l=>l.id===lojaId);
     if(_lojaParaDist?.latitude&&_lojaParaDist?.longitude){
@@ -2781,6 +2783,32 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+function _normTxtEndereco(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+// Checa se já existe pedido criado nos últimos 3min pra mesma loja no mesmo
+// endereço (proximidade geográfica ≤50m; cai pra comparação de texto
+// normalizada — ignorando complemento — se a geocodificação não deu certo).
+// Não bloqueia, só sinaliza pro caller decidir (confirm) — dois pedidos reais
+// pro mesmo prédio são um caso legítimo, isso é só uma rede de segurança
+// contra clique duplicado/confusão.
+async function _checarEnderecoDuplicadoRecente(lojaId,geo,enderecoRaw){
+  if(!lojaId)return null;
+  const desde=new Date(Date.now()-3*60*1000).toISOString();
+  const recentes=await db('pedidos','GET',null,`?loja_id=eq.${lojaId}&created_at=gte.${desde}&select=id,numero,endereco,latitude,longitude&order=created_at.desc&limit=20`).catch(()=>[]);
+  if(!Array.isArray(recentes)||!recentes.length)return null;
+  const enderecoNorm=_normTxtEndereco(enderecoRaw);
+  for(const p of recentes){
+    if(geo&&p.latitude!=null&&p.longitude!=null){
+      if(calcularDistancia(geo.lat,geo.lng,p.latitude,p.longitude)<=0.05)return p;
+    }else{
+      const pNorm=_normTxtEndereco(p.endereco);
+      if(pNorm&&enderecoNorm&&(pNorm.startsWith(enderecoNorm)||enderecoNorm.startsWith(pNorm)))return p;
+    }
+  }
+  return null;
+}
+
 async function criarPedido(){
   const _btnsCp=[...document.querySelectorAll('.js-btn-criar-pedido')];
   if(_btnsCp.some(b=>b.disabled))return;
@@ -2821,6 +2849,11 @@ async function _criarPedidoInterno(){
   if(!geo){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Endereço não encontrado. Verifique e tente novamente.</div>';return;}
   const agora=new Date().toISOString();
   const finalLojaId=lojaIdSel;
+  const _dupNp=await _checarEnderecoDuplicadoRecente(finalLojaId,geo,endereco);
+  if(_dupNp){
+    if(fb)fb.innerHTML='';
+    if(!confirm(`Você acabou de criar uma entrega (#${_dupNp.numero}) para este mesmo endereço há poucos minutos.\nDeseja criar outra entrega mesmo assim?`))return;
+  }
   let latLoja=-21.1775,lngLoja=-47.8103;
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   let latOrigem=latLoja,lngOrigem=lngLoja,origemUsada='loja',geoColeta=null;
