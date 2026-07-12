@@ -39,6 +39,7 @@ const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
+let _clientesFiltro='todos';
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
@@ -2961,11 +2962,26 @@ async function _renderCadastrosConteudo(aba){
   }
 }
 
+function _clientesSetFiltro(filtro){_clientesFiltro=filtro;_renderCadastrosConteudo('clientes');}
+
 async function _renderClientesTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-clientes"></tbody></table></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
+  const _cTotal=data.length;
+  const _cAtivas=data.filter(l=>l.ativo).length;
+  const _cInativas=_cTotal-_cAtivas;
+  const btnFiltro=(id,label,count)=>{
+    const ativo=_clientesFiltro===id;
+    const cBadge=count>0?` <span style="background:${ativo?'rgba(255,255,255,.3)':'#1A56DB'};color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:2px">${count}</span>`:'';
+    return `<button onclick="_clientesSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}${cBadge}</button>`;
+  };
+  const filtroBtns=`
+    ${btnFiltro('todos','Todas',_cTotal)}
+    ${btnFiltro('ativas','✅ Ativas',_cAtivas)}
+    ${btnFiltro('inativas','⛔ Inativas',_cInativas)}`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-clientes"></tbody></table></div></div>`;
+  const filtered=_clientesFiltro==='ativas'?data.filter(l=>l.ativo):_clientesFiltro==='inativas'?data.filter(l=>!l.ativo):data;
   const tbody=document.getElementById('tbody-clientes');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>{const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;}).join('');
+  tbody.innerHTML=filtered.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;}).join('');
 }
 
 async function _renderEntregadoresTab(el){
