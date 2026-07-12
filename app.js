@@ -5111,6 +5111,7 @@ function _renderGerarPagamento(){
           </div></div>
         <button onclick="_calcularPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
+      <div id="gp-resumo" style="margin-bottom:16px"></div>
       <div id="gp-lista"></div>
     </div></div>
     <div class="card"><div style="padding:16px 20px 8px">
@@ -5155,6 +5156,18 @@ async function _carregarHistoricoSaques(append){
 
 function _gpCarregarMais(){_carregarHistoricoSaques(true);}
 
+// Card de resumo acima da tabela: total de pagamento aos motoboys no
+// período, líquido (mesma soma que a tabela abaixo já mostra por
+// entregador — total já descontado de saques retirados no período).
+function _gpAtualizarResumo(rows){
+  const el=document.getElementById('gp-resumo');if(!el)return;
+  const totalMotoboy=rows.reduce((s,r)=>s+r.total,0);
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+      <div class="stat-card"><div class="stat-label">TOTAL PAGAMENTO AOS MOTOBOYS</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
+    </div>`;
+}
+
 async function _calcularPagamentos(){
   const lista=document.getElementById('gp-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
@@ -5195,6 +5208,7 @@ async function _calcularPagamentos(){
     _gpResultados[eid].total=Math.max(0,Math.round((_gpResultados[eid].total-jaRetirado)*100)/100);
   });
   const rows=Object.values(_gpResultados).filter(r=>r.total>0);
+  _gpAtualizarResumo(rows);
   if(!lista)return;
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com saldo a pagar</div></div>`;return;}
   lista.innerHTML=`
@@ -5451,23 +5465,14 @@ async function _enviarFaturaHistorico(cobId){
 }
 
 // Card de resumo acima da tabela: total a cobrar das lojas (mesmo escopo da
-// tabela — exclui crédito/já-cobradas) vs. custo total de motoboy no mesmo
-// período (todos os pedidos finalizados, mesmo escopo de _calcularPagamentos,
-// valor bruto — sem descontar saques já retirados).
-async function _gcAtualizarResumo(inicioISO,fimISO,rowsCobranca){
+// tabela — exclui crédito/já-cobradas). O total de pagamento a motoboys fica
+// na aba Gerar Pagamentos (_gpAtualizarResumo), não aqui.
+function _gcAtualizarResumo(rowsCobranca){
   const el=document.getElementById('gc-resumo');if(!el)return;
-  el.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Calculando resumo...</div>';
   const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total,0);
-  const selectFields='taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
-  const pedidosMotoboy=await db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`);
-  const arr=Array.isArray(pedidosMotoboy)?pedidosMotoboy:[];
-  await _preCarregarFaixasLojas(arr);
-  const totalMotoboy=arr.reduce((s,p)=>s+_valorPagoMotoboyPedido(p,_tabelaFaixasPagPorLoja),0);
-  if(!document.getElementById('gc-resumo'))return; // busca seguinte pode ter re-renderizado a tela
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
       <div class="stat-card"><div class="stat-label">TOTAL A COBRAR DAS LOJAS</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
-      <div class="stat-card"><div class="stat-label">TOTAL PAGAMENTO AOS MOTOBOYS</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
     </div>`;
 }
 
@@ -5496,7 +5501,7 @@ async function _buscarCobrancas(){
     _gcResultados[lid].qtd++;
   });
   const rows=Object.values(_gcResultados);
-  await _gcAtualizarResumo(inicioISO,fimISO,rows);
+  _gcAtualizarResumo(rows);
   if(!lista)return;
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma loja com pedidos finalizados no período</div></div>`;return;}
   lista.innerHTML=`
