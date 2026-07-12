@@ -3994,16 +3994,25 @@ async function _buscarPedidosAdmin(){
   const fatBase=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
   const desp=finalizados.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
   const merc=arr.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  // Lojas de crédito pré-pagam saldo (depósito avulso) e "gastam" esse saldo a
+  // cada entrega — o valor do pedido não é receita nova, é consumo do depósito
+  // já contado quando ele entrou. Por isso, para o card de Faturamento, exclui
+  // o valor pulverizado por pedido dessas lojas (fatBase segue igual pras
+  // outras métricas, ex. Lucro médio/entrega, que é economia por entrega e não
+  // agregado de receita do período).
+  const _lojasCreditoIds=new Set((Array.isArray(_fpLojas)?_fpLojas:[]).filter(l=>l.tipo_cobranca==='credito').map(l=>l.id));
+  const fatBaseFaturamento=finalizados.filter(p=>!_lojasCreditoIds.has(p.loja_id)).reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
   // Créditos/débitos avulsos de loja (exclui os automáticos de entrega/estorno,
   // que já estão contados via taxa_entrega/gorjeta acima — mesmo critério usado
-  // no Faturamento da tela de Relatórios).
+  // no Faturamento da tela de Relatórios). Pra loja de crédito, isso é o
+  // próprio depósito — a receita real dela nesse card.
   const _avulsos=(Array.isArray(_creditosRes)?_creditosRes:[]).filter(c=>{
     const obs=(c.observacoes||'').toLowerCase();
     return !obs.startsWith('entrega #')&&!obs.startsWith('estorno #');
   });
   const _totalCreditos=_avulsos.filter(c=>c.tipo==='credito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   const _totalDebitos=_avulsos.filter(c=>c.tipo==='debito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
-  const fat=fatBase+_totalCreditos-_totalDebitos;
+  const fat=fatBaseFaturamento+_totalCreditos-_totalDebitos;
   const lucroBruto=fat-desp;
   const contasPagarTotal=(Array.isArray(_contasPagarRes)?_contasPagarRes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   const lucroLiquido=lucroBruto-contasPagarTotal;
