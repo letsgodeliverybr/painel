@@ -333,11 +333,27 @@ serve(async () => {
       }
 
       if (modo === "todos") {
+        // Expira ofertas vencidas ANTES de checar "já enviado" — sem isso,
+        // uma vez que a janela de expira_em passa sem ninguém aceitar, a
+        // linha continua 'aguardando' pra sempre (nada nunca a marcava como
+        // 'expirado' neste modo, diferente do modo 'ondas', que já fazia
+        // essa varredura). O motoboy para de ver/tocar o pedido (respeitando
+        // expira_em no client), mas o banco segue achando que "ainda tem
+        // gente olhando" e nunca redespacha — pedido fica pronto e invisível
+        // pra sempre. Bug real, reproduzido em produção (Novigo, 2026-07-12).
+        const { error: expirarTodosErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
+          .eq("pedido_id", pedido.id).eq("status", "aguardando")
+          .lt("expira_em", agora.toISOString());
+        logErr(`expirar ofertas vencidas do pedido ${pedido.id} (modo todos)`, expirarTodosErr);
+
         // Escopado a 'aguardando' (não "qualquer linha que já existiu"): um
         // pedido aceito e depois desalocado (ou que voltou a ficar
         // disponível por qualquer outro motivo) tem que poder ser
         // redespachado. Checar por qualquer status histórico travava esse
-        // pedido pra sempre, mesmo já liberado de volta pro broadcast.
+        // pedido pra sempre, mesmo já liberado de volta pro broadcast. Com a
+        // expiração acima, isso agora também cobre o retry natural: uma vez
+        // que a onda expira sem aceite, este check libera um novo broadcast
+        // completo no próximo tick.
         const jaEnviado = await supabase.from("despacho_fila")
           .select("id").eq("pedido_id", pedido.id).eq("status", "aguardando").limit(1);
         logErr(`verificar envio existente do pedido ${pedido.id}`, jaEnviado.error);
