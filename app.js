@@ -68,6 +68,15 @@ function _calcTaxaMotoboy(p,faixasOverride){
   console.log(`[calcTaxaMotoboy] loja_id=${p.loja_id||'?'} tabela_pagamento=${tabelaPag} distancia_km=${km} pd_aplicado=${parseFloat(p.preco_dinamico)||0} gorjeta=${parseFloat(p.gorjeta)||0} total=${result}`);
   return result;
 }
+// Valor pago ao motoboy por um pedido: taxa_motoboy fixada no pedido > cálculo por
+// faixa de km (_calcTaxaMotoboy) > fallback taxa_entrega_motoboy/taxa_entrega + gorjeta.
+// Extraído de _calcularPagamentos (Gerar Pagamentos) pra ser reusado também no
+// resumo da tela Gerar Cobranças — uma única fórmula, dois lugares.
+function _valorPagoMotoboyPedido(p,faixasPorLoja){
+  return p.taxa_motoboy!=null
+    ? parseFloat(p.taxa_motoboy)
+    : (_calcTaxaMotoboy(p,(faixasPorLoja||{})[p.loja_id])??(parseFloat(p.taxa_entrega_motoboy??p.taxa_entrega??0)+parseFloat(p.gorjeta||0)));
+}
 function _calcTaxaLoja(p,faixasOverride){
   const faixas=faixasOverride||_faixasCobranca;
   if(!faixas.length)return parseFloat(p.taxa_entrega)||0;
@@ -5163,7 +5172,7 @@ async function _calcularPagamentos(){
   arr.forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
     if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0};}
-    const tx=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):(_calcTaxaMotoboy(p,_tabelaFaixasPagPorLoja[p.loja_id])??(parseFloat(p.taxa_entrega_motoboy??p.taxa_entrega??0)+parseFloat(p.gorjeta||0)));
+    const tx=_valorPagoMotoboyPedido(p,_tabelaFaixasPagPorLoja);
     _gpResultados[eid].total+=tx;
     _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
     _gpResultados[eid].qtd++;
@@ -5371,6 +5380,7 @@ function _renderGerarCobranca(){
           </div></div>
         <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
       </div>
+      <div id="gc-resumo" style="margin-bottom:16px"></div>
       <div id="gc-lista"></div>
     </div></div>
     <div class="card"><div style="padding:16px 20px 8px">
@@ -5429,6 +5439,27 @@ async function _enviarFaturaHistorico(cobId){
   showNotif(sent?'📲 Fatura enviada!':'❌ Falha ao enviar fatura',c.lojas?.nome||'',sent?'#22c55e':'var(--red)');
 }
 
+// Card de resumo acima da tabela: total a cobrar das lojas (mesmo escopo da
+// tabela — exclui crédito/já-cobradas) vs. custo total de motoboy no mesmo
+// período (todos os pedidos finalizados, mesmo escopo de _calcularPagamentos,
+// valor bruto — sem descontar saques já retirados).
+async function _gcAtualizarResumo(inicioISO,fimISO,rowsCobranca){
+  const el=document.getElementById('gc-resumo');if(!el)return;
+  el.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Calculando resumo...</div>';
+  const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total,0);
+  const selectFields='taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
+  const pedidosMotoboy=await db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`);
+  const arr=Array.isArray(pedidosMotoboy)?pedidosMotoboy:[];
+  await _preCarregarFaixasLojas(arr);
+  const totalMotoboy=arr.reduce((s,p)=>s+_valorPagoMotoboyPedido(p,_tabelaFaixasPagPorLoja),0);
+  if(!document.getElementById('gc-resumo'))return; // busca seguinte pode ter re-renderizado a tela
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+      <div class="stat-card"><div class="stat-label">TOTAL A COBRAR DAS LOJAS</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="stat-label">TOTAL PAGAMENTO AOS MOTOBOYS</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
+    </div>`;
+}
+
 async function _buscarCobrancas(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
   const fim=document.getElementById('gc-data-fim')?.value;
@@ -5454,6 +5485,7 @@ async function _buscarCobrancas(){
     _gcResultados[lid].qtd++;
   });
   const rows=Object.values(_gcResultados);
+  await _gcAtualizarResumo(inicioISO,fimISO,rows);
   if(!lista)return;
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma loja com pedidos finalizados no período</div></div>`;return;}
   lista.innerHTML=`
