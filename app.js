@@ -4022,7 +4022,17 @@ async function _buscarPedidosAdmin(){
   const _mesIni=dataIni?dataIni.slice(0,7)+'-01':null;
   const _mesFim=dataFim?dataFim.slice(0,7)+'-01':null;
   const qsContasPagar=_mesIni&&_mesFim?`?status=eq.pago&competencia=gte.${_mesIni}&competencia=lte.${_mesFim}`:'?status=eq.pago';
-  const [_res,_creditosRes,_contasPagarRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos),db('contas_pagar','GET',null,qsContasPagar)]);
+  // Crédito/débito manual de entregador (Créditos > Crédito/Débito
+  // Entregadores) listado aqui como linha extra, só pra adm — não é um pedido
+  // de verdade, então não filtra por loja/número (não se aplicam) e não entra
+  // em nenhum card de resumo acima (Total, Finalizados, KM, Faturamento...),
+  // só aparece como linha visual no fim da tabela.
+  const _mostrarCreditosEntregador=currentPerfil==='adm'&&!lojaId&&!numBusca;
+  let qsCreditosEnt='?select=entregador_id,tipo,valor,observacoes,data&tipo=in.(credito,debito)&order=data.desc';
+  if(entId)qsCreditosEnt+=`&entregador_id=eq.${entId}`;
+  if(dataIni)qsCreditosEnt+=`&data=gte.${dataIni}`;
+  if(dataFim)qsCreditosEnt+=`&data=lte.${dataFim}`;
+  const [_res,_creditosRes,_contasPagarRes,_creditosEntRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos),db('contas_pagar','GET',null,qsContasPagar),_mostrarCreditosEntregador?db('creditos_entregadores','GET',null,qsCreditosEnt):Promise.resolve([])]);
   let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
@@ -4100,7 +4110,19 @@ async function _buscarPedidosAdmin(){
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?9:11;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  tbody.innerHTML=arr.length===0?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  // Linhas extras de crédito/débito manual de entregador — só quando adm e
+  // sem filtro de loja/número (não fazem sentido pra esses filtros). Usa o
+  // mesmo formato de 13 colunas do adm; não participam de nenhum card de
+  // resumo, é só exibição no fim da lista.
+  const _creditosEntRows=(Array.isArray(_creditosEntRes)?_creditosEntRes:[]).map(c=>{
+    const ent=_fpEntregadores.find(e=>e.id===c.entregador_id);
+    const isCredito=c.tipo==='credito';
+    const badge=isCredito?`<span class="p-badge" style="background:#d1fae520;color:#059669">💰 Crédito</span>`:`<span class="p-badge" style="background:#fee2e220;color:#ef4444">💸 Débito</span>`;
+    const valorStr=`<span style="font-weight:700;color:${isCredito?'#10b981':'#ef4444'}">${isCredito?'+':'-'}R$ ${(parseFloat(c.valor)||0).toFixed(2)}</span>`;
+    return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito manual':'Débito manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td></tr>`;
+  }).join('');
+  tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
 }
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
@@ -5264,10 +5286,11 @@ async function _calcularPagamentos(){
   const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
   const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
   const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
-  const [pedidos,entregadores,saquesPeriodo]=await Promise.all([
+  const [pedidos,entregadores,saquesPeriodo,creditosPeriodo]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
     db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=lte.${dataFim}&data_fim=gt.${dataIni}&status=neq.cancelado`),
+    db('creditos_entregadores','GET',null,`?select=entregador_id,tipo,valor&data=gte.${dataIni}&data=lte.${dataFim}&tipo=in.(credito,debito)`),
   ]);
   // Soma saques gerados DENTRO do período exato (data_inicio >= inicio E data_fim <= fim)
   const saquesPorEid={};
@@ -5285,6 +5308,16 @@ async function _calcularPagamentos(){
     _gpResultados[eid].total+=tx;
     _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
     _gpResultados[eid].qtd++;
+  });
+  // Crédito/débito manual (Créditos > Crédito/Débito Entregadores) no mesmo
+  // período — entra na conta junto com os pedidos, inclusive pra entregador
+  // que não tenha nenhum pedido no período (senão o ajuste sumiria em
+  // silêncio).
+  (Array.isArray(creditosPeriodo)?creditosPeriodo:[]).forEach(c=>{
+    const eid=c.entregador_id;if(!eid)return;
+    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0};}
+    const delta=(c.tipo==='credito'?1:-1)*(parseFloat(c.valor)||0);
+    _gpResultados[eid].total=Math.round((_gpResultados[eid].total+delta)*100)/100;
   });
   // Desconta saques já realizados no período; oculta entregadores totalmente quitados
   Object.keys(_gpResultados).forEach(eid=>{
