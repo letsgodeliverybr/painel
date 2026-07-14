@@ -2006,7 +2006,15 @@ function renderMapaPage(){
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Mostrar todas as lojas" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
         </div>
-        ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;background:#f59e0b;color:#111;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);white-space:nowrap"></div>`:''}
+        ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
+          <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
+          <div style="flex:1;min-width:0;overflow:hidden">
+            <div style="font-size:14px;font-weight:600;color:#fbbf24;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
+            <div id="alerta-saque-rapido-titulo" style="font-size:13px;font-weight:600;color:#fbbf24;margin-bottom:3px"></div>
+            <div style="font-size:12px;color:#fbbf24;opacity:.75">Clique para ver os detalhes</div>
+          </div>
+          <button onclick="event.stopPropagation();document.getElementById('alerta-saque-rapido').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
@@ -4539,8 +4547,9 @@ function _atualizarAlertaSaqueRapidoMapa(){
   const el=document.getElementById('alerta-saque-rapido');if(!el)return;
   if(_saquesRapidosPendentesCount>0){
     const n=_saquesRapidosPendentesCount;
-    el.textContent=`⚠️ Você tem ${n} saque${n>1?'s':''} rápido${n>1?'s':''} pendente${n>1?'s':''}`;
-    el.style.display='block';
+    const titulo=document.getElementById('alerta-saque-rapido-titulo');
+    if(titulo)titulo.textContent=`⚠️ Você tem ${n} saque${n>1?'s':''} rápido${n>1?'s':''} pendente${n>1?'s':''}`;
+    el.style.display='flex';
   }else{
     el.style.display='none';
   }
