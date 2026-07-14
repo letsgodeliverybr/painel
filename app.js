@@ -1127,6 +1127,30 @@ async function _criarContaAuth(email,senha){
   }catch{return{ok:false,error:'Erro de conexão.'};}
 }
 
+// Redefine a senha de uma conta direto no Supabase Auth (Admin API, via
+// admin-reset-senha), sem disparar e-mail nem expor link/host — usado nas
+// telas de Editar Entregador/Usuário/Loja. Requer o access_token real de
+// quem está logado (a Edge Function confere que é um admin ativo).
+function _toggleSenhaVisivel(inputId,btn){
+  const el=document.getElementById(inputId);if(!el)return;
+  if(el.type==='password'){el.type='text';btn.textContent='🙈';}else{el.type='password';btn.textContent='👁️';}
+}
+async function _redefinirSenhaAuth(email,novaSenha){
+  let sessao=null;
+  try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
+  if(!sessao?.access_token)return{ok:false,error:'Sessão expirada — faça login novamente.'};
+  try{
+    const r=await fetch(`${SB_URL}/functions/v1/admin-reset-senha`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${sessao.access_token}`},
+      body:JSON.stringify({email,novaSenha})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)return{ok:false,error:data.error||`Erro ${r.status}`};
+    return{ok:true};
+  }catch{return{ok:false,error:'Erro de conexão.'};}
+}
+
 async function logAcao(acao,detalhes={}){
   if(!currentUser)return;
   await db('logs_acoes','POST',{usuario_id:currentUser.id,acao,detalhes});
@@ -3210,7 +3234,7 @@ ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
-${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="redefinirSenhaEntregador('${(e.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
 ${sec('📎 Documentos')}
 ${(()=>{const _db=(url)=>url?`<button type="button" data-url="${(url||'').replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;width:100%">Ver foto</button>`:'<span style="color:var(--text3);font-size:13px;padding:9px 0;display:block">Não enviado</span>';return row2(fi('Foto de Perfil',_db(e.foto_perfil||e.foto_url||e.avatar||'')),fi('CNH',_db(e.foto_cnh||e.cnh_url||'')))+row2(fi('CRLV',_db(e.foto_crlv||e.crlv_url||'')),fi('Comp. Residência',_db(e.comprovante_residencia||e.foto_comprovante||'')));})()}
 ${sec('🛵 Dados do Veículo')}
@@ -3255,6 +3279,14 @@ async function salvarEdicaoEntregador(entId){
     }
   }
 
+  const novaSenha=g('ee-nova-senha');
+  if(novaSenha){
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova senha precisa ter no mínimo 6 caracteres.</span>';return;}
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando senha…</span>';
+    const resSenha=await _redefinirSenhaAuth(novoEmail||emailOriginal,novaSenha);
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao redefinir senha: ${resSenha.error}</span>`;return;}
+  }
+
   const update={
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
     codigo_cadastro:g('ee-codigo-cadastro')||null,
@@ -3278,16 +3310,6 @@ async function salvarEdicaoEntregador(entId){
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado com sucesso!','','var(--green)');
   setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
-}
-
-async function redefinirSenhaEntregador(email){
-  const fb=document.getElementById('ee-feedback');
-  if(!email){if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail não informado.</span>';return;}
-  if(fb)fb.innerHTML='<span style="color:var(--text3)">Enviando e-mail…</span>';
-  try{
-    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
-    if(fb)fb.innerHTML=r.ok?'<span style="color:#22c55e">✅ E-mail de redefinição enviado!</span>':'<span style="color:#ef4444">Erro ao enviar e-mail.</span>';
-  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
 }
 
 function abrirNovoEntregador(){
@@ -3336,28 +3358,27 @@ async function abrirEditarUsuario(userId){
   let modal=document.getElementById('modal-editar-usuario');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-usuario';modal.className='modal-overlay';document.body.appendChild(modal);}
   const lojaOpts='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="display:flex;align-items:flex-end"><button onclick="redefinirSenhaUsuario('${(u.email||'').replace(/'/g,"\\'")}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
 async function salvarEdicaoUsuario(userId){
   const fb=document.getElementById('eu-feedback');
+  const emailEl=document.getElementById('eu-email');
+  const emailOriginal=(emailEl?.getAttribute('data-original-email')||'').trim().toLowerCase();
+  const novaSenha=document.getElementById('eu-nova-senha')?.value||'';
+  if(novaSenha){
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova senha precisa ter no mínimo 6 caracteres.</span>';return;}
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando senha…</span>';
+    const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao redefinir senha: ${resSenha.error}</span>`;return;}
+  }
   const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar usuário','','var(--red)');return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Usuário atualizado!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-usuario')?.classList.remove('open');renderCadastrosPage('usuarios');},1200);
-}
-
-async function redefinirSenhaUsuario(email){
-  const fb=document.getElementById('eu-feedback');
-  if(!email){if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail não informado.</span>';return;}
-  if(fb)fb.innerHTML='<span style="color:var(--text3)">Enviando e-mail…</span>';
-  try{
-    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
-    if(fb)fb.innerHTML=r.ok?'<span style="color:#22c55e">✅ E-mail de redefinição enviado!</span>':'<span style="color:#ef4444">Erro ao enviar e-mail.</span>';
-  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
 }
 
 async function _renderPrecificacaoTab(el){
@@ -4138,8 +4159,8 @@ ${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig=
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
 ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
 ${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
-${r2(fi('E-mail',inp('el-email',l.email)),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
-${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('',`<div style="display:flex;align-items:flex-end;height:100%"><button onclick="resetSenhaLoja('${v(l.email)}')" style="width:100%;padding:9px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔑 Redefinir Senha</button></div>`))}
+${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-original-email="${v(l.email)}" style="${is}"/>`),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
+${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r1(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`))}
@@ -4153,15 +4174,6 @@ ${r1(fi('Tempo de espera para agrupar (segundos)',inp('el-rot-espera',l.roteriza
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
 }
-async function resetSenhaLoja(email){
-  const fb=document.getElementById('el-feedback');
-  if(!email){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">E-mail não informado.</div>';return;}
-  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Enviando e-mail…</div>';
-  try{
-    const r=await fetch(`${SB_URL}/auth/v1/recover`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});
-    if(fb)fb.innerHTML=r.ok?'<div style="color:#22c55e;font-size:13px">✅ E-mail de redefinição enviado!</div>':'<div style="color:#ef4444;font-size:13px">Erro ao enviar e-mail.</div>';
-  }catch{if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Erro de conexão.</div>';}
-}
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
   if(!endereco){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha o endereço primeiro</span>';return;}
@@ -4172,7 +4184,16 @@ async function geocodificarLoja(){
   else{if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Não encontrado</span>';}
 }
 async function salvarEdicaoLoja(lojaId){
-  const fb=document.getElementById('el-feedback');if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
+  const fb=document.getElementById('el-feedback');
+  const emailOriginal=(document.getElementById('el-email')?.getAttribute('data-original-email')||'').trim().toLowerCase();
+  const novaSenha=document.getElementById('el-nova-senha')?.value||'';
+  if(novaSenha){
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nova senha precisa ter no mínimo 6 caracteres.</div>';return;}
+    if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Atualizando senha…</div>';
+    const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<div style="color:#ef4444;font-size:13px">❌ Erro ao redefinir senha: ${resSenha.error}</div>`;return;}
+  }
+  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const g=(id)=>document.getElementById(id)?.value||'';
   const pj=g('el-pessoa-juridica');
   const update={
@@ -4250,7 +4271,7 @@ async function criarLoja(){
   };
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
-  await db('usuarios_painel','POST',{nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
+  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
   fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja cadastrada!</div>';showNotif('Loja criada!',`${nome} pode acessar com ${email}`);
   setTimeout(()=>fecharModal('modal-loja'),2000);
@@ -4277,7 +4298,7 @@ async function criarUsuario(){
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const auth=await _criarContaAuth(email,senha);
   if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
-  const result=await db('usuarios_painel','POST',{nome,email,senha,perfil,loja_id:lojaId,ativo:true});
+  const result=await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil,loja_id:lojaId,ativo:true});
   await logAcao('criar_usuario',{nome,email,perfil});
   if(result&&result.length>0){fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Usuário cadastrado!</div>';showNotif('Usuário criado!',`${nome} (${perfil})`);setTimeout(()=>fecharModal('modal-usuario'),2000);}
   else fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro. E-mail pode já estar cadastrado.</div>';
