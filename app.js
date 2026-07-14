@@ -25,8 +25,9 @@ let _pedidosAtivosGlobal=[];
 let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
+let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -1905,7 +1906,7 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   body.innerHTML=items.map(item=>{
-    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:'';
+    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
   }).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px"><button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
 }
@@ -1941,7 +1942,7 @@ async function fazerLogin(){
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
   const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';
   _carregarSaldoTopbar();
-  if(currentPerfil==='adm')_carregarBadgeSaques();
+  if(currentPerfil==='adm'){_carregarBadgeSaques();_carregarBadgeSaqueRapido();}
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
   if(currentPerfil==='adm')_iniciarMonitorWhatsapp();
 }
@@ -1967,7 +1968,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
   if(pages[id])pages[id]();
 }
 
@@ -2005,6 +2006,7 @@ function renderMapaPage(){
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Mostrar todas as lojas" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
         </div>
+        ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;background:#f59e0b;color:#111;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);white-space:nowrap"></div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
@@ -2047,6 +2049,7 @@ function renderMapaPage(){
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
+    if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
     if(currentPerfil==='loja'){
       const selCr=document.getElementById('cr-loja-id');
       if(selCr){
@@ -2330,6 +2333,7 @@ async function atualizarTudo(){
   renderPedidosLista();if(map)atualizarMarcadores();
   carregarTabelaMapa();
   if(currentPerfil==='loja')_carregarSaldoTopbar();
+  if(currentPerfil==='adm')_carregarBadgeSaqueRapido();
 }
 
 let _wsRealtime=null,_wsHeartbeat=null,_wsReconTimer=null;
@@ -4517,9 +4521,29 @@ let _gpResultados={};
 let _gcResultados={};
 
 async function _carregarBadgeSaques(){
-  const r=await db('saques','GET',null,'?select=id&status=eq.pendente');
+  const r=await db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=is.null');
   _saquesPendentesCount=Array.isArray(r)?r.length:0;
   renderNavSidebar(_navAtivo);
+}
+// Saque rápido = solicitado pelo entregador no app Flutter (RPC solicitar_saque),
+// identificado por chave_pix preenchido na própria linha de saques — o repasse
+// semanal gerado pelo admin em Gerar Pagamentos nunca preenche esse campo (só
+// grava qtd_pedidos). Ver conversa/memória sobre a separação dos dois fluxos.
+async function _carregarBadgeSaqueRapido(){
+  const r=await db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=not.is.null');
+  _saquesRapidosPendentesCount=Array.isArray(r)?r.length:0;
+  renderNavSidebar(_navAtivo);
+  _atualizarAlertaSaqueRapidoMapa();
+}
+function _atualizarAlertaSaqueRapidoMapa(){
+  const el=document.getElementById('alerta-saque-rapido');if(!el)return;
+  if(_saquesRapidosPendentesCount>0){
+    const n=_saquesRapidosPendentesCount;
+    el.textContent=`⚠️ Você tem ${n} saque${n>1?'s':''} rápido${n>1?'s':''} pendente${n>1?'s':''}`;
+    el.style.display='block';
+  }else{
+    el.style.display='none';
+  }
 }
 
 async function renderFinanceiroPage(aba){
@@ -5127,7 +5151,7 @@ async function _carregarResumoFinanceiro(){
   const [cobrancasPagas,saquesPagos,saquesPendentes]=await Promise.all([
     db('cobrancas_lojas','GET',null,`?select=valor_total&status=eq.pago&updated_at=gte.${startSemanaISO}${_lf}`),
     db('saques','GET',null,`?select=valor&status=eq.pago&updated_at=gte.${startSemanaISO}`),
-    db('saques','GET',null,'?select=valor&status=eq.pendente'),
+    db('saques','GET',null,'?select=valor&status=eq.pendente&chave_pix=is.null'),
   ]);
 
   const somaValor=arr=>(Array.isArray(arr)?arr:[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
@@ -5285,7 +5309,7 @@ async function _calcularPagamentos(){
 async function _buscarPagamentos(){
   const pendWrap=document.getElementById('as-pendentes-wrap');
   if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&order=created_at.asc');
+  const saques=await db('saques','GET',null,'?select=*,entregadores(nome,chave_pix,tipo_chave_pix,banco)&status=eq.pendente&chave_pix=is.null&order=created_at.asc');
   _saquesPendentesMap={};
   (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
   if(!pendWrap)return;
@@ -5369,7 +5393,7 @@ async function _renderHistoricoAprovarSaques(inicio,fim){
   if(!wrap)return;
   // Histórico sempre mostra os últimos 50 registros sem filtro de data
   // para não sumir quando os saques aprovados são de outros períodos
-  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=50');
+  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&chave_pix=is.null&order=updated_at.desc&limit=50');
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
@@ -5434,6 +5458,114 @@ async function recusarSaque(id){
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _carregarResumoFinanceiro();
   _buscarPagamentos();
+}
+
+// ── SAQUE RÁPIDO (solicitado pelo entregador no app, distinto do repasse
+// semanal — ver comentário em _carregarBadgeSaqueRapido) ──
+let _saquesRapidosPendentesMap={};
+function renderSaqueRapidoPage(){
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">⚡ Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos()">🔄 Atualizar</button></div>
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques rápidos pendentes de aprovação</div>
+      <div id="sr-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
+    </div></div>
+    <div id="sr-historico-wrap"></div>
+  </div>`;
+  _buscarSaquesRapidos();
+}
+async function _buscarSaquesRapidos(){
+  const pendWrap=document.getElementById('sr-pendentes-wrap');
+  if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
+  const saques=await db('saques','GET',null,'?select=*,entregadores(nome)&status=eq.pendente&chave_pix=not.is.null&order=created_at.asc');
+  _saquesRapidosPendentesMap={};
+  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesRapidosPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
+  if(!pendWrap)return;
+  if(!saques||!saques.length){
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque rápido pendente</div></div>`;
+    _renderHistoricoSaqueRapido();
+    return;
+  }
+  pendWrap.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="sr-sel-all" onchange="_srToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <button onclick="_aprovarSaquesRapidosSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <tbody>${saques.map(s=>{const ent=s.entregadores||{};
+        const bruto=parseFloat(s.valor_bruto||s.valor||0);
+        const taxa=parseFloat(s.taxa||0);
+        const liq=parseFloat(s.valor_liquido||s.valor||0);
+        return`<tr id="saque-rapido-row-${s.id}">
+        <td><input type="checkbox" class="sr-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
+        <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
+        <td style="font-weight:700;color:var(--text)">R$ ${bruto.toFixed(2)}</td>
+        <td style="color:#ef4444;font-size:12px">R$ ${taxa.toFixed(2)}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${liq.toFixed(2)}</td>
+        <td style="font-family:monospace;font-size:12px">${s.chave_pix||'—'}</td>
+        <td>${s.tipo_chave_pix||'—'}</td>
+        <td>${s.banco||'—'}</td>
+        <td><button onclick="recusarSaqueRapido('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+      </tr>`;}).join('')}</tbody>
+    </table></div>`;
+  _renderHistoricoSaqueRapido();
+}
+function _srToggleAll(checked){document.querySelectorAll('.sr-cb').forEach(cb=>cb.checked=checked);}
+async function _aprovarSaquesRapidosSelecionados(){
+  const ids=[...document.querySelectorAll('.sr-cb:checked')].map(cb=>cb.value);
+  if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
+  const agora=new Date().toISOString();let ok=0;
+  for(const id of ids){
+    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}`);
+    if(res!==null){
+      document.getElementById(`saque-rapido-row-${id}`)?.remove();
+      ok++;
+      const s=_saquesRapidosPendentesMap[id];
+      if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+    }
+  }
+  _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-ok);
+  renderNavSidebar(_navAtivo);
+  _atualizarAlertaSaqueRapidoMapa();
+  showNotif(`✅ ${ok} saque(s) rápido(s) aprovado(s)!`,'');
+  _buscarSaquesRapidos();
+}
+async function recusarSaqueRapido(id){
+  const agora=new Date().toISOString();
+  const s=_saquesRapidosPendentesMap[id];
+  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}`);
+  if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
+  document.getElementById(`saque-rapido-row-${id}`)?.remove();
+  _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-1);
+  renderNavSidebar(_navAtivo);
+  _atualizarAlertaSaqueRapidoMapa();
+  console.log(`[SALDO] saque rápido ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
+  showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
+  _buscarSaquesRapidos();
+}
+async function _renderHistoricoSaqueRapido(){
+  const wrap=document.getElementById('sr-historico-wrap');
+  if(!wrap)return;
+  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&chave_pix=not.is.null&order=updated_at.desc&limit=50');
+  if(!hist||!hist.length){wrap.innerHTML='';return;}
+  const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
+  wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Saques Rápidos</div>
+    <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
+      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado em</th><th>Status</th></tr></thead>
+      <tbody>${hist.map(s=>`<tr>
+        <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
+        <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
+        <td>R$ ${(parseFloat(s.valor_bruto||s.valor)||0).toFixed(2)}</td>
+        <td style="color:#ef4444;font-size:12px">R$ ${(parseFloat(s.taxa)||0).toFixed(2)}</td>
+        <td style="font-weight:700;color:#10b981">R$ ${(parseFloat(s.valor_liquido||s.valor)||0).toFixed(2)}</td>
+        <td style="font-size:11px;color:var(--text3)">${s.aprovado_em?formatarDataHora(s.aprovado_em):'—'}</td>
+        <td>${badge(s)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div></div>`;
 }
 
 // ── GERAR COBRANÇA ──
