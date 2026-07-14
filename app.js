@@ -5478,7 +5478,7 @@ function renderSaqueRapidoPage(){
         </div>
       </div>
       <div class="stat-card"><div class="stat-label">PAGO NO PERÍODO</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
-      <div class="stat-card"><div class="stat-label">TAXA NO PERÍODO</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
+      <div class="stat-card"><div class="stat-label">LUCRO NO PERÍODO</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
     </div>
     <div class="card" style="margin-bottom:20px"><div style="padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
       <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA INÍCIO</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
