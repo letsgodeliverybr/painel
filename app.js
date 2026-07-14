@@ -3989,6 +3989,7 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição de Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?9:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
@@ -4104,6 +4105,27 @@ async function _buscarPedidosAdmin(){
     _slaBars.innerHTML=_totalSla===0
       ?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com dados de SLA no período</div>'
       :_faixas.map(f=>{const pct=(f.n/_totalSla*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${f.cor};height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
+  }
+  // Distribuição de KM: faixas fixas de 1km, dinâmicas até a maior distância
+  // encontrada no período — usa o mesmo array de finalizados já buscado
+  // acima (mesmo conjunto do card "TOTAL KM"), sem query nova.
+  const _kmBars=document.getElementById('fp-km-bars');
+  if(_kmBars){
+    const _comKm=finalizados.filter(p=>parseFloat(p.distancia_km)>0);
+    if(!_comKm.length){
+      _kmBars.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com KM no período</div>';
+    }else{
+      const _maxKm=Math.max(...(_comKm.map(p=>parseFloat(p.distancia_km))));
+      const _numFaixas=Math.max(1,Math.ceil(_maxKm));
+      const _faixasKm=Array.from({length:_numFaixas},(_,i)=>({label:`${i} a ${i+1}km`,n:0}));
+      _comKm.forEach(p=>{
+        const km=parseFloat(p.distancia_km);
+        const idx=Math.min(Math.floor(km),_numFaixas-1);
+        _faixasKm[idx].n++;
+      });
+      const _totalKm=_comKm.length;
+      _kmBars.innerHTML=_faixasKm.filter(f=>f.n>0).map(f=>{const pct=(f.n/_totalKm*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:#1A56DB;height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
+    }
   }
   const _showFin=currentPerfil==='adm';
   const _isSup=currentPerfil==='suporte';
