@@ -5463,9 +5463,28 @@ async function recusarSaque(id){
 // ── SAQUE RÁPIDO (solicitado pelo entregador no app, distinto do repasse
 // semanal — ver comentário em _carregarBadgeSaqueRapido) ──
 let _saquesRapidosPendentesMap={};
+let _srCaixaAtual=0;
 function renderSaqueRapidoPage(){
+  const hoje=_dataHojeBrasilia();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">⚡ Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos()">🔄 Atualizar</button></div>
+    <div class="page-header"><div class="page-title">⚡ Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">🔄 Atualizar</button></div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">CAIXA <span onclick="_srEditarCaixaToggle()" style="cursor:pointer" title="Definir caixa">✏️</span></div>
+        <div class="stat-value" id="sr-card-caixa" style="font-size:22px;color:var(--accent)">—</div>
+        <div id="sr-caixa-edit" style="display:none;margin-top:10px;gap:6px">
+          <input type="number" id="sr-caixa-input" step="0.01" min="0" style="width:110px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:Inter,sans-serif;font-size:13px"/>
+          <button onclick="_srSalvarCaixa()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">✔</button>
+        </div>
+      </div>
+      <div class="stat-card"><div class="stat-label">PAGO NO PERÍODO</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
+      <div class="stat-card"><div class="stat-label">TAXA NO PERÍODO</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
+    </div>
+    <div class="card" style="margin-bottom:20px"><div style="padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA INÍCIO</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
+      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA FIM</label><input type="date" id="sr-data-fim" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
+      <button onclick="_srAplicarPeriodo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Filtrar</button>
+    </div></div>
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques rápidos pendentes de aprovação</div>
       <div id="sr-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
@@ -5473,13 +5492,55 @@ function renderSaqueRapidoPage(){
     <div id="sr-historico-wrap"></div>
   </div>`;
   _buscarSaquesRapidos();
+  _srCarregarCaixa();
+  _srAplicarPeriodo();
+}
+async function _srCarregarCaixa(){
+  const r=await db('configuracoes','GET',null,'?chave=eq.caixa_saque_rapido');
+  _srCaixaAtual=(Array.isArray(r)&&r[0])?parseFloat(r[0].valor)||0:0;
+  const el=document.getElementById('sr-card-caixa');if(el)el.textContent='R$ '+_srCaixaAtual.toFixed(2);
+}
+function _srEditarCaixaToggle(){
+  const el=document.getElementById('sr-caixa-edit');if(!el)return;
+  const abrir=el.style.display!=='flex';
+  el.style.display=abrir?'flex':'none';
+  if(abrir){const inp=document.getElementById('sr-caixa-input');if(inp)inp.value=_srCaixaAtual.toFixed(2);}
+}
+async function _srPersistirCaixa(v){
+  const existing=await db('configuracoes','GET',null,'?chave=eq.caixa_saque_rapido');
+  const agora=new Date().toISOString();
+  if(existing&&existing.length>0)await dbPatch('configuracoes',{valor:String(v),updated_at:agora},'?chave=eq.caixa_saque_rapido');
+  else await db('configuracoes','POST',{chave:'caixa_saque_rapido',valor:String(v),created_at:agora,updated_at:agora});
+  _srCaixaAtual=v;
+  const el=document.getElementById('sr-card-caixa');if(el)el.textContent='R$ '+v.toFixed(2);
+}
+async function _srSalvarCaixa(){
+  const v=parseFloat(document.getElementById('sr-caixa-input')?.value);
+  if(isNaN(v)||v<0){showNotif('Atenção','Valor inválido','var(--yellow)');return;}
+  await _srPersistirCaixa(v);
+  document.getElementById('sr-caixa-edit').style.display='none';
+  showNotif('✅ Caixa atualizado!','');
+}
+async function _srAplicarPeriodo(){
+  const ini=document.getElementById('sr-data-ini')?.value;
+  const fim=document.getElementById('sr-data-fim')?.value;
+  let qs='?select=valor,valor_liquido,taxa&status=eq.pago&chave_pix=not.is.null';
+  if(ini)qs+=`&aprovado_em=gte.${_inicioDiaBrasilia(ini)}`;
+  if(fim)qs+=`&aprovado_em=lte.${_fimDiaBrasilia(fim)}`;
+  const rows=await db('saques','GET',null,qs);
+  const arr=Array.isArray(rows)?rows:[];
+  const pago=arr.reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0);
+  const taxa=arr.reduce((s,r)=>s+(parseFloat(r.taxa)||0),0);
+  const elP=document.getElementById('sr-card-pago');if(elP)elP.textContent='R$ '+pago.toFixed(2);
+  const elT=document.getElementById('sr-card-taxa');if(elT)elT.textContent='R$ '+taxa.toFixed(2);
+  _renderHistoricoSaqueRapido(ini,fim);
 }
 async function _buscarSaquesRapidos(){
   const pendWrap=document.getElementById('sr-pendentes-wrap');
   if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const saques=await db('saques','GET',null,'?select=*,entregadores(nome)&status=eq.pendente&chave_pix=not.is.null&order=created_at.asc');
   _saquesRapidosPendentesMap={};
-  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesRapidosPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
+  (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesRapidosPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor,valor_liquido:s.valor_liquido};});
   if(!pendWrap)return;
   if(!saques||!saques.length){
     pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque rápido pendente</div></div>`;
@@ -5516,21 +5577,26 @@ function _srToggleAll(checked){document.querySelectorAll('.sr-cb').forEach(cb=>c
 async function _aprovarSaquesRapidosSelecionados(){
   const ids=[...document.querySelectorAll('.sr-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
-  const agora=new Date().toISOString();let ok=0;
+  const agora=new Date().toISOString();let ok=0,decrementoCaixa=0;
   for(const id of ids){
     const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}`);
     if(res!==null){
       document.getElementById(`saque-rapido-row-${id}`)?.remove();
       ok++;
       const s=_saquesRapidosPendentesMap[id];
-      if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+      if(s){
+        await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+        decrementoCaixa+=parseFloat(s.valor_liquido||s.valor)||0;
+      }
     }
   }
   _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-ok);
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
+  if(decrementoCaixa>0)await _srPersistirCaixa(Math.max(0,_srCaixaAtual-decrementoCaixa));
   showNotif(`✅ ${ok} saque(s) rápido(s) aprovado(s)!`,'');
   _buscarSaquesRapidos();
+  _srAplicarPeriodo();
 }
 async function recusarSaqueRapido(id){
   const agora=new Date().toISOString();
@@ -5545,10 +5611,13 @@ async function recusarSaqueRapido(id){
   showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
   _buscarSaquesRapidos();
 }
-async function _renderHistoricoSaqueRapido(){
+async function _renderHistoricoSaqueRapido(inicio,fim){
   const wrap=document.getElementById('sr-historico-wrap');
   if(!wrap)return;
-  const hist=await db('saques','GET',null,'?select=*,entregadores(nome)&status=in.(pago,recusado)&chave_pix=not.is.null&order=updated_at.desc&limit=50');
+  let qs='?select=*,entregadores(nome)&status=in.(pago,recusado)&chave_pix=not.is.null&order=updated_at.desc&limit=50';
+  if(inicio)qs+=`&updated_at=gte.${_inicioDiaBrasilia(inicio)}`;
+  if(fim)qs+=`&updated_at=lte.${_fimDiaBrasilia(fim)}`;
+  const hist=await db('saques','GET',null,qs);
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
