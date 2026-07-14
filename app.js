@@ -28,7 +28,7 @@ let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
 const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
@@ -1968,7 +1968,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage};
   if(pages[id])pages[id]();
 }
 
@@ -4886,6 +4886,43 @@ async function _cpExcluir(id){
   await db('contas_pagar','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Conta excluída','','var(--red)');
   _cpBuscar();
+}
+
+// ── FATURAS (LOJA) ──
+// Mesmos dados de "Histórico de Cobranças" (Financeiro > Aprovar Faturas, no
+// painel admin), mas restrito à loja logada. IMPORTANTE: esse filtro
+// &loja_id=eq.${currentUser.loja_id} é só client-side, como em todo o resto
+// do painel (db() sempre usa a chave anon estática, nunca o JWT da sessão) —
+// não é uma garantia de RLS a nível de banco. Ver conversa/memória sobre a
+// auditoria de RLS/anon-vs-JWT pendente.
+async function renderFaturasLojaPage(){
+  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">🧾 Faturas</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">🧾 Faturas</div></div>
+    <div class="card"><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
+  </div>`;
+  _flBuscar();
+}
+async function _flBuscar(){
+  const wrap=document.getElementById('fl-tabela');if(!wrap)return;
+  const qs=`?select=*&loja_id=eq.${currentUser.loja_id}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
+  const rows=await db('cobrancas_lojas','GET',null,qs);
+  const hist=Array.isArray(rows)?rows:[];
+  if(!hist.length){wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma fatura encontrada</div>';return;}
+  const badge=c=>c.status==='pago'
+    ?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
+    :c.status==='pendente'
+    ?`<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`
+    :`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
+  wrap.innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Data</th><th>Período</th><th>Valor</th><th>Status</th></tr></thead>
+    <tbody>${hist.map(c=>`<tr>
+      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
+      <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
+      <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+      <td>${badge(c)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
 }
 
 // ── RANKING ENTREGADOR ──
