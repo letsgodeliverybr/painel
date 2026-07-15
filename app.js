@@ -4124,7 +4124,7 @@ async function _buscarPedidosAdmin(){
         _faixasKm[idx].n++;
       });
       const _totalKm=_comKm.length;
-      _kmBars.innerHTML=_faixasKm.filter(f=>f.n>0).map(f=>{const pct=(f.n/_totalKm*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:#1A56DB;height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
+      _kmBars.innerHTML=_faixasKm.map(f=>{const pct=(f.n/_totalKm*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:#1A56DB;height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
     }
   }
   const _showFin=currentPerfil==='adm';
