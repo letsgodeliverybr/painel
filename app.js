@@ -4012,7 +4012,11 @@ async function _buscarPedidosAdmin(){
   const lojaId=document.getElementById('fp-loja')?.value;
   const entId=document.getElementById('fp-entregador')?.value;
   const numBusca=(document.getElementById('fp-numero')?.value||'').trim();
-  let qs=`?order=created_at.desc&limit=500${_lojaFiltro()}`;
+  // limit alto (não 500) — com mais de 500 pedidos no período, os cards de
+  // resumo (Total, Finalizados, Cancelados, KM, Faturamento, Custo, Lucro)
+  // são todos calculados sobre esse array, e um limite baixo cortava tudo
+  // silenciosamente numa janela deslizante dos mais recentes.
+  let qs=`?order=created_at.desc&limit=10000${_lojaFiltro()}`;
   let qsCreditos=`?select=tipo,valor,observacoes${_lojaFiltro()}`;
   if(dataIni){const _g=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;qs+=_g;qsCreditos+=_g;}
   if(dataFim){const _l=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;qs+=_l;qsCreditos+=_l;}
