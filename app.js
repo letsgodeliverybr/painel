@@ -1097,7 +1097,13 @@ document.documentElement.classList.add('dark');
 // (refresh_token já salvo no login); se não houver sessão válida nem
 // refresh possível, cai pra SB_KEY — que hoje em diante é tratado pelas
 // policies como anônimo de verdade (sem allow-all), não como bypass.
-async function _authHeader(){
+async function _authHeader(tokenOverride){
+  // tokenOverride: usado só pela checagem de usuarios_painel dentro do
+  // próprio fazerLogin() — nesse momento o access_token novo ainda não foi
+  // salvo em sessionStorage (só é salvo depois que essa checagem passa),
+  // então ler do sessionStorage aqui pegaria a sessão antiga/vazia e a
+  // policy self_or_admin bloquearia a checagem de um login válido.
+  if(tokenOverride)return `Bearer ${tokenOverride}`;
   let sessao=null;
   try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
   if(!sessao?.access_token)return `Bearer ${SB_KEY}`;
@@ -1120,9 +1126,9 @@ async function _authHeader(){
   return `Bearer ${sessao.access_token}`;
 }
 
-async function db(table,method='GET',body=null,filters=''){
+async function db(table,method='GET',body=null,filters='',tokenOverride){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
-  const h={'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'};
+  const h={'apikey':SB_KEY,'Authorization':await _authHeader(tokenOverride),'Content-Type':'application/json'};
   if(method==='POST'||method==='PATCH')h['Prefer']='return=representation';
   try{
     const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):null});
@@ -1139,9 +1145,9 @@ async function db(table,method='GET',body=null,filters=''){
   }
 }
 
-async function dbPatch(table,body,filter){
+async function dbPatch(table,body,filter,tokenOverride){
   const url=`${SB_URL}/rest/v1/${table}${filter}`;
-  const h={'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json','Prefer':'return=representation'};
+  const h={'apikey':SB_KEY,'Authorization':await _authHeader(tokenOverride),'Content-Type':'application/json','Prefer':'return=representation'};
   try{
     const r=await fetch(url,{method:'PATCH',headers:h,body:JSON.stringify(body)});
     if(!r.ok){const msg=await r.text();console.error(`PATCH ${table} ${r.status}:`,msg);return null;}
@@ -1956,7 +1962,7 @@ async function fazerLogin(){
     if(r.ok)session=await r.json();
   }catch{}
   if(!session?.access_token){btn.disabled=false;btn.textContent='Entrar →';errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
-  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true`);
+  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true`,session.access_token);
   btn.disabled=false;btn.textContent='Entrar →';
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
   currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
