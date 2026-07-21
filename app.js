@@ -3267,7 +3267,7 @@ async function _setCadastroStatus(entId,novoStatus){
   document.getElementById('dd-cadastro')?.remove();
   const patch={status_cadastro:novoStatus,updated_at:new Date().toISOString()};
   if(novoStatus==='aprovado'){patch.aprovado=true;patch.status='ativo';}
-  else if(novoStatus==='reprovado'||novoStatus==='em_analise'){patch.aprovado=false;}
+  else if(novoStatus==='reprovado'||novoStatus==='em_analise'||novoStatus==='pendente'){patch.aprovado=false;}
   await dbPatch('entregadores',patch,`?id=eq.${entId}`);
   showNotif(`Status atualizado: ${novoStatus}`,'');
   renderCadastrosPage('entregadores');
