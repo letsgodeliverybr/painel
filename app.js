@@ -1090,9 +1090,39 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
 
 document.documentElement.classList.add('dark');
 
+// Autorização real por usuário (RLS depende disso) — antes disso, db()/dbPatch()
+// sempre mandavam a chave anon estática, então toda policy de RLS via
+// auth.uid()/current_perfil() enxergava um request anônimo, não o usuário
+// logado. Renova o access_token proativamente se estiver perto de expirar
+// (refresh_token já salvo no login); se não houver sessão válida nem
+// refresh possível, cai pra SB_KEY — que hoje em diante é tratado pelas
+// policies como anônimo de verdade (sem allow-all), não como bypass.
+async function _authHeader(){
+  let sessao=null;
+  try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
+  if(!sessao?.access_token)return `Bearer ${SB_KEY}`;
+
+  const expiraEm=(sessao.expires_at||0)*1000-Date.now();
+  if(expiraEm<60000 && sessao.refresh_token){
+    try{
+      const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`,{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({refresh_token:sessao.refresh_token}),
+      });
+      if(r.ok){
+        const nova=await r.json();
+        sessao={access_token:nova.access_token,refresh_token:nova.refresh_token,expires_at:nova.expires_at};
+        sessionStorage.setItem('lg_session',JSON.stringify(sessao));
+      }
+    }catch(e){console.error('[auth] falha ao renovar token:',e);}
+  }
+  return `Bearer ${sessao.access_token}`;
+}
+
 async function db(table,method='GET',body=null,filters=''){
   const url=`${SB_URL}/rest/v1/${table}${filters}`;
-  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'};
+  const h={'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'};
   if(method==='POST'||method==='PATCH')h['Prefer']='return=representation';
   try{
     const r=await fetch(url,{method,headers:h,body:body?JSON.stringify(body):null});
@@ -1111,7 +1141,7 @@ async function db(table,method='GET',body=null,filters=''){
 
 async function dbPatch(table,body,filter){
   const url=`${SB_URL}/rest/v1/${table}${filter}`;
-  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
+  const h={'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json','Prefer':'return=representation'};
   try{
     const r=await fetch(url,{method:'PATCH',headers:h,body:JSON.stringify(body)});
     if(!r.ok){const msg=await r.text();console.error(`PATCH ${table} ${r.status}:`,msg);return null;}
