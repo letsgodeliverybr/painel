@@ -40,7 +40,7 @@ const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
-let _clientesFiltro='todos';
+let _estabelecimentosFiltro='todos';
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
@@ -2995,16 +2995,17 @@ async function _criarPedidoInterno(){
 // ═══════════════════════════════════════════════
 // CADASTROS — página com sub-abas
 // ═══════════════════════════════════════════════
-let _cadastrosAba='clientes';
+let _cadastrosAba='estabelecimentos';
 
 function renderCadastrosPage(aba){
   const todasAbas=[
-    {id:'clientes',    icon:'🏪', label:'Clientes'},
-    {id:'entregadores',icon:'🛵', label:'Entregadores'},
-    {id:'usuarios',    icon:'👥', label:'Usuários'},
+    {id:'estabelecimentos', icon:'🏪', label:'Estabelecimentos'},
+    {id:'clientes',         icon:'👤', label:'Clientes'},
+    {id:'entregadores',     icon:'🛵', label:'Entregadores'},
+    {id:'usuarios',         icon:'👥', label:'Usuários'},
   ];
   const abas=currentPerfil==='suporte'?todasAbas.filter(a=>a.id==='entregadores'):todasAbas;
-  const defaultAba=currentPerfil==='suporte'?'entregadores':'clientes';
+  const defaultAba=currentPerfil==='suporte'?'entregadores':'estabelecimentos';
   _cadastrosAba=aba||_cadastrosAba||defaultAba;
   if(!abas.find(a=>a.id===_cadastrosAba)) _cadastrosAba=abas[0].id;
   document.getElementById('app-body').innerHTML=`
@@ -3022,7 +3023,7 @@ function renderCadastrosPage(aba){
 async function _renderCadastrosConteudo(aba){
   _cadastrosAba=aba;
   // Atualiza estilo das abas
-  ['clientes','entregadores','usuarios'].forEach(id=>{
+  ['estabelecimentos','clientes','entregadores','usuarios'].forEach(id=>{
     const el=document.getElementById('cad-aba-'+id);
     if(!el)return;
     el.style.borderBottom=id===aba?'2px solid var(--accent)':'2px solid transparent';
@@ -3031,8 +3032,10 @@ async function _renderCadastrosConteudo(aba){
   const el=document.getElementById('cad-content');
   if(!el)return;
 
-  if(aba==='clientes'){
-    await _renderClientesTab(el);
+  if(aba==='estabelecimentos'){
+    await _renderEstabelecimentosTab(el);
+  } else if(aba==='clientes'){
+    await _renderClientesAppTab(el);
   } else if(aba==='entregadores'){
     await _renderEntregadoresTab(el);
   } else if(aba==='usuarios'){
@@ -3040,26 +3043,48 @@ async function _renderCadastrosConteudo(aba){
   }
 }
 
-function _clientesSetFiltro(filtro){_clientesFiltro=filtro;_renderCadastrosConteudo('clientes');}
+function _estabelecimentosSetFiltro(filtro){_estabelecimentosFiltro=filtro;_renderCadastrosConteudo('estabelecimentos');}
 
-async function _renderClientesTab(el){
+async function _renderEstabelecimentosTab(el){
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const _cTotal=data.length;
   const _cAtivas=data.filter(l=>l.ativo).length;
   const _cInativas=_cTotal-_cAtivas;
   const btnFiltro=(id,label,count)=>{
-    const ativo=_clientesFiltro===id;
+    const ativo=_estabelecimentosFiltro===id;
     const cBadge=count>0?` <span style="background:${ativo?'rgba(255,255,255,.3)':'#1A56DB'};color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:2px">${count}</span>`:'';
-    return `<button onclick="_clientesSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}${cBadge}</button>`;
+    return `<button onclick="_estabelecimentosSetFiltro('${id}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;border:1px solid ${ativo?'#1A56DB':'var(--border)'};background:${ativo?'#1A56DB':'var(--surface2)'};color:${ativo?'#fff':'var(--text2)'}">${label}${cBadge}</button>`;
   };
   const filtroBtns=`
     ${btnFiltro('todos','Todas',_cTotal)}
     ${btnFiltro('ativas','✅ Ativas',_cAtivas)}
     ${btnFiltro('inativas','⛔ Inativas',_cInativas)}`;
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-clientes"></tbody></table></div></div>`;
-  const filtered=_clientesFiltro==='ativas'?data.filter(l=>l.ativo):_clientesFiltro==='inativas'?data.filter(l=>!l.ativo):data;
-  const tbody=document.getElementById('tbody-clientes');if(!tbody)return;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  const filtered=_estabelecimentosFiltro==='ativas'?data.filter(l=>l.ativo):_estabelecimentosFiltro==='inativas'?data.filter(l=>!l.ativo):data;
+  const tbody=document.getElementById('tbody-estabelecimentos');if(!tbody)return;
   tbody.innerHTML=filtered.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;}).join('');
+}
+
+// ── CLIENTES (app "Let's Go: Comida e Mercado") ──
+// clientes_app: cadastro dos consumidores finais no app do cliente — mesmo
+// projeto Supabase do painel (astbkmpegcmqljltmdpx), confirmado direto no
+// código do lets_go_food (auth_service.dart). Só listagem — o cadastro em
+// si é feito pelo próprio app do consumidor, não pelo painel.
+let _clientesAppBusca='';
+function _clientesAppSetBusca(v){_clientesAppBusca=v;_renderCadastrosConteudo('clientes');}
+async function _renderClientesAppTab(el){
+  const data=await db('clientes_app','GET',null,'?order=created_at.desc');
+  const busca=_clientesAppBusca.trim().toLowerCase();
+  const filtered=!busca?data:data.filter(c=>(c.nome||'').toLowerCase().includes(busca)||(c.telefone||'').includes(busca)||(c.email||'').toLowerCase().includes(busca)||(c.cpf||'').includes(busca));
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+      <input id="clientes-app-busca" type="text" placeholder="🔎 Buscar por nome, telefone, e-mail ou CPF" value="${_clientesAppBusca.replace(/"/g,'&quot;')}"
+        style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:13px;flex:1;min-width:240px"
+        oninput="_clientesAppSetBusca(this.value)"/>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap">${filtered.length} de ${data.length}</span>
+    </div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>CPF</th><th>Cadastrado em</th></tr></thead><tbody id="tbody-clientes-app"></tbody></table></div></div>`;
+  const tbody=document.getElementById('tbody-clientes-app');if(!tbody)return;
+  tbody.innerHTML=filtered.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum cliente encontrado</td></tr>':filtered.map(c=>`<tr><td style="font-weight:600;color:var(--text)">👤 ${c.nome||'—'}</td><td>${c.telefone||'—'}</td><td style="font-size:12px;color:var(--text3)">${c.email||'—'}</td><td style="font-size:12px;color:var(--text2)">${c.cpf||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td></tr>`).join('');
 }
 
 async function _renderEntregadoresTab(el){
