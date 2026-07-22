@@ -1454,7 +1454,7 @@ async function _crCalcularTaxa(){
   spanKm.textContent='📍...';
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
   if(!geo){spanKm.textContent='';spanTaxa.textContent='';return;}
-  const distKm=parseFloat(calcularDistancia(loja.latitude,loja.longitude,geo.lat,geo.lng).toFixed(2));
+  const distKm=parseFloat((await calcularDistanciaRota(loja.latitude,loja.longitude,geo.lat,geo.lng)).toFixed(2));
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
   const {cliente:_pdCr}=await _fetchPdAtual(lojaId);
@@ -1539,7 +1539,7 @@ async function _criarEntregaRapida(){
   if((!_crLastDistKm)&&geo){
     const _lojaParaDist=allLojas.find(l=>l.id===lojaId);
     if(_lojaParaDist?.latitude&&_lojaParaDist?.longitude){
-      _crLastDistKm=parseFloat(calcularDistancia(_lojaParaDist.latitude,_lojaParaDist.longitude,geo.lat,geo.lng).toFixed(2));
+      _crLastDistKm=parseFloat((await calcularDistanciaRota(_lojaParaDist.latitude,_lojaParaDist.longitude,geo.lat,geo.lng)).toFixed(2));
       console.log('[CR] distância calculada no momento de criar:', _crLastDistKm, 'km');
     }
   }
@@ -1628,7 +1628,7 @@ async function calcularTaxaAuto(){
     const geoColeta=await geocodificarEndereco(endColetaVal).catch(()=>null);
     if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='ponto_coleta';}
   }
-  const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
+  const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
   const faixasLoja=await _getFaixasCobranca(lojaHid.value);
   if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada})</span>`;return;}
@@ -2742,7 +2742,7 @@ async function _epRecalcularTaxas(){
   const lojaData=allLojas.find(l=>l.id===lojaId);
   if(lojaData?.latitude){latOrigem=parseFloat(lojaData.latitude);lngOrigem=parseFloat(lojaData.longitude);}
   else if(lojaId){const _r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=latitude,longitude&limit=1`);if(_r&&_r[0]?.latitude){latOrigem=parseFloat(_r[0].latitude);lngOrigem=parseFloat(_r[0].longitude);}}
-  const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
+  const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
   _epGeo.distKm=distKm;
   const kmEl=document.getElementById('ep-km');if(kmEl)kmEl.value=distKm;
   const gorjeta=parseFloat(document.getElementById('ep-gorjeta')?.value)||0;
@@ -2851,8 +2851,8 @@ function _labelComNumero(res,numero){
   const local=[bairro,cidade].filter(Boolean).join(', ');
   return[rua,local].filter(Boolean).join(' - ')||res.display_name.split(',').slice(0,4).join(',').trim();
 }
+const GMAPS_KEY='AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs';
 async function geocodificarEndereco(endereco,cidade='',estado=''){
-  const GMAPS_KEY='AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs';
   const _norm=s=>s.replace(/[()[\]{}]/g,' ').replace(/\bnº?\.\s*/gi,'').replace(/\s+/g,' ').trim();
   const base=_norm(endereco);
   const sufixo=[cidade,estado,'Brasil'].filter(Boolean).join(', ');
@@ -2880,6 +2880,43 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
   const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+// Distância REAL de rota (Google Routes API — computeRoutes), usada só
+// onde o valor afeta dinheiro (cobrança da loja e pagamento do motoboy) —
+// confirmado que a linha reta (calcularDistancia acima) fica ~44% menor
+// que a rota real nas ruas, sistematicamente, em todo pedido. Cai pra
+// haversine se a API falhar por qualquer motivo (inclusive se ainda não
+// tiver sido habilitada no console do Google Cloud), pra nunca bloquear a
+// criação do pedido.
+async function calcularDistanciaRota(lat1,lon1,lat2,lon2){
+  try{
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),5000);
+    const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{
+      method:'POST',
+      signal:controller.signal,
+      headers:{
+        'Content-Type':'application/json',
+        'X-Goog-Api-Key':GMAPS_KEY,
+        'X-Goog-FieldMask':'routes.distanceMeters',
+      },
+      body:JSON.stringify({
+        origin:{location:{latLng:{latitude:lat1,longitude:lon1}}},
+        destination:{location:{latLng:{latitude:lat2,longitude:lon2}}},
+        travelMode:'DRIVE',
+      }),
+    });
+    clearTimeout(timeoutId);
+    const d=await r.json();
+    const metros=d?.routes?.[0]?.distanceMeters;
+    if(r.ok&&metros){
+      return metros/1000;
+    }
+    console.error('[calcularDistanciaRota] resposta inesperada da Routes API, usando haversine como fallback:',d);
+  }catch(e){
+    console.error('[calcularDistanciaRota] erro ao chamar Routes API, usando haversine como fallback:',e);
+  }
+  return calcularDistancia(lat1,lon1,lat2,lon2);
 }
 
 function _normTxtEndereco(s){
@@ -2957,7 +2994,7 @@ async function _criarPedidoInterno(){
   if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
   let latOrigem=latLoja,lngOrigem=lngLoja,origemUsada='loja',geoColeta=null;
   if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
-  const distKm=parseFloat(calcularDistancia(latOrigem,lngOrigem,geo.lat,geo.lng).toFixed(2));
+  const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
   console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
   if(distKm>32){if(fb)fb.innerHTML='';showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
