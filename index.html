@@ -404,6 +404,9 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs&libraries=places&language=pt-BR"></script>
-<script src="https://letsgodeliverybr.github.io/painel/app.js"></script>
+<!-- ?v= precisa ser atualizado (ex: pro hash do commit) a cada deploy que mude
+     app.js — sem isso, o cache de 10min do GitHub Pages + cache do navegador
+     pode servir uma versão antiga do JS depois do push. -->
+<script src="https://letsgodeliverybr.github.io/painel/app.js?v=3f3b50e"></script>
 </body>
 </html>
