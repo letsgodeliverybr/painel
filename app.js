@@ -7357,6 +7357,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 document.addEventListener('DOMContentLoaded',()=>{
   if(!_rastreioIdUrl)return;
   document.getElementById('login-screen').style.display='none';
+  document.getElementById('rastreio-screen').style.display='flex';
   _iniciarRastreioPublico(_rastreioIdUrl);
 });
 
