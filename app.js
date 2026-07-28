@@ -1319,6 +1319,7 @@ async function abrirModal(id){
       if(!modalBody||document.getElementById('np-loja-id')){
         const _rb=document.getElementById('np-retorno-btn');const _rl=document.getElementById('np-retorno-lbl');
         if(_rb)_rb.style.background='#3a3a3a';if(_rl){_rl.textContent='Sem retorno';_rl.style.color='#888888';}
+        if(_npMap)_npMap.invalidateSize();
         return;
       }
       const isAdm=currentPerfil==='adm'||currentPerfil==='suporte';
@@ -1329,6 +1330,8 @@ async function abrirModal(id){
         ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px">
         ${blocoLoja}
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
@@ -1380,7 +1383,16 @@ async function abrirModal(id){
             <div class="fi"><label>Data e hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
           </div>
         </div>
-        <div id="np-feedback" style="margin-top:4px"></div>`;
+        <div id="np-feedback" style="margin-top:4px"></div>
+        </div>
+        <div style="width:420px;flex-shrink:0">
+          <div id="np-map" style="width:100%;height:560px;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
+        </div>
+        </div>`;
+      if(!_npMap){
+        _npMap=L.map('np-map',{zoomControl:true}).setView([-21.1775,-47.8103],13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(_npMap);
+      }
       // Para perfil loja: seta lat/lng no hidden np-loja-id para calcularTaxaAuto funcionar
       if(!isAdm&&currentUser?.loja_id){
         const lojaLocal=allLojas.find(l=>l.id===currentUser.loja_id);
@@ -1437,6 +1449,7 @@ function _toggleAgendamento(){
 let _taxaTimer=null;
 function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeout(()=>calcularTaxaAuto(),800);}
 let _npLojasData=[];
+let _npMap=null,_npRotaLayer=null;
 let _crRetornoAtivo=false;
 let _crCalcTimer=null;
 let _crLastDistKm=null;
@@ -1622,7 +1635,7 @@ async function calcularTaxaAuto(){
   const _lng=parseFloat(document.getElementById('np-lng')?.value);
   if(_lat&&_lng){geo={lat:_lat,lng:_lng};}
   else{geo=await geocodificarEndereco(endereco);}
-  if(!geo){if(fb)fb.innerHTML='';document.getElementById('np-km').value='—';return;}
+  if(!geo){if(fb)fb.innerHTML='';document.getElementById('np-km').value='—';_npDesenharRota(null);return;}
   // Determina origem: ponto de coleta ou loja
   let latOrigem=lojaLat,lngOrigem=lojaLng,origemUsada='loja';
   const coletaOn=document.getElementById('np-coleta-toggle')?.checked;
@@ -1631,7 +1644,9 @@ async function calcularTaxaAuto(){
     const geoColeta=await geocodificarEndereco(endColetaVal).catch(()=>null);
     if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='ponto_coleta';}
   }
-  const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
+  const _rotaNp=await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng,true);
+  const distKm=parseFloat(_rotaNp.distKm.toFixed(2));
+  _npDesenharRota(_rotaNp.polyline);
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
   const faixasLoja=await _getFaixasCobranca(lojaHid.value);
   if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada})</span>`;return;}
@@ -2953,6 +2968,18 @@ function _crDesenharRota(polylineEncoded){
   map.fitBounds(_crRotaLayer.getBounds(),{padding:[40,40]});
 }
 
+// Mesmo padrão de _crDesenharRota, mas pro mapa embutido no modal "Novo
+// Pedido" (_npMap) — mapa próprio porque o Leaflet não permite reaproveitar
+// a mesma instância em dois containers DOM diferentes.
+function _npDesenharRota(polylineEncoded){
+  if(_npRotaLayer){_npMap?.removeLayer(_npRotaLayer);_npRotaLayer=null;}
+  if(!polylineEncoded||!_npMap)return;
+  const coords=_decodePolyline(polylineEncoded);
+  if(!coords.length)return;
+  _npRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(_npMap);
+  _npMap.fitBounds(_npRotaLayer.getBounds(),{padding:[30,30]});
+}
+
 function _normTxtEndereco(s){
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 }
@@ -3058,7 +3085,7 @@ async function _criarPedidoInterno(){
     }
     const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
     if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
-    showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');setTimeout(()=>fecharModal('modal-pedido'),2500);
+    showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');_npDesenharRota(null);setTimeout(()=>fecharModal('modal-pedido'),2500);
   }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao criar pedido.</div>';}
 }
 
