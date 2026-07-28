@@ -1330,8 +1330,8 @@ async function abrirModal(id){
         ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
-        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;max-width:100%">
-        <div style="flex:1 1 320px;min-width:280px">
+        <div style="display:flex;gap:16px;height:100%;min-height:0">
+        <div style="flex:1 1 400px;min-width:280px;height:100%;overflow-y:auto;padding-right:4px">
         ${blocoLoja}
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
@@ -1385,8 +1385,8 @@ async function abrirModal(id){
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
         </div>
-        <div style="flex:0 1 520px;min-width:200px">
-          <div id="np-map" style="width:100%;height:560px;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
+        <div style="flex:1 1 500px;min-width:300px;height:100%;display:flex;flex-direction:column">
+          <div id="np-map" style="width:100%;flex:1;min-height:0;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
         </div>
         </div>`;
       if(!_npMap){
@@ -1449,27 +1449,20 @@ function _toggleAgendamento(){
 let _taxaTimer=null;
 function onChangeEnderecoDebounce(){clearTimeout(_taxaTimer);_taxaTimer=setTimeout(()=>calcularTaxaAuto(),800);}
 let _npLojasData=[];
-let _npMap=null,_npRotaLayer=null,_npOrigemMarker=null,_npDestinoMarker=null;
+let _npMap=null,_npRotaLayer=null,_npDestinoMarker=null;
 let _crRetornoAtivo=false;
 let _crCalcTimer=null;
 let _crLastDistKm=null;
-let _crRotaLayer=null,_crOrigemMarker=null,_crDestinoMarker=null;
-// Mesmo pino usado pras lojas no mapa principal (atualizarMarcadores), só
-// parametrizado por cor — reaproveitado nos marcadores de origem/destino das
-// prévias de rota (Criar Entrega e modal Novo Pedido). badgeTexto opcional
-// desenha ao lado um badge no mesmo estilo dos badges numerados (#num) dos
-// pinos de pedido no mapa principal — usado hoje só no pino de entrega.
-function _iconePinRota(cor,badgeTexto){
-  const _pinSvg=`<svg width="28" height="36" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="${cor}" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
-  if(!badgeTexto){
-    return L.divIcon({html:_pinSvg,iconSize:[28,36],iconAnchor:[14,36],className:''});
-  }
+let _crRotaLayer=null,_crDestinoMarker=null;
+// Badge de entrega das prévias de rota (Criar Entrega e modal Novo Pedido) —
+// mesmo estilo visual dos badges numerados (#pedido) dos pinos do mapa
+// principal (retângulo colorido + triângulo apontando pro ponto), sem pino
+// embaixo. Sem marcador de origem/coleta: a loja já tem seu próprio marcador
+// fixo no mapa principal, um segundo pino ali seria redundante.
+function _iconeBadgeEntrega(){
   return L.divIcon({
-    html:`<div style="position:relative;width:130px;height:36px">
-      <div style="position:absolute;left:0;top:0">${_pinSvg}</div>
-      <div style="position:absolute;left:32px;top:7px;background:#1A56DB;color:white;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">${badgeTexto}</div>
-    </div>`,
-    iconSize:[130,36],iconAnchor:[14,36],className:''
+    html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#1A56DB;color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">ENTREGA</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #1A56DB"></div></div>`,
+    iconSize:[70,30],iconAnchor:[35,30],className:''
   });
 }
 async function _crCalcularTaxa(){
@@ -1488,7 +1481,7 @@ async function _crCalcularTaxa(){
   if(!geo){spanKm.textContent='';spanTaxa.textContent='';_crDesenharRota(null);return;}
   const _rotaCr=await calcularDistanciaRota(loja.latitude,loja.longitude,geo.lat,geo.lng,true);
   const distKm=parseFloat(_rotaCr.distKm.toFixed(2));
-  _crDesenharRota(_rotaCr.polyline,{lat:loja.latitude,lng:loja.longitude},{lat:geo.lat,lng:geo.lng});
+  _crDesenharRota(_rotaCr.polyline,{lat:geo.lat,lng:geo.lng});
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
   const {cliente:_pdCr}=await _fetchPdAtual(lojaId);
@@ -1664,7 +1657,7 @@ async function calcularTaxaAuto(){
   }
   const _rotaNp=await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng,true);
   const distKm=parseFloat(_rotaNp.distKm.toFixed(2));
-  _npDesenharRota(_rotaNp.polyline,{lat:latOrigem,lng:lngOrigem},{lat:geo.lat,lng:geo.lng});
+  _npDesenharRota(_rotaNp.polyline,{lat:geo.lat,lng:geo.lng});
   document.getElementById('np-km').value=distKm.toFixed(2)+' km';
   const faixasLoja=await _getFaixasCobranca(lojaHid.value);
   if(!faixasLoja.length){if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada})</span>`;return;}
@@ -2978,32 +2971,28 @@ function _decodePolyline(encoded){
 // cálculo da taxa em "Criar Entrega" — some sozinha quando o endereço fica
 // inválido/vazio ou depois que a entrega é criada. Usa o mapa principal
 // (map), o mesmo que já mostra pedidos e entregadores.
-function _crDesenharRota(polylineEncoded,origem,destino){
+function _crDesenharRota(polylineEncoded,destino){
   if(_crRotaLayer){map?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
-  if(_crOrigemMarker){map?.removeLayer(_crOrigemMarker);_crOrigemMarker=null;}
   if(_crDestinoMarker){map?.removeLayer(_crDestinoMarker);_crDestinoMarker=null;}
   if(!polylineEncoded||!map)return;
   const coords=_decodePolyline(polylineEncoded);
   if(!coords.length)return;
   _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(map);
-  if(origem)_crOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(map);
-  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(map);
+  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconeBadgeEntrega()}).addTo(map);
   map.fitBounds(_crRotaLayer.getBounds(),{padding:[40,40]});
 }
 
 // Mesmo padrão de _crDesenharRota, mas pro mapa embutido no modal "Novo
 // Pedido" (_npMap) — mapa próprio porque o Leaflet não permite reaproveitar
 // a mesma instância em dois containers DOM diferentes.
-function _npDesenharRota(polylineEncoded,origem,destino){
+function _npDesenharRota(polylineEncoded,destino){
   if(_npRotaLayer){_npMap?.removeLayer(_npRotaLayer);_npRotaLayer=null;}
-  if(_npOrigemMarker){_npMap?.removeLayer(_npOrigemMarker);_npOrigemMarker=null;}
   if(_npDestinoMarker){_npMap?.removeLayer(_npDestinoMarker);_npDestinoMarker=null;}
   if(!polylineEncoded||!_npMap)return;
   const coords=_decodePolyline(polylineEncoded);
   if(!coords.length)return;
   _npRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(_npMap);
-  if(origem)_npOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(_npMap);
-  if(destino)_npDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(_npMap);
+  if(destino)_npDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconeBadgeEntrega()}).addTo(_npMap);
   _npMap.fitBounds(_npRotaLayer.getBounds(),{padding:[30,30]});
 }
 
