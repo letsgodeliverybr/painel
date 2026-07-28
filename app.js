@@ -4,6 +4,12 @@
 const SB_URL='https://astbkmpegcmqljltmdpx.supabase.co';
 const SB_KEY='sb_publishable_7lNXC4ipqerGckfvUQvlnQ_ObfWXhmI';
 
+// Link de rastreio (?rastrear=<pedido_id>) é público — vai pro cliente final
+// via WhatsApp/SMS, não pode exigir login. Checado aqui, no topo do arquivo,
+// pra qualquer fluxo de sessão/login mais abaixo poder se desligar cedo
+// quando esse parâmetro estiver presente.
+const _rastreioIdUrl=new URLSearchParams(window.location.search).get('rastrear');
+
 function corStatus(status){
   const cores={'agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','no_local':'#38BDF8','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
   return cores[status]||'#6b7280';
@@ -7193,6 +7199,139 @@ async function _mcExcluirProduto(prodId,nome){
   showNotif('🗑️ Produto excluído','');
 }
 
+// ═══════════════════════════════════════════════
+// RASTREIO PÚBLICO — ?rastrear=<pedido_id>, sem login
+// Página que o cliente final recebe via WhatsApp/SMS: mapa com loja +
+// entregador em tempo real, e card de status/itens/código de entrega.
+// ═══════════════════════════════════════════════
+const RASTREIO_ETAPAS=[
+  {label:'Indo coletar',statuses:['agendado','recebido','pronto','aceito']},
+  {label:'Coletando',statuses:['no_local','chegou_no_local','chegou_local']},
+  {label:'Indo entregar',statuses:['em_rota']},
+  {label:'Entregue',statuses:['chegou_destino','retornando','finalizado']},
+];
+function _rastreioEtapaAtual(statusDetalhado){
+  const idx=RASTREIO_ETAPAS.findIndex(e=>e.statuses.includes(statusDetalhado));
+  return idx===-1?0:idx;
+}
+// Mesmo pino usado pras lojas no mapa principal (atualizarMarcadores) —
+// duplicado aqui em vez de extraído/compartilhado, pra não mexer em código
+// já em produção só por causa desta página pública.
+function _rastreioIconeLoja(){
+  return L.divIcon({html:`<svg width="34" height="44" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="#1A56DB" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`,iconSize:[34,44],iconAnchor:[17,44],className:''});
+}
+// Mesmo capacete usado pros entregadores no mapa principal — mesma lógica de
+// duplicação acima.
+function _rastreioIconeCapacete(nome){
+  const svgHelmet=`<svg width="52" height="52" viewBox="0 0 248 243" xmlns="http://www.w3.org/2000/svg"><circle cx="124" cy="121" r="118" fill="none" stroke="white" stroke-width="2"/><g transform="translate(0,243) scale(0.1,-0.1)" stroke="none"><path fill="#EF4444" d="M1375 2020 c322 -78 591 -300 702 -578 19 -48 41 -100 48 -117 22 -51 62 -195 85 -305 12 -58 35 -153 51 -213 46 -167 46 -175 0 -316 -49 -147 -105 -251 -183 -334 l-57 -61 -113 38 c-62 21 -189 67 -283 101 -149 55 -254 88 -440 140 -27 8 -97 24 -155 35 -58 11 -135 27 -172 35 -36 8 -139 18 -227 23 -175 9 -193 15 -205 73 -5 28 -33 86 -133 280 -146 281 -162 550 -48 788 25 51 55 106 66 123 19 26 20 33 9 71 -24 86 -24 84 7 90 15 2 117 28 226 56 327 84 428 101 592 97 100 -3 166 -10 230 -26z"/><path fill="#991b1b" d="M836 1426 c-150 -65 -39 -337 188 -460 353 -192 863 -329 1121 -301 l67 7 -7 36 c-27 154 -119 530 -133 544 -4 4 -70 12 -147 18 -267 20 -557 62 -711 101 -43 11 -105 27 -137 35 -86 22 -212 32 -241 20z"/></g></svg>`;
+  return L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center">${svgHelmet}<div style="background:rgba(0,0,0,0.55);color:white;font-size:10px;font-weight:700;padding:1px 4px;border-radius:4px;margin-top:2px;white-space:nowrap">${nome}</div></div>`,iconSize:[64,64],iconAnchor:[32,64],className:''});
+}
+// Fetch direto com a chave anon (mesma usada pelo resto do app antes do
+// login) — RLS de pedidos/lojas/entregadores permite leitura sem sessão
+// hoje. select= sempre restrito aos campos realmente necessários, nunca
+// linha inteira (entregadores tem cpf/cnpj/banco/chave_pix etc.).
+async function _rastreioFetch(path){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${path}`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(e){return null;}
+}
+function _rastreioRenderCard(el,p,motoboy,sk){
+  if(sk==='cancelado'){
+    el.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:8px">❌</div><div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||''} cancelado</div></div>`;
+    return;
+  }
+  const etapaIdx=_rastreioEtapaAtual(sk);
+  const cor=corStatus(sk);
+  const itens=Array.isArray(p.itens)?p.itens:[];
+  const step=(idx,label)=>{
+    const done=idx<=etapaIdx;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+      <div style="width:26px;height:26px;border-radius:50%;background:${done?'#10b981':'var(--surface2)'};border:2px solid ${done?'#10b981':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${done?'#fff':'var(--text3)'}">${done?'✓':'○'}</div>
+      <span style="font-size:10px;color:${done?'#10b981':'var(--text3)'};font-weight:${done?700:400};white-space:nowrap;text-align:center">${label}</span>
+    </div>`;
+  };
+  const stepLine=(idx)=>`<div style="flex:1;height:2px;background:${idx<=etapaIdx?'#10b981':'var(--border)'};margin-top:12px;max-width:32px"></div>`;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||p.id.substring(0,6)}</div>
+      <span style="background:${cor}20;color:${cor};font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">${RASTREIO_ETAPAS[etapaIdx].label}</span>
+    </div>
+    <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:18px">
+      ${RASTREIO_ETAPAS.map((e,i)=>(i===0?'':stepLine(i-1))+step(i,e.label)).join('')}
+    </div>
+    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;margin-bottom:14px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO PRA ENTREGA</div><div style="font-size:22px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
+    ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px;margin-bottom:14px">
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:'🛵'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
+        ${motoboy.telefone?`<a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" style="font-size:12px;color:#25D366;font-weight:600;text-decoration:none">📞 ${motoboy.telefone}</a>`:''}
+      </div>
+    </div>`:''}
+    ${itens.length?`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📦 Itens</div>
+      <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
+        ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${it.quantidade||it.quantity||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>`).join('')}
+        ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:7px 10px;font-weight:700;font-size:13px"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
+      </div>
+    </div>`:''}
+    <div style="font-size:12px;color:var(--text2)">📍 ${p.endereco||'—'}</div>
+    ${p.descricao?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
+  `;
+}
+async function _iniciarRastreioPublico(pedidoId){
+  const mapEl=document.getElementById('rastreio-map'),cardEl=document.getElementById('rastreio-card');
+  if(!mapEl||!cardEl)return;
+  const rMap=L.map('rastreio-map',{zoomControl:true}).setView([-21.1775,-47.8103],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(rMap);
+  let lojaMarker=null,motoboyMarker=null,destinoMarker=null,primeiraCarga=true,pararPolling=false;
+
+  async function atualizar(){
+    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at`);
+    const p=pedidos?.[0];
+    if(!p){
+      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido não encontrado.</div>`;
+      pararPolling=true;
+      return;
+    }
+    const sk=p.status_detalhado||p.status||'';
+    if(['finalizado','cancelado'].includes(sk))pararPolling=true;
+
+    const motoboyId=p.motoboy_id||p.entregador_id;
+    const [lojas,motoboys]=await Promise.all([
+      p.loja_id?_rastreioFetch(`lojas?id=eq.${p.loja_id}&select=id,nome,latitude,longitude,endereco`):Promise.resolve(null),
+      motoboyId?_rastreioFetch(`entregadores?id=eq.${motoboyId}&select=id,nome,lat,lng,telefone,foto_perfil`):Promise.resolve(null),
+    ]);
+    const loja=lojas?.[0]||null;
+    const motoboy=motoboys?.[0]||null;
+
+    const latColeta=p.latitude_coleta||loja?.latitude,lngColeta=p.longitude_coleta||loja?.longitude;
+    if(latColeta&&lngColeta){
+      if(lojaMarker)rMap.removeLayer(lojaMarker);
+      lojaMarker=L.marker([latColeta,lngColeta],{icon:_rastreioIconeLoja()}).addTo(rMap).bindPopup(loja?.nome||'Loja');
+    }
+    if(p.latitude&&p.longitude&&!destinoMarker){
+      destinoMarker=L.marker([p.latitude,p.longitude],{icon:_iconeBadgeEntrega()}).addTo(rMap);
+    }
+    if(motoboy?.lat&&motoboy?.lng){
+      if(motoboyMarker)rMap.removeLayer(motoboyMarker);
+      motoboyMarker=L.marker([motoboy.lat,motoboy.lng],{icon:_rastreioIconeCapacete(motoboy.nome||'Entregador')}).addTo(rMap);
+    }
+
+    if(primeiraCarga){
+      const pontos=[[latColeta,lngColeta],[p.latitude,p.longitude],motoboy?[motoboy.lat,motoboy.lng]:null].filter(pt=>pt&&pt[0]&&pt[1]);
+      if(pontos.length)rMap.fitBounds(pontos,{padding:[40,40]});
+      primeiraCarga=false;
+    }
+
+    _rastreioRenderCard(cardEl,p,motoboy,sk);
+  }
+
+  await atualizar();
+  const intervalo=setInterval(()=>{if(pararPolling){clearInterval(intervalo);return;}atualizar();},5000);
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.matchMedia('(prefers-color-scheme: dark)').matches){
     document.documentElement.classList.add('dark');
@@ -7215,7 +7354,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 });
 
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!_rastreioIdUrl)return;
+  document.getElementById('login-screen').style.display='none';
+  _iniciarRastreioPublico(_rastreioIdUrl);
+});
+
 document.addEventListener('DOMContentLoaded',async()=>{
+  if(_rastreioIdUrl)return;
   const sessao=sessionStorage.getItem('lg_user'),sessaoAuth=sessionStorage.getItem('lg_session');
   if(!sessao||!sessaoAuth)return;
   try{

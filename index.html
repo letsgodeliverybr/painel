@@ -226,6 +226,12 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
   <div class="nav-sidebar-body" id="nav-sidebar-body"></div>
 </div>
 
+<!-- RASTREIO PÚBLICO (?rastrear=<id>) — sem login, sem sessão -->
+<div id="rastreio-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:2000;flex-direction:column">
+  <div id="rastreio-map" style="flex:1;position:relative"></div>
+  <div id="rastreio-card" style="background:var(--surface);border-top:1px solid var(--border);max-height:45vh;overflow-y:auto;padding:16px;box-shadow:0 -4px 20px rgba(0,0,0,.15);font-family:'Inter',sans-serif"></div>
+</div>
+
 <!-- APP -->
 <div id="app" style="display:none;height:100vh;flex-direction:column;">
   <div class="topbar">
