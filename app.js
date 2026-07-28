@@ -1385,7 +1385,7 @@ async function abrirModal(id){
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
         </div>
-        <div style="width:380px;flex-shrink:0">
+        <div style="width:520px;flex-shrink:0">
           <div id="np-map" style="width:100%;height:560px;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
         </div>
         </div>`;
