@@ -1440,21 +1440,24 @@ let _npLojasData=[];
 let _crRetornoAtivo=false;
 let _crCalcTimer=null;
 let _crLastDistKm=null;
+let _crRotaLayer=null;
 async function _crCalcularTaxa(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
   const spanKm=document.getElementById('cr-dist-km');
   const spanTaxa=document.getElementById('cr-dist-taxa');
   if(!spanKm||!spanTaxa)return;
-  if(!endereco||endereco.length<6){spanKm.textContent='';spanTaxa.textContent='';_crLastDistKm=null;return;}
+  if(!endereco||endereco.length<6){spanKm.textContent='';spanTaxa.textContent='';_crLastDistKm=null;_crDesenharRota(null);return;}
   const selCrEl=document.getElementById('cr-loja-id');
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
-  if(!lojaId){spanKm.textContent='';spanTaxa.textContent='';return;}
+  if(!lojaId){spanKm.textContent='';spanTaxa.textContent='';_crDesenharRota(null);return;}
   const loja=allLojas.find(l=>l.id===lojaId);
-  if(!loja?.latitude||!loja?.longitude){spanKm.textContent='';spanTaxa.textContent='';return;}
+  if(!loja?.latitude||!loja?.longitude){spanKm.textContent='';spanTaxa.textContent='';_crDesenharRota(null);return;}
   spanKm.textContent='📍...';
   const geo=await geocodificarEndereco(endereco).catch(()=>null);
-  if(!geo){spanKm.textContent='';spanTaxa.textContent='';return;}
-  const distKm=parseFloat((await calcularDistanciaRota(loja.latitude,loja.longitude,geo.lat,geo.lng)).toFixed(2));
+  if(!geo){spanKm.textContent='';spanTaxa.textContent='';_crDesenharRota(null);return;}
+  const _rotaCr=await calcularDistanciaRota(loja.latitude,loja.longitude,geo.lat,geo.lng,true);
+  const distKm=parseFloat(_rotaCr.distKm.toFixed(2));
+  _crDesenharRota(_rotaCr.polyline);
   _crLastDistKm=distKm;
   const faixasCr=await _getFaixasCobranca(lojaId);
   const {cliente:_pdCr}=await _fetchPdAtual(lojaId);
@@ -1569,7 +1572,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-gorjeta').value='';
-    _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;
+    _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;_crDesenharRota(null);
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
     atualizarTudo();
@@ -2888,7 +2891,7 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
 // haversine se a API falhar por qualquer motivo (inclusive se ainda não
 // tiver sido habilitada no console do Google Cloud), pra nunca bloquear a
 // criação do pedido.
-async function calcularDistanciaRota(lat1,lon1,lat2,lon2){
+async function calcularDistanciaRota(lat1,lon1,lat2,lon2,retornarPolyline=false){
   try{
     const controller=new AbortController();
     const timeoutId=setTimeout(()=>controller.abort(),5000);
@@ -2898,7 +2901,7 @@ async function calcularDistanciaRota(lat1,lon1,lat2,lon2){
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':GMAPS_KEY,
-        'X-Goog-FieldMask':'routes.distanceMeters',
+        'X-Goog-FieldMask':retornarPolyline?'routes.distanceMeters,routes.polyline.encodedPolyline':'routes.distanceMeters',
       },
       body:JSON.stringify({
         origin:{location:{latLng:{latitude:lat1,longitude:lon1}}},
@@ -2910,13 +2913,44 @@ async function calcularDistanciaRota(lat1,lon1,lat2,lon2){
     const d=await r.json();
     const metros=d?.routes?.[0]?.distanceMeters;
     if(r.ok&&metros){
-      return metros/1000;
+      const distKm=metros/1000;
+      return retornarPolyline?{distKm,polyline:d.routes[0]?.polyline?.encodedPolyline||null}:distKm;
     }
     console.error('[calcularDistanciaRota] resposta inesperada da Routes API, usando haversine como fallback:',d);
   }catch(e){
     console.error('[calcularDistanciaRota] erro ao chamar Routes API, usando haversine como fallback:',e);
   }
-  return calcularDistancia(lat1,lon1,lat2,lon2);
+  const distKmFallback=calcularDistancia(lat1,lon1,lat2,lon2);
+  return retornarPolyline?{distKm:distKmFallback,polyline:null}:distKmFallback;
+}
+
+// Decodifica o encoded polyline do Google (algoritmo padrão) pra desenhar a
+// rota real no Leaflet — não há plugin de polyline carregado no projeto,
+// só o leaflet.min.js puro.
+function _decodePolyline(encoded){
+  let index=0,lat=0,lng=0;const coords=[];
+  while(index<encoded.length){
+    let shift=0,result=0,byte;
+    do{byte=encoded.charCodeAt(index++)-63;result|=(byte&0x1f)<<shift;shift+=5;}while(byte>=0x20);
+    lat+=(result&1)?~(result>>1):(result>>1);
+    shift=0;result=0;
+    do{byte=encoded.charCodeAt(index++)-63;result|=(byte&0x1f)<<shift;shift+=5;}while(byte>=0x20);
+    lng+=(result&1)?~(result>>1):(result>>1);
+    coords.push([lat/1e5,lng/1e5]);
+  }
+  return coords;
+}
+
+// Desenha (ou limpa, se polylineEncoded for null) a linha da rota usada no
+// cálculo da taxa em "Criar Entrega" — some sozinha quando o endereço fica
+// inválido/vazio ou depois que a entrega é criada.
+function _crDesenharRota(polylineEncoded){
+  if(_crRotaLayer){map?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
+  if(!polylineEncoded||!map)return;
+  const coords=_decodePolyline(polylineEncoded);
+  if(!coords.length)return;
+  _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(map);
+  map.fitBounds(_crRotaLayer.getBounds(),{padding:[40,40]});
 }
 
 function _normTxtEndereco(s){
