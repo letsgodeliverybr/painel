@@ -1330,8 +1330,8 @@ async function abrirModal(id){
         ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
-        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-        <div style="flex:1;min-width:280px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="flex:1;min-width:240px">
         ${blocoLoja}
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
@@ -1385,7 +1385,7 @@ async function abrirModal(id){
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
         </div>
-        <div style="width:420px;flex-shrink:0">
+        <div style="width:380px;flex-shrink:0">
           <div id="np-map" style="width:100%;height:560px;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
         </div>
         </div>`;
@@ -1454,7 +1454,6 @@ let _crRetornoAtivo=false;
 let _crCalcTimer=null;
 let _crLastDistKm=null;
 let _crRotaLayer=null,_crOrigemMarker=null,_crDestinoMarker=null;
-let _crMap=null;
 // Mesmo pino usado pras lojas no mapa principal (atualizarMarcadores), só
 // parametrizado por cor — reaproveitado nos marcadores de origem/destino das
 // prévias de rota (Criar Entrega e modal Novo Pedido). badgeTexto opcional
@@ -2092,8 +2091,7 @@ function renderMapaPage(){
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;gap:10px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;align-items:flex-start">
-          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto">
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
@@ -2108,10 +2106,6 @@ function renderMapaPage(){
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
           <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
-          </div>
-          <div style="width:300px;flex-shrink:0">
-            <div id="cr-map" style="width:100%;height:160px;border-radius:8px;overflow:hidden;background:#1E1E1E"></div>
-          </div>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
@@ -2134,9 +2128,6 @@ function renderMapaPage(){
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
-    if(_crMap){_crMap.remove();_crMap=null;}
-    _crMap=L.map('cr-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false}).setView([-21.1775,-47.8103],13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(_crMap);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
     if(currentPerfil==='loja'){
@@ -2985,21 +2976,19 @@ function _decodePolyline(encoded){
 
 // Desenha (ou limpa, se polylineEncoded for null) a linha da rota usada no
 // cálculo da taxa em "Criar Entrega" — some sozinha quando o endereço fica
-// inválido/vazio ou depois que a entrega é criada. Usa _crMap, o mapa próprio
-// do card ao lado do formulário — não o mapa principal, pra não dar
-// fitBounds/zoom nele (que está sendo usado ao vivo por quem despacha)
-// toda vez que alguém digita um endereço aqui.
+// inválido/vazio ou depois que a entrega é criada. Usa o mapa principal
+// (map), o mesmo que já mostra pedidos e entregadores.
 function _crDesenharRota(polylineEncoded,origem,destino){
-  if(_crRotaLayer){_crMap?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
-  if(_crOrigemMarker){_crMap?.removeLayer(_crOrigemMarker);_crOrigemMarker=null;}
-  if(_crDestinoMarker){_crMap?.removeLayer(_crDestinoMarker);_crDestinoMarker=null;}
-  if(!polylineEncoded||!_crMap)return;
+  if(_crRotaLayer){map?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
+  if(_crOrigemMarker){map?.removeLayer(_crOrigemMarker);_crOrigemMarker=null;}
+  if(_crDestinoMarker){map?.removeLayer(_crDestinoMarker);_crDestinoMarker=null;}
+  if(!polylineEncoded||!map)return;
   const coords=_decodePolyline(polylineEncoded);
   if(!coords.length)return;
-  _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(_crMap);
-  if(origem)_crOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(_crMap);
-  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(_crMap);
-  _crMap.fitBounds(_crRotaLayer.getBounds(),{padding:[20,20]});
+  _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(map);
+  if(origem)_crOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(map);
+  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(map);
+  map.fitBounds(_crRotaLayer.getBounds(),{padding:[40,40]});
 }
 
 // Mesmo padrão de _crDesenharRota, mas pro mapa embutido no modal "Novo
