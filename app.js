@@ -1454,11 +1454,24 @@ let _crRetornoAtivo=false;
 let _crCalcTimer=null;
 let _crLastDistKm=null;
 let _crRotaLayer=null,_crOrigemMarker=null,_crDestinoMarker=null;
+let _crMap=null;
 // Mesmo pino usado pras lojas no mapa principal (atualizarMarcadores), só
 // parametrizado por cor — reaproveitado nos marcadores de origem/destino das
-// prévias de rota (Criar Entrega e modal Novo Pedido).
-function _iconePinRota(cor){
-  return L.divIcon({html:`<svg width="28" height="36" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="${cor}" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`,iconSize:[28,36],iconAnchor:[14,36],className:''});
+// prévias de rota (Criar Entrega e modal Novo Pedido). badgeTexto opcional
+// desenha ao lado um badge no mesmo estilo dos badges numerados (#num) dos
+// pinos de pedido no mapa principal — usado hoje só no pino de entrega.
+function _iconePinRota(cor,badgeTexto){
+  const _pinSvg=`<svg width="28" height="36" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="${cor}" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
+  if(!badgeTexto){
+    return L.divIcon({html:_pinSvg,iconSize:[28,36],iconAnchor:[14,36],className:''});
+  }
+  return L.divIcon({
+    html:`<div style="position:relative;width:130px;height:36px">
+      <div style="position:absolute;left:0;top:0">${_pinSvg}</div>
+      <div style="position:absolute;left:32px;top:7px;background:#1A56DB;color:white;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">${badgeTexto}</div>
+    </div>`,
+    iconSize:[130,36],iconAnchor:[14,36],className:''
+  });
 }
 async function _crCalcularTaxa(){
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
@@ -2079,7 +2092,8 @@ function renderMapaPage(){
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto">
+        <div style="display:flex;gap:10px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;align-items:flex-start">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
@@ -2094,6 +2108,10 @@ function renderMapaPage(){
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
           <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
+          </div>
+          <div style="width:300px;flex-shrink:0">
+            <div id="cr-map" style="width:100%;height:160px;border-radius:8px;overflow:hidden;background:#1E1E1E"></div>
+          </div>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
@@ -2116,6 +2134,9 @@ function renderMapaPage(){
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
+    if(_crMap){_crMap.remove();_crMap=null;}
+    _crMap=L.map('cr-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false}).setView([-21.1775,-47.8103],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(_crMap);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
     if(currentPerfil==='loja'){
@@ -2964,18 +2985,21 @@ function _decodePolyline(encoded){
 
 // Desenha (ou limpa, se polylineEncoded for null) a linha da rota usada no
 // cálculo da taxa em "Criar Entrega" — some sozinha quando o endereço fica
-// inválido/vazio ou depois que a entrega é criada.
+// inválido/vazio ou depois que a entrega é criada. Usa _crMap, o mapa próprio
+// do card ao lado do formulário — não o mapa principal, pra não dar
+// fitBounds/zoom nele (que está sendo usado ao vivo por quem despacha)
+// toda vez que alguém digita um endereço aqui.
 function _crDesenharRota(polylineEncoded,origem,destino){
-  if(_crRotaLayer){map?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
-  if(_crOrigemMarker){map?.removeLayer(_crOrigemMarker);_crOrigemMarker=null;}
-  if(_crDestinoMarker){map?.removeLayer(_crDestinoMarker);_crDestinoMarker=null;}
-  if(!polylineEncoded||!map)return;
+  if(_crRotaLayer){_crMap?.removeLayer(_crRotaLayer);_crRotaLayer=null;}
+  if(_crOrigemMarker){_crMap?.removeLayer(_crOrigemMarker);_crOrigemMarker=null;}
+  if(_crDestinoMarker){_crMap?.removeLayer(_crDestinoMarker);_crDestinoMarker=null;}
+  if(!polylineEncoded||!_crMap)return;
   const coords=_decodePolyline(polylineEncoded);
   if(!coords.length)return;
-  _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(map);
-  if(origem)_crOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(map);
-  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981')}).addTo(map);
-  map.fitBounds(_crRotaLayer.getBounds(),{padding:[40,40]});
+  _crRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(_crMap);
+  if(origem)_crOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(_crMap);
+  if(destino)_crDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(_crMap);
+  _crMap.fitBounds(_crRotaLayer.getBounds(),{padding:[20,20]});
 }
 
 // Mesmo padrão de _crDesenharRota, mas pro mapa embutido no modal "Novo
@@ -2990,7 +3014,7 @@ function _npDesenharRota(polylineEncoded,origem,destino){
   if(!coords.length)return;
   _npRotaLayer=L.polyline(coords,{color:'#1A56DB',weight:4,opacity:0.8}).addTo(_npMap);
   if(origem)_npOrigemMarker=L.marker([origem.lat,origem.lng],{icon:_iconePinRota('#1A56DB')}).addTo(_npMap);
-  if(destino)_npDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981')}).addTo(_npMap);
+  if(destino)_npDestinoMarker=L.marker([destino.lat,destino.lng],{icon:_iconePinRota('#10b981','ENTREGA')}).addTo(_npMap);
   _npMap.fitBounds(_npRotaLayer.getBounds(),{padding:[30,30]});
 }
 
