@@ -1,0 +1,8 @@
+project_id = "astbkmpegcmqljltmdpx"
+
+# Webhook público do iFood (X-IFood-Signature) — não pode exigir o JWT
+# padrão do Supabase, o iFood não manda esse header. A autenticação real
+# dessa function é a validação HMAC feita no próprio código (ver
+# validarAssinaturaWebhook em ifood-status-sync/index.ts).
+[functions.ifood-status-sync]
+verify_jwt = false

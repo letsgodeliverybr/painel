@@ -100,7 +100,168 @@ function endpointParaEvento(ifoodOrderId: string, evento: string): string {
   return `/logistics/orders/${ifoodOrderId}/${evento}`;
 }
 
-serve(async () => {
+// ═══════════════════════════════════════════════
+// WEBHOOK INBOUND — eventos que o iFood empurra (push), alternativa ao
+// polling de ifood-polling pra receber pedidos/mudanças de status.
+// Confirmado contra a doc oficial (2026-07-25):
+// https://developer.ifood.com.br/en-US/docs/guides/order/events/delivery-methods/webhook/signature/
+// Header X-IFood-Signature = HMAC-SHA256(client_secret, raw body bytes),
+// hex. client_secret usado direto como chave — mesmo credential do OAuth.
+// ═══════════════════════════════════════════════
+
+// Comparação em tempo constante — Deno não tem crypto.timingSafeEqual como
+// o Node, implementado na mão pra não vazar timing na comparação da
+// assinatura (a doc do iFood é explícita: eles mandam assinaturas erradas
+// de propósito durante homologação, testando se a validação é robusta).
+function compararConstante(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function validarAssinaturaWebhook(rawBody: Uint8Array, assinaturaRecebida: string): Promise<boolean> {
+  if (!IFOOD_CLIENT_SECRET || !assinaturaRecebida) return false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(IFOOD_CLIENT_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const assinaturaCalculada = await crypto.subtle.sign("HMAC", key, rawBody);
+  const hex = Array.from(new Uint8Array(assinaturaCalculada)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return compararConstante(hex, assinaturaRecebida.toLowerCase());
+}
+
+// Mesmo mapeamento usado em ifood-polling, duplicado aqui — cada Edge
+// Function é um deploy isolado, sem módulo compartilhado entre elas, mesmo
+// padrão já usado no resto do projeto. Campos confirmados contra um pedido
+// de teste real do Developer Portal do iFood (2026-07-25). NÃO confirmado:
+// merchant.address — a doc não lista endereço da loja nesse payload,
+// endereco_coleta fica vazio até vir de outra fonte.
+function mapearPedidoIfood(d: any) {
+  const agora = new Date().toISOString();
+  return {
+    ifood_order_id: d.id ?? d.orderId,
+    numero: String(d.displayId ?? d.id),
+    numero_loja: String(d.displayId ?? d.id),
+    origem: "ifood",
+    status: "pronto",
+    status_detalhado: "pronto",
+    pagamento_confirmado: true,
+    endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
+    latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
+    longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
+    endereco_coleta: d.merchant?.address?.formattedAddress ?? "",
+    latitude_coleta: d.merchant?.address?.coordinates?.latitude ?? null,
+    longitude_coleta: d.merchant?.address?.coordinates?.longitude ?? null,
+    contato_coleta: d.merchant?.name ?? null,
+    cliente: d.customer?.name ?? "",
+    telefone: d.customer?.phone?.number ?? null,
+    itens: d.items ?? [],
+    valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
+    total_pedido: d.total?.orderAmount ?? 0,
+    taxa_entrega: d.total?.deliveryFee ?? 0,
+    recebido_em: agora,
+    pronto_em: agora,
+    created_at: agora,
+    updated_at: agora,
+  };
+}
+
+async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
+  const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${orderId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    await logErro("webhook_detalhes_pedido_http", { orderId, status: res.status, body });
+    return null;
+  }
+  try {
+    return await res.json();
+  } catch (e) {
+    await logErro("webhook_detalhes_pedido_parse", { orderId, message: String(e) });
+    return null;
+  }
+}
+
+// Um evento de webhook = uma mudança de status (ou pedido novo) — busca os
+// detalhes atuais do pedido na Order API e faz upsert em `pedidos`, mesmo
+// fluxo que ifood-polling já faz pra cada evento do polling. Lança exceção
+// em qualquer falha real (não em "evento sem orderId", que é esperado pra
+// presence events) — o chamador decide se isso vira 5xx (retry do iFood).
+async function processarEventoWebhook(evento: any): Promise<void> {
+  const orderId = evento?.orderId ?? evento?.id;
+  if (!orderId) {
+    await logErro("webhook_evento_sem_orderId", { evento });
+    return;
+  }
+  const token = await getAccessToken();
+  if (!token) throw new Error("sem token de acesso pra buscar detalhes do pedido");
+
+  const detalhes = await buscarDetalhesPedidoWebhook(orderId, token);
+  if (!detalhes) throw new Error(`falha ao buscar detalhes do pedido ${orderId}`);
+
+  const pedido = mapearPedidoIfood(detalhes);
+  const { error } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });
+  if (error) {
+    await logErro("webhook_persistir_pedido", { orderId, message: error.message });
+    throw new Error(`falha ao persistir pedido ${orderId}: ${error.message}`);
+  }
+}
+
+async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
+  const rawBody = new Uint8Array(await req.arrayBuffer());
+
+  const assinaturaValida = await validarAssinaturaWebhook(rawBody, assinaturaRecebida);
+  if (!assinaturaValida) {
+    await logErro("webhook_assinatura_invalida", {});
+    return new Response(JSON.stringify({ error: "assinatura inválida" }), { status: 401 });
+  }
+
+  let payload: any;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(rawBody));
+  } catch (e) {
+    await logErro("webhook_parse", { message: String(e) });
+    return new Response(JSON.stringify({ error: "body inválido" }), { status: 400 });
+  }
+
+  const eventos = Array.isArray(payload) ? payload : [payload];
+
+  try {
+    // Paralelo — precisa responder em até 5s (exigência da doc), não dá
+    // pra serializar se vier mais de um evento no mesmo webhook. Upsert é
+    // idempotente (ignoreDuplicates), então retry do iFood em 5xx nunca
+    // duplica os eventos que já tinham sido processados com sucesso.
+    await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
+  } catch (e) {
+    await logErro("webhook_processar_excecao", { message: String(e) });
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+  }
+
+  return new Response(null, { status: 202 });
+}
+
+serve(async (req) => {
+  const assinaturaWebhook = req.headers.get("X-IFood-Signature");
+  if (req.method === "POST" && assinaturaWebhook) {
+    return await tratarWebhook(req, assinaturaWebhook);
+  }
+
+  // verify_jwt=false (config.toml) foi desligado pra função inteira, não só
+  // pro branch do webhook — sem isso, esse trecho (leitura da fila e envio
+  // de status pro iFood) ficaria acessível sem autenticação nenhuma pra
+  // qualquer um na internet. cron_dispatch_key (vault) é a service role key
+  // do projeto, mesmo valor que a function já tem em SUPABASE_SERVICE_ROLE_KEY.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (authHeader !== `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) {
+    return new Response(JSON.stringify({ ok: false, motivo: "não autorizado" }), { status: 401 });
+  }
+
   const token = await getAccessToken();
   if (!token) {
     return new Response(JSON.stringify({ ok: false, motivo: "sem token de acesso" }), { status: 200 });
