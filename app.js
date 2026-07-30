@@ -7204,6 +7204,11 @@ async function _mcExcluirProduto(prodId,nome){
 // Página que o cliente final recebe via WhatsApp/SMS: mapa com loja +
 // entregador em tempo real, e card de status/itens/código de entrega.
 // ═══════════════════════════════════════════════
+// Nome da loja vem do banco (não confiável) e agora entra via innerHTML
+// (pra permitir <br> na quebra de linha do título) — precisa escapar.
+function _escHtml(s){
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 const RASTREIO_ETAPAS=[
   {label:'Indo coletar',statuses:['agendado','recebido','pronto','aceito']},
   {label:'Coletando',statuses:['no_local','chegou_no_local','chegou_local']},
@@ -7266,7 +7271,7 @@ function _rastreioRenderCard(el,p,motoboy,sk){
       <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega? <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">(11) 99170-2772</a> — qualquer dúvida, nossa equipe está à disposição.</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br><a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a><br>qualquer dúvida, nossa equipe está à disposição.</div>
       </div>
     </div>`:''}
     ${itens.length?`<div style="margin-bottom:14px">
@@ -7307,7 +7312,7 @@ async function _iniciarRastreioPublico(pedidoId){
     const motoboy=motoboys?.[0]||null;
 
     const tituloEl=document.getElementById('rastreio-titulo');
-    if(tituloEl)tituloEl.textContent=`Seu pedido de ${loja?.nome||'nossa loja'} está indo até você! Acompanhe sua entrega em tempo real.`;
+    if(tituloEl)tituloEl.innerHTML=`Seu pedido de ${_escHtml(loja?.nome||'nossa loja')}<br>está indo até você! Acompanhe sua entrega em tempo real.`;
 
     const latColeta=p.latitude_coleta||loja?.latitude,lngColeta=p.longitude_coleta||loja?.longitude;
     if(latColeta&&lngColeta){
