@@ -7204,11 +7204,6 @@ async function _mcExcluirProduto(prodId,nome){
 // Página que o cliente final recebe via WhatsApp/SMS: mapa com loja +
 // entregador em tempo real, e card de status/itens/código de entrega.
 // ═══════════════════════════════════════════════
-// Nome da loja vem do banco (não confiável) e agora entra via innerHTML
-// (pra permitir <br> na quebra de linha do título) — precisa escapar.
-function _escHtml(s){
-  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 const RASTREIO_ETAPAS=[
   {label:'Indo coletar',statuses:['agendado','recebido','pronto','aceito']},
   {label:'Coletando',statuses:['no_local','chegou_no_local','chegou_local']},
@@ -7242,6 +7237,33 @@ async function _rastreioFetch(path){
     return await r.json();
   }catch(e){return null;}
 }
+// Mesma lógica de previsão já usada em renderPedidosLista/abrirInfoPedido
+// (janela fixa de 30min a partir de pronto_em, ou created_at se ainda não
+// tiver ficado pronto) — não existe ETA real baseado em distância/rota em
+// nenhum lugar do sistema hoje. Chamar a Routes API a cada poll (5s) desta
+// página pública e não-autenticada custaria e seria abusável por qualquer
+// um com um pedido_id válido, então reaproveitei o heurístico já existente
+// em vez de criar uma chamada nova.
+function _rastreioPrevisaoHtml(p){
+  let previsaoMs,corTxt,texto;
+  if(p.pronto_em){
+    const minPassados=(Date.now()-_tsUtc(p.pronto_em))/60000;
+    previsaoMs=_tsUtc(p.pronto_em)+30*60*1000;
+    const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+    if(minPassados<=30){corTxt='#10b981';texto=`${restanteMin}min`;}
+    else if(minPassados<=40){corTxt='#f97316';texto=`+${Math.round(minPassados-30)}min`;}
+    else{corTxt='#ef4444';texto='Atrasado';}
+  }else{
+    previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+    const restanteMin=Math.round((previsaoMs-Date.now())/60000);
+    corTxt=restanteMin>0?'#10b981':'#ef4444';
+    texto=restanteMin>0?`${restanteMin}min`:'Atrasado';
+  }
+  return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+    <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+    <div style="font-size:16px;font-weight:800;color:${corTxt}">${texto}</div>
+  </div>`;
+}
 function _rastreioRenderCard(el,p,motoboy,sk){
   if(sk==='cancelado'){
     el.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:8px">❌</div><div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||''} cancelado</div></div>`;
@@ -7266,12 +7288,13 @@ function _rastreioRenderCard(el,p,motoboy,sk){
     <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:18px">
       ${RASTREIO_ETAPAS.map((e,i)=>(i===0?'':stepLine(i-1))+step(i,e.label)).join('')}
     </div>
+    ${_rastreioPrevisaoHtml(p)}
     ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;margin-bottom:14px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO PRA ENTREGA</div><div style="font-size:22px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
     ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px;margin-bottom:14px">
       <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br><a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a><br>qualquer dúvida, nossa equipe está à disposição.</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br>qualquer dúvida, nossa equipe está à disposição.<br>Suporte operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
       </div>
     </div>`:''}
     ${itens.length?`<div style="margin-bottom:14px">
@@ -7285,6 +7308,39 @@ function _rastreioRenderCard(el,p,motoboy,sk){
     ${p.descricao?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
   `;
 }
+// Web Share API nativa quando disponível (a maioria dos navegadores mobile,
+// que é o uso principal daqui — link chega via WhatsApp/SMS); cai pra
+// copiar no clipboard em desktop ou quando o usuário cancela o share sheet.
+async function _rastreioCompartilhar(){
+  const url=window.location.href;
+  const btn=document.getElementById('rastreio-btn-compartilhar');
+  if(navigator.share){
+    try{ await navigator.share({title:"Acompanhe sua entrega — Let's Go Delivery",url}); return; }catch(e){ /* cancelado pelo usuário — tenta clipboard abaixo */ }
+  }
+  try{
+    await navigator.clipboard.writeText(url);
+    if(btn){const original=btn.textContent;btn.textContent='✅ Link copiado!';setTimeout(()=>{btn.textContent=original;},2000);}
+  }catch(e){ /* ambiente sem clipboard API — raro, falha silenciosa */ }
+}
+// Tela final quando o pedido chega em "finalizado" — substitui TODO o
+// conteúdo de #rastreio-screen (não só o card), já que nesse ponto não faz
+// mais sentido mostrar mapa/stepper. id="rastreio-link-appstore" fica
+// reservado pro link da App Store quando existir.
+function _rastreioTelaEntregue(numero){
+  const tela=document.getElementById('rastreio-screen');
+  if(!tela)return;
+  tela.innerHTML=`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px;font-family:'Inter',sans-serif">
+      <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:64px;height:64px;border-radius:16px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.15)"/>
+      <div style="font-size:44px">✅</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido entregue!</div>
+      <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado por escolher a Let's Go Delivery. Esperamos que tenha gostado da experiência!</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%;max-width:280px">
+        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">⭐ Avaliar na Play Store</a>
+      </div>
+    </div>
+  `;
+}
 async function _iniciarRastreioPublico(pedidoId){
   const mapEl=document.getElementById('rastreio-map'),cardEl=document.getElementById('rastreio-card');
   if(!mapEl||!cardEl)return;
@@ -7293,7 +7349,7 @@ async function _iniciarRastreioPublico(pedidoId){
   let lojaMarker=null,motoboyMarker=null,destinoMarker=null,primeiraCarga=true,pararPolling=false;
 
   async function atualizar(){
-    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at`);
+    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em`);
     const p=pedidos?.[0];
     if(!p){
       cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido não encontrado.</div>`;
@@ -7301,7 +7357,13 @@ async function _iniciarRastreioPublico(pedidoId){
       return;
     }
     const sk=p.status_detalhado||p.status||'';
-    if(['finalizado','cancelado'].includes(sk))pararPolling=true;
+    if(sk==='finalizado'){
+      pararPolling=true;
+      try{rMap.remove();}catch(e){}
+      _rastreioTelaEntregue(p.numero_loja||p.numero);
+      return;
+    }
+    if(sk==='cancelado')pararPolling=true;
 
     const motoboyId=p.motoboy_id||p.entregador_id;
     const [lojas,motoboys]=await Promise.all([
@@ -7311,8 +7373,8 @@ async function _iniciarRastreioPublico(pedidoId){
     const loja=lojas?.[0]||null;
     const motoboy=motoboys?.[0]||null;
 
-    const tituloEl=document.getElementById('rastreio-titulo');
-    if(tituloEl)tituloEl.innerHTML=`Seu pedido de ${_escHtml(loja?.nome||'nossa loja')}<br>está indo até você! Acompanhe sua entrega em tempo real.`;
+    const tituloLojaEl=document.getElementById('rastreio-titulo-loja');
+    if(tituloLojaEl)tituloLojaEl.textContent=loja?.nome||'nossa loja';
 
     const latColeta=p.latitude_coleta||loja?.latitude,lngColeta=p.longitude_coleta||loja?.longitude;
     if(latColeta&&lngColeta){
