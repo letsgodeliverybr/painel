@@ -7205,9 +7205,9 @@ async function _mcExcluirProduto(prodId,nome){
 // entregador em tempo real, e card de status/itens/código de entrega.
 // ═══════════════════════════════════════════════
 const RASTREIO_ETAPAS=[
-  {label:'Indo coletar',statuses:['agendado','recebido','pronto','aceito']},
+  {label:'Indo Coletar',statuses:['agendado','recebido','pronto','aceito']},
   {label:'Coletando',statuses:['no_local','chegou_no_local','chegou_local']},
-  {label:'Indo entregar',statuses:['em_rota']},
+  {label:'Indo Entregar',statuses:['em_rota']},
   {label:'Entregue',statuses:['chegou_destino','retornando','finalizado']},
 ];
 function _rastreioEtapaAtual(statusDetalhado){
@@ -7259,14 +7259,14 @@ function _rastreioPrevisaoHtml(p){
     corTxt=restanteMin>0?'#10b981':'#ef4444';
     texto=restanteMin>0?`${restanteMin}min`:'Atrasado';
   }
-  return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+  return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:8px 12px;margin-bottom:10px">
     <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
     <div style="font-size:16px;font-weight:800;color:${corTxt}">${texto}</div>
   </div>`;
 }
 function _rastreioRenderCard(el,p,motoboy,sk){
   if(sk==='cancelado'){
-    el.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:8px">❌</div><div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||''} cancelado</div></div>`;
+    el.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:8px">❌</div><div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||''} Cancelado</div></div>`;
     return;
   }
   const etapaIdx=_rastreioEtapaAtual(sk);
@@ -7274,34 +7274,34 @@ function _rastreioRenderCard(el,p,motoboy,sk){
   const itens=Array.isArray(p.itens)?p.itens:[];
   const step=(idx,label)=>{
     const done=idx<=etapaIdx;
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
-      <div style="width:26px;height:26px;border-radius:50%;background:${done?'#10b981':'var(--surface2)'};border:2px solid ${done?'#10b981':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${done?'#fff':'var(--text3)'}">${done?'✓':'○'}</div>
-      <span style="font-size:10px;color:${done?'#10b981':'var(--text3)'};font-weight:${done?700:400};white-space:nowrap;text-align:center">${label}</span>
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0">
+      <div style="width:24px;height:24px;border-radius:50%;background:${done?'#10b981':'var(--surface2)'};border:2px solid ${done?'#10b981':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${done?'#fff':'var(--text3)'};flex-shrink:0">${done?'✓':'○'}</div>
+      <span style="font-size:9px;color:${done?'#10b981':'var(--text3)'};font-weight:${done?700:400};text-align:center;line-height:1.25;word-break:break-word">${label}</span>
     </div>`;
   };
-  const stepLine=(idx)=>`<div style="flex:1;height:2px;background:${idx<=etapaIdx?'#10b981':'var(--border)'};margin-top:12px;max-width:32px"></div>`;
+  const stepLine=(idx)=>`<div style="flex:0 1 18px;height:2px;background:${idx<=etapaIdx?'#10b981':'var(--border)'};margin-top:11px"></div>`;
   el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="font-size:16px;font-weight:800;color:var(--text)">Pedido #${p.numero_loja||p.numero||p.id.substring(0,6)}</div>
       <span style="background:${cor}20;color:${cor};font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">${RASTREIO_ETAPAS[etapaIdx].label}</span>
     </div>
-    <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:18px">
+    <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:12px">
       ${RASTREIO_ETAPAS.map((e,i)=>(i===0?'':stepLine(i-1))+step(i,e.label)).join('')}
     </div>
     ${_rastreioPrevisaoHtml(p)}
-    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;margin-bottom:14px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO PRA ENTREGA</div><div style="font-size:22px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
-    ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px;margin-bottom:14px">
+    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:2px">CÓDIGO PRA ENTREGA</div><div style="font-size:20px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
+    ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:8px;margin-bottom:10px">
       <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br>qualquer dúvida, nossa equipe está à disposição.<br>Suporte operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa De Suporte Com Sua Entrega?<br>Qualquer Dúvida, Nossa Equipe Está À Disposição.<br>Suporte Operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
       </div>
     </div>`:''}
-    ${itens.length?`<div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📦 Itens</div>
+    ${itens.length?`<div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">📦 Itens</div>
       <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
-        ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${it.quantidade||it.quantity||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>`).join('')}
-        ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:7px 10px;font-weight:700;font-size:13px"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
+        ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${it.quantidade||it.quantity||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>`).join('')}
+        ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:6px 10px;font-weight:700;font-size:13px"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
       </div>
     </div>`:''}
     <div style="font-size:12px;color:var(--text2)">📍 ${p.endereco||'—'}</div>
@@ -7333,10 +7333,10 @@ function _rastreioTelaEntregue(numero){
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px;font-family:'Inter',sans-serif">
       <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:64px;height:64px;border-radius:16px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.15)"/>
       <div style="font-size:44px">✅</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido entregue!</div>
-      <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado por escolher a Let's Go Delivery. Esperamos que tenha gostado da experiência!</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido Entregue!</div>
+      <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado Por Escolher A Let's Go Delivery. Esperamos Que Tenha Gostado Da Experiência!</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%;max-width:280px">
-        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">⭐ Avaliar na Play Store</a>
+        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">⭐ Avaliar Na Play Store</a>
       </div>
     </div>
   `;
@@ -7352,7 +7352,7 @@ async function _iniciarRastreioPublico(pedidoId){
     const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em`);
     const p=pedidos?.[0];
     if(!p){
-      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido não encontrado.</div>`;
+      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido Não Encontrado.</div>`;
       pararPolling=true;
       return;
     }
