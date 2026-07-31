@@ -7326,20 +7326,27 @@ async function _rastreioCompartilhar(){
 // conteúdo de #rastreio-screen (não só o card), já que nesse ponto não faz
 // mais sentido mostrar mapa/stepper. id="rastreio-link-appstore" fica
 // reservado pro link da App Store quando existir.
-function _rastreioTelaEntregue(numero){
+function _rastreioTelaEntregue(numero,nomeLoja){
   const tela=document.getElementById('rastreio-screen');
   if(!tela)return;
   tela.innerHTML=`
+    <div id="rastreio-banner" style="flex-shrink:0;background:#1A56DB;color:#fff;text-align:center;padding:6px 14px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;line-height:1.4">
+      Precisa De Um Entregador? <a href="https://wa.me/5511991702772" target="_blank" style="color:#fff;font-weight:800;text-decoration:underline">(11) 99170-2772</a>
+    </div>
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px;font-family:'Inter',sans-serif">
       <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:64px;height:64px;border-radius:16px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.15)"/>
       <div style="font-size:44px">✅</div>
       <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido Entregue!</div>
-      <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado Por Escolher A Let's Go Delivery. Esperamos Que Tenha Gostado Da Experiência!</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%;max-width:280px">
-        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px">⭐ Avaliar Na Play Store</a>
+      <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado Por Escolher <span id="rastreio-entregue-loja"></span> E Entregas Let's Go Delivery.</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;width:100%;max-width:280px">
+        <div style="font-size:13px;color:var(--text2);font-weight:600">Avalie Nosso App Na Play Store</div>
+        <div style="font-size:22px;color:#eab308;letter-spacing:2px">★★★★★</div>
+        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;width:100%">⭐ Avaliar Na Play Store</a>
       </div>
     </div>
   `;
+  const lojaEl=document.getElementById('rastreio-entregue-loja');
+  if(lojaEl)lojaEl.textContent=nomeLoja||'nossa loja';
 }
 async function _iniciarRastreioPublico(pedidoId){
   const mapEl=document.getElementById('rastreio-map'),cardEl=document.getElementById('rastreio-card');
@@ -7360,7 +7367,8 @@ async function _iniciarRastreioPublico(pedidoId){
     if(sk==='finalizado'){
       pararPolling=true;
       try{rMap.remove();}catch(e){}
-      _rastreioTelaEntregue(p.numero_loja||p.numero);
+      const lojaFinal=p.loja_id?(await _rastreioFetch(`lojas?id=eq.${p.loja_id}&select=nome`))?.[0]:null;
+      _rastreioTelaEntregue(p.numero_loja||p.numero,lojaFinal?.nome);
       return;
     }
     if(sk==='cancelado')pararPolling=true;
