@@ -33,8 +33,8 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'faturas',icon:'🧾',label:'Faturas'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'faturas',icon:'🧾',label:'Faturas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
@@ -1151,6 +1151,28 @@ async function db(table,method='GET',body=null,filters='',tokenOverride){
   }
 }
 
+// Chama uma função RPC do Postgres (POST /rest/v1/rpc/<fn>) — usada quando a
+// agregação precisa rodar no banco (GROUP BY/COUNT) em vez de trazer linhas
+// pro client, que fica sujeito ao limite de linhas do PostgREST (ver bug do
+// Relatório de Entregas, app.js:_buscarPedidosAdmin).
+async function dbRpc(fnName,args={}){
+  const url=`${SB_URL}/rest/v1/rpc/${fnName}`;
+  const h={'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'};
+  try{
+    const r=await fetch(url,{method:'POST',headers:h,body:JSON.stringify(args)});
+    if(!r.ok){
+      const errBody=await r.text().catch(()=>'');
+      console.error(`[dbRpc] ERRO ${r.status} ${r.statusText} | ${fnName}`,errBody);
+      return[];
+    }
+    const t=await r.text();
+    return t?JSON.parse(t):[];
+  }catch(e){
+    console.error(`[dbRpc] EXCEPTION | ${fnName}`,e);
+    return[];
+  }
+}
+
 async function dbPatch(table,body,filter,tokenOverride){
   const url=`${SB_URL}/rest/v1/${table}${filter}`;
   const h={'apikey':SB_KEY,'Authorization':await _authHeader(tokenOverride),'Content-Type':'application/json','Prefer':'return=representation'};
@@ -2039,7 +2061,7 @@ function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -4330,6 +4352,79 @@ async function _buscarPedidosAdmin(){
     return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito manual':'Débito manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td></tr>`;
   }).join('');
   tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
+}
+const _MESES_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+// Primeiro dia do mês, N meses antes do mês atual (Brasília) — usado pro
+// período padrão da tela de Métricas (últimos 12 meses, incluindo o atual).
+const _primeiroDiaMesesAtras=(n)=>{
+  const[y,m]=_dataHojeBrasilia().split('-').map(Number);
+  return new Date(Date.UTC(y,m-1-n,1)).toISOString().slice(0,10);
+};
+async function renderMetricasPage(){
+  const hoje=_dataHojeBrasilia();
+  const dataIniPadrao=_primeiroDiaMesesAtras(11);
+  const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
+  const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
+  const _titulo=currentPerfil==='loja'?'📊 Minhas Métricas':"📊 Métricas Let's Go";
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">${_titulo}</div></div>
+    <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div>${_lbl('DE')}<input type="date" id="mm-data-ini" value="${dataIniPadrao}" style="${_is}"/></div>
+        <div>${_lbl('ATÉ')}<input type="date" id="mm-data-fim" value="${hoje}" style="${_is}"/></div>
+        <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Aplicar</button>
+      </div>
+    </div></div>
+    <div class="card"><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
+      <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
+  </div>`;
+  _buscarMetricas();
+}
+async function _buscarMetricas(){
+  const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
+  chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
+  const dataIni=document.getElementById('mm-data-ini')?.value;
+  const dataFim=document.getElementById('mm-data-fim')?.value;
+  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';return;}
+  if(dataIni>dataFim){showNotif('⚠️ Período inválido','A data inicial não pode ser depois da final','var(--yellow)');return;}
+  // Agregação feita no banco (RPC pedidos_finalizados_por_mes, COUNT+GROUP BY
+  // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
+  // ao limite de linhas do PostgREST que já causou números errados no
+  // Relatório de Entregas (ver comentário em _buscarPedidosAdmin).
+  // Perfil loja só pode ver o agregado da própria loja — mesmo campo
+  // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
+  const _args={data_ini:dataIni,data_fim:dataFim};
+  if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
+  const rows=await dbRpc('pedidos_finalizados_por_mes',_args);
+  const porMes=new Map((Array.isArray(rows)?rows:[]).map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
+  const[yIni,mIni]=dataIni.split('-').map(Number);
+  const[yFim,mFim]=dataFim.split('-').map(Number);
+  const meses=[];
+  let y=yIni,m=mIni;
+  while(y<yFim||(y===yFim&&m<=mFim)){
+    const chave=`${y}-${String(m).padStart(2,'0')}`;
+    meses.push({chave,label:`${_MESES_ABREV[m-1]}/${y}`,quantidade:porMes.get(chave)||0});
+    m++;if(m>12){m=1;y++;}
+  }
+  chartEl.innerHTML=_renderMetricasChart(meses);
+}
+function _renderMetricasChart(meses){
+  if(!meses.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Selecione um período válido</div>';
+  const max=Math.max(1,...meses.map(m=>m.quantidade));
+  const larguraMin=Math.max(meses.length*44,320);
+  const barras=meses.map(m=>{
+    const alturaPct=m.quantidade>0?Math.max(3,(m.quantidade/max*100)):0;
+    return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:32px;height:100%" title="${m.label}: ${m.quantidade} pedido${m.quantidade===1?'':'s'} finalizado${m.quantidade===1?'':'s'}">
+      <div style="font-size:11px;font-weight:700;color:var(--text2)">${m.quantidade}</div>
+      <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:linear-gradient(180deg,var(--green),var(--accent));border-radius:4px 4px 0 0;margin-top:4px"></div>
+    </div>`;
+  }).join('');
+  const rotulos=meses.map(m=>`<div style="flex:1;min-width:32px;display:flex;justify-content:center"><span style="display:inline-block;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap;margin-top:6px">${m.label}</span></div>`).join('');
+  return`<div style="overflow-x:auto"><div style="min-width:${larguraMin}px">
+    <div style="display:flex;align-items:flex-end;gap:6px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
+    <div style="display:flex;gap:6px;padding:0 4px 34px">${rotulos}</div>
+  </div></div>`;
 }
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
