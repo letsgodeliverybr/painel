@@ -4353,16 +4353,10 @@ async function _buscarPedidosAdmin(){
   }).join('');
   tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
 }
-const _MESES_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-// Primeiro dia do mês, N meses antes do mês atual (Brasília) — usado pro
-// período padrão da tela de Métricas (últimos 12 meses, incluindo o atual).
-const _primeiroDiaMesesAtras=(n)=>{
-  const[y,m]=_dataHojeBrasilia().split('-').map(Number);
-  return new Date(Date.UTC(y,m-1-n,1)).toISOString().slice(0,10);
-};
 async function renderMetricasPage(){
-  const hoje=_dataHojeBrasilia();
-  const dataIniPadrao=_primeiroDiaMesesAtras(11);
+  const anoAtual=Number(_dataHojeBrasilia().slice(0,4));
+  const dataIniPadrao=`${anoAtual}-01-01`;
+  const dataFimPadrao=`${anoAtual}-12-31`;
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
   const _titulo=currentPerfil==='loja'?'📊 Minhas Métricas':"📊 Métricas Let's Go";
@@ -4371,7 +4365,7 @@ async function renderMetricasPage(){
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('DE')}<input type="date" id="mm-data-ini" value="${dataIniPadrao}" style="${_is}"/></div>
-        <div>${_lbl('ATÉ')}<input type="date" id="mm-data-fim" value="${hoje}" style="${_is}"/></div>
+        <div>${_lbl('ATÉ')}<input type="date" id="mm-data-fim" value="${dataFimPadrao}" style="${_is}"/></div>
         <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Aplicar</button>
       </div>
     </div></div>
@@ -4392,9 +4386,14 @@ async function _buscarMetricas(){
   // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
   // ao limite de linhas do PostgREST que já causou números errados no
   // Relatório de Entregas (ver comentário em _buscarPedidosAdmin).
+  // Boundary em timestamptz calculado com os MESMOS helpers que o Relatório
+  // de Entregas e o card "Finalizados hoje" usam pro filtro de created_at
+  // (_inicioDiaBrasilia/_fimDiaBrasilia) — evita qualquer divergência de
+  // fuso horário entre essa tela e o resto do painel (bug real encontrado
+  // em produção: gráfico e relatório davam números diferentes pro mesmo dia).
+  const _args={data_ini_ts:_inicioDiaBrasilia(dataIni),data_fim_ts:_fimDiaBrasilia(dataFim)};
   // Perfil loja só pode ver o agregado da própria loja — mesmo campo
   // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
-  const _args={data_ini:dataIni,data_fim:dataFim};
   if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
   const rows=await dbRpc('pedidos_finalizados_por_mes',_args);
   const porMes=new Map((Array.isArray(rows)?rows:[]).map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
@@ -4404,7 +4403,7 @@ async function _buscarMetricas(){
   let y=yIni,m=mIni;
   while(y<yFim||(y===yFim&&m<=mFim)){
     const chave=`${y}-${String(m).padStart(2,'0')}`;
-    meses.push({chave,label:`${_MESES_ABREV[m-1]}/${y}`,quantidade:porMes.get(chave)||0});
+    meses.push({chave,label:`${String(m).padStart(2,'0')}/${y}`,quantidade:porMes.get(chave)||0});
     m++;if(m>12){m=1;y++;}
   }
   chartEl.innerHTML=_renderMetricasChart(meses);
