@@ -197,6 +197,22 @@ const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
 // devolver, pra comparação de string continuar válida nos dois formatos.
 const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return `${new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10)}T00:00:00`;};
 const _normDataLocal=(s)=>String(s||'').replace(' ','T');
+// Relógio ao vivo no topbar (#topbar-relogio, index.html) — conferência
+// visual permanente pro operador: se o painel algum dia voltar a divergir
+// do horário real (ver bug de fuso que já corrigimos), fica óbvio comparando
+// com um relógio físico. timeZone fixo em 'America/Sao_Paulo' — não usa o
+// fuso local do navegador, pra alguém acessando de fora do Brasil não ver
+// hora errada.
+function _atualizarRelogioTopbar(){
+  const el=document.getElementById('topbar-relogio');
+  if(!el)return;
+  const agora=new Date();
+  const data=agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  const hora=agora.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  el.textContent=`${data} ${hora}`;
+}
+_atualizarRelogioTopbar();
+setInterval(_atualizarRelogioTopbar,1000);
 const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
 const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);
 
