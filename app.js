@@ -33,8 +33,8 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'faturas',icon:'🧾',label:'Faturas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
@@ -157,6 +157,12 @@ let _pdCidTimers={}; // keyed by `${tipo}_${cidade}`
 function _cidadeSufixo(c){return{'Ribeirão Preto':'RP','São José dos Campos':'SJC','Campinas':'CAMPI'}[c]||'';}
 
 // ── BRASÍLIA TIMEZONE HELPERS ──
+// REVERTIDO (ver investigação em andamento) — o fallback -03:00 causou
+// contradição com teste real: usuário confirmou que o horário exibido
+// (card do pedido, Relatório de Entregas) já estava CORRETO com o
+// fallback +'Z' original, antes desta mudança. Voltando pro que já
+// funcionava até a causa da contradição ser entendida.
+//
 // Supabase retorna timestamps sem 'Z'; sem o sufixo o browser trata como horário local,
 // causando double-conversão. _parseUtc garante parse correto como UTC.
 const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'Z');};
@@ -170,9 +176,27 @@ const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.
 // Igual a _lojaFiltro(), mas pra usar direto na tabela lojas — ela não tem
 // coluna loja_id, a própria chave é id.
 const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&id=eq.${currentUser.loja_id}`:'';
+// ⚠️ REGRA DE FUSO — LER ANTES DE MEXER EM QUALQUER FILTRO DE DATA/HORA.
+// Confirmado via information_schema (ver migrations/add_pedidos_finalizados_por_mes_rpc.sql):
+//   pedidos.created_at / updated_at / finalizado_em / pronto_em / aceito_em / em_rota_em,
+//   entregadores.updated_at e lojas.created_at
+// são `timestamp` SEM fuso e o valor gravado JÁ É hora local de Brasília.
+// NUNCA aplicar AT TIME ZONE (SQL) nem _inicioDiaBrasilia/_fimDiaBrasilia ou
+// qualquer conversão -03:00 nessas colunas — compare a string local direto
+// (ex: `${data}T00:00:00`), igual pedidos_finalizados_por_mes faz.
+//
+// Já creditos_lojas, creditos_entregadores, cobrancas_lojas e saques são
+// `timestamptz` de verdade e PRECISAM da conversão normal — é pra essas que
+// _inicioDiaBrasilia/_fimDiaBrasilia abaixo servem.
 const _inicioDiaBrasilia=(s)=>new Date(s+'T00:00:00-03:00').toISOString();
 const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
-const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return _inicioDiaBrasilia(new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10));};
+// Comparado direto (string) contra pedidos.created_at, que é timestamp SEM
+// fuso — por isso NÃO passa por _inicioDiaBrasilia aqui (isso mandaria um
+// boundary UTC +3h, travando pedidos da própria semana como "anteriores").
+// _normDataLocal abaixo cobre o separador (espaço vs 'T') que a API pode
+// devolver, pra comparação de string continuar válida nos dois formatos.
+const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return `${new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10)}T00:00:00`;};
+const _normDataLocal=(s)=>String(s||'').replace(' ','T');
 const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
 const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);
 
@@ -1171,6 +1195,26 @@ async function dbRpc(fnName,args={}){
     console.error(`[dbRpc] EXCEPTION | ${fnName}`,e);
     return[];
   }
+}
+
+// Busca TODAS as linhas de uma tabela pra um filtro, sem limite implícito —
+// pagina em blocos de `pageSize` via offset/limit até uma página vir com
+// menos linhas que pageSize (sinal de que acabou). Usar quando o valor de
+// cada linha depende de lógica de negócio no client (ex: tabela de preço
+// por faixa de KM em verFaturaCobranca) que não compensa duplicar em SQL —
+// se o cálculo puder virar agregação pura (COUNT/SUM), prefira dbRpc.
+// filtroBase não pode conter `limit=`/`offset=` (essa função controla os
+// dois) e precisa ter um `order=` determinístico, senão a paginação pode
+// pular ou repetir linha entre páginas.
+async function _dbTodasLinhas(table,filtroBase,pageSize=500){
+  let offset=0,todas=[],pagina;
+  do{
+    pagina=await db(table,'GET',null,`${filtroBase}&limit=${pageSize}&offset=${offset}`);
+    if(!Array.isArray(pagina))break;
+    todas=todas.concat(pagina);
+    offset+=pageSize;
+  }while(pagina.length===pageSize);
+  return todas;
 }
 
 async function dbPatch(table,body,filter,tokenOverride){
@@ -4221,8 +4265,18 @@ async function _buscarPedidosAdmin(){
   // silenciosamente numa janela deslizante dos mais recentes.
   let qs=`?order=created_at.desc&limit=10000${_lojaFiltro()}`;
   let qsCreditos=`?select=tipo,valor,observacoes${_lojaFiltro()}`;
-  if(dataIni){const _g=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;qs+=_g;qsCreditos+=_g;}
-  if(dataFim){const _l=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;qs+=_l;qsCreditos+=_l;}
+  // pedidos.created_at é `timestamp` SEM fuso, já em hora local de Brasília
+  // (confirmado via information_schema) — compara direto, sem Date()/-03:00.
+  // creditos_lojas.created_at é `timestamptz` de verdade (também confirmado)
+  // — esse SIM precisa da conversão local→UTC, mantida como já estava.
+  if(dataIni){
+    qs+=`&created_at=gte.${dataIni}T${horaIni}:00`;
+    qsCreditos+=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;
+  }
+  if(dataFim){
+    qs+=`&created_at=lte.${dataFim}T${horaFim}:59`;
+    qsCreditos+=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;
+  }
   if(lojaId){const _lj=`&loja_id=eq.${lojaId}`;qs+=_lj;qsCreditos+=_lj;}
   // Contas a pagar: soma as contas 'pago' cuja competência (dia 1 do mês) caia
   // em qualquer mês tocado pelo período — comparar contra o dia 1 do mês de
@@ -4339,7 +4393,7 @@ async function _buscarPedidosAdmin(){
   const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?9:11;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(p.created_at>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
   // Linhas extras de crédito/débito manual de entregador — só quando adm e
   // sem filtro de loja/número (não fazem sentido pra esses filtros). Usa o
   // mesmo formato de 13 colunas do adm; não participam de nenhum card de
@@ -4386,12 +4440,13 @@ async function _buscarMetricas(){
   // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
   // ao limite de linhas do PostgREST que já causou números errados no
   // Relatório de Entregas (ver comentário em _buscarPedidosAdmin).
-  // Boundary em timestamptz calculado com os MESMOS helpers que o Relatório
-  // de Entregas e o card "Finalizados hoje" usam pro filtro de created_at
-  // (_inicioDiaBrasilia/_fimDiaBrasilia) — evita qualquer divergência de
-  // fuso horário entre essa tela e o resto do painel (bug real encontrado
-  // em produção: gráfico e relatório davam números diferentes pro mesmo dia).
-  const _args={data_ini_ts:_inicioDiaBrasilia(dataIni),data_fim_ts:_fimDiaBrasilia(dataFim)};
+  // pedidos.created_at é `timestamp` SEM fuso e o valor já É a hora local
+  // de Brasília (confirmado em produção, ver migration) — por isso manda
+  // os limites como string local pura, na cara, sem passar por
+  // _inicioDiaBrasilia/_fimDiaBrasilia (que assumem o oposto: que a coluna
+  // é um instante UTC precisando de conversão, o que gerava um erro de
+  // +3h e contava pedidos no mês seguinte ao real).
+  const _args={data_ini_ts:`${dataIni}T00:00:00`,data_fim_ts:`${dataFim}T23:59:59.999`};
   // Perfil loja só pode ver o agregado da própria loja — mesmo campo
   // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
   if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
@@ -4438,7 +4493,7 @@ function abrirDropdownStatusRelatorio(event,pedidoId){
   const anchor=event.currentTarget;
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p)return;
-  if(p.created_at<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
   const itens=STATUS_RELATORIO.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoRelatorio('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
   const dd=_criarDropdown(pedidoId,itens);
   _posicionarDropdown(dd,anchor);
@@ -4447,7 +4502,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   fecharDropdownStatus();
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p)return;
-  if(p.created_at<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
   if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
   const agora=new Date().toISOString();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
@@ -4656,9 +4711,12 @@ async function renderRelatoriosPage(){
 }
 async function carregarRelatorio(){
   const de=document.getElementById('r-de')?.value,ate=document.getElementById('r-ate')?.value,lojaId=document.getElementById('r-loja')?.value;
+  // pedidos.created_at é timestamp SEM fuso, já local — string direta, sem
+  // _inicioDiaBrasilia/_fimDiaBrasilia (essas servem só pra creditos_lojas
+  // logo abaixo, que é timestamptz de verdade).
   let filtro='?order=created_at.desc';
-  if(de)filtro+=`&created_at=gte.${_inicioDiaBrasilia(de)}`;
-  if(ate)filtro+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
+  if(de)filtro+=`&created_at=gte.${de}T00:00:00`;
+  if(ate)filtro+=`&created_at=lte.${ate}T23:59:59.999`;
   if(lojaId)filtro+=`&loja_id=eq.${lojaId}`;
   filtro+=_lojaFiltro();
   let filtroCreditos='?select=tipo,valor,observacoes';
@@ -5621,8 +5679,11 @@ async function _calcularPagamentos(){
   if(!dataIni||!dataFim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const horaIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
   const horaFim=document.getElementById('gp-hora-fim')?.value||'23:59';
-  const inicioISO=new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString();
-  const fimISO=new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString();
+  // pedidos.finalizado_em é timestamp SEM fuso, já local — string direta,
+  // sem Date()/-03:00 (única tabela filtrada aqui; saques/creditos_entregadores
+  // abaixo usam campos `date` puro, não precisam de hora).
+  const inicioISO=`${dataIni}T${horaIni}:00`;
+  const fimISO=`${dataFim}T${horaFim}:59`;
   const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
   const [pedidos,entregadores,saquesPeriodo,creditosPeriodo]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
@@ -6115,8 +6176,11 @@ async function _buscarCobrancas(){
   if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
   const hIni=document.getElementById('gc-hora-inicio')?.value||'00:00';
   const hFim=document.getElementById('gc-hora-fim')?.value||'23:59';
-  const inicioISO=new Date(`${inicio}T${hIni}:00-03:00`).toISOString();
-  const fimISO=new Date(`${fim}T${hFim}:59-03:00`).toISOString();
+  // pedidos.finalizado_em é timestamp SEM fuso, já local — string direta,
+  // sem Date()/-03:00 (única tabela filtrada aqui; cobrancas_lojas abaixo
+  // usa data_inicio/data_fim, campo `date` puro, sem hora).
+  const inicioISO=`${inicio}T${hIni}:00`;
+  const fimISO=`${fim}T${hFim}:59`;
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,jaGeradas]=await Promise.all([
@@ -6303,8 +6367,12 @@ async function verFaturaCobranca(cobId){
   const dataInicio=formatarDataBR(c.data_inicio);
   const dataFim=formatarDataBR(c.data_fim);
   const valorTotal=parseFloat(c.valor_total)||0;
-  const iniISO=c.data_inicio?_inicioDiaBrasilia(c.data_inicio):'';
-  const fimISO=c.data_fim?_fimDiaBrasilia(c.data_fim):'';
+  // pedidos.finalizado_em/updated_at são `timestamp` SEM fuso e já em hora
+  // local de Brasília (confirmado via information_schema) — igual ao fix do
+  // gráfico de Métricas, manda a string local pura, sem _inicioDiaBrasilia/
+  // _fimDiaBrasilia (que somam/subtraem 3h presumindo uma coluna UTC).
+  const iniISO=c.data_inicio?`${c.data_inicio}T00:00:00`:'';
+  const fimISO=c.data_fim?`${c.data_fim}T23:59:59.999`:'';
   const numFatura=String(c.numero_fatura||'').padStart(7,'0');
   const hoje=new Date();
   const dataEmissao=formatarDataBR(hoje);
@@ -6312,8 +6380,12 @@ async function verFaturaCobranca(cobId){
   const vencimento=formatarDataBR(dtVenc);
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
-    const res=await db('pedidos','GET',null,`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta,distancia_km,com_retorno,retorno,preco_dinamico&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc&limit=500`);
-    pedidosData=Array.isArray(res)?res:[];
+    // Paginado (_dbTodasLinhas) em vez de limit=500 fixo — uma loja com mais
+    // de 500 pedidos finalizados no período faturado tinha o excedente
+    // cortado da fatura silenciosamente. order=finalizado_em,id garante
+    // desempate determinístico entre páginas (finalizado_em pode repetir
+    // valor, ou vir null e cair no fallback por updated_at do OR abaixo).
+    pedidosData=await _dbTodasLinhas('pedidos',`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta,distancia_km,com_retorno,retorno,preco_dinamico&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc,id.asc`);
   }
   const faixasLoja=await _getFaixasCobranca(c.loja_id);
   const totalEntregas=pedidosData.length>0
