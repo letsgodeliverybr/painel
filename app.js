@@ -4459,23 +4459,24 @@ async function renderMetricasPage(){
         <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Aplicar</button>
       </div>
     </div></div>
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
+    <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
       <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
-    <div class="card"><div class="card-header"><span class="card-title">🚫 Pedidos Cancelados por Mês</span></div>
-      <div style="padding:20px 20px 8px" id="mm-chart-cancelados"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    ${currentPerfil==='adm'?`<div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
+      <div style="padding:20px 20px 8px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
+    <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
+      <div style="padding:20px 20px 8px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>`:''}
   </div>`;
   _buscarMetricas();
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
-  const chartCancEl=document.getElementById('mm-chart-cancelados');
   chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
-  if(chartCancEl)chartCancEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
   const dataIni=document.getElementById('mm-data-ini')?.value;
   const dataFim=document.getElementById('mm-data-fim')?.value;
-  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';if(chartCancEl)chartCancEl.innerHTML='';return;}
+  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';return;}
   if(dataIni>dataFim){showNotif('⚠️ Período inválido','A data inicial não pode ser depois da final','var(--yellow)');return;}
   // Agregação feita no banco (RPC pedidos_finalizados_por_mes, COUNT+GROUP BY
   // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
@@ -4491,28 +4492,45 @@ async function _buscarMetricas(){
   // Perfil loja só pode ver o agregado da própria loja — mesmo campo
   // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
   if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
-  const rows=await dbRpc('pedidos_finalizados_por_mes',_args);
+  // Lojas Novas e Motoboys Novos por Mês só fazem sentido pro adm
+  // (agregado de toda a operação) — buscadas em paralelo quando aplicável.
+  const chartLojasNovasEl=currentPerfil==='adm'?document.getElementById('mm-chart-lojas-novas'):null;
+  const chartMotoboysNovosEl=currentPerfil==='adm'?document.getElementById('mm-chart-motoboys-novos'):null;
+  const _argsSemLoja={data_ini_local:_args.data_ini_local,data_fim_local:_args.data_fim_local};
+  const[rows,rowsLojasNovas,rowsMotoboysNovos]=await Promise.all([
+    dbRpc('pedidos_finalizados_por_mes',_args),
+    chartLojasNovasEl?dbRpc('lojas_novas_por_mes',_argsSemLoja):Promise.resolve([]),
+    chartMotoboysNovosEl?dbRpc('motoboys_novos_por_mes',_argsSemLoja):Promise.resolve([]),
+  ]);
   const porMes=new Map((Array.isArray(rows)?rows:[]).map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
+  const porMesLojasNovas=new Map((Array.isArray(rowsLojasNovas)?rowsLojasNovas:[]).map(r=>[String(r.mes).slice(0,7),Number(r.novas)||0]));
+  const porMesMotoboysNovos=new Map((Array.isArray(rowsMotoboysNovos)?rowsMotoboysNovos:[]).map(r=>[String(r.mes).slice(0,7),Number(r.novos)||0]));
   const[yIni,mIni]=dataIni.split('-').map(Number);
   const[yFim,mFim]=dataFim.split('-').map(Number);
-  const meses=[];
+  const meses=[],mesesLojasNovas=[],mesesMotoboysNovos=[];
   let y=yIni,m=mIni;
   while(y<yFim||(y===yFim&&m<=mFim)){
     const chave=`${y}-${String(m).padStart(2,'0')}`;
-    meses.push({chave,label:`${String(m).padStart(2,'0')}/${y}`,quantidade:porMes.get(chave)||0});
+    const label=`${String(m).padStart(2,'0')}/${y}`;
+    meses.push({chave,label,quantidade:porMes.get(chave)||0});
+    mesesLojasNovas.push({chave,label,quantidade:porMesLojasNovas.get(chave)||0});
+    mesesMotoboysNovos.push({chave,label,quantidade:porMesMotoboysNovos.get(chave)||0});
     m++;if(m>12){m=1;y++;}
   }
   chartEl.innerHTML=_renderMetricasChart(meses);
+  if(chartLojasNovasEl)chartLojasNovasEl.innerHTML=_renderMetricasChart(mesesLojasNovas,{cor1:'#8b5cf6',cor2:'var(--accent)',rotulo:'loja nova',rotuloPlural:'lojas novas'});
+  if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{cor1:'#f59e0b',cor2:'var(--accent)',rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
 }
-function _renderMetricasChart(meses){
+function _renderMetricasChart(meses,opts){
   if(!meses.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Selecione um período válido</div>';
+  const{cor1='var(--green)',cor2='var(--accent)',rotulo='pedido finalizado',rotuloPlural='pedidos finalizados'}=opts||{};
   const max=Math.max(1,...meses.map(m=>m.quantidade));
   const larguraMin=Math.max(meses.length*44,320);
   const barras=meses.map(m=>{
     const alturaPct=m.quantidade>0?Math.max(3,(m.quantidade/max*100)):0;
-    return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:32px;height:100%" title="${m.label}: ${m.quantidade} pedido${m.quantidade===1?'':'s'} finalizado${m.quantidade===1?'':'s'}">
+    return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:32px;height:100%" title="${m.label}: ${m.quantidade} ${m.quantidade===1?rotulo:rotuloPlural}">
       <div style="font-size:11px;font-weight:700;color:var(--text2)">${m.quantidade}</div>
-      <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:linear-gradient(180deg,var(--green),var(--accent));border-radius:4px 4px 0 0;margin-top:4px"></div>
+      <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:linear-gradient(180deg,${cor1},${cor2});border-radius:4px 4px 0 0;margin-top:4px"></div>
     </div>`;
   }).join('');
   const rotulos=meses.map(m=>`<div style="flex:1;min-width:32px;display:flex;justify-content:center"><span style="display:inline-block;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap;margin-top:6px">${m.label}</span></div>`).join('');
