@@ -157,15 +157,32 @@ let _pdCidTimers={}; // keyed by `${tipo}_${cidade}`
 function _cidadeSufixo(c){return{'Ribeirão Preto':'RP','São José dos Campos':'SJC','Campinas':'CAMPI'}[c]||'';}
 
 // ── BRASÍLIA TIMEZONE HELPERS ──
-// REVERTIDO (ver investigação em andamento) — o fallback -03:00 causou
-// contradição com teste real: usuário confirmou que o horário exibido
-// (card do pedido, Relatório de Entregas) já estava CORRETO com o
-// fallback +'Z' original, antes desta mudança. Voltando pro que já
-// funcionava até a causa da contradição ser entendida.
+// ⚠️ NÃO REVERTER O FALLBACK '-03:00' ABAIXO SEM REFAZER O TESTE DESCRITO
+// AQUI — já foi revertido por engano uma vez, não repete.
 //
-// Supabase retorna timestamps sem 'Z'; sem o sufixo o browser trata como horário local,
-// causando double-conversão. _parseUtc garante parse correto como UTC.
-const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'Z');};
+// Se a string já vem com offset explícito ('Z' ou +/-HH:MM), é uma coluna
+// timestamptz de verdade (creditos_lojas, cobrancas_lojas, saques,
+// creditos_entregadores) — usa como está. Sem offset, é uma das colunas
+// confirmadas timestamp SEM fuso (pedidos.*, entregadores.updated_at,
+// lojas.created_at — ver comentário perto de _inicioDiaBrasilia) cujo
+// valor já É hora local de Brasília — assume -03:00, não 'Z'/UTC.
+//
+// Histórico (pra não reverter de novo sem motivo):
+//   1ª tentativa: trocou 'Z' por '-03:00'. Usuário reportou que o horário
+//     de um pedido do meio do dia (#005) já estava certo ANTES da
+//     mudança — revertido de volta pra 'Z'.
+//   Investigação seguinte: esse reporte era sobre o APP FLUTTER (outro
+//     repositório, não editado aqui), não sobre o painel web. Não provava
+//     nada sobre o painel.
+//   Prova real (produção, painel web): filtro do Relatório de Entregas
+//     em 01/08/2026 trouxe pedidos #7774 e #2061 exibidos como
+//     "31/07/2026 21:03"/"21:01" — 3h ATRASADO. Query direta no banco
+//     confirmou created_at real = 2026-08-01 00:03:00 / 00:01:50 (minuto
+//     a minuto batendo com a previsão de -3h do fallback 'Z' errado).
+//     Um pedido de virada de meia-noite é o único caso que expõe o bug
+//     de forma óbvia (muda a DATA exibida, não só a hora) — por isso o
+//     teste com pedido do meio do dia não pegou da primeira vez.
+const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'-03:00');};
 const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
 const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
 const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
