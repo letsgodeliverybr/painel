@@ -2500,8 +2500,11 @@ async function atualizarTudo(){
   const emPreparo=allPedidos.filter(p=>getStatusKey(p)==='recebido').length;
   const procurando=allPedidos.filter(p=>getStatusKey(p)==='pronto').length;
   const emRota=allPedidos.filter(p=>['aceito','chegou_local','em_rota','chegou_destino','retornando'].includes(getStatusKey(p))).length;
+  // pedidos.created_at é timestamp SEM fuso, já local — string direta, sem
+  // _inicioDiaBrasilia/_fimDiaBrasilia (que somavam +3h e excluíam pedidos
+  // das primeiras ~3h do dia, ex: criados 00h-03h de Brasília).
   const _hoje=_dataHojeBrasilia();
-  const _ini=_inicioDiaBrasilia(_hoje),_fim=_fimDiaBrasilia(_hoje);
+  const _ini=`${_hoje}T00:00:00`,_fim=`${_hoje}T23:59:59.999`;
   const contadoresHoje=await db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=in.(finalizado,cancelado)${_lf}`);
   const finalizadosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='finalizado').length;
   const canceladosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='cancelado').length;
@@ -4456,18 +4459,23 @@ async function renderMetricasPage(){
         <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Aplicar</button>
       </div>
     </div></div>
-    <div class="card"><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
       <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
+    <div class="card"><div class="card-header"><span class="card-title">🚫 Pedidos Cancelados por Mês</span></div>
+      <div style="padding:20px 20px 8px" id="mm-chart-cancelados"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
   </div>`;
   _buscarMetricas();
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
+  const chartCancEl=document.getElementById('mm-chart-cancelados');
   chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
+  if(chartCancEl)chartCancEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
   const dataIni=document.getElementById('mm-data-ini')?.value;
   const dataFim=document.getElementById('mm-data-fim')?.value;
-  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';return;}
+  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';if(chartCancEl)chartCancEl.innerHTML='';return;}
   if(dataIni>dataFim){showNotif('⚠️ Período inválido','A data inicial não pode ser depois da final','var(--yellow)');return;}
   // Agregação feita no banco (RPC pedidos_finalizados_por_mes, COUNT+GROUP BY
   // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
@@ -4479,7 +4487,7 @@ async function _buscarMetricas(){
   // _inicioDiaBrasilia/_fimDiaBrasilia (que assumem o oposto: que a coluna
   // é um instante UTC precisando de conversão, o que gerava um erro de
   // +3h e contava pedidos no mês seguinte ao real).
-  const _args={data_ini_ts:`${dataIni}T00:00:00`,data_fim_ts:`${dataFim}T23:59:59.999`};
+  const _args={data_ini_local:`${dataIni}T00:00:00`,data_fim_local:`${dataFim}T23:59:59.999`};
   // Perfil loja só pode ver o agregado da própria loja — mesmo campo
   // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
   if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
