@@ -4535,7 +4535,11 @@ function _renderMetricasChart(meses,opts){
       <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:linear-gradient(180deg,${cor1},${cor2});border-radius:4px 4px 0 0;margin-top:4px"></div>
     </div>`;
   }).join('');
-  const rotulos=meses.map(m=>`<div style="flex:1;min-width:32px;display:flex;justify-content:center"><span style="display:inline-block;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap;margin-top:6px">${m.label}</span></div>`).join('');
+  // right:50% ancora o rotate no centro exato da coluna (mesmo centro da
+  // barra acima, via align-items:center) — não depende da largura do
+  // texto, diferente de centralizar com justify-content e só depois girar
+  // (o pivot top-right acaba a largura_do_texto/2 à direita do centro real).
+  const rotulos=meses.map(m=>`<div style="flex:1;min-width:32px;position:relative;height:1px"><span style="position:absolute;right:50%;top:6px;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap">${m.label}</span></div>`).join('');
   return`<div style="overflow-x:auto"><div style="min-width:${larguraMin}px">
     <div style="display:flex;align-items:flex-end;gap:6px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
     <div style="display:flex;gap:6px;padding:0 4px 34px">${rotulos}</div>
