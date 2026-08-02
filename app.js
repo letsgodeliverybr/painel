@@ -4462,16 +4462,23 @@ async function renderMetricasPage(){
     <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
       <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
-    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
       <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
         <div style="padding:20px 20px 8px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
       <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
         <div style="padding:20px 20px 8px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
+    </div>
+    <div class="card"><div class="card-header"><span class="card-title">🏷️ Lojas por Categoria</span></div>
+      <div style="padding:20px 20px 8px" id="mm-chart-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>`:''}
   </div>`;
   _buscarMetricas();
+  // Distribuição por categoria é foto do total atual, sem relação com o
+  // filtro DE/ATÉ da tela — busca uma vez só, não refaz quando o usuário
+  // clica "Aplicar" no período.
+  if(currentPerfil==='adm')_buscarLojasPorCategoria();
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
@@ -4544,6 +4551,44 @@ function _renderMetricasChart(meses,opts){
     <div style="display:flex;align-items:flex-end;gap:6px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
     <div style="display:flex;gap:6px;padding:0 4px 34px">${rotulos}</div>
   </div></div>`;
+}
+// Paleta categórica fixa (ordem sempre igual, cor segue a categoria — não
+// o rank) — cicla se um dia existirem mais categorias que cores, o que
+// não deveria acontecer na prática com a lista atual de CATEGORIAS_LOJA.
+const _CORES_CATEGORIA=['#1A56DB','#22c55e','#f97316','#ec4899','#8b5cf6','#eab308','#06b6d4','#ef4444','#84cc16','#f43f5e','#0ea5e9','#a855f7','#14b8a6','#f59e0b','#6366f1','#10b981','#d946ef','#64748b','#fb7185','#34d399','#fbbf24'];
+async function _buscarLojasPorCategoria(){
+  const el=document.getElementById('mm-chart-categoria');if(!el)return;
+  const rows=await dbRpc('lojas_por_categoria',{});
+  const dados=(Array.isArray(rows)?rows:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
+  el.innerHTML=_renderDonutCategoria(dados);
+}
+function _renderDonutCategoria(dados){
+  if(!dados.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Nenhuma loja cadastrada</div>';
+  const total=dados.reduce((s,d)=>s+d.quantidade,0);
+  const R=40,C=2*Math.PI*R;
+  let offsetAcc=0;
+  const fatias=dados.map((d,i)=>{
+    const cor=_CORES_CATEGORIA[i%_CORES_CATEGORIA.length];
+    const arco=(d.quantidade/total)*C;
+    const el=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${cor}" stroke-width="16" stroke-dasharray="${arco.toFixed(2)} ${(C-arco).toFixed(2)}" stroke-dashoffset="${(-offsetAcc).toFixed(2)}" transform="rotate(-90 50 50)"><title>${d.categoria}: ${d.quantidade} (${(d.quantidade/total*100).toFixed(1)}%)</title></circle>`;
+    offsetAcc+=arco;
+    return el;
+  }).join('');
+  const legenda=dados.map((d,i)=>{
+    const cor=_CORES_CATEGORIA[i%_CORES_CATEGORIA.length];
+    const pct=(d.quantidade/total*100).toFixed(1);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
+  }).join('');
+  return`<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap;justify-content:center">
+    <div style="position:relative;width:180px;height:180px;flex-shrink:0">
+      <svg viewBox="0 0 100 100" width="180" height="180">${fatias}</svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+        <div style="font-size:22px;font-weight:700;color:var(--text)">${total}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">loja${total===1?'':'s'}</div>
+      </div>
+    </div>
+    <div style="min-width:200px;max-width:320px;flex:1">${legenda}</div>
+  </div>`;
 }
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
