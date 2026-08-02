@@ -4539,16 +4539,7 @@ async function _buscarMetricas(){
   if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
   if(chartPedidosCategoriaEl){
     const _porCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
-    // Agrupa em macro-grupos (_GRUPO_CATEGORIA) só pra esse gráfico — mais
-    // legível que 23 fatias individuais. "Lojas por Categoria" não passa
-    // por isso, continua categoria a categoria.
-    const _porGrupo=new Map();
-    _porCategoria.forEach(d=>{
-      const grupo=_GRUPO_CATEGORIA[d.categoria]||'Sem categoria';
-      _porGrupo.set(grupo,(_porGrupo.get(grupo)||0)+d.quantidade);
-    });
-    const dadosPedidosCategoria=[..._porGrupo.entries()].map(([categoria,quantidade])=>({categoria,quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
-    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(dadosPedidosCategoria,{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos finalizados',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo});
+    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo});
   }
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
@@ -4577,53 +4568,57 @@ function _renderMetricasChart(meses,opts){
 }
 // Paleta categórica fixa (ordem sempre igual, cor segue a categoria — não
 // o rank) — cicla se um dia existirem mais categorias que cores, o que
-// não deveria acontecer na prática com a lista atual de CATEGORIAS_LOJA.
-const _CORES_CATEGORIA=['#1A56DB','#22c55e','#f97316','#ec4899','#8b5cf6','#eab308','#06b6d4','#ef4444','#84cc16','#f43f5e','#0ea5e9','#a855f7','#14b8a6','#f59e0b','#6366f1','#10b981','#d946ef','#64748b','#fb7185','#34d399','#fbbf24','#7c3aed','#0891b2','#dc2626'];
-// Mapeia categoria -> cor pela posição FIXA em CATEGORIAS_LOJA (definida
-// mais abaixo no arquivo — referenciada aqui só dentro do corpo da função,
-// então a ordem de declaração não importa, CATEGORIAS_LOJA já existe no
-// escopo do módulo quando isso realmente roda). Categoria fora da lista
-// (hoje só 'Sem categoria', vinda do COALESCE das RPCs) recebe o próximo
-// índice logo após a lista, não a última cor da paleta cortada — assim
-// a cor de cada categoria é sempre a mesma nos dois gráficos de pizza,
-// independente da ordem em que cada RPC devolve as linhas (cada uma
-// ordena por quantidade DESC, ranking diferente em cada gráfico).
-function _corCategoria(categoria){
-  const idx=CATEGORIAS_LOJA.indexOf(categoria);
-  return _CORES_CATEGORIA[(idx===-1?CATEGORIAS_LOJA.length:idx)%_CORES_CATEGORIA.length];
-}
-// Macro-grupos de categoria — usado só no donut "Pedidos Finalizados por
-// Categoria" (mais legível que 23 fatias individuais); "Lojas por
-// Categoria" continua mostrando categoria a categoria, sem agrupar.
-// corDe = categoria "bandeira" de cada grupo, cuja cor fixa (via
-// _corCategoria) o grupo inteiro reaproveita — não inventa cor nova.
+// Macro-grupos de categoria — usados nos dois donuts da tela Métricas
+// (Lojas por Categoria e Pedidos Finalizados por Categoria), pra mostrar
+// grupo em vez das 23 categorias individuais.
 const _GRUPOS_CATEGORIA_DEF=[
-  {grupo:'Alimentação',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],corDe:'Restaurantes'},
-  {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],corDe:'Mercado'},
-  {grupo:'Pet Shop',categorias:['Pet Shop'],corDe:'Pet Shop'},
-  {grupo:'Farmácia',categorias:['Farmácia'],corDe:'Farmácia'},
-  {grupo:'Suplementos',categorias:['Suplementos'],corDe:'Suplementos'},
-  {grupo:'Tabacarias',categorias:['Tabacarias'],corDe:'Tabacarias'},
-  {grupo:'Auto Peças',categorias:['Auto Peças'],corDe:'Auto Peças'},
-  {grupo:"App Let's Go",categorias:["App Let's Go"],corDe:"App Let's Go"},
+  {grupo:'Food',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café']},
+  {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega']},
+  {grupo:'Pet Shop',categorias:['Pet Shop']},
+  {grupo:'Farmácia',categorias:['Farmácia']},
+  {grupo:'Suplementos',categorias:['Suplementos']},
+  {grupo:'Tabacarias',categorias:['Tabacarias']},
+  {grupo:'Auto Peças',categorias:['Auto Peças']},
+  {grupo:"App Let's Go",categorias:["App Let's Go"]},
 ];
 const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>g.categorias.map(c=>[c,g.grupo])));
-// 'Sem categoria' (loja/pedido ainda não classificado) não pertence a
-// nenhum macro-grupo definido acima — vira grupo próprio, com a mesma cor
-// fixa que já usa nos dois donuts hoje (via _corCategoria diretamente).
-function _corGrupo(grupo){
-  if(grupo==='Sem categoria')return _corCategoria('Sem categoria');
-  const def=_GRUPOS_CATEGORIA_DEF.find(g=>g.grupo===grupo);
-  return _corCategoria(def?def.corDe:grupo);
+// Cor fixa por GRUPO (não mais por categoria individual nem por rank) —
+// os dois donuts mostram os mesmos grupos, então precisam da mesma cor
+// pro mesmo grupo. 'Sem categoria' (loja/pedido ainda não classificado)
+// não é um grupo de _GRUPOS_CATEGORIA_DEF, mas ainda precisa de cor fixa
+// própria, distinta das outras 8.
+const _CORES_GRUPO={
+  'Food':'#eab308',
+  'Pet Shop':'#f97316',
+  'Farmácia':'#1A56DB',
+  'Suplementos':'#22c55e',
+  'Auto Peças':'#8b5cf6',
+  'Mercado':'#06b6d4',
+  'Tabacarias':'#64748b',
+  "App Let's Go":'#ec4899',
+  'Sem categoria':'#475569',
+};
+function _corGrupo(grupo){return _CORES_GRUPO[grupo]||'#475569';}
+// Soma quantidade por grupo (COALESCE já resolvido pelas RPCs pra 'Sem
+// categoria' quando a categoria original é NULL) — usado pelos dois
+// donuts, ordena por quantidade DESC igual as RPCs já faziam por
+// categoria individual antes do agrupamento existir.
+function _agruparPorCategoria(dadosPorCategoria){
+  const porGrupo=new Map();
+  dadosPorCategoria.forEach(d=>{
+    const grupo=_GRUPO_CATEGORIA[d.categoria]||'Sem categoria';
+    porGrupo.set(grupo,(porGrupo.get(grupo)||0)+d.quantidade);
+  });
+  return[...porGrupo.entries()].map(([categoria,quantidade])=>({categoria,quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
 }
 async function _buscarLojasPorCategoria(){
   const el=document.getElementById('mm-chart-categoria');if(!el)return;
   const rows=await dbRpc('lojas_por_categoria',{});
   const dados=(Array.isArray(rows)?rows:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
-  el.innerHTML=_renderDonutCategoria(dados);
+  el.innerHTML=_renderDonutCategoria(_agruparPorCategoria(dados),{corFn:_corGrupo});
 }
 function _renderDonutCategoria(dados,opts){
-  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corCategoria}=opts||{};
+  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corGrupo}=opts||{};
   if(!dados.length)return`<div style="color:var(--text3);text-align:center;padding:40px">${vazio}</div>`;
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
