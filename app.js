@@ -4460,18 +4460,23 @@ async function renderMetricasPage(){
       </div>
     </div></div>
     <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
-      <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      <div style="padding:20px 20px 16px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
       <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
-        <div style="padding:20px 20px 8px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+        <div style="padding:20px 20px 16px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
       <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
-        <div style="padding:20px 20px 8px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+        <div style="padding:20px 20px 16px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
-    <div class="card"><div class="card-header"><span class="card-title">🏷️ Lojas por Categoria</span></div>
-      <div style="padding:20px 20px 8px" id="mm-chart-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+      <div class="card"><div class="card-header"><span class="card-title">🏷️ Lojas por Categoria</span></div>
+        <div style="padding:20px 20px 8px" id="mm-chart-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">📦 Pedidos Finalizados por Categoria</span></div>
+        <div style="padding:20px 20px 8px" id="mm-chart-pedidos-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      </div>
     </div>`:''}
   </div>`;
   _buscarMetricas();
@@ -4501,15 +4506,18 @@ async function _buscarMetricas(){
   // Perfil loja só pode ver o agregado da própria loja — mesmo campo
   // (currentUser.loja_id) usado em _lojaFiltro() pro resto do painel.
   if(currentPerfil==='loja'&&currentUser?.loja_id)_args.loja_id_filtro=currentUser.loja_id;
-  // Lojas Novas e Motoboys Novos por Mês só fazem sentido pro adm
-  // (agregado de toda a operação) — buscadas em paralelo quando aplicável.
+  // Lojas Novas, Motoboys Novos e Pedidos Finalizados por Categoria só
+  // fazem sentido pro adm (agregado de toda a operação) — buscadas em
+  // paralelo quando aplicável.
   const chartLojasNovasEl=currentPerfil==='adm'?document.getElementById('mm-chart-lojas-novas'):null;
   const chartMotoboysNovosEl=currentPerfil==='adm'?document.getElementById('mm-chart-motoboys-novos'):null;
+  const chartPedidosCategoriaEl=currentPerfil==='adm'?document.getElementById('mm-chart-pedidos-categoria'):null;
   const _argsSemLoja={data_ini_local:_args.data_ini_local,data_fim_local:_args.data_fim_local};
-  const[rows,rowsLojasNovas,rowsMotoboysNovos]=await Promise.all([
+  const[rows,rowsLojasNovas,rowsMotoboysNovos,rowsPedidosCategoria]=await Promise.all([
     dbRpc('pedidos_finalizados_por_mes',_args),
     chartLojasNovasEl?dbRpc('lojas_novas_por_mes',_argsSemLoja):Promise.resolve([]),
     chartMotoboysNovosEl?dbRpc('motoboys_novos_por_mes',_argsSemLoja):Promise.resolve([]),
+    chartPedidosCategoriaEl?dbRpc('pedidos_finalizados_por_categoria',_argsSemLoja):Promise.resolve([]),
   ]);
   const porMes=new Map((Array.isArray(rows)?rows:[]).map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
   const porMesLojasNovas=new Map((Array.isArray(rowsLojasNovas)?rowsLojasNovas:[]).map(r=>[String(r.mes).slice(0,7),Number(r.novas)||0]));
@@ -4529,6 +4537,10 @@ async function _buscarMetricas(){
   chartEl.innerHTML=_renderMetricasChart(meses);
   if(chartLojasNovasEl)chartLojasNovasEl.innerHTML=_renderMetricasChart(mesesLojasNovas,{rotulo:'loja nova',rotuloPlural:'lojas novas'});
   if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
+  if(chartPedidosCategoriaEl){
+    const dadosPedidosCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
+    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(dadosPedidosCategoria,{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos finalizados',vazio:'Nenhum pedido finalizado no período'});
+  }
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
 // pra caber todos os meses do período na largura do card, em vez de
@@ -4552,20 +4564,21 @@ function _renderMetricasChart(meses,opts){
   // (o pivot top-right acaba a largura_do_texto/2 à direita do centro real).
   const rotulos=meses.map(m=>`<div style="flex:1;min-width:0;position:relative;height:1px"><span style="position:absolute;right:50%;top:6px;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap">${m.label}</span></div>`).join('');
   return`<div style="display:flex;align-items:flex-end;gap:4px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
-    <div style="display:flex;gap:4px;padding:0 4px 34px">${rotulos}</div>`;
+    <div style="display:flex;gap:4px;padding:0 4px 48px">${rotulos}</div>`;
 }
 // Paleta categórica fixa (ordem sempre igual, cor segue a categoria — não
 // o rank) — cicla se um dia existirem mais categorias que cores, o que
 // não deveria acontecer na prática com a lista atual de CATEGORIAS_LOJA.
-const _CORES_CATEGORIA=['#1A56DB','#22c55e','#f97316','#ec4899','#8b5cf6','#eab308','#06b6d4','#ef4444','#84cc16','#f43f5e','#0ea5e9','#a855f7','#14b8a6','#f59e0b','#6366f1','#10b981','#d946ef','#64748b','#fb7185','#34d399','#fbbf24'];
+const _CORES_CATEGORIA=['#1A56DB','#22c55e','#f97316','#ec4899','#8b5cf6','#eab308','#06b6d4','#ef4444','#84cc16','#f43f5e','#0ea5e9','#a855f7','#14b8a6','#f59e0b','#6366f1','#10b981','#d946ef','#64748b','#fb7185','#34d399','#fbbf24','#7c3aed','#0891b2','#dc2626'];
 async function _buscarLojasPorCategoria(){
   const el=document.getElementById('mm-chart-categoria');if(!el)return;
   const rows=await dbRpc('lojas_por_categoria',{});
   const dados=(Array.isArray(rows)?rows:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
   el.innerHTML=_renderDonutCategoria(dados);
 }
-function _renderDonutCategoria(dados){
-  if(!dados.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Nenhuma loja cadastrada</div>';
+function _renderDonutCategoria(dados,opts){
+  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada'}=opts||{};
+  if(!dados.length)return`<div style="color:var(--text3);text-align:center;padding:40px">${vazio}</div>`;
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
   let offsetAcc=0;
@@ -4586,7 +4599,7 @@ function _renderDonutCategoria(dados){
       <svg viewBox="0 0 100 100" width="180" height="180">${fatias}</svg>
       <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
         <div style="font-size:22px;font-weight:700;color:var(--text)">${total}</div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">loja${total===1?'':'s'}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">${total===1?rotuloCentro:rotuloCentroPlural}</div>
       </div>
     </div>
     <div style="min-width:200px;max-width:320px;flex:1">${legenda}</div>
@@ -4648,7 +4661,7 @@ async function renderLojasPage(){
 // Mesma lista de valores do <select id="loja-categoria"> em index.html
 // (form de Nova Loja) — mantém os dois formulários (criar/editar)
 // oferecendo exatamente as mesmas opções.
-const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Suplementos','Marmitaria','Mercado','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
+const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Café','Salgados','Comida Fit','Suplementos','Marmitaria','Mercado','Empório','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
 async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;

@@ -86,12 +86,18 @@ ALTER TABLE public.lojas ALTER COLUMN categoria DROP DEFAULT;
 -- real deployado do despacho-engine (ou confirmação de que não foi ele).
 ALTER TABLE public.lojas ALTER COLUMN categoria DROP NOT NULL;
 
+-- Lista atualizada de novo pra incluir "Café", "Empório" e "Salgados" —
+-- mesmo cuidado de sempre: gerada direto a partir de CATEGORIAS_LOJA
+-- (app.js), não digitada em paralelo, pra não repetir o mesmo tipo de
+-- divergência que já aconteceu aqui (a primeira versão desta constraint,
+-- criada fora deste repositório, ficou sem "Suplementos").
 ALTER TABLE public.lojas DROP CONSTRAINT IF EXISTS lojas_categoria_check;
 
 ALTER TABLE public.lojas ADD CONSTRAINT lojas_categoria_check
   CHECK (categoria IS NULL OR categoria IN (
     'Restaurantes', 'Hamburgueria', 'Japonesa', 'Pizzaria', 'Confeitaria',
-    'Sorveteria', 'Açaí', 'Casa de Carnes', 'Padaria', 'Comida Fit',
-    'Suplementos', 'Marmitaria', 'Mercado', 'Conveniência', 'Adega',
-    'Pet Shop', 'Farmácia', 'Auto Peças', 'Tabacarias', 'App Let''s Go'
+    'Sorveteria', 'Açaí', 'Casa de Carnes', 'Padaria', 'Café', 'Salgados',
+    'Comida Fit', 'Suplementos', 'Marmitaria', 'Mercado', 'Empório',
+    'Conveniência', 'Adega', 'Pet Shop', 'Farmácia', 'Auto Peças',
+    'Tabacarias', 'App Let''s Go'
   ));
