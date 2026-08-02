@@ -50,7 +50,41 @@ UPDATE public.lojas SET categoria = NULL WHERE categoria = 'restaurante';
 -- categoria), sem DEFAULT o resultado passa a ser NULL (honesto, "não
 -- classificado") em vez de 'restaurante' (dado errado, mas com cara de
 -- classificado). Não resolve a causa raiz — só impede que ela grave lixo.
+--
+-- PENDÊNCIA CONHECIDA (registrada, não resolvida): o UPDATE acima já foi
+-- revertido pelo despacho-engine pelo menos uma vez ANTES do DROP DEFAULT
+-- ter sido aplicado — confirmado visualmente no gráfico "Lojas por
+-- Categoria" mostrando 39 de 62 lojas (62.9%) ainda em 'restaurante'
+-- depois de tudo isso já ter rodado. Não corrigir de novo às cegas — só
+-- vale rodar o UPDATE outra vez depois que a causa raiz real (código
+-- deployado do despacho-engine) for encontrada e corrigida de vez, senão
+-- é o mesmo ciclo de novo.
 ALTER TABLE public.lojas ALTER COLUMN categoria DROP DEFAULT;
+
+-- 🚨 3ª ALTERAÇÃO NÃO RASTREADA NESTA MESMA COLUNA (grave — algo com
+-- acesso de DDL em produção está mexendo na estrutura de lojas.categoria
+-- por fora de qualquer migration deste repositório):
+--   1ª — a CHECK constraint lojas_categoria_check original (lista
+--        desatualizada, sem "Suplementos").
+--   2ª — o DEFAULT 'restaurante'::text (documentado acima).
+--   3ª — categoria apareceu com NOT NULL em algum momento ENTRE o DROP
+--        DEFAULT acima e uma tentativa seguinte de rodar o UPDATE de
+--        limpeza de novo — a tentativa falhou com "null value in column
+--        categoria of relation lojas violates not-null constraint".
+--        Confirmado via information_schema (is_nullable = 'NO') e já
+--        corrigido manualmente em produção:
+--          ALTER TABLE public.lojas ALTER COLUMN categoria DROP NOT NULL;
+--        (repetido logo abaixo pra idempotência/reaplicação futura).
+-- Nenhuma das 3 veio de código deste repositório (nem de add_categoria_
+-- lojas.sql, nem desta própria migration — CHECK e NOT NULL são
+-- mecanismos independentes no Postgres, um não implica o outro). Causa
+-- raiz desconhecida — mesma suspeita do DEFAULT: ou é o despacho-engine
+-- (código deployado diverge do repo), ou é alteração manual pela aba
+-- Table Editor do Supabase Studio enquanto alguém investigava os erros
+-- da constraint (fácil de tocar sem querer no toggle "Is Nullable" ali).
+-- PRIORIDADE: investigar com atenção assim que houver acesso ao código
+-- real deployado do despacho-engine (ou confirmação de que não foi ele).
+ALTER TABLE public.lojas ALTER COLUMN categoria DROP NOT NULL;
 
 ALTER TABLE public.lojas DROP CONSTRAINT IF EXISTS lojas_categoria_check;
 

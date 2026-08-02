@@ -4527,30 +4527,32 @@ async function _buscarMetricas(){
     m++;if(m>12){m=1;y++;}
   }
   chartEl.innerHTML=_renderMetricasChart(meses);
-  if(chartLojasNovasEl)chartLojasNovasEl.innerHTML=_renderMetricasChart(mesesLojasNovas,{cor1:'#8b5cf6',cor2:'var(--accent)',rotulo:'loja nova',rotuloPlural:'lojas novas'});
-  if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{cor1:'#f59e0b',cor2:'var(--accent)',rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
+  if(chartLojasNovasEl)chartLojasNovasEl.innerHTML=_renderMetricasChart(mesesLojasNovas,{rotulo:'loja nova',rotuloPlural:'lojas novas'});
+  if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
 }
+// Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
+// pra caber todos os meses do período na largura do card, em vez de
+// rolar horizontalmente. Cor sólida var(--accent) igual nos 3 gráficos
+// que usam esta função (Finalizados, Lojas Novas, Motoboys Novos) — só
+// rotulo/rotuloPlural (texto do tooltip) muda por gráfico.
 function _renderMetricasChart(meses,opts){
   if(!meses.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Selecione um período válido</div>';
-  const{cor1='var(--green)',cor2='var(--accent)',rotulo='pedido finalizado',rotuloPlural='pedidos finalizados'}=opts||{};
+  const{rotulo='pedido finalizado',rotuloPlural='pedidos finalizados'}=opts||{};
   const max=Math.max(1,...meses.map(m=>m.quantidade));
-  const larguraMin=Math.max(meses.length*44,320);
   const barras=meses.map(m=>{
     const alturaPct=m.quantidade>0?Math.max(3,(m.quantidade/max*100)):0;
-    return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:32px;height:100%" title="${m.label}: ${m.quantidade} ${m.quantidade===1?rotulo:rotuloPlural}">
+    return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:0;height:100%" title="${m.label}: ${m.quantidade} ${m.quantidade===1?rotulo:rotuloPlural}">
       <div style="font-size:11px;font-weight:700;color:var(--text2)">${m.quantidade}</div>
-      <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:linear-gradient(180deg,${cor1},${cor2});border-radius:4px 4px 0 0;margin-top:4px"></div>
+      <div style="width:60%;max-width:36px;height:${alturaPct}%;min-height:${m.quantidade>0?'2px':'0'};background:var(--accent);border-radius:4px 4px 0 0;margin-top:4px"></div>
     </div>`;
   }).join('');
   // right:50% ancora o rotate no centro exato da coluna (mesmo centro da
   // barra acima, via align-items:center) — não depende da largura do
   // texto, diferente de centralizar com justify-content e só depois girar
   // (o pivot top-right acaba a largura_do_texto/2 à direita do centro real).
-  const rotulos=meses.map(m=>`<div style="flex:1;min-width:32px;position:relative;height:1px"><span style="position:absolute;right:50%;top:6px;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap">${m.label}</span></div>`).join('');
-  return`<div style="overflow-x:auto"><div style="min-width:${larguraMin}px">
-    <div style="display:flex;align-items:flex-end;gap:6px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
-    <div style="display:flex;gap:6px;padding:0 4px 34px">${rotulos}</div>
-  </div></div>`;
+  const rotulos=meses.map(m=>`<div style="flex:1;min-width:0;position:relative;height:1px"><span style="position:absolute;right:50%;top:6px;transform:rotate(-45deg);transform-origin:top right;font-size:11px;color:var(--text3);white-space:nowrap">${m.label}</span></div>`).join('');
+  return`<div style="display:flex;align-items:flex-end;gap:4px;height:240px;border-bottom:1px solid var(--border);padding:0 4px">${barras}</div>
+    <div style="display:flex;gap:4px;padding:0 4px 34px">${rotulos}</div>`;
 }
 // Paleta categórica fixa (ordem sempre igual, cor segue a categoria — não
 // o rank) — cicla se um dia existirem mais categorias que cores, o que
