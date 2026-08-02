@@ -4570,6 +4570,19 @@ function _renderMetricasChart(meses,opts){
 // o rank) — cicla se um dia existirem mais categorias que cores, o que
 // não deveria acontecer na prática com a lista atual de CATEGORIAS_LOJA.
 const _CORES_CATEGORIA=['#1A56DB','#22c55e','#f97316','#ec4899','#8b5cf6','#eab308','#06b6d4','#ef4444','#84cc16','#f43f5e','#0ea5e9','#a855f7','#14b8a6','#f59e0b','#6366f1','#10b981','#d946ef','#64748b','#fb7185','#34d399','#fbbf24','#7c3aed','#0891b2','#dc2626'];
+// Mapeia categoria -> cor pela posição FIXA em CATEGORIAS_LOJA (definida
+// mais abaixo no arquivo — referenciada aqui só dentro do corpo da função,
+// então a ordem de declaração não importa, CATEGORIAS_LOJA já existe no
+// escopo do módulo quando isso realmente roda). Categoria fora da lista
+// (hoje só 'Sem categoria', vinda do COALESCE das RPCs) recebe o próximo
+// índice logo após a lista, não a última cor da paleta cortada — assim
+// a cor de cada categoria é sempre a mesma nos dois gráficos de pizza,
+// independente da ordem em que cada RPC devolve as linhas (cada uma
+// ordena por quantidade DESC, ranking diferente em cada gráfico).
+function _corCategoria(categoria){
+  const idx=CATEGORIAS_LOJA.indexOf(categoria);
+  return _CORES_CATEGORIA[(idx===-1?CATEGORIAS_LOJA.length:idx)%_CORES_CATEGORIA.length];
+}
 async function _buscarLojasPorCategoria(){
   const el=document.getElementById('mm-chart-categoria');if(!el)return;
   const rows=await dbRpc('lojas_por_categoria',{});
@@ -4582,15 +4595,15 @@ function _renderDonutCategoria(dados,opts){
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
   let offsetAcc=0;
-  const fatias=dados.map((d,i)=>{
-    const cor=_CORES_CATEGORIA[i%_CORES_CATEGORIA.length];
+  const fatias=dados.map((d)=>{
+    const cor=_corCategoria(d.categoria);
     const arco=(d.quantidade/total)*C;
     const el=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${cor}" stroke-width="16" stroke-dasharray="${arco.toFixed(2)} ${(C-arco).toFixed(2)}" stroke-dashoffset="${(-offsetAcc).toFixed(2)}" transform="rotate(-90 50 50)"><title>${d.categoria}: ${d.quantidade} (${(d.quantidade/total*100).toFixed(1)}%)</title></circle>`;
     offsetAcc+=arco;
     return el;
   }).join('');
-  const legenda=dados.map((d,i)=>{
-    const cor=_CORES_CATEGORIA[i%_CORES_CATEGORIA.length];
+  const legenda=dados.map((d)=>{
+    const cor=_corCategoria(d.categoria);
     const pct=(d.quantidade/total*100).toFixed(1);
     return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
   }).join('');
