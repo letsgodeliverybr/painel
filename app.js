@@ -4538,8 +4538,17 @@ async function _buscarMetricas(){
   if(chartLojasNovasEl)chartLojasNovasEl.innerHTML=_renderMetricasChart(mesesLojasNovas,{rotulo:'loja nova',rotuloPlural:'lojas novas'});
   if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
   if(chartPedidosCategoriaEl){
-    const dadosPedidosCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
-    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(dadosPedidosCategoria,{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos finalizados',vazio:'Nenhum pedido finalizado no período'});
+    const _porCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
+    // Agrupa em macro-grupos (_GRUPO_CATEGORIA) só pra esse gráfico — mais
+    // legível que 23 fatias individuais. "Lojas por Categoria" não passa
+    // por isso, continua categoria a categoria.
+    const _porGrupo=new Map();
+    _porCategoria.forEach(d=>{
+      const grupo=_GRUPO_CATEGORIA[d.categoria]||'Sem categoria';
+      _porGrupo.set(grupo,(_porGrupo.get(grupo)||0)+d.quantidade);
+    });
+    const dadosPedidosCategoria=[..._porGrupo.entries()].map(([categoria,quantidade])=>({categoria,quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
+    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(dadosPedidosCategoria,{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos finalizados',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo});
   }
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
@@ -4583,6 +4592,30 @@ function _corCategoria(categoria){
   const idx=CATEGORIAS_LOJA.indexOf(categoria);
   return _CORES_CATEGORIA[(idx===-1?CATEGORIAS_LOJA.length:idx)%_CORES_CATEGORIA.length];
 }
+// Macro-grupos de categoria — usado só no donut "Pedidos Finalizados por
+// Categoria" (mais legível que 23 fatias individuais); "Lojas por
+// Categoria" continua mostrando categoria a categoria, sem agrupar.
+// corDe = categoria "bandeira" de cada grupo, cuja cor fixa (via
+// _corCategoria) o grupo inteiro reaproveita — não inventa cor nova.
+const _GRUPOS_CATEGORIA_DEF=[
+  {grupo:'Alimentação',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],corDe:'Restaurantes'},
+  {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],corDe:'Mercado'},
+  {grupo:'Pet Shop',categorias:['Pet Shop'],corDe:'Pet Shop'},
+  {grupo:'Farmácia',categorias:['Farmácia'],corDe:'Farmácia'},
+  {grupo:'Suplementos',categorias:['Suplementos'],corDe:'Suplementos'},
+  {grupo:'Tabacarias',categorias:['Tabacarias'],corDe:'Tabacarias'},
+  {grupo:'Auto Peças',categorias:['Auto Peças'],corDe:'Auto Peças'},
+  {grupo:"App Let's Go",categorias:["App Let's Go"],corDe:"App Let's Go"},
+];
+const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>g.categorias.map(c=>[c,g.grupo])));
+// 'Sem categoria' (loja/pedido ainda não classificado) não pertence a
+// nenhum macro-grupo definido acima — vira grupo próprio, com a mesma cor
+// fixa que já usa nos dois donuts hoje (via _corCategoria diretamente).
+function _corGrupo(grupo){
+  if(grupo==='Sem categoria')return _corCategoria('Sem categoria');
+  const def=_GRUPOS_CATEGORIA_DEF.find(g=>g.grupo===grupo);
+  return _corCategoria(def?def.corDe:grupo);
+}
 async function _buscarLojasPorCategoria(){
   const el=document.getElementById('mm-chart-categoria');if(!el)return;
   const rows=await dbRpc('lojas_por_categoria',{});
@@ -4590,20 +4623,20 @@ async function _buscarLojasPorCategoria(){
   el.innerHTML=_renderDonutCategoria(dados);
 }
 function _renderDonutCategoria(dados,opts){
-  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada'}=opts||{};
+  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corCategoria}=opts||{};
   if(!dados.length)return`<div style="color:var(--text3);text-align:center;padding:40px">${vazio}</div>`;
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
   let offsetAcc=0;
   const fatias=dados.map((d)=>{
-    const cor=_corCategoria(d.categoria);
+    const cor=corFn(d.categoria);
     const arco=(d.quantidade/total)*C;
     const el=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${cor}" stroke-width="16" stroke-dasharray="${arco.toFixed(2)} ${(C-arco).toFixed(2)}" stroke-dashoffset="${(-offsetAcc).toFixed(2)}" transform="rotate(-90 50 50)"><title>${d.categoria}: ${d.quantidade} (${(d.quantidade/total*100).toFixed(1)}%)</title></circle>`;
     offsetAcc+=arco;
     return el;
   }).join('');
   const legenda=dados.map((d)=>{
-    const cor=_corCategoria(d.categoria);
+    const cor=corFn(d.categoria);
     const pct=(d.quantidade/total*100).toFixed(1);
     return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
   }).join('');
