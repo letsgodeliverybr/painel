@@ -1,0 +1,11 @@
+-- Categoria/segmento de negócio da loja (Restaurantes, Pizzaria, Farmácia,
+-- etc.) — usada pro gráfico de distribuição por categoria na tela
+-- Métricas Let's Go (pendente, implementado só depois que as 62 lojas
+-- existentes forem classificadas manualmente pela interface).
+--
+-- text puro, sem CHECK constraint — mesmo padrão de tipo_cliente/
+-- tipo_cobranca (app.js: NAV_ITEMS/abrirEditarLoja), a lista de valores
+-- válidos é imposta pelo <select> do painel, não pelo banco. Sem DEFAULT
+-- (campo opcional) — ADD COLUMN sem default é metadata-only, não reescreve
+-- a tabela, as 62 lojas existentes ficam NULL até serem classificadas.
+ALTER TABLE public.lojas ADD COLUMN IF NOT EXISTS categoria text;

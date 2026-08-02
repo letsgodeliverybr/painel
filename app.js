@@ -4594,6 +4594,10 @@ async function renderLojasPage(){
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
+// Mesma lista de valores do <select id="loja-categoria"> em index.html
+// (form de Nova Loja) — mantém os dois formulários (criar/editar)
+// oferecendo exatamente as mesmas opções.
+const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Mercado','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
 async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
@@ -4610,6 +4614,7 @@ async function abrirEditarLoja(lojaId){
   const r1=(a)=>`<div class="form-row full">${a}</div>`;
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
+${r1(fi('Categoria',sel('el-categoria',l.categoria,[['','Selecione...'],...CATEGORIAS_LOJA.map(c=>[c,c])])))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
 ${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}" onfocus="iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback')"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
 <div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
@@ -4654,7 +4659,7 @@ async function salvarEdicaoLoja(lojaId){
   const g=(id)=>document.getElementById(id)?.value||'';
   const pj=g('el-pessoa-juridica');
   const update={
-    nome:g('el-nome'),razao_social:g('el-razao-social'),
+    nome:g('el-nome'),razao_social:g('el-razao-social'),categoria:g('el-categoria')||null,
     inscricao_estadual:g('el-insc-estadual'),inscricao_municipal:g('el-insc-municipal'),
     endereco:g('el-endereco'),cep:g('el-cep'),complemento:g('el-complemento'),
     tipo_cliente:g('el-tipo-cliente')||null,responsavel:g('el-responsavel'),
@@ -4709,7 +4714,7 @@ async function criarLoja(){
   }
   const pj=g('loja-pessoa-juridica');
   const payload={
-    nome,razao_social:g('loja-razao-social'),
+    nome,razao_social:g('loja-razao-social'),categoria:g('loja-categoria')||null,
     inscricao_estadual:g('loja-insc-estadual'),inscricao_municipal:g('loja-insc-municipal'),
     endereco,cep:g('loja-cep'),complemento:g('loja-complemento'),
     tipo_cliente:g('loja-tipo-cliente')||null,responsavel:g('loja-responsavel'),
