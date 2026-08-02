@@ -4462,11 +4462,13 @@ async function renderMetricasPage(){
     <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
       <div style="padding:20px 20px 8px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
-    ${currentPerfil==='adm'?`<div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
-      <div style="padding:20px 20px 8px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
-    </div>
-    <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
-      <div style="padding:20px 20px 8px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+      <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
+        <div style="padding:20px 20px 8px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
+        <div style="padding:20px 20px 8px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      </div>
     </div>`:''}
   </div>`;
   _buscarMetricas();

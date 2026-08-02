@@ -8,14 +8,23 @@
 --   data_nascimento — data de nascimento do entregador, não do cadastro.
 --   aprovado        — boolean, sem timestamp de quando mudou.
 --
--- DEFAULT now() só vale pra cadastros NOVOS a partir de agora — cadastros
--- já existentes ficam com created_at NULL de propósito, sem backfill
--- inventado. A RPC abaixo (WHERE created_at BETWEEN ...) exclui NULL
--- naturalmente, então meses anteriores a esta migration mostram 0 no
--- gráfico — não porque não houve cadastro naquele mês, mas porque não
--- existe essa data histórica confiável. A métrica só fica utilizável de
--- verdade a partir de quando essa coluna passou a existir.
-ALTER TABLE public.entregadores ADD COLUMN IF NOT EXISTS created_at timestamp DEFAULT now();
+-- Padrão em 2 passos — NÃO junta ADD COLUMN com DEFAULT now() na mesma
+-- instrução. Isso já foi rodado errado uma vez direto em produção: como
+-- now() é uma expressão volátil, "ADD COLUMN created_at DEFAULT now()"
+-- força o Postgres a reescrever a tabela inteira e avaliar now() UMA VEZ
+-- pra transação inteira, carimbando TODAS as linhas já existentes com o
+-- mesmo timestamp (o momento do ALTER) — não deixa NULL como a intenção
+-- original desta migration presumia. Resultado real: 89 entregadores
+-- ficaram com created_at idêntico ao instante do ALTER, seria um pico
+-- artificial de "cadastros novos" no gráfico. Corrigido manualmente em
+-- produção (UPDATE zerando os timestamps duplicados — só sobra NULL nos
+-- cadastros antigos, únicos e reais permanecem intactos).
+--
+-- ADD COLUMN sem default é rápido e só-metadados (não reescreve, não
+-- toca nas linhas existentes — ficam NULL de verdade). SET DEFAULT depois
+-- só afeta INSERTs futuros, nunca faz backfill.
+ALTER TABLE public.entregadores ADD COLUMN IF NOT EXISTS created_at timestamp;
+ALTER TABLE public.entregadores ALTER COLUMN created_at SET DEFAULT now();
 
 -- Mesmo padrão de lojas_novas_por_mes/pedidos_finalizados_por_mes:
 -- agregação COUNT+GROUP BY no banco, nunca traz linha por entregador pro
