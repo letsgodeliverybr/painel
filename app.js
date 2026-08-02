@@ -4597,7 +4597,7 @@ async function renderLojasPage(){
 // Mesma lista de valores do <select id="loja-categoria"> em index.html
 // (form de Nova Loja) — mantém os dois formulários (criar/editar)
 // oferecendo exatamente as mesmas opções.
-const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Mercado','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
+const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Suplementos','Marmitaria','Mercado','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
 async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
