@@ -56,6 +56,7 @@ let _faixasCachePorTabela={};
 let _faixasCachePorTabelaPag={};
 let _tabelasPrecoCache=[];
 let _saldoLojaAtual=0;
+let _lojaCreditoAtiva=false;
 let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
 
@@ -1922,7 +1923,7 @@ async function _carregarSaldoTopbar(){
       if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
       const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
       if(_tipoCobrancaSaldo!=='credito'){
-        el.style.display='none';_saldoLojaAtual=0;
+        el.style.display='none';_saldoLojaAtual=0;_lojaCreditoAtiva=false;el.style.cursor='default';
         const _ab=document.getElementById('saldo-alerta-banner');if(_ab)_ab.style.display='none';
         _atualizarBtnCriarEntrega();return;
       }
@@ -1936,6 +1937,7 @@ async function _carregarSaldoTopbar(){
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
+      _lojaCreditoAtiva=true;el.style.cursor='pointer';
       let alertBanner=document.getElementById('saldo-alerta-banner');
       if(saldo<100){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
@@ -1946,8 +1948,10 @@ async function _carregarSaldoTopbar(){
     } else if(currentPerfil==='adm'||currentPerfil==='admin'){
       val.textContent='0,00';
       el.style.display='flex';
+      _lojaCreditoAtiva=false;el.style.cursor='default';
     } else {
       el.style.display='none';
+      _lojaCreditoAtiva=false;
     }
   }catch(_){}
 }
@@ -1971,6 +1975,103 @@ function _atualizarBtnCriarEntrega(){
   btn.style.setProperty('background',insuficiente?'#6b7280':'#1A56DB','important');
   btn.style.cursor=insuficiente?'not-allowed':'pointer';
   btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':'➕ Criar Entrega';
+}
+
+// ── RECARGA DE SALDO VIA PIX MANUAL (BR Code / Pix Copia e Cola) ──
+// TODO: preencher com os dados reais da conta Pix da empresa antes de publicar.
+const PIX_CONFIG={chave:'SUA_CHAVE_PIX_AQUI',nome:'NOME/RAZAO SOCIAL AQUI',cidade:'CIDADE AQUI'};
+const PIX_WHATSAPP='5511991702772';
+const PACOTES_RECARGA_PIX=[
+  {pago:100,credito:100,badge:null,destaque:false,discreto:true},
+  {pago:300,credito:300,badge:'Padrão Mínimo',destaque:true,discreto:false},
+  {pago:500,credito:550,badge:'10% Bônus',destaque:false,discreto:false},
+  {pago:1000,credito:1200,badge:'20% Bônus',destaque:false,discreto:false},
+  {pago:2000,credito:2500,badge:'25% Bônus',destaque:false,discreto:false},
+];
+let _pixPayloadAtual='';
+function _pixRemoverAcentos(s){return(s||'').normalize('NFD').split('').filter(ch=>{const c=ch.codePointAt(0);return c<768||c>879;}).join('');}
+function _pixTLV(id,value){return `${id}${String(value.length).padStart(2,'0')}${value}`;}
+function _pixCrc16(str){
+  let crc=0xFFFF;
+  for(let i=0;i<str.length;i++){
+    crc^=(str.charCodeAt(i)<<8);
+    for(let j=0;j<8;j++){crc=(crc&0x8000)?((crc<<1)^0x1021)&0xFFFF:(crc<<1)&0xFFFF;}
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+// Payload EMV/BR Code (Pix estático com valor fixo) — spec do Banco Central.
+function _gerarPixPayload(valor){
+  const chave=PIX_CONFIG.chave;
+  const nome=_pixRemoverAcentos(PIX_CONFIG.nome).toUpperCase().substring(0,25);
+  const cidade=_pixRemoverAcentos(PIX_CONFIG.cidade).toUpperCase().substring(0,15);
+  const merchantAccountInfo=_pixTLV('26',_pixTLV('00','br.gov.bcb.pix')+_pixTLV('01',chave));
+  const addDataField=_pixTLV('62',_pixTLV('05','***'));
+  const valorStr=Number(valor).toFixed(2);
+  let payload=_pixTLV('00','01')+_pixTLV('01','11')+merchantAccountInfo+_pixTLV('52','0000')+_pixTLV('53','986')+_pixTLV('54',valorStr)+_pixTLV('58','BR')+_pixTLV('59',nome)+_pixTLV('60',cidade)+addDataField;
+  payload+='6304';
+  return payload+_pixCrc16(payload);
+}
+function _abrirModalRecargaPix(){
+  if(currentPerfil!=='loja'||!currentUser?.loja_id||!_lojaCreditoAtiva)return;
+  let modal=document.getElementById('modal-recarga-pix');
+  if(!modal){modal=document.createElement('div');modal.id='modal-recarga-pix';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const cardHtml=(p,i)=>{
+    const bonus=p.credito-p.pago;
+    const borda=p.destaque?'border:2px solid #10b981;box-shadow:0 0 0 3px rgba(16,185,129,.15)':'border:1px solid var(--border)';
+    const badgeHtml=p.badge?`<div style="display:inline-block;background:${p.destaque?'#10b981':'#8b5cf6'};color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-bottom:6px">${p.badge}</div>`:'';
+    const recomendado=p.destaque?`<div style="position:absolute;top:-10px;right:12px;background:#10b981;color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px">RECOMENDADO</div>`:'';
+    return `<div onclick="_selecionarPacotePix(${i})" style="position:relative;cursor:pointer;border-radius:14px;padding:${p.discreto?'14px':'18px'} 16px;background:var(--surface2);${borda};${p.discreto?'opacity:.85':''};transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      ${recomendado}${badgeHtml}
+      <div style="font-size:${p.discreto?'16px':'20px'};font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR')}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">Crédito: <b style="color:#10b981">R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}</b></div>
+      ${bonus>0?`<div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:4px">+R$ ${bonus.toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus</div>`:''}
+    </div>`;
+  };
+  modal.innerHTML=`<div class="modal" style="max-width:640px">
+    <div class="modal-header"><span class="modal-title">💰 Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">✕</button></div>
+    <div class="modal-body" id="mrp-body">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha um valor para recarregar seu saldo. Pacotes maiores têm bônus de crédito.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+function _selecionarPacotePix(i){
+  const p=PACOTES_RECARGA_PIX[i];if(!p)return;
+  _pixPayloadAtual=_gerarPixPayload(p.pago);
+  const body=document.getElementById('mrp-body');if(!body)return;
+  const lojaNome=allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha loja';
+  const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}\nCrédito a receber: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  const waLink=`https://wa.me/${PIX_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  body.innerHTML=`
+    <button onclick="_abrirModalRecargaPix()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0">← Voltar aos pacotes</button>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text2)">Valor a pagar</div>
+      <div style="font-size:26px;font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div style="font-size:12px;color:#10b981;font-weight:700;margin-top:2px">Crédito: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}${p.credito>p.pago?` (+R$ ${(p.credito-p.pago).toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus)`:''}</div>
+    </div>
+    <div id="mrp-qr" style="display:flex;justify-content:center;margin-bottom:16px;background:#fff;padding:16px;border-radius:12px"></div>
+    <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px">
+      <div><b>Chave Pix:</b> ${PIX_CONFIG.chave}</div>
+      <div><b>Beneficiário:</b> ${PIX_CONFIG.nome}</div>
+      <div><b>Cidade:</b> ${PIX_CONFIG.cidade}</div>
+    </div>
+    <button onclick="_copiarCodigoPix()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:Inter,sans-serif">📋 Copiar código Pix</button>
+    <a href="${waLink}" target="_blank" style="display:block;box-sizing:border-box;text-align:center;text-decoration:none;width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp</a>
+    <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;text-align:center">⏳ Crédito será adicionado em até 24h úteis após confirmação do pagamento</div>
+  `;
+  const qrEl=document.getElementById('mrp-qr');
+  if(qrEl&&typeof qrcode!=='undefined'){
+    try{
+      const qr=qrcode(0,'M');
+      qr.addData(_pixPayloadAtual);
+      qr.make();
+      qrEl.innerHTML=qr.createSvgTag(6,0);
+    }catch(e){qrEl.innerHTML='<span style="color:var(--red);font-size:12px">Erro ao gerar QR code</span>';console.error('[PIX] erro ao gerar QR',e);}
+  }
+}
+function _copiarCodigoPix(){
+  navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix copiado!','Cole no app do seu banco'));
 }
 
 async function confirmarPagamento(pedidoId){
@@ -4736,10 +4837,47 @@ ${sec('🗺️ Roterizador')}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-rot-ativo" ${l.roterizador_ativo?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
 ${r2(fi('Raio de agrupamento (km)',inp('el-rot-raio',l.roterizador_raio_km??'','ex: 1.5','number')),fi('Máximo de pedidos por rota',inp('el-rot-max',l.roterizador_max_pedidos??'','ex: 3','number')))}
 ${r1(fi('Tempo de espera para agrupar (segundos)',inp('el-rot-espera',l.roterizador_tempo_espera_seg??'','ex: 60','number')))}
+${sec('💰 Creditar Saldo Manualmente')}
+<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px">Saldo atual: <b id="elc-saldo-atual" style="color:var(--text)">carregando...</b></div>
+${r2(fi('Valor a creditar (R$)',inp('elc-valor','','0.00','number')),fi('Observações',inp('elc-obs','','Ex: Recarga Pix conferida via WhatsApp')))}
+<div id="elc-feedback" style="font-size:12px;margin:-4px 0 10px;min-height:16px"></div>
+<div class="form-row full"><div class="fi"><button type="button" onclick="_elCreditarSaldo('${lojaId}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">➕ Creditar</button></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
+  _elCarregarSaldoAtual(lojaId);
+}
+async function _elCarregarSaldoAtual(lojaId){
+  const el=document.getElementById('elc-saldo-atual');if(!el)return;
+  const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${lojaId}`);
+  const arr=Array.isArray(rows)?rows:[];
+  const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const totD=arr.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const totB=arr.filter(r=>r.tipo==='bonus').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const saldo=totC+totB-totD;
+  el.textContent=`R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  el.style.color=saldo>=0?'#10b981':'#ef4444';
+}
+async function _elCreditarSaldo(lojaId){
+  const valor=parseFloat(document.getElementById('elc-valor')?.value||0);
+  const observacoes=(document.getElementById('elc-obs')?.value||'').trim();
+  const fb=document.getElementById('elc-feedback');
+  if(!(valor>0)){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe um valor válido</span>';return;}
+  const agora=new Date().toISOString();
+  const payload={loja_id:lojaId,tipo:'credito',valor,observacoes:observacoes||'Crédito manual (admin)',manual:true,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora};
+  const res=await db('creditos_lojas','POST',payload);
+  if(res&&(Array.isArray(res)?res.length>0:res.id)){
+    await logAcao('creditar_saldo_manual',{loja_id:lojaId,valor,observacoes});
+    showNotif('✅ Saldo creditado!',`R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})} adicionado`);
+    document.getElementById('elc-valor').value='';
+    document.getElementById('elc-obs').value='';
+    if(fb)fb.innerHTML='';
+    _elCarregarSaldoAtual(lojaId);
+    if(currentUser?.loja_id===lojaId)_carregarSaldoTopbar();
+  }else{
+    if(fb)fb.innerHTML='<span style="color:var(--red)">Erro ao creditar — verifique permissões da tabela creditos_lojas</span>';
+  }
 }
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
