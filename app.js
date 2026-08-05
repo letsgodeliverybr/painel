@@ -1978,15 +1978,17 @@ function _atualizarBtnCriarEntrega(){
 }
 
 // ── RECARGA DE SALDO VIA PIX MANUAL (BR Code / Pix Copia e Cola) ──
-// TODO: preencher com os dados reais da conta Pix da empresa antes de publicar.
-const PIX_CONFIG={chave:'SUA_CHAVE_PIX_AQUI',nome:'NOME/RAZAO SOCIAL AQUI',cidade:'CIDADE AQUI'};
+// nome/cidade são exigidos pelo payload EMV do BR Code (padrão Bacen),
+// mas não são exibidos na tela — só a chave Pix aparece pro lojista.
+const PIX_CONFIG={chave:'54039529000148',nome:'GABRIEL ELIZIARIO',cidade:'RIBEIRAO PRETO'};
 const PIX_WHATSAPP='5511991702772';
 const PACOTES_RECARGA_PIX=[
   {pago:100,credito:100,badge:null,destaque:false,discreto:true},
   {pago:300,credito:300,badge:'Padrão Mínimo',destaque:true,discreto:false},
   {pago:500,credito:550,badge:'10% Bônus',destaque:false,discreto:false},
   {pago:1000,credito:1200,badge:'20% Bônus',destaque:false,discreto:false},
-  {pago:2000,credito:2500,badge:'25% Bônus',destaque:false,discreto:false},
+  {pago:3000,credito:3750,badge:'25% Bônus',destaque:false,discreto:false},
+  {pago:5000,credito:6500,badge:'30% Bônus',destaque:false,discreto:false},
 ];
 let _pixPayloadAtual='';
 function _pixRemoverAcentos(s){return(s||'').normalize('NFD').split('').filter(ch=>{const c=ch.codePointAt(0);return c<768||c>879;}).join('');}
@@ -2027,11 +2029,11 @@ function _abrirModalRecargaPix(){
       ${bonus>0?`<div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:4px">+R$ ${bonus.toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus</div>`:''}
     </div>`;
   };
-  modal.innerHTML=`<div class="modal" style="max-width:640px">
+  modal.innerHTML=`<div class="modal" style="width:640px;max-width:95vw">
     <div class="modal-header"><span class="modal-title">💰 Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">✕</button></div>
     <div class="modal-body" id="mrp-body">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha um valor para recarregar seu saldo. Pacotes maiores têm bônus de crédito.</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
+      <div class="pix-pacotes-grid">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -2050,25 +2052,18 @@ function _selecionarPacotePix(i){
       <div style="font-size:26px;font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
       <div style="font-size:12px;color:#10b981;font-weight:700;margin-top:2px">Crédito: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}${p.credito>p.pago?` (+R$ ${(p.credito-p.pago).toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus)`:''}</div>
     </div>
-    <div id="mrp-qr" style="display:flex;justify-content:center;margin-bottom:16px;background:#fff;padding:16px;border-radius:12px"></div>
-    <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px">
-      <div><b>Chave Pix:</b> ${PIX_CONFIG.chave}</div>
-      <div><b>Beneficiário:</b> ${PIX_CONFIG.nome}</div>
-      <div><b>Cidade:</b> ${PIX_CONFIG.cidade}</div>
+    <div style="display:flex;justify-content:center;margin-bottom:16px;background:#fff;padding:16px;border-radius:12px">
+      <img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix — R$ ${p.pago}" style="width:260px;height:260px;max-width:100%;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <span style="display:none;color:var(--red);font-size:12px;text-align:center">QR indisponível no momento — use o código copia e cola abaixo.</span>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Chave Pix</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text)">${PIX_CONFIG.chave}</div>
     </div>
     <button onclick="_copiarCodigoPix()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:Inter,sans-serif">📋 Copiar código Pix</button>
     <a href="${waLink}" target="_blank" style="display:block;box-sizing:border-box;text-align:center;text-decoration:none;width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp</a>
     <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;text-align:center">⏳ Crédito será adicionado em até 24h úteis após confirmação do pagamento</div>
   `;
-  const qrEl=document.getElementById('mrp-qr');
-  if(qrEl&&typeof qrcode!=='undefined'){
-    try{
-      const qr=qrcode(0,'M');
-      qr.addData(_pixPayloadAtual);
-      qr.make();
-      qrEl.innerHTML=qr.createSvgTag(6,0);
-    }catch(e){qrEl.innerHTML='<span style="color:var(--red);font-size:12px">Erro ao gerar QR code</span>';console.error('[PIX] erro ao gerar QR',e);}
-  }
 }
 function _copiarCodigoPix(){
   navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix copiado!','Cole no app do seu banco'));
