@@ -4635,7 +4635,8 @@ async function _buscarMetricas(){
   if(chartMotoboysNovosEl)chartMotoboysNovosEl.innerHTML=_renderMetricasChart(mesesMotoboysNovos,{rotulo:'motoboy novo',rotuloPlural:'motoboys novos'});
   if(chartPedidosCategoriaEl){
     const _porCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
-    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo});
+    _dadosBrutoPedidosCategoria=_porCategoria;
+    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo,clicavel:true,chartId:'pedidos'});
   }
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
@@ -4667,24 +4668,32 @@ function _renderMetricasChart(meses,opts){
 // Macro-grupos de categoria — usados nos dois donuts da tela Métricas
 // (Lojas por Categoria e Pedidos Finalizados por Categoria), pra mostrar
 // grupo em vez das 23 categorias individuais.
+// categorias = genéricas (o segmento como um todo); marcas = franquias/redes
+// específicas que também contam pro grupo pai nos gráficos agregados, mas
+// aparecem separadas das genéricas no drill-down (ver _MARCAS_ESPECIFICAS).
 const _GRUPOS_CATEGORIA_DEF=[
-  {grupo:'Food',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café']},
-  {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega']},
-  {grupo:'Pet Shop',categorias:['Pet Shop']},
-  {grupo:'Farmácia',categorias:['Farmácia']},
-  {grupo:'Suplementos',categorias:['Suplementos']},
-  {grupo:'Tabacarias',categorias:['Tabacarias']},
-  {grupo:'Auto Peças',categorias:['Auto Peças']},
-  {grupo:"App Let's Go",categorias:["App Let's Go"]},
+  {grupo:'Pulverizados',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero',"Habib's",'Outback','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco']},
+  {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],marcas:[]},
+  {grupo:'Pet Shop',categorias:['Pet Shop'],marcas:[]},
+  {grupo:'Farmácia',categorias:['Farmácia'],marcas:['RD','DPSP','Pague Menos','São João','Panvel','Araujo','Clamed','Drogal','Nissei','Indiana','Venancio','Rede d1000','Grupo Total','Farma Conde','Farmais','Redepharma','Drogarias Globo','Permanente','Grupo Tapajós']},
+  {grupo:'Suplementos',categorias:['Suplementos'],marcas:[]},
+  {grupo:'Tabacarias',categorias:['Tabacarias'],marcas:[]},
+  {grupo:'Auto Peças',categorias:['Auto Peças'],marcas:[]},
+  {grupo:"App Let's Go",categorias:["App Let's Go"],marcas:[]},
+  {grupo:'Zé Delivery',categorias:[],marcas:['Armazém da Cerveja']},
 ];
-const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>g.categorias.map(c=>[c,g.grupo])));
+const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>[...g.categorias,...g.marcas].map(c=>[c,g.grupo])));
+// Marca específica de rede/franquia (ex: "Habib's") vs categoria genérica
+// (ex: "Restaurantes") — usado pelo drill-down dos donuts pra separar as
+// duas coisas dentro de um mesmo grupo.
+const _MARCAS_ESPECIFICAS=new Set(_GRUPOS_CATEGORIA_DEF.flatMap(g=>g.marcas));
 // Cor fixa por GRUPO (não mais por categoria individual nem por rank) —
 // os dois donuts mostram os mesmos grupos, então precisam da mesma cor
 // pro mesmo grupo. 'Sem categoria' (loja/pedido ainda não classificado)
 // não é um grupo de _GRUPOS_CATEGORIA_DEF, mas ainda precisa de cor fixa
-// própria, distinta das outras 8.
+// própria, distinta das outras.
 const _CORES_GRUPO={
-  'Food':'#eab308',
+  'Pulverizados':'#eab308',
   'Pet Shop':'#f97316',
   'Farmácia':'#1A56DB',
   'Suplementos':'#22c55e',
@@ -4692,9 +4701,19 @@ const _CORES_GRUPO={
   'Mercado':'#06b6d4',
   'Tabacarias':'#64748b',
   "App Let's Go":'#ec4899',
+  'Zé Delivery':'#dc2626',
   'Sem categoria':'#475569',
 };
 function _corGrupo(grupo){return _CORES_GRUPO[grupo]||'#475569';}
+// Paleta pro drill-down por marca dentro de um grupo — cor estável por
+// nome (índice fixo na lista de marcas conhecidas), cicla se acabar.
+const _PALETA_MARCAS=['#eab308','#f97316','#ec4899','#8b5cf6','#06b6d4','#22c55e','#e11d48','#0ea5e9','#a855f7','#84cc16','#f59e0b','#14b8a6'];
+const _LISTA_MARCAS=[..._MARCAS_ESPECIFICAS];
+function _corMarca(categoria){
+  if(categoria==='Outras/Genéricas')return'#475569';
+  const idx=_LISTA_MARCAS.indexOf(categoria);
+  return _PALETA_MARCAS[(idx<0?0:idx)%_PALETA_MARCAS.length];
+}
 // Soma quantidade por grupo (COALESCE já resolvido pelas RPCs pra 'Sem
 // categoria' quando a categoria original é NULL) — usado pelos dois
 // donuts, ordena por quantidade DESC igual as RPCs já faziam por
@@ -4707,29 +4726,33 @@ function _agruparPorCategoria(dadosPorCategoria){
   });
   return[...porGrupo.entries()].map(([categoria,quantidade])=>({categoria,quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
 }
+let _dadosBrutoLojasCategoria=[];
+let _dadosBrutoPedidosCategoria=[];
 async function _buscarLojasPorCategoria(){
   const el=document.getElementById('mm-chart-categoria');if(!el)return;
   const rows=await dbRpc('lojas_por_categoria',{});
   const dados=(Array.isArray(rows)?rows:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
-  el.innerHTML=_renderDonutCategoria(_agruparPorCategoria(dados),{corFn:_corGrupo});
+  _dadosBrutoLojasCategoria=dados;
+  el.innerHTML=_renderDonutCategoria(_agruparPorCategoria(dados),{corFn:_corGrupo,clicavel:true,chartId:'lojas'});
 }
 function _renderDonutCategoria(dados,opts){
-  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corGrupo}=opts||{};
+  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corGrupo,clicavel=false,chartId=''}=opts||{};
   if(!dados.length)return`<div style="color:var(--text3);text-align:center;padding:40px">${vazio}</div>`;
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
   let offsetAcc=0;
+  const onclickAttr=(cat)=>clicavel?` onclick="_abrirDrilldownCategoria('${chartId}','${cat.replace(/'/g,"\\'")}')" style="cursor:pointer"`:'';
   const fatias=dados.map((d)=>{
     const cor=corFn(d.categoria);
     const arco=(d.quantidade/total)*C;
-    const el=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${cor}" stroke-width="16" stroke-dasharray="${arco.toFixed(2)} ${(C-arco).toFixed(2)}" stroke-dashoffset="${(-offsetAcc).toFixed(2)}" transform="rotate(-90 50 50)"><title>${d.categoria}: ${d.quantidade} (${(d.quantidade/total*100).toFixed(1)}%)</title></circle>`;
+    const el=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${cor}" stroke-width="16" stroke-dasharray="${arco.toFixed(2)} ${(C-arco).toFixed(2)}" stroke-dashoffset="${(-offsetAcc).toFixed(2)}" transform="rotate(-90 50 50)"${onclickAttr(d.categoria)}><title>${d.categoria}: ${d.quantidade} (${(d.quantidade/total*100).toFixed(1)}%)${clicavel?' — clique para detalhar':''}</title></circle>`;
     offsetAcc+=arco;
     return el;
   }).join('');
   const legenda=dados.map((d)=>{
     const cor=corFn(d.categoria);
     const pct=(d.quantidade/total*100).toFixed(1);
-    return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
+    return`<div${clicavel?` onclick="_abrirDrilldownCategoria('${chartId}','${d.categoria.replace(/'/g,"\\'")}')" style="cursor:pointer"`:''} style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
   }).join('');
   return`<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap;justify-content:center">
     <div style="position:relative;width:180px;height:180px;flex-shrink:0">
@@ -4740,7 +4763,30 @@ function _renderDonutCategoria(dados,opts){
       </div>
     </div>
     <div style="min-width:200px;max-width:320px;flex:1">${legenda}</div>
+  </div>${clicavel?`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔎 Clique numa fatia ou item da legenda pra detalhar por marca</div>`:''}`;
+}
+// Detalhamento por marca dentro de um grupo — separa as marcas específicas
+// (ex: Habib's) das categorias genéricas do grupo (somadas em "Outras/
+// Genéricas"), usando os dados brutos por categoria guardados na última
+// busca de cada donut (evita re-buscar do banco).
+function _abrirDrilldownCategoria(chartId,grupo){
+  const bruto=chartId==='lojas'?_dadosBrutoLojasCategoria:_dadosBrutoPedidosCategoria;
+  const doGrupo=bruto.filter(d=>(_GRUPO_CATEGORIA[d.categoria]||'Sem categoria')===grupo);
+  const marcas=doGrupo.filter(d=>_MARCAS_ESPECIFICAS.has(d.categoria)).map(d=>({categoria:d.categoria,quantidade:d.quantidade}));
+  if(!marcas.length){showNotif('Sem detalhamento disponível',`"${grupo}" ainda não tem marcas específicas cadastradas.`,'var(--text3)');return;}
+  const genericasTotal=doGrupo.filter(d=>!_MARCAS_ESPECIFICAS.has(d.categoria)).reduce((s,d)=>s+d.quantidade,0);
+  const detalhado=[...marcas];
+  if(genericasTotal>0)detalhado.push({categoria:'Outras/Genéricas',quantidade:genericasTotal});
+  detalhado.sort((a,b)=>b.quantidade-a.quantidade);
+  const rotuloCentro=chartId==='lojas'?'loja':'pedido';
+  const rotuloCentroPlural=chartId==='lojas'?'lojas':'pedidos';
+  let modal=document.getElementById('modal-categoria-detalhe');
+  if(!modal){modal=document.createElement('div');modal.id='modal-categoria-detalhe';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:520px">
+    <div class="modal-header"><span class="modal-title">🔎 ${grupo} — por marca</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
+    <div class="modal-body">${_renderDonutCategoria(detalhado,{rotuloCentro,rotuloCentroPlural,corFn:_corMarca})}</div>
   </div>`;
+  modal.classList.add('open');
 }
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
@@ -4795,10 +4841,12 @@ async function renderLojasPage(){
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
-// Mesma lista de valores do <select id="loja-categoria"> em index.html
-// (form de Nova Loja) — mantém os dois formulários (criar/editar)
-// oferecendo exatamente as mesmas opções.
-const CATEGORIAS_LOJA=['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Café','Salgados','Comida Fit','Suplementos','Marmitaria','Mercado','Empório','Conveniência','Adega','Pet Shop','Farmácia','Auto Peças','Tabacarias',"App Let's Go"];
+// Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
+// específicas) — fonte única, evita a lista dessincronizar do mapeamento
+// grupo/cor usado nos donuts. Mesma lista de valores do
+// <select id="loja-categoria"> em index.html (form de Nova Loja) — mantém
+// os dois formulários (criar/editar) oferecendo exatamente as mesmas opções.
+const CATEGORIAS_LOJA=_GRUPOS_CATEGORIA_DEF.flatMap(g=>[...g.categorias,...g.marcas]);
 async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
