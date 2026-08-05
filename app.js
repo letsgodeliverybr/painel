@@ -4705,13 +4705,12 @@ const _CORES_GRUPO={
   'Sem categoria':'#475569',
 };
 function _corGrupo(grupo){return _CORES_GRUPO[grupo]||'#475569';}
-// Paleta pro drill-down por marca dentro de um grupo — cor estável por
-// nome (índice fixo na lista de marcas conhecidas), cicla se acabar.
-const _PALETA_MARCAS=['#eab308','#f97316','#ec4899','#8b5cf6','#06b6d4','#22c55e','#e11d48','#0ea5e9','#a855f7','#84cc16','#f59e0b','#14b8a6'];
-const _LISTA_MARCAS=[..._MARCAS_ESPECIFICAS];
+// Paleta pro drill-down dentro de um grupo (genéricas + marcas, todas
+// aparecem separadas) — cor estável por nome (índice fixo na mesma ordem
+// de CATEGORIAS_LOJA), cicla se acabar.
+const _PALETA_MARCAS=['#eab308','#f97316','#ec4899','#8b5cf6','#06b6d4','#22c55e','#e11d48','#0ea5e9','#a855f7','#84cc16','#f59e0b','#14b8a6','#6366f1','#d946ef','#65a30d','#0891b2','#c026d3','#ea580c'];
 function _corMarca(categoria){
-  if(categoria==='Outras/Genéricas')return'#475569';
-  const idx=_LISTA_MARCAS.indexOf(categoria);
+  const idx=CATEGORIAS_LOJA.indexOf(categoria);
   return _PALETA_MARCAS[(idx<0?0:idx)%_PALETA_MARCAS.length];
 }
 // Soma quantidade por grupo (COALESCE já resolvido pelas RPCs pra 'Sem
@@ -4752,7 +4751,7 @@ function _renderDonutCategoria(dados,opts){
   const legenda=dados.map((d)=>{
     const cor=corFn(d.categoria);
     const pct=(d.quantidade/total*100).toFixed(1);
-    return`<div${clicavel?` onclick="_abrirDrilldownCategoria('${chartId}','${d.categoria.replace(/'/g,"\\'")}')" style="cursor:pointer"`:''} style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1">${d.categoria}</span><span style="color:var(--text3);white-space:nowrap">${d.quantidade} (${pct}%)</span></div>`;
+    return`<div${clicavel?` onclick="_abrirDrilldownCategoria('${chartId}','${d.categoria.replace(/'/g,"\\'")}')" style="cursor:pointer"`:''} style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px"><span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;display:inline-block"></span><span style="color:var(--text2);flex:1"><b style="color:var(--text)">${d.quantidade}</b> ${d.categoria} <span style="color:var(--text3)">(${pct}%)</span></span></div>`;
   }).join('');
   return`<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap;justify-content:center">
     <div style="position:relative;width:180px;height:180px;flex-shrink:0">
@@ -4765,25 +4764,24 @@ function _renderDonutCategoria(dados,opts){
     <div style="min-width:200px;max-width:320px;flex:1">${legenda}</div>
   </div>${clicavel?`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔎 Clique numa fatia ou item da legenda pra detalhar por marca</div>`:''}`;
 }
-// Detalhamento por marca dentro de um grupo — separa as marcas específicas
-// (ex: Habib's) das categorias genéricas do grupo (somadas em "Outras/
-// Genéricas"), usando os dados brutos por categoria guardados na última
-// busca de cada donut (evita re-buscar do banco).
+// Detalhamento completo de um grupo — mostra cada categoria/marca que o
+// compõe separada (genéricas e marcas específicas, sem somar nada em
+// bucket nenhum), usando os dados brutos por categoria guardados na
+// última busca de cada donut (evita re-buscar do banco). Só abre se o
+// grupo tiver pelo menos uma marca específica cadastrada — senão é só
+// a categoria genérica de sempre, sem nada novo pra detalhar.
 function _abrirDrilldownCategoria(chartId,grupo){
   const bruto=chartId==='lojas'?_dadosBrutoLojasCategoria:_dadosBrutoPedidosCategoria;
   const doGrupo=bruto.filter(d=>(_GRUPO_CATEGORIA[d.categoria]||'Sem categoria')===grupo);
-  const marcas=doGrupo.filter(d=>_MARCAS_ESPECIFICAS.has(d.categoria)).map(d=>({categoria:d.categoria,quantidade:d.quantidade}));
-  if(!marcas.length){showNotif('Sem detalhamento disponível',`"${grupo}" ainda não tem marcas específicas cadastradas.`,'var(--text3)');return;}
-  const genericasTotal=doGrupo.filter(d=>!_MARCAS_ESPECIFICAS.has(d.categoria)).reduce((s,d)=>s+d.quantidade,0);
-  const detalhado=[...marcas];
-  if(genericasTotal>0)detalhado.push({categoria:'Outras/Genéricas',quantidade:genericasTotal});
-  detalhado.sort((a,b)=>b.quantidade-a.quantidade);
+  const temMarca=doGrupo.some(d=>_MARCAS_ESPECIFICAS.has(d.categoria));
+  if(!temMarca){showNotif('Sem detalhamento disponível',`"${grupo}" ainda não tem marcas específicas cadastradas.`,'var(--text3)');return;}
+  const detalhado=doGrupo.map(d=>({categoria:d.categoria,quantidade:d.quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
   const rotuloCentro=chartId==='lojas'?'loja':'pedido';
   const rotuloCentroPlural=chartId==='lojas'?'lojas':'pedidos';
   let modal=document.getElementById('modal-categoria-detalhe');
   if(!modal){modal=document.createElement('div');modal.id='modal-categoria-detalhe';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">🔎 ${grupo} — por marca</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">🔎 ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
     <div class="modal-body">${_renderDonutCategoria(detalhado,{rotuloCentro,rotuloCentroPlural,corFn:_corMarca})}</div>
   </div>`;
   modal.classList.add('open');
