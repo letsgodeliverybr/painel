@@ -4558,7 +4558,20 @@ async function renderMetricasPage(){
     <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
       <div style="padding:20px 20px 16px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
-    ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
+    ${currentPerfil==='adm'?`<div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">🏦 Metas de Caixa</span></div>
+      <div style="padding:20px">
+        <div class="fi" style="max-width:280px;margin-bottom:16px">
+          <label>Valor atual em caixa (R$)</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="number" id="meta-caixa-valor" step="0.01" min="0" placeholder="0,00"/>
+            <button class="btn-modal-primary" onclick="_salvarMetaCaixa()">💾 Salvar</button>
+          </div>
+        </div>
+        <div id="meta-caixa-progresso"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
       <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
         <div style="padding:20px 20px 16px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
@@ -4579,7 +4592,7 @@ async function renderMetricasPage(){
   // Distribuição por categoria é foto do total atual, sem relação com o
   // filtro DE/ATÉ da tela — busca uma vez só, não refaz quando o usuário
   // clica "Aplicar" no período.
-  if(currentPerfil==='adm')_buscarLojasPorCategoria();
+  if(currentPerfil==='adm'){_buscarLojasPorCategoria();_buscarMetaCaixa();}
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
@@ -4638,6 +4651,59 @@ async function _buscarMetricas(){
     _dadosBrutoPedidosCategoria=_porCategoria;
     chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo,clicavel:true,chartId:'pedidos'});
   }
+}
+// Metas de Caixa — card admin-only na tela Métricas Let's Go. Valor é
+// preenchido manualmente (não calculado de pedidos/GMV) e persistido na
+// tabela chave/valor `configuracoes` (mesma tabela/padrão já usado pelo
+// Preço Dinâmico — ver _pdChave/salvarPrecoDinamico), sem precisar criar
+// tabela nova. Marcos fixos definem 4 segmentos de progresso.
+const _META_CAIXA_CHAVE='meta_caixa_valor_atual';
+const _META_CAIXA_MARCOS=[1000,10000,100000,1000000];
+function _fmtMoedaCaixa(v){return`R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+// Cada marco vira um segmento de largura igual na barra (0→1º marco, 1º→2º,
+// ...) — evita que R$1.000/R$10.000 fiquem microscópicos ao lado de
+// R$1.000.000 numa barra linear única.
+function _renderMetaCaixaProgresso(valor){
+  valor=Number(valor)||0;
+  const segmentos=_META_CAIXA_MARCOS.map((m,i)=>{
+    const start=i===0?0:_META_CAIXA_MARCOS[i-1];
+    const end=m;
+    const pct=valor<=start?0:valor>=end?100:(valor-start)/(end-start)*100;
+    return{label:_fmtMoedaCaixa(m),pct,atingido:valor>=end};
+  });
+  const barras=segmentos.map(s=>`<div style="flex:1;min-width:0">
+      <div style="background:var(--surface2);border-radius:6px;height:14px;overflow:hidden">
+        <div style="height:100%;width:${s.pct.toFixed(1)}%;background:${s.atingido?'#22c55e':'var(--accent)'};transition:width .4s ease"></div>
+      </div>
+      <div style="font-size:11px;color:${s.atingido?'#22c55e':'var(--text3)'};font-weight:${s.atingido?'700':'500'};text-align:center;margin-top:4px;white-space:nowrap">${s.atingido?'✅ ':''}${s.label}</div>
+    </div>`).join('');
+  const proximoIdx=segmentos.findIndex(s=>!s.atingido);
+  const resumo=proximoIdx===-1
+    ?`🏆 Meta máxima atingida! Caixa atual: <b>${_fmtMoedaCaixa(valor)}</b>`
+    :`Caixa atual: <b>${_fmtMoedaCaixa(valor)}</b> — ${proximoIdx>0?`passou de <b>${_fmtMoedaCaixa(_META_CAIXA_MARCOS[proximoIdx-1])}</b>, `:''}avançando rumo a <b>${_fmtMoedaCaixa(_META_CAIXA_MARCOS[proximoIdx])}</b> (<b>${segmentos[proximoIdx].pct.toFixed(1)}%</b>)`;
+  return`<div style="display:flex;gap:10px;margin-bottom:14px">${barras}</div><div style="font-size:13px;color:var(--text2)">${resumo}</div>`;
+}
+async function _buscarMetaCaixa(){
+  const el=document.getElementById('meta-caixa-progresso');if(!el)return;
+  const rows=await db('configuracoes','GET',null,`?chave=eq.${_META_CAIXA_CHAVE}`);
+  const valor=parseFloat(rows?.[0]?.valor)||0;
+  const input=document.getElementById('meta-caixa-valor');
+  if(input)input.value=valor>0?valor.toFixed(2):'';
+  el.innerHTML=_renderMetaCaixaProgresso(valor);
+}
+async function _salvarMetaCaixa(){
+  const input=document.getElementById('meta-caixa-valor');
+  const valor=parseFloat(input?.value);
+  if(!(valor>=0)){showNotif('⚠️ Valor inválido','Digite um valor válido em R$','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const existing=await db('configuracoes','GET',null,`?chave=eq.${_META_CAIXA_CHAVE}`);
+  const res=(existing&&existing.length>0)
+    ?await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.${_META_CAIXA_CHAVE}`)
+    :await db('configuracoes','POST',{chave:_META_CAIXA_CHAVE,valor:String(valor),created_at:agora,updated_at:agora});
+  if(!res||res.length===0){showNotif('❌ Erro ao salvar','Não foi possível salvar o valor em caixa','var(--red)');return;}
+  showNotif('✅ Valor salvo!','Caixa atualizado com sucesso');
+  const el=document.getElementById('meta-caixa-progresso');
+  if(el)el.innerHTML=_renderMetaCaixaProgresso(valor);
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
 // pra caber todos os meses do período na largura do card, em vez de
