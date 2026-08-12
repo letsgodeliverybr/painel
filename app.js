@@ -2386,14 +2386,14 @@ function renderMapaPage(){
           </div>
           <button onclick="event.stopPropagation();document.getElementById('alerta-saque-rapido').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
-        ${currentPerfil==='loja'?`<div id="alerta-fatura-loja" onclick="goTab('faturas')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
-          <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
-          <div style="flex:1;min-width:0;overflow:hidden">
-            <div style="font-size:14px;font-weight:600;color:#fbbf24;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
-            <div id="alerta-fatura-loja-titulo" style="font-size:13px;font-weight:600;color:#fbbf24;margin-bottom:3px"></div>
-            <div style="font-size:12px;color:#fbbf24;opacity:.75">Clique para ver a fatura</div>
+        ${currentPerfil==='loja'?`<div id="alerta-fatura-loja" onclick="goTab('faturas')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;width:min(480px,calc(100vw - 32px));padding:10px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:10px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
+          <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:30px;height:30px;object-fit:contain;border-radius:7px" onerror="this.style.display='none'"/>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:#fbbf24;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
+            <div id="alerta-fatura-loja-titulo" style="font-size:13px;font-weight:600;color:#fbbf24;line-height:1.45"></div>
+            <div style="font-size:11px;color:#fbbf24;opacity:.7;margin-top:2px;white-space:nowrap">Clique para ver a fatura</div>
           </div>
-          <button onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
