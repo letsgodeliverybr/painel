@@ -59,6 +59,13 @@ let _saldoLojaAtual=0;
 let _lojaCreditoAtiva=false;
 let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
+// Fatura em aberto (cobrancas_lojas.status='pendente') da loja logada — ver
+// bloco "FATURAS — VENCIMENTO/JUROS/BLOQUEIO" perto dos helpers de fuso.
+let _faturaAtualLoja=null;
+let _faturaVencidaLoja=false;
+let _faturaBannerCycleStart=null;
+let _faturaBannerTickInterval=null;
+let _faturaBannerRefreshInterval=null;
 
 // Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
 function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta,kmAdicionalValor){
@@ -215,6 +222,87 @@ const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
 // devolver, pra comparação de string continuar válida nos dois formatos.
 const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return `${new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10)}T00:00:00`;};
 const _normDataLocal=(s)=>String(s||'').replace(' ','T');
+
+// ── FATURAS — VENCIMENTO/JUROS/BLOQUEIO ──
+// Vencimento de uma cobrança (fatura) = quarta-feira da semana de geração
+// (mesma semana se gerada até quarta, senão a quarta da semana seguinte),
+// sempre derivado de cobrancas_lojas.created_at — nunca persistido, porque
+// created_at não muda depois de criado, então recalcular sempre dá o mesmo
+// resultado (mesmo espírito do "calcula na hora" pedido pro juros/multa).
+// created_at é timestamptz de verdade (comentário no topo deste bloco de
+// helpers de fuso) — _parseUtc já entende o offset explícito.
+// Cálculo por data-calendário pura (Date.UTC), igual _inicioSemanaAtualBrasilia
+// — Brasil não observa horário de verão desde 2019, então não há ambiguidade
+// de fuso em aritmética de dia-a-dia como essa.
+const _dataYMDBrasilia=(dataStr)=>_parseUtc(dataStr).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+function _faturaVencimentoYMD(cobranca){
+  const [y,m,d]=_dataYMDBrasilia(cobranca.created_at).split('-').map(Number);
+  const dow=new Date(Date.UTC(y,m-1,d)).getUTCDay(); // 0=Dom..6=Sáb, 3=Qua
+  const diasAteQuarta=dow<=3?3-dow:10-dow; // gerada Qui/Sex/Sáb vence só na quarta da semana seguinte
+  return new Date(Date.UTC(y,m-1,d+diasAteQuarta)).toISOString().slice(0,10);
+}
+// >0 = dias em atraso (vencimento já passou), 0 = vence hoje, <0 = ainda não venceu.
+function _diasAtrasoFatura(vencYMD){
+  const [vy,vm,vd]=vencYMD.split('-').map(Number);
+  const [hy,hm,hd]=_dataHojeBrasilia().split('-').map(Number);
+  return Math.round((Date.UTC(hy,hm-1,hd)-Date.UTC(vy,vm-1,vd))/86400000);
+}
+// Multa de 5% única (não recorrente) + juros de 10%/mês pro-rata ao dia
+// (10%/30), ambos incidindo a partir do dia seguinte ao vencimento —
+// dataAtraso===0 (vence hoje) ainda não pega multa/juros.
+function _calcularJurosMultaFatura(valorOriginal,vencYMD){
+  const diasAtraso=Math.max(0,_diasAtrasoFatura(vencYMD));
+  const valOrig=parseFloat(valorOriginal)||0;
+  if(diasAtraso<=0)return{diasAtraso:0,multa:0,juros:0,valorAtualizado:Math.round(valOrig*100)/100};
+  const multa=Math.round(valOrig*0.05*100)/100;
+  const juros=Math.round(valOrig*(0.10/30)*diasAtraso*100)/100;
+  return{diasAtraso,multa,juros,valorAtualizado:Math.round((valOrig+multa+juros)*100)/100};
+}
+// Carrega a(s) cobrança(s) pendente(s) da loja logada e escolhe a mais
+// urgente (maior atraso) pra representar no botão "Criar Entrega" e no
+// banner da tela Mapa — chamada no login, na restauração de sessão e
+// periodicamente pelo ciclo do banner (ver _iniciarFaturaBannerLoja),
+// pra refletir sem reload quando o admin aprova o pagamento em outra sessão.
+async function _carregarFaturaAtualLoja(){
+  if(currentPerfil!=='loja'||!currentUser?.loja_id){_faturaAtualLoja=null;_faturaVencidaLoja=false;return;}
+  const rows=await db('cobrancas_lojas','GET',null,`?loja_id=eq.${currentUser.loja_id}&status=eq.pendente&order=created_at.desc`).catch(()=>[]);
+  const pendentes=Array.isArray(rows)?rows:[];
+  if(!pendentes.length){_faturaAtualLoja=null;_faturaVencidaLoja=false;_atualizarBtnCriarEntrega();return;}
+  const anotadas=pendentes.map(c=>{const vencYMD=_faturaVencimentoYMD(c);return{...c,_vencYMD:vencYMD,_diasAtraso:_diasAtrasoFatura(vencYMD)};});
+  anotadas.sort((a,b)=>b._diasAtraso-a._diasAtraso);
+  _faturaAtualLoja=anotadas[0];
+  _faturaVencidaLoja=anotadas.some(c=>c._diasAtraso>=1);
+  _atualizarBtnCriarEntrega();
+}
+const _FATURA_BANNER_CICLO_MS=60*60*1000; // aparece a cada 1h
+const _FATURA_BANNER_VISIVEL_MS=10*60*1000; // fica 10min visível por ciclo
+// Um único setInterval global (iniciado no login/restauração de sessão, não
+// a cada render do Mapa) — sobrevive a troca de aba porque só toca o DOM se
+// #alerta-fatura-loja existir na tela atual; troca de aba não recria nem
+// duplica o timer. elapsed%CICLO em vez de setTimeout encadeado: não
+// acumula drift nem timers extras se a loja deixar a aba aberta por horas.
+function _iniciarFaturaBannerLoja(){
+  if(currentPerfil!=='loja')return;
+  clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);
+  _faturaBannerCycleStart=Date.now();
+  _carregarFaturaAtualLoja().then(_tickFaturaBanner);
+  _faturaBannerTickInterval=setInterval(_tickFaturaBanner,15000);
+  _faturaBannerRefreshInterval=setInterval(_carregarFaturaAtualLoja,5*60*1000);
+}
+function _tickFaturaBanner(){
+  const el=document.getElementById('alerta-fatura-loja');
+  if(!el)return;
+  if(!_faturaAtualLoja){el.style.display='none';return;}
+  const elapsed=(Date.now()-_faturaBannerCycleStart)%_FATURA_BANNER_CICLO_MS;
+  if(elapsed>=_FATURA_BANNER_VISIVEL_MS){el.style.display='none';return;}
+  const titulo=document.getElementById('alerta-fatura-loja-titulo');
+  if(titulo)titulo.textContent=_faturaAtualLoja._diasAtraso>=1
+    ?'🚫 Fatura vencida! Regularize o pagamento para continuar criando entregas.'
+    :_faturaAtualLoja._diasAtraso===0
+    ?'⏰ Sua fatura vence hoje 18:00. Evite atrasos no pagamento.'
+    :'🧾 Fatura em aberto. Clique para ver a fatura.';
+  el.style.display='flex';
+}
 // Relógio ao vivo no topbar (#topbar-relogio, index.html) — conferência
 // visual permanente pro operador: se o painel algum dia voltar a divergir
 // do horário real (ver bug de fuso que já corrigimos), fica óbvio comparando
@@ -1661,6 +1749,7 @@ async function _criarEntregaRapida(){
   }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
   if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
+  if(currentPerfil==='loja'&&_faturaVencidaLoja){showNotif('Fatura vencida','Regularize o pagamento para criar novas entregas.','#f59e0b');return;}
   const agora=new Date().toISOString();
   const numFinal=((document.getElementById('cr-numero-pedido')?.value||'').trim())||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
@@ -1971,10 +2060,11 @@ function _atualizarBtnCriarEntrega(){
   const _lojaBtn=allLojas.find(l=>l.id===currentUser?.loja_id);
   const _tipoBtn=_lojaBtn?.tipo_cobranca||'faturamento';
   const insuficiente=_tipoBtn==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa));
-  btn.disabled=insuficiente;
-  btn.style.setProperty('background',insuficiente?'#6b7280':'#1A56DB','important');
-  btn.style.cursor=insuficiente?'not-allowed':'pointer';
-  btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':'➕ Criar Entrega';
+  const bloqueado=insuficiente||_faturaVencidaLoja;
+  btn.disabled=bloqueado;
+  btn.style.setProperty('background',bloqueado?'#6b7280':'#1A56DB','important');
+  btn.style.cursor=bloqueado?'not-allowed':'pointer';
+  btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':_faturaVencidaLoja?'🚫 Fatura vencida':'➕ Criar Entrega';
 }
 
 // ── RECARGA DE SALDO VIA PIX MANUAL (BR Code / Pix Copia e Cola) ──
@@ -2211,13 +2301,14 @@ async function fazerLogin(){
   if(currentPerfil==='adm'){_carregarBadgeSaques();_carregarBadgeSaqueRapido();}
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
   if(currentPerfil==='adm')_iniciarMonitorWhatsapp();
+  if(currentPerfil==='loja')_iniciarFaturaBannerLoja();
 }
 function logout(){
   try{
     const s=JSON.parse(sessionStorage.getItem('lg_session')||'null');
     if(s?.access_token)fetch(`${SB_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${s.access_token}`}}).catch(()=>{});
   }catch{}
-  clearInterval(realtimeInterval);pararRoteirizacao();sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
+  clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -2281,6 +2372,15 @@ function renderMapaPage(){
           </div>
           <button onclick="event.stopPropagation();document.getElementById('alerta-saque-rapido').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
+        ${currentPerfil==='loja'?`<div id="alerta-fatura-loja" onclick="goTab('faturas')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
+          <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
+          <div style="flex:1;min-width:0;overflow:hidden">
+            <div style="font-size:14px;font-weight:600;color:#fbbf24;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
+            <div id="alerta-fatura-loja-titulo" style="font-size:13px;font-weight:600;color:#fbbf24;margin-bottom:3px"></div>
+            <div style="font-size:12px;color:#fbbf24;opacity:.75">Clique para ver a fatura</div>
+          </div>
+          <button onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
@@ -2324,6 +2424,7 @@ function renderMapaPage(){
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
+    if(currentPerfil==='loja')_tickFaturaBanner();
     if(currentPerfil==='loja'){
       const selCr=document.getElementById('cr-loja-id');
       if(selCr){
@@ -5648,22 +5749,38 @@ async function renderFaturasLojaPage(){
   if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">🧾 Faturas</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">🧾 Faturas</div></div>
-    <div class="card"><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
+    <div id="fl-atual"></div>
+    <div class="card"><div class="card-header"><span class="card-title">📜 Histórico</span></div><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
   </div>`;
   _flBuscar();
 }
+// Fatura Atual = cobrança pendente mais urgente (maior atraso) da loja —
+// normalmente só existe 0 ou 1 (Gerar Cobrança não deixa gerar duas pro
+// mesmo período/loja), mas se houver mais de uma pendente por algum motivo,
+// as demais continuam aparecendo no Histórico (só saem de "pendente" quando
+// pagas/recusadas, igual antes).
 async function _flBuscar(){
-  const wrap=document.getElementById('fl-tabela');if(!wrap)return;
+  const atualWrap=document.getElementById('fl-atual');
+  const histWrap=document.getElementById('fl-tabela');if(!histWrap)return;
   const qs=`?select=*&loja_id=eq.${currentUser.loja_id}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
   const rows=await db('cobrancas_lojas','GET',null,qs);
-  const hist=Array.isArray(rows)?rows:[];
-  if(!hist.length){wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma fatura encontrada</div>';return;}
+  const todas=Array.isArray(rows)?rows:[];
+  const pendentes=todas.filter(c=>c.status==='pendente');
+  let atual=null;
+  if(pendentes.length){
+    const anotadas=pendentes.map(c=>{const vencYMD=_faturaVencimentoYMD(c);return{...c,_vencYMD:vencYMD,_diasAtraso:_diasAtrasoFatura(vencYMD)};});
+    anotadas.sort((a,b)=>b._diasAtraso-a._diasAtraso);
+    atual=anotadas[0];
+  }
+  if(atualWrap)atualWrap.innerHTML=atual?_renderFaturaAtualCard(atual):'';
+  const hist=todas.filter(c=>c.id!==atual?.id);
+  if(!hist.length){histWrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma fatura no histórico</div>';return;}
   const badge=c=>c.status==='pago'
     ?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
     :c.status==='pendente'
     ?`<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`
     :`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
-  wrap.innerHTML=`<div style="overflow-x:auto"><table>
+  histWrap.innerHTML=`<div style="overflow-x:auto"><table>
     <thead><tr><th>Data</th><th>Período</th><th>Valor</th><th>Status</th></tr></thead>
     <tbody>${hist.map(c=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
@@ -5672,6 +5789,26 @@ async function _flBuscar(){
       <td>${badge(c)}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+}
+function _renderFaturaAtualCard(c){
+  const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD);
+  const vencida=diasAtraso>=1;
+  return`<div class="card" style="margin-bottom:14px;border:2px solid ${vencida?'#ef4444':'var(--accent)'}">
+    <div class="card-header"><span class="card-title">${vencida?'🔴':'🟡'} Fatura Atual</span></div>
+    <div style="padding:20px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px">
+        <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Período</div><div style="font-size:14px;font-weight:600;color:var(--text)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Vencimento</div><div style="font-size:14px;font-weight:600;color:${vencida?'#ef4444':'var(--text)'}">${formatarDataBR(c._vencYMD)}${vencida?` · ${diasAtraso} dia${diasAtraso>1?'s':''} de atraso`:''}</div></div>
+      </div>
+      ${vencida?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px 18px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor original</span><span>R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (5% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:8px;padding-top:8px"><span>Total atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
+      </div>`:`<div style="font-size:28px;font-weight:800;color:#1A56DB;margin-bottom:16px">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`}
+      <button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button>
+    </div>
+  </div>`;
 }
 
 // ── RANKING ENTREGADOR ──
@@ -6699,13 +6836,19 @@ async function _buscarCobrancasPendentes(){
       <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionadas</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
-      <tbody>${cobrancas.map(c=>{const loja=c.lojas||{};return`<tr id="cob-row-${c.id}">
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Vencimento</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
+      <tbody>${cobrancas.map(c=>{
+        const loja=c.lojas||{};
+        const vencYMD=_faturaVencimentoYMD(c);
+        const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,vencYMD);
+        const vencida=diasAtraso>=1;
+        return`<tr id="cob-row-${c.id}">
         <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
+        <td style="font-size:12px;color:${vencida?'#ef4444':'var(--text2)'};font-weight:${vencida?'700':'400'}">${formatarDataBR(vencYMD)}${vencida?` (${diasAtraso}d)`:''}</td>
         <td>${c.qtd_pedidos||'—'}</td>
-        <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+        <td style="font-weight:700;color:${vencida?'#dc2626':'#1A56DB'}">R$ ${(vencida?valorAtualizado:(parseFloat(c.valor_total)||0)).toFixed(2)}${vencida?`<div style="font-size:10px;font-weight:600;color:#dc2626">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)} +multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}</div>`:''}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="_aprovarCobrancaUnica('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar</button><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
       </tr>`;}).join('')}</tbody>
@@ -6792,8 +6935,10 @@ async function verFaturaCobranca(cobId){
   const numFatura=String(c.numero_fatura||'').padStart(7,'0');
   const hoje=new Date();
   const dataEmissao=formatarDataBR(hoje);
-  const dtVenc=new Date(hoje);dtVenc.setDate(dtVenc.getDate()+2);
-  const vencimento=formatarDataBR(dtVenc);
+  // Vencimento real (quarta-feira da semana de geração, ver _faturaVencimentoYMD)
+  // — antes era só cosmético (hoje+2 dias, recalculado a cada visualização).
+  const vencYMD=_faturaVencimentoYMD(c);
+  const vencimento=formatarDataBR(vencYMD);
   let pedidosData=[];
   if(c.loja_id&&iniISO&&fimISO){
     // Paginado (_dbTodasLinhas) em vez de limit=500 fixo — uma loja com mais
@@ -6809,6 +6954,9 @@ async function verFaturaCobranca(cobId){
     :(parseFloat(c.valor_total)||0);
   const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
   const totalGorjetas=Math.round(pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0)*100)/100;
+  const valorOriginalFatura=totalEntregas+totalGorjetas;
+  const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(valorOriginalFatura,vencYMD);
+  const faturaVencida=diasAtraso>=1;
   const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
   const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
   const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
@@ -6832,7 +6980,8 @@ async function verFaturaCobranca(cobId){
       </div>
       <div style="text-align:right;min-width:140px">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Total a pagar</div>
-        <div style="font-size:30px;font-weight:800;color:#1A56DB;line-height:1">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</div>
+        ${faturaVencida?`<div style="font-size:13px;color:#9ca3af;text-decoration:line-through">R$ ${valorOriginalFatura.toFixed(2)}</div>`:''}
+        <div style="font-size:30px;font-weight:800;color:${faturaVencida?'#dc2626':'#1A56DB'};line-height:1">R$ ${(faturaVencida?valorAtualizado:valorOriginalFatura).toFixed(2)}</div>
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
@@ -6854,16 +7003,33 @@ async function verFaturaCobranca(cobId){
         <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
+    ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
+      <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — juros e multa aplicados</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (5% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
+    </div>`:''}
     <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
       <div style="color:#111111;font-weight:700;font-size:12px;letter-spacing:.3px">#LetsGoDelivery &nbsp;&nbsp; #CadaKmUmSonho &nbsp;&nbsp; #ObrigadoPelaParceria</div>
     </div>
-    <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e5e7eb;background:#fff">
+    <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
       <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir</button>
+      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp Financeiro</button>`:''}
     </div>
   </div>`;
   modal.innerHTML=invoice;
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
+}
+// wa.me com mensagem pré-preenchida (link direto, sem depender da API
+// Evolution/_evolutionSendText usada nos disparos automáticos do admin —
+// aqui é a PRÓPRIA loja compartilhando o comprovante, então abre o
+// WhatsApp Web/App do usuário como uma conversa normal).
+function _enviarComprovanteWhatsappFatura(cobId,numFatura,periodo,valorTotal){
+  const lojaNome=(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome)||currentUser?.nome||'';
+  const msg=`Olá! Segue o comprovante de pagamento da fatura.\n\nLoja: ${lojaNome}\nFatura Nº ${numFatura}\nPeríodo: ${periodo}\nValor total: R$ ${parseFloat(valorTotal).toFixed(2)}`;
+  window.open(`https://wa.me/5511991702772?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 function _imprimirFatura(){
@@ -8039,6 +8205,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const btnCriarTop2=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop2)btnCriarTop2.style.display=currentPerfil==='suporte'?'flex':'none';
     renderTabs();setTimeout(()=>{goTab('mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
+    if(currentPerfil==='loja')_iniciarFaturaBannerLoja();
     _inicializarPrecoDinamico();
   }catch(e){sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');}
 });
