@@ -2431,6 +2431,22 @@ function renderMapaPage(){
     </div>`;
   iniciarDragSidebar();
   _iniciarResizeMapa();
+  // Fallback essencial (não só um "tick" a mais): em produção,
+  // sistema.letsgodelivery.com.br sobrescreve window.fazerLogin inteiro com
+  // um login raw próprio que nunca chama a fazerLogin() real deste arquivo
+  // nem escreve sessionStorage['lg_session'] — então _iniciarFaturaBannerLoja()
+  // nunca dispara a partir do login/restauração de sessão, e _faturaAtualLoja
+  // fica null pra sempre (o banner nunca tem dado pra mostrar, mesmo com
+  // #alerta-fatura-loja presente no HTML). Mapa ao Vivo é a home e SEMPRE
+  // renderiza via goTab('mapa'), não importa qual código de login rodou —
+  // é o lugar certo pra garantir que o loop exista. Roda aqui fora, síncrono,
+  // e não dentro do setTimeout do Leaflet logo abaixo: se L.map(...) lançar
+  // por qualquer motivo, o resto daquele callback para no meio, e não pode
+  // levar o banner junto.
+  if(currentPerfil==='loja'){
+    if(_faturaBannerTickInterval)_tickFaturaBanner();
+    else _iniciarFaturaBannerLoja();
+  }
   setTimeout(()=>{
     if(map){map.remove();map=null;}
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
@@ -2438,7 +2454,6 @@ function renderMapaPage(){
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB',maxZoom:19}).addTo(map);
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
-    if(currentPerfil==='loja')_tickFaturaBanner();
     if(currentPerfil==='loja'){
       const selCr=document.getElementById('cr-loja-id');
       if(selCr){
