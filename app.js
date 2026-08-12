@@ -301,8 +301,14 @@ function _tickFaturaBanner(){
   const el=document.getElementById('alerta-fatura-loja');
   if(!el)return;
   if(!_faturaAtualLoja){el.style.display='none';return;}
-  const elapsed=(Date.now()-_faturaBannerCycleStart)%_FATURA_BANNER_CICLO_MS;
-  if(elapsed>=_FATURA_BANNER_VISIVEL_MS){el.style.display='none';return;}
+  // Estado "vence hoje" (diasAtraso===0) foge do ciclo aparece/some — fica
+  // fixo o dia inteiro (só some trocando de tela ou quando a fatura deixa
+  // de estar pendente/vence). Os outros dois estados (aberta / vencida)
+  // continuam no ciclo normal de 1h/10min.
+  if(_faturaAtualLoja._diasAtraso!==0){
+    const elapsed=(Date.now()-_faturaBannerCycleStart)%_FATURA_BANNER_CICLO_MS;
+    if(elapsed>=_FATURA_BANNER_VISIVEL_MS){el.style.display='none';return;}
+  }
   const titulo=document.getElementById('alerta-fatura-loja-titulo');
   if(titulo)titulo.textContent=_faturaAtualLoja._diasAtraso>=1
     ?'🚫 Fatura vencida! Regularize o pagamento para continuar criando entregas.'
