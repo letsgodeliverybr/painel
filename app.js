@@ -256,7 +256,7 @@ function _diasAtrasoFatura(vencYMD){
   const [hy,hm,hd]=_dataHojeBrasilia().split('-').map(Number);
   return Math.round((Date.UTC(hy,hm-1,hd)-Date.UTC(vy,vm-1,vd))/86400000);
 }
-// Multa de 5% única (não recorrente) + juros de 10%/mês pro-rata ao dia
+// Multa de 2% única (não recorrente) + juros de 10%/mês pro-rata ao dia
 // (10%/30), ambos incidindo a partir do dia seguinte ao vencimento —
 // dataAtraso===0 (vence hoje) ainda não pega multa/juros.
 // Fatura pequena (valor original < R$100): o percentual renderia menos que
@@ -271,7 +271,7 @@ function _calcularJurosMultaFatura(valorOriginal,vencYMD){
     const taxaFixa=5;
     return{diasAtraso,multa:0,juros:0,taxaFixa,valorAtualizado:Math.round((valOrig+taxaFixa)*100)/100};
   }
-  const multa=Math.round(valOrig*0.05*100)/100;
+  const multa=Math.round(valOrig*0.02*100)/100;
   const juros=Math.round(valOrig*(0.10/30)*diasAtraso*100)/100;
   return{diasAtraso,multa,juros,taxaFixa:0,valorAtualizado:Math.round((valOrig+multa+juros)*100)/100};
 }
@@ -7346,7 +7346,7 @@ async function verFaturaCobranca(cobId){
     ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
       <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — ${taxaFixa>0?'taxa mínima aplicada':'juros e multa aplicados'}</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
-      ${taxaFixa>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Taxa mínima (fatura &lt; R$100)</span><span>R$ ${taxaFixa.toFixed(2)}</span></div>`:`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (5% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
+      ${taxaFixa>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Taxa mínima (fatura &lt; R$100)</span><span>R$ ${taxaFixa.toFixed(2)}</span></div>`:`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (2% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>`}
       <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
     </div>`:''}
