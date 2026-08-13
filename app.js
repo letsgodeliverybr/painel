@@ -33,10 +33,10 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'chat',icon:'💬',label:'Chat'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'chat',icon:'💬',label:'Chat'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
@@ -353,6 +353,24 @@ function _iniciarChatBadgeLoja(){
   _carregarBadgeChatLoja();
   _chatBadgeInterval=setInterval(_carregarBadgeChatLoja,20000);
 }
+// Mesma ideia de _carregarBadgeChatLoja, mas pro lado admin/suporte: conta
+// não lidas de TODAS as lojas (sem filtro de loja_id), já que aqui o botão
+// flutuante único cobre a caixa de entrada inteira, não uma conversa só.
+async function _carregarBadgeChatAdmin(){
+  if(currentPerfil==='loja')return;
+  const rows=await db('mensagens_chat','GET',null,'?remetente_perfil=eq.loja&lida=eq.false&select=id').catch(()=>[]);
+  _chatNaoLidasAdminCount=Array.isArray(rows)?rows.length:0;
+  const badge=document.getElementById('chat-badge-admin');
+  if(!badge)return;
+  if(_chatNaoLidasAdminCount>0){badge.textContent=_chatNaoLidasAdminCount>9?'9+':_chatNaoLidasAdminCount;badge.style.display='flex';}
+  else badge.style.display='none';
+}
+function _iniciarChatBadgeAdmin(){
+  if(currentPerfil==='loja')return;
+  clearInterval(_chatBadgeInterval);
+  _carregarBadgeChatAdmin();
+  _chatBadgeInterval=setInterval(_carregarBadgeChatAdmin,20000);
+}
 function _bolhaChatHtml(m){
   const souLoja=currentPerfil==='loja';
   const minhaMsg=souLoja?m.remetente_perfil==='loja':m.remetente_perfil!=='loja';
@@ -426,20 +444,31 @@ function _fecharChatLoja(){
 }
 
 // ── Admin/Suporte: inbox com lista de lojas + conversa selecionada ──
-async function renderChatAdminPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="height:100%;display:flex;flex-direction:column">
-    <div class="page-header"><div class="page-title">💬 Chat</div></div>
-    <div style="flex:1;display:flex;gap:14px;min-height:0">
-      <div class="card" style="width:300px;flex-shrink:0;overflow-y:auto;padding:0" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
-      <div class="card" style="flex:1;display:flex;flex-direction:column;min-width:0" id="chat-painel-conversa">
+// Modal (não mais página de menu) — mesmo ponto de entrada (botão flutuante
+// 💬 no mapa) que a loja usa, só que aqui abre a lista em vez de ir direto
+// pra uma conversa, já que o admin/suporte tem várias lojas conversando.
+async function _abrirChatAdmin(){
+  let modal=document.getElementById('modal-chat-admin');
+  if(!modal){modal=document.createElement('div');modal.id='modal-chat-admin';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:820px;width:92vw;height:75vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div class="modal-header" style="padding:14px 20px;flex-shrink:0"><span class="modal-title">💬 Chat</span><button class="modal-close" onclick="_fecharChatAdmin()">✕</button></div>
+    <div class="chat-admin-layout" style="flex:1;display:flex;gap:14px;min-height:0;padding:0 16px 16px">
+      <div style="width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:10px" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="chat-painel-conversa">
         <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione uma loja pra ver a conversa</div>
       </div>
     </div>
   </div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)_fecharChatAdmin();};
   _chatLojaAtual=null;
   clearInterval(_chatPollInterval);
   await _carregarListaConversasAdmin();
   _chatPollInterval=setInterval(_carregarListaConversasAdmin,10000);
+}
+function _fecharChatAdmin(){
+  document.getElementById('modal-chat-admin')?.classList.remove('open');
+  clearInterval(_chatPollInterval);_chatPollInterval=null;
 }
 async function _carregarListaConversasAdmin(){
   const el=document.getElementById('chat-lista-conversas');if(!el)return;
@@ -1429,6 +1458,14 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
          então somem primeiro; o badge continua visível.
          Ver comentário sobre _atualizarRelogioTopbar no topo do arquivo. */
       #topbar-relogio, #user-nome { display: none !important; }
+      /* Modal de chat do admin/suporte (lista de lojas + conversa lado a
+         lado) não cabe em 375px com os 260px fixos da lista — empilha em
+         vez de espremer, lista com altura limitada (rolável) em cima,
+         conversa ocupando o resto embaixo. */
+      #modal-chat-admin .modal { width: 96vw !important; height: 88vh !important; }
+      .chat-admin-layout { flex-direction: column !important; }
+      .chat-admin-layout #chat-lista-conversas { width: 100% !important; max-height: 140px !important; flex-shrink: 0 !important; }
+      .chat-admin-layout #chat-painel-conversa { flex: 1 !important; min-height: 0 !important; }
     }
     /* ── DARK MODE GLOBAL OVERRIDES ── */
     html.dark body, html.dark #app, html.dark #app-body { background: #1E1E1E !important; color: #ffffff !important; }
@@ -2557,7 +2594,7 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   body.innerHTML=items.map(item=>{
-    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:item.id==='chat'&&_chatNaoLidasAdminCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_chatNaoLidasAdminCount}</span>`:'';
+    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
   }).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px"><button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
 }
@@ -2618,10 +2655,10 @@ function renderTabs(){
 }
 function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
-  if(id!=='chat')clearInterval(_chatPollInterval);
+  clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage,'chat':renderChatAdminPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -2659,7 +2696,7 @@ function renderMapaPage(){
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Mostrar todas as lojas" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
-          ${currentPerfil==='loja'?`<button id="btn-chat-loja" onclick="_abrirChatLoja()" title="Chat com o Suporte" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="chat-badge-loja" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>`:''}
+          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -2734,6 +2771,9 @@ function renderMapaPage(){
     // mensagens não lidas do chat não depender de fazerLogin() real rodar.
     if(_chatBadgeInterval)_carregarBadgeChatLoja();
     else _iniciarChatBadgeLoja();
+  }else if(currentPerfil==='adm'||currentPerfil==='suporte'){
+    if(_chatBadgeInterval)_carregarBadgeChatAdmin();
+    else _iniciarChatBadgeAdmin();
   }
   setTimeout(()=>{
     if(map){map.remove();map=null;}
