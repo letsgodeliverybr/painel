@@ -2599,8 +2599,7 @@ function renderMapaPage(){
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;flex-direction:column;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
@@ -2615,10 +2614,6 @@ function renderMapaPage(){
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
           <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:160px;max-width:100%;font-family:Inter,sans-serif"/>
-        </div>
         </div>
         <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px;min-width:0">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
@@ -2794,10 +2789,6 @@ async function renderTabelaMapa(){
   _tabelaAnexarSentinela();
 }
 
-function _tabelaFiltrar(){
-  _tabelaFiltros.busca=document.getElementById('tf-busca')?.value||'';
-  renderTabelaMapa();
-}
 function _tabelaMudarData(){carregarTabelaMapa();}
 function _tabelaIrPagina(){}
 
