@@ -2694,9 +2694,9 @@ function renderMapaPage(){
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Cancelados hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
+          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" style="position:relative;background:#10B981;border:2px solid #10B981;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Mostrar todas as lojas" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
-          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -2991,6 +2991,11 @@ function iniciarDragSidebar(){
   document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDrag(e.touches[0].clientX);}},{passive:false});
   document.addEventListener('mouseup',e=>{if(dragging)endDrag(e.clientX);});
   document.addEventListener('touchend',e=>{if(dragging)endDrag(e.changedTouches[0].clientX);});
+  // touchcancel (gesto interrompido pelo sistema, ex: swipe-back do Safari
+  // iOS perto da borda esquerda, onde fica esse handle) — sem isso, touchend
+  // nunca disparava, dragging ficava true e a largura inline parcial do
+  // drag nunca era limpa via snapTo().
+  document.addEventListener('touchcancel',e=>{if(dragging)endDrag(e.changedTouches[0]?.clientX??startX);});
   // Mobile (mesmo breakpoint do @media max-width:768px que transforma essa
   // sidebar num overlay position:absolute;width:100%): sem minimizar por
   // padrão, ela nasce cobrindo a tela inteira — barra de Criar Entrega e
@@ -3001,7 +3006,13 @@ function iniciarDragSidebar(){
   if(window.innerWidth<=768)toggleSidebar(true);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
-function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
+// No mobile, limpa width/minWidth inline que pode ter ficado preso de um
+// drag anterior no sb-toggle-tab (iniciarDragSidebar/moveDrag) que não
+// terminou direito (ex: touchend nunca disparou porque o gesto foi
+// interrompido perto da borda esquerda, zona do "voltar" por swipe do
+// Safari iOS) — sem isso, o painel podia abrir com uma largura menor que
+// 100%, sobrando espaço vazio do lado direito da tela.
+function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
 let _estadoLojas=0;
 const _LOJAS_TITLES=['Mostrar todas as lojas','Escondendo lojas sem pedido','Lojas ocultas'];
 const _LOJAS_CORES=['transparent','#eab308','#ef4444'];
