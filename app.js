@@ -1939,7 +1939,10 @@ async function _criarEntregaRapida(){
   }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
   if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
-  if(currentPerfil==='loja'&&_faturaVencidaLoja){showNotif('Fatura vencida','Regularize o pagamento para criar novas entregas.','#f59e0b');return;}
+  // Fatura vencida NÃO bloqueia mais a criação de entregas — só o aviso
+  // visual (banner fixo + rótulo do botão) continua, ver
+  // _atualizarBtnCriarEntrega(). Só saldo insuficiente (crédito) bloqueia
+  // de verdade.
   const agora=new Date().toISOString();
   const numFinal=((document.getElementById('cr-numero-pedido')?.value||'').trim())||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
@@ -2251,10 +2254,13 @@ function _atualizarBtnCriarEntrega(){
   const _lojaBtn=allLojas.find(l=>l.id===currentUser?.loja_id);
   const _tipoBtn=_lojaBtn?.tipo_cobranca||'faturamento';
   const insuficiente=_tipoBtn==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa));
-  const bloqueado=insuficiente||_faturaVencidaLoja;
-  btn.disabled=bloqueado;
-  btn.style.setProperty('background',bloqueado?'#6b7280':'#1A56DB','important');
-  btn.style.cursor=bloqueado?'not-allowed':'pointer';
+  // Fatura vencida só mostra o aviso visual (rótulo + cor de alerta) — não
+  // desabilita mais o botão. Só saldo insuficiente (crédito) bloqueia de
+  // verdade a criação de entregas.
+  const avisoVisual=insuficiente||_faturaVencidaLoja;
+  btn.disabled=insuficiente;
+  btn.style.setProperty('background',avisoVisual?'#6b7280':'#1A56DB','important');
+  btn.style.cursor=insuficiente?'not-allowed':'pointer';
   btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':_faturaVencidaLoja?'🚫 Fatura vencida':'➕ Criar Entrega';
 }
 
