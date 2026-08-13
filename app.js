@@ -1762,10 +1762,23 @@ async function _criarEntregaRapida(){
     if(_clEl){_clEl.focus();_clEl.style.borderColor='#ef4444';setTimeout(()=>{_clEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
+  if(!telefone){
+    showNotif('Telefone obrigatório','Preencha o telefone do cliente','var(--yellow)');
+    const _tfEl=document.getElementById('cr-telefone');
+    if(_tfEl){_tfEl.focus();_tfEl.style.borderColor='#ef4444';setTimeout(()=>{_tfEl.style.borderColor='#3A3A3A';},2500);}
+    return;
+  }
   if(!complemento){
     showNotif('Complemento obrigatório','Preencha o complemento (ex: apto, bloco, ponto de referência)','var(--yellow)');
     const _cpEl=document.getElementById('cr-complemento');
     if(_cpEl){_cpEl.focus();_cpEl.style.borderColor='#ef4444';setTimeout(()=>{_cpEl.style.borderColor='#3A3A3A';},2500);}
+    return;
+  }
+  const valorPedido=parseFloat(document.getElementById('cr-valor')?.value);
+  if(!(valorPedido>0)){
+    showNotif('Valor obrigatório','Preencha o valor do pedido que o motoboy deve cobrar do cliente','var(--yellow)');
+    const _vlEl=document.getElementById('cr-valor');
+    if(_vlEl){_vlEl.focus();_vlEl.style.borderColor='#ef4444';setTimeout(()=>{_vlEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
@@ -1793,7 +1806,7 @@ async function _criarEntregaRapida(){
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
   const _faixaCrSubmit=_faixasCr.find(f=>_distKm<=parseFloat(f.km_ate))||_faixasCr[_faixasCr.length-1];
   console.log(`[_criarEntregaRapida] origem_usada=loja distancia_km=${_distKm} faixa_aplicada=km_ate:${_faixaCrSubmit?.km_ate||'?'} pd_cliente=${_pdCliente}(${_pdOrigemCr}) taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:0,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -1811,6 +1824,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-telefone').value='';
     document.getElementById('cr-endereco').value='';
     document.getElementById('cr-complemento').value='';
+    document.getElementById('cr-valor').value='';
     document.getElementById('cr-gorjeta').value='';
     _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;_crDesenharRota(null);
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
@@ -2415,6 +2429,7 @@ function renderMapaPage(){
           <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:210px;font-family:Inter,sans-serif"/>
           <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
+          <input id="cr-valor" placeholder="Valor R$" type="number" step="0.01" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
           <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
