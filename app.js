@@ -5961,8 +5961,14 @@ async function _flBuscar(){
   </table></div>`;
 }
 function _renderFaturaAtualCard(c){
-  const {diasAtraso,multa,juros,taxaFixa,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD);
+  const {diasAtraso,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD);
   const vencida=diasAtraso>=1;
+  // Card resumido de propósito: só o valor total já atualizado em
+  // destaque, sem o detalhamento linha a linha de multa/juros — esse
+  // breakdown completo continua só no modal "Ver Fatura"
+  // (verFaturaCobranca) e na tabela "Aprovar Faturas" do admin
+  // (_buscarCobrancasPendentes), que já usam _calcularJurosMultaFatura
+  // de forma independente.
   return`<div class="card" style="margin-bottom:14px;border:2px solid ${vencida?'#ef4444':'var(--accent)'}">
     <div class="card-header"><span class="card-title">${vencida?'🔴':'🟡'} Fatura Atual</span></div>
     <div style="padding:20px">
@@ -5970,12 +5976,7 @@ function _renderFaturaAtualCard(c){
         <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Período</div><div style="font-size:14px;font-weight:600;color:var(--text)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</div></div>
         <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Vencimento</div><div style="font-size:14px;font-weight:600;color:${vencida?'#ef4444':'var(--text)'}">${formatarDataBR(c._vencYMD)}${vencida?` · ${diasAtraso} dia${diasAtraso>1?'s':''} de atraso`:''}</div></div>
       </div>
-      ${vencida?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px 18px;margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor original</span><span>R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</span></div>
-        ${taxaFixa>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Taxa mínima (fatura &lt; R$100)</span><span>R$ ${taxaFixa.toFixed(2)}</span></div>`:`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (5% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>`}
-        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:8px;padding-top:8px"><span>Total atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
-      </div>`:`<div style="font-size:28px;font-weight:800;color:#1A56DB;margin-bottom:16px">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`}
+      ${vencida?`<div style="font-size:28px;font-weight:800;color:#dc2626;margin-bottom:16px">R$ ${valorAtualizado.toFixed(2)}</div>`:`<div style="font-size:28px;font-weight:800;color:#1A56DB;margin-bottom:16px">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`}
       <button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button>
     </div>
   </div>`;
