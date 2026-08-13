@@ -33,10 +33,10 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'chat',icon:'💬',label:'Chat'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'chat',icon:'💬',label:'Chat'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
@@ -66,6 +66,15 @@ let _faturaVencidaLoja=false;
 let _faturaBannerCycleStart=null;
 let _faturaBannerTickInterval=null;
 let _faturaBannerRefreshInterval=null;
+// Chat interno Loja <-> Admin/Suporte — conversa única e contínua por loja
+// (mensagens_chat.loja_id), ver migrations/add_mensagens_chat.sql.
+let _chatLojaAtual=null; // loja_id da conversa aberta agora (perfil loja: sempre a própria loja; perfil adm/suporte: a selecionada na lista)
+let _chatPollInterval=null; // poll de ~10s só enquanto uma conversa está aberta (painel do admin OU modal da loja)
+let _chatBadgeInterval=null; // poll mais espaçado (~20s) só pro badge de não lidas, independente de ter conversa aberta
+let _chatNaoLidasLojaCount=0;
+let _chatNaoLidasAdminCount=0;
+let _chatConversasCache=[];
+let _chatMensagensCache=[];
 
 // Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
 function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta,kmAdicionalValor){
@@ -323,6 +332,153 @@ function _tickFaturaBanner(){
   const fecharBtn=document.getElementById('alerta-fatura-loja-fechar');
   if(fecharBtn)fecharBtn.style.display=_faturaAtualLoja._diasAtraso<0?'flex':'none';
   el.style.display='flex';
+}
+
+// ── CHAT INTERNO LOJA <-> ADMIN/SUPORTE ──
+// mensagens_chat.created_at é timestamptz de verdade (default now()) —
+// formatarHora/formatarDataHora (helpers de fuso do topo do arquivo) já
+// lidam com isso direto, sem precisar de nenhuma conversão extra.
+async function _carregarBadgeChatLoja(){
+  if(currentPerfil!=='loja'||!currentUser?.loja_id)return;
+  const rows=await db('mensagens_chat','GET',null,`?loja_id=eq.${currentUser.loja_id}&remetente_perfil=neq.loja&lida=eq.false&select=id`).catch(()=>[]);
+  _chatNaoLidasLojaCount=Array.isArray(rows)?rows.length:0;
+  const badge=document.getElementById('chat-badge-loja');
+  if(!badge)return;
+  if(_chatNaoLidasLojaCount>0){badge.textContent=_chatNaoLidasLojaCount>9?'9+':_chatNaoLidasLojaCount;badge.style.display='flex';}
+  else badge.style.display='none';
+}
+function _iniciarChatBadgeLoja(){
+  if(currentPerfil!=='loja')return;
+  clearInterval(_chatBadgeInterval);
+  _carregarBadgeChatLoja();
+  _chatBadgeInterval=setInterval(_carregarBadgeChatLoja,20000);
+}
+function _bolhaChatHtml(m){
+  const souLoja=currentPerfil==='loja';
+  const minhaMsg=souLoja?m.remetente_perfil==='loja':m.remetente_perfil!=='loja';
+  const nomeExibido=m.remetente_perfil==='loja'?(m.remetente_nome||'Loja'):(m.remetente_nome||(m.remetente_perfil==='suporte'?'Suporte':'Admin'));
+  const textoEscapado=(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return`<div style="align-self:${minhaMsg?'flex-end':'flex-start'};max-width:75%;display:flex;flex-direction:column">
+    ${!minhaMsg?`<div style="font-size:10px;color:var(--text3);margin-bottom:2px;padding:0 4px">${nomeExibido}</div>`:''}
+    <div style="background:${minhaMsg?'var(--accent)':'var(--surface)'};color:${minhaMsg?'#fff':'var(--text)'};border:1px solid ${minhaMsg?'transparent':'var(--border)'};border-radius:12px;padding:8px 12px;font-size:13px;white-space:pre-wrap;word-break:break-word">${textoEscapado}</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px;padding:0 4px;text-align:${minhaMsg?'right':'left'}">${formatarHora(m.created_at)}</div>
+  </div>`;
+}
+function _renderMensagensChat(){
+  const el=document.getElementById('chat-loja-mensagens')||document.getElementById('chat-admin-mensagens');
+  if(!el)return;
+  if(!_chatMensagensCache.length){el.innerHTML='<div style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Nenhuma mensagem ainda. Envie a primeira!</div>';return;}
+  el.innerHTML=_chatMensagensCache.map(_bolhaChatHtml).join('');
+  el.scrollTop=el.scrollHeight;
+}
+// Busca a conversa inteira de _chatLojaAtual, renderiza, e marca como lida
+// o lado oposto ao perfil de quem está vendo agora (loja lê o que adm/
+// suporte escreveram, e vice-versa — adm e suporte compartilham o mesmo
+// "lado" da conversa, então uma mensagem da loja fica lida assim que
+// QUALQUER um dos dois abrir, não precisa dos dois abrirem separado).
+async function _carregarMensagensChat(){
+  if(!_chatLojaAtual)return;
+  const rows=await db('mensagens_chat','GET',null,`?loja_id=eq.${_chatLojaAtual}&order=created_at.asc`).catch(()=>[]);
+  _chatMensagensCache=Array.isArray(rows)?rows:[];
+  _renderMensagensChat();
+  const souLoja=currentPerfil==='loja';
+  const idsNaoLidas=_chatMensagensCache.filter(m=>(souLoja?m.remetente_perfil!=='loja':m.remetente_perfil==='loja')&&!m.lida).map(m=>m.id);
+  if(idsNaoLidas.length){
+    await dbPatch('mensagens_chat',{lida:true},`?id=in.(${idsNaoLidas.join(',')})`);
+    if(souLoja)_carregarBadgeChatLoja();
+  }
+}
+async function _enviarMensagemChat(){
+  const input=document.getElementById('chat-loja-input')||document.getElementById('chat-admin-input');
+  const texto=(input?.value||'').trim();
+  if(!texto||!_chatLojaAtual)return;
+  input.value='';
+  const payload={loja_id:_chatLojaAtual,remetente_perfil:currentPerfil,remetente_usuario_id:currentUser?.id||null,remetente_nome:currentUser?.nome||null,texto,lida:false};
+  const res=await db('mensagens_chat','POST',payload);
+  if(!res||res.length===0){showNotif('❌ Erro ao enviar','Não foi possível enviar a mensagem','var(--red)');input.value=texto;return;}
+  await _carregarMensagensChat();
+  if(currentPerfil!=='loja')await _carregarListaConversasAdmin();
+}
+
+// ── Loja: modal com a conversa única dela ──
+function _abrirChatLoja(){
+  if(!currentUser?.loja_id)return;
+  let modal=document.getElementById('modal-chat-loja');
+  if(!modal){modal=document.createElement('div');modal.id='modal-chat-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:480px;height:70vh;display:flex;flex-direction:column">
+    <div class="modal-header"><span class="modal-title">💬 Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">✕</button></div>
+    <div id="chat-loja-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+      <input id="chat-loja-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
+      <button onclick="_enviarMensagemChat()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Enviar</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)_fecharChatLoja();};
+  _chatLojaAtual=currentUser.loja_id;
+  _carregarMensagensChat();
+  clearInterval(_chatPollInterval);
+  _chatPollInterval=setInterval(_carregarMensagensChat,10000);
+}
+function _fecharChatLoja(){
+  document.getElementById('modal-chat-loja')?.classList.remove('open');
+  clearInterval(_chatPollInterval);_chatPollInterval=null;
+}
+
+// ── Admin/Suporte: inbox com lista de lojas + conversa selecionada ──
+async function renderChatAdminPage(){
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="height:100%;display:flex;flex-direction:column">
+    <div class="page-header"><div class="page-title">💬 Chat</div></div>
+    <div style="flex:1;display:flex;gap:14px;min-height:0">
+      <div class="card" style="width:300px;flex-shrink:0;overflow-y:auto;padding:0" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-width:0" id="chat-painel-conversa">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione uma loja pra ver a conversa</div>
+      </div>
+    </div>
+  </div>`;
+  _chatLojaAtual=null;
+  clearInterval(_chatPollInterval);
+  await _carregarListaConversasAdmin();
+  _chatPollInterval=setInterval(_carregarListaConversasAdmin,10000);
+}
+async function _carregarListaConversasAdmin(){
+  const el=document.getElementById('chat-lista-conversas');if(!el)return;
+  const rows=await db('mensagens_chat','GET',null,'?select=*,lojas(nome)&order=created_at.desc').catch(()=>[]);
+  const porLoja=new Map();
+  (Array.isArray(rows)?rows:[]).forEach(m=>{
+    if(!porLoja.has(m.loja_id))porLoja.set(m.loja_id,{loja_id:m.loja_id,lojaNome:m.lojas?.nome||'—',ultima:m,naoLidas:0});
+    if(m.remetente_perfil==='loja'&&!m.lida)porLoja.get(m.loja_id).naoLidas++;
+  });
+  _chatConversasCache=[...porLoja.values()].sort((a,b)=>new Date(b.ultima.created_at)-new Date(a.ultima.created_at));
+  _chatNaoLidasAdminCount=_chatConversasCache.reduce((s,c)=>s+c.naoLidas,0);
+  renderNavSidebar(_navAtivo);
+  if(!_chatConversasCache.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma conversa ainda</div>';return;}
+  el.innerHTML=_chatConversasCache.map(c=>`<div onclick="_abrirConversaAdmin('${c.loja_id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:${_chatLojaAtual===c.loja_id?'var(--surface2)':'transparent'}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+      <span style="font-weight:600;font-size:13px;color:var(--text)">🏪 ${c.lojaNome}</span>
+      ${c.naoLidas>0?`<span style="background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${c.naoLidas}</span>`:''}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(c.ultima.texto||'').substring(0,60)}</div>
+  </div>`).join('');
+  if(_chatLojaAtual&&document.getElementById('chat-admin-mensagens'))_carregarMensagensChat();
+}
+function _abrirConversaAdmin(lojaId){
+  _chatLojaAtual=lojaId;
+  const conversa=_chatConversasCache.find(c=>c.loja_id===lojaId);
+  const painel=document.getElementById('chat-painel-conversa');
+  if(!painel)return;
+  painel.innerHTML=`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);flex-shrink:0">🏪 ${conversa?.lojaNome||''}</div>
+    <div id="chat-admin-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+      <input id="chat-admin-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
+      <button onclick="_enviarMensagemChat()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Enviar</button>
+    </div>`;
+  _carregarMensagensChat();
+  // Só pra tirar o destaque/badge da linha selecionada na lista à esquerda
+  // (recarrega a lista inteira — simples, sem duplicar a lógica de
+  // agregação em outro lugar só pra atualizar uma linha).
+  _carregarListaConversasAdmin();
 }
 // Relógio ao vivo no topbar (#topbar-relogio, index.html) — conferência
 // visual permanente pro operador: se o painel algum dia voltar a divergir
@@ -2297,7 +2453,7 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   body.innerHTML=items.map(item=>{
-    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
+    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:item.id==='chat'&&_chatNaoLidasAdminCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_chatNaoLidasAdminCount}</span>`:'';
     return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
   }).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px"><button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
 }
@@ -2343,7 +2499,7 @@ function logout(){
     const s=JSON.parse(sessionStorage.getItem('lg_session')||'null');
     if(s?.access_token)fetch(`${SB_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${s.access_token}`}}).catch(()=>{});
   }catch{}
-  clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
+  clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -2358,9 +2514,10 @@ function renderTabs(){
 }
 function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
+  if(id!=='chat')clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage,'chat':renderChatAdminPage};
   if(pages[id])pages[id]();
 }
 
@@ -2397,6 +2554,7 @@ function renderMapaPage(){
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Mostrar todas as lojas" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
+          ${currentPerfil==='loja'?`<button id="btn-chat-loja" onclick="_abrirChatLoja()" title="Chat com o Suporte" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="chat-badge-loja" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>`:''}
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -2468,6 +2626,10 @@ function renderMapaPage(){
   if(currentPerfil==='loja'){
     if(_faturaBannerTickInterval)_tickFaturaBanner();
     else _iniciarFaturaBannerLoja();
+    // Mesmo fallback, mesmo motivo (ver comentário acima) — pro badge de
+    // mensagens não lidas do chat não depender de fazerLogin() real rodar.
+    if(_chatBadgeInterval)_carregarBadgeChatLoja();
+    else _iniciarChatBadgeLoja();
   }
   setTimeout(()=>{
     if(map){map.remove();map=null;}
