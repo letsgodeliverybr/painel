@@ -480,6 +480,89 @@ function _abrirConversaAdmin(lojaId){
   // agregação em outro lugar só pra atualizar uma linha).
   _carregarListaConversasAdmin();
 }
+
+// ── PULL-TO-REFRESH (gesto touch, estilo app nativo) ──
+// Puro touchstart/touchmove/touchend — nunca disparam com mouse, então já
+// "só ativa em touch" sem precisar de detecção de user-agent nenhuma.
+// O gesto só arma se o toque começar perto do topo da tela (~100px): esse
+// layout mistura vários containers com scroll próprio (tabela do mapa,
+// sidebar de pedidos, listagens internas) em vez de ser uma página inteira
+// rolável — checar "scrollTop de um container específico" seria diferente
+// pra cada tela; iniciar perto do topo é a forma simples e segura de não
+// capturar por engano um scroll dentro de uma dessas listas internas.
+// Reaproveita a função de atualização que cada tela já tinha (a mesma que
+// o botão "Atualizar" removido do mapa chamava) — nenhuma tela precisou
+// de uma função nova só pra isso.
+const _PULL_REFRESH_MAP={
+  mapa:()=>atualizarTudo(),
+  pedidos:()=>_buscarPedidosAdmin(),
+  metricas:()=>_buscarMetricas(),
+  faturas:()=>currentPerfil==='loja'?_flBuscar():null,
+};
+let _pullStartY=null,_pullDistancia=0,_pullAtivo=false,_pullRefreshing=false;
+const _PULL_LIMIAR=70,_PULL_MAX=110;
+function _pullToRefreshEl(){
+  let el=document.getElementById('pull-refresh-indicador');
+  if(!el){
+    el=document.createElement('div');
+    el.id='pull-refresh-indicador';
+    el.style.cssText='position:fixed;top:0;left:50%;width:40px;height:40px;background:var(--surface,#1E1E1E);border:1px solid var(--border,#3A3A3A);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:2000;pointer-events:none;color:var(--text2,#94a3b8)';
+    el.style.transform='translate(-50%,-50px)';
+    el.textContent='🔄';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function _pullToRefreshAtualizarVisual(distancia,refreshing){
+  const el=_pullToRefreshEl();
+  const passouLimiar=distancia>=_PULL_LIMIAR;
+  const y=Math.min(distancia,_PULL_MAX)-50;
+  el.style.transition='none';
+  el.style.transform=`translate(-50%, ${y}px) rotate(${refreshing?0:distancia*3}deg)`;
+  el.style.opacity=String(Math.min(distancia/_PULL_LIMIAR,1));
+  el.style.color=(passouLimiar||refreshing)?'var(--accent,#1A56DB)':'var(--text2,#94a3b8)';
+  el.style.animation=refreshing?'spin .8s linear infinite':'none';
+}
+function _pullToRefreshEsconder(){
+  const el=_pullToRefreshEl();
+  el.style.animation='none';
+  el.style.transition='transform .25s ease, opacity .25s ease';
+  el.style.transform='translate(-50%,-50px)';
+  el.style.opacity='0';
+}
+async function _pullToRefreshExecutar(){
+  const fn=_PULL_REFRESH_MAP[_navAtivo];
+  if(!fn)return;
+  _pullRefreshing=true;
+  _pullToRefreshAtualizarVisual(_PULL_LIMIAR,true);
+  try{await fn();}catch(e){console.error('[pull-to-refresh]',e);}
+  _pullRefreshing=false;
+  _pullToRefreshEsconder();
+}
+function _iniciarPullToRefresh(){
+  document.addEventListener('touchstart',(e)=>{
+    if(_pullRefreshing||!currentPerfil||!_PULL_REFRESH_MAP[_navAtivo]){_pullAtivo=false;return;}
+    if(e.touches[0].clientY>100){_pullAtivo=false;return;}
+    _pullStartY=e.touches[0].clientY;
+    _pullAtivo=true;_pullDistancia=0;
+  },{passive:true});
+  document.addEventListener('touchmove',(e)=>{
+    if(!_pullAtivo||_pullStartY===null)return;
+    const dy=e.touches[0].clientY-_pullStartY;
+    if(dy<=0){_pullDistancia=0;_pullToRefreshAtualizarVisual(0,false);return;}
+    _pullDistancia=dy;
+    _pullToRefreshAtualizarVisual(dy,false);
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(!_pullAtivo)return;
+    _pullAtivo=false;
+    if(_pullDistancia>=_PULL_LIMIAR)_pullToRefreshExecutar();
+    else _pullToRefreshEsconder();
+    _pullStartY=null;_pullDistancia=0;
+  },{passive:true});
+}
+_iniciarPullToRefresh();
+
 // Relógio ao vivo no topbar (#topbar-relogio, index.html) — conferência
 // visual permanente pro operador: se o painel algum dia voltar a divergir
 // do horário real (ver bug de fuso que já corrigimos), fica óbvio comparando
