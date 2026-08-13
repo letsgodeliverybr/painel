@@ -1331,7 +1331,21 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       #tabela-mapa-section { min-height: auto !important; max-height: 60vh !important; }
       #tabela-mapa-section > div:nth-child(2) { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
       #tabela-mapa-section table td, #tabela-mapa-section table th { font-size: 11px !important; padding: 6px 8px !important; }
-      .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 100 !important; top: 0 !important; bottom: 0 !important; }
+      .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 100 !important; top: 0 !important; bottom: 0 !important; left: 0 !important; transform: translateX(0); transition: transform 0.3s ease; }
+      /* width:0 de .sb-minimized (não !important) perde pro width:100%!important
+         acima — sem isso, minimizar não escondia nada no mobile, só "existia"
+         invisível ocupando a tela inteira. transform desloca pra fora, width
+         continua 100% (não importa, já não está mais na área visível). */
+      .sb-dark.sb-minimized { transform: translateX(-100%) !important; }
+      /* Topbar (presente em toda tela logada, não só Mapa ao Vivo): relógio +
+         nome do usuário + badge de perfil, juntos, não cabem depois do menu
+         hambúrguer + logo + botão "Novo Pedido" em ~375px — sobravam ~80px
+         pra fora da tela, forçando scroll horizontal na página inteira
+         (html.scrollWidth > innerWidth). Relógio e nome são só reforço
+         visual (o essencial — saber quem/qual perfil — fica só no badge),
+         então somem primeiro; o badge continua visível.
+         Ver comentário sobre _atualizarRelogioTopbar no topo do arquivo. */
+      #topbar-relogio, #user-nome { display: none !important; }
     }
     /* ── DARK MODE GLOBAL OVERRIDES ── */
     html.dark body, html.dark #app, html.dark #app-body { background: #1E1E1E !important; color: #ffffff !important; }
@@ -2256,10 +2270,11 @@ function _atualizarBtnCriarEntrega(){
   const insuficiente=_tipoBtn==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa));
   // Fatura vencida só mostra o aviso visual (rótulo + cor de alerta) — não
   // desabilita mais o botão. Só saldo insuficiente (crédito) bloqueia de
-  // verdade a criação de entregas.
-  const avisoVisual=insuficiente||_faturaVencidaLoja;
+  // verdade a criação de entregas. Cor de alerta (âmbar) em vez do cinza
+  // de "desabilitado" — cinza dava a entender que o botão estava
+  // bloqueado mesmo continuando clicável; âmbar avisa sem parecer morto.
   btn.disabled=insuficiente;
-  btn.style.setProperty('background',avisoVisual?'#6b7280':'#1A56DB','important');
+  btn.style.setProperty('background',insuficiente?'#6b7280':_faturaVencidaLoja?'#f59e0b':'#1A56DB','important');
   btn.style.cursor=insuficiente?'not-allowed':'pointer';
   btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':_faturaVencidaLoja?'🚫 Fatura vencida':'➕ Criar Entrega';
 }
@@ -2548,7 +2563,7 @@ function renderMapaPage(){
         <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">🛵 Disparar Rota (0 pedidos) ++</button>
       </div>
     </div>
-    <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
+    <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important">
@@ -2583,9 +2598,9 @@ function renderMapaPage(){
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
       <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
-      <div id="tabela-mapa-section" style="flex:1;min-height:80px;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto">
-          <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
+      <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
           <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
@@ -2601,7 +2616,11 @@ function renderMapaPage(){
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
           <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
         </div>
-        <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <input id="tf-busca" placeholder="🔍 Buscar..." oninput="_tabelaFiltrar()" style="padding:4px 8px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:160px;max-width:100%;font-family:Inter,sans-serif"/>
+        </div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px;min-width:0">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
             <thead style="position:sticky;top:0;z-index:2;background:#3A3A3A !important">
               <tr style="background:#3A3A3A !important">
@@ -2857,6 +2876,14 @@ function iniciarDragSidebar(){
   document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDrag(e.touches[0].clientX);}},{passive:false});
   document.addEventListener('mouseup',e=>{if(dragging)endDrag(e.clientX);});
   document.addEventListener('touchend',e=>{if(dragging)endDrag(e.changedTouches[0].clientX);});
+  // Mobile (mesmo breakpoint do @media max-width:768px que transforma essa
+  // sidebar num overlay position:absolute;width:100%): sem minimizar por
+  // padrão, ela nasce cobrindo a tela inteira — barra de Criar Entrega e
+  // tabela ficam escondidas atrás dela, só o mapa "vaza" por cima porque o
+  // Leaflet usa z-index próprio mais alto que o da sidebar. No desktop
+  // (sidebar normal, ocupa espaço em vez de sobrepor) o comportamento não
+  // muda — só minimiza aqui embaixo do breakpoint.
+  if(window.innerWidth<=768)toggleSidebar(true);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
