@@ -1,0 +1,13 @@
+-- Histórico de faturas (admin "Aprovar Faturas" e loja "Faturas") mostrava
+-- sempre valor_total (o valor ORIGINAL da fatura) mesmo pra faturas pagas
+-- com atraso, escondendo a multa/juros que realmente foram cobrados.
+--
+-- valor_total continua intocado (é o valor original do período, referência
+-- histórica de quanto foi consumido) — valor_pago_final é preenchido só no
+-- momento da aprovação (status -> 'pago'), com o valor JÁ CALCULADO ali
+-- (_calcularJurosMultaFatura) travado permanentemente: não pode ser
+-- recalculado depois na exibição, porque juros/multa dependem de "hoje",
+-- e a fatura já foi paga naquele momento específico.
+--
+-- NULL pra tudo que não é 'pago' (pendente/recusado nunca teve valor pago).
+ALTER TABLE public.cobrancas_lojas ADD COLUMN IF NOT EXISTS valor_pago_final numeric;

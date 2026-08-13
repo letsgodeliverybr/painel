@@ -6225,7 +6225,7 @@ async function _flBuscar(){
     <tbody>${hist.map(c=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
       <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
-      <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+      <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.status==='pago'&&c.valor_pago_final!=null?c.valor_pago_final:c.valor_total)||0).toFixed(2)}${c.status==='pago'&&c.valor_pago_final!=null&&c.valor_pago_final!==c.valor_total?`<div style="font-size:10px;font-weight:600;color:var(--text3)">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`:''}</td>
       <td>${badge(c)}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -7314,7 +7314,7 @@ async function _renderHistoricoCobrancas(inicio,fim){
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
-        <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
+        <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.status==='pago'&&c.valor_pago_final!=null?c.valor_pago_final:c.valor_total)||0).toFixed(2)}${c.status==='pago'&&c.valor_pago_final!=null&&c.valor_pago_final!==c.valor_total?`<div style="font-size:10px;font-weight:600;color:var(--text3)">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`:''}</td>
         <td>${badge(c)}</td>
       </tr>`).join('')}</tbody>
     </table></div>
@@ -7323,12 +7323,25 @@ async function _renderHistoricoCobrancas(inicio,fim){
 
 function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>cb.checked=checked);}
 
+// Congela o valor com multa/juros no momento da aprovação (valor_pago_final)
+// — não pode ficar sendo recalculado depois na exibição do Histórico, já
+// que _calcularJurosMultaFatura depende de "hoje" e a fatura já foi paga
+// naquele momento específico. valor_total original nunca é sobrescrito.
+async function _valorFinalParaAprovar(id){
+  const rows=await db('cobrancas_lojas','GET',null,`?id=eq.${id}&select=id,valor_total,created_at&limit=1`);
+  const c=Array.isArray(rows)?rows[0]:null;
+  if(!c)return null;
+  const vencYMD=_faturaVencimentoYMD(c);
+  return _calcularJurosMultaFatura(c.valor_total,vencYMD).valorAtualizado;
+}
+
 async function _aprovarCobrancasSelecionadas(){
   const ids=[...document.querySelectorAll('.ac-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos uma cobrança','var(--yellow)');return;}
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
-    const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+    const valorPagoFinal=await _valorFinalParaAprovar(id);
+    const res=await dbPatch('cobrancas_lojas',{status:'pago',valor_pago_final:valorPagoFinal,updated_at:agora},`?id=eq.${id}`);
     if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
   }
   showNotif(`✅ ${ok} cobrança(s) aprovada(s)!`,'');
@@ -7337,7 +7350,8 @@ async function _aprovarCobrancasSelecionadas(){
 
 async function _aprovarCobrancaUnica(id){
   const agora=new Date().toISOString();
-  const res=await dbPatch('cobrancas_lojas',{status:'pago',updated_at:agora},`?id=eq.${id}`);
+  const valorPagoFinal=await _valorFinalParaAprovar(id);
+  const res=await dbPatch('cobrancas_lojas',{status:'pago',valor_pago_final:valorPagoFinal,updated_at:agora},`?id=eq.${id}`);
   if(res===null){showNotif('Erro','Não foi possível aprovar','var(--red)');return;}
   document.getElementById(`cob-row-${id}`)?.remove();
   showNotif('✅ Cobrança aprovada!','');
