@@ -282,6 +282,8 @@ async function _carregarFaturaAtualLoja(){
   _faturaVencidaLoja=anotadas.some(c=>c._diasAtraso>=1);
   _atualizarBtnCriarEntrega();
 }
+// Ciclo só se aplica ao estado "fatura aberta" (ainda não venceu) — "vence
+// hoje" e "vencida" ficam fixos (ver _tickFaturaBanner).
 const _FATURA_BANNER_CICLO_MS=60*60*1000; // aparece a cada 1h
 const _FATURA_BANNER_VISIVEL_MS=10*60*1000; // fica 10min visível por ciclo
 // Um único setInterval global (iniciado no login/restauração de sessão, não
@@ -301,11 +303,11 @@ function _tickFaturaBanner(){
   const el=document.getElementById('alerta-fatura-loja');
   if(!el)return;
   if(!_faturaAtualLoja){el.style.display='none';return;}
-  // Estado "vence hoje" (diasAtraso===0) foge do ciclo aparece/some — fica
-  // fixo o dia inteiro (só some trocando de tela ou quando a fatura deixa
-  // de estar pendente/vence). Os outros dois estados (aberta / vencida)
-  // continuam no ciclo normal de 1h/10min.
-  if(_faturaAtualLoja._diasAtraso!==0){
+  // Só o estado "fatura aberta" (diasAtraso<0, ainda não venceu) entra no
+  // ciclo aparece/some (10min/1min) — "vence hoje" (diasAtraso===0) e
+  // "vencida" (diasAtraso>=1) ficam fixos na tela até a fatura ser paga
+  // (não têm botão de fechar — só some quando o admin aprova o pagamento).
+  if(_faturaAtualLoja._diasAtraso<0){
     const elapsed=(Date.now()-_faturaBannerCycleStart)%_FATURA_BANNER_CICLO_MS;
     if(elapsed>=_FATURA_BANNER_VISIVEL_MS){el.style.display='none';return;}
   }
@@ -315,6 +317,11 @@ function _tickFaturaBanner(){
     :_faturaAtualLoja._diasAtraso===0
     ?'⏰ Sua fatura vence hoje 18:00. Evite atrasos no pagamento.'
     :'🧾 Fatura em aberto. Clique para ver a fatura.';
+  // Botão de fechar só no estado "aberta" (ainda não venceu) — "vence hoje"
+  // e "vencida" não podem ser dispensados pela loja, só desaparecem quando
+  // a fatura é paga/aprovada.
+  const fecharBtn=document.getElementById('alerta-fatura-loja-fechar');
+  if(fecharBtn)fecharBtn.style.display=_faturaAtualLoja._diasAtraso<0?'flex':'none';
   el.style.display='flex';
 }
 // Relógio ao vivo no topbar (#topbar-relogio, index.html) — conferência
@@ -2393,7 +2400,7 @@ function renderMapaPage(){
             <div id="alerta-fatura-loja-titulo" style="font-size:12px;font-weight:600;color:#fbbf24;line-height:1.5;text-wrap:balance"></div>
             <div style="font-size:11px;color:#fbbf24;opacity:.7;margin-top:2px;white-space:nowrap">Clique para ver a fatura</div>
           </div>
-          <button onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button id="alerta-fatura-loja-fechar" onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="display:none;flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
