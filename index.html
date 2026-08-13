@@ -250,12 +250,45 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
     <button id="login-forgot" type="button" onclick="alert('Entre em contato com o administrador para redefinir sua senha.')">Esqueci minha senha</button>
     <button class="login-btn" id="login-btn" onclick="fazerLogin()">Acessar</button>
     <div class="login-error" id="login-error">E-mail ou senha incorretos.</div>
+    <button id="login-cadastrar-loja" type="button" onclick="abrirModal('modal-cadastro-loja')" style="display:block;width:100%;text-align:center;background:none;border:none;color:#161616;font-size:13px;font-weight:700;cursor:pointer;margin-top:16px;text-decoration:underline">Ainda não é parceiro? Cadastre sua loja</button>
     <p class="ll-terms">
       <span class="ll-line1">Ao acessar o sistema com seu e-mail e senha, voce concorda com o nosso</span><br>
       <a href="#">TERMO DE LICENCA DE USO DE USUARIO COMERCIANTE</a>
     </p>
   </div>
   <div class="ll-bottombar"><span>Copyright &copy; 2026 - Lets Go Delivery</span></div>
+</div>
+
+<!-- CADASTRO PÚBLICO DE LOJA — sem login, gera status_cadastro='em_analise'
+     (ver app.js:enviarCadastroLoja) pra aprovação depois em
+     Cadastros → Estabelecimentos, mesmo conceito já usado pra motoboy. -->
+<div class="modal-overlay" id="modal-cadastro-loja">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏪 Cadastrar minha loja</span>
+      <button class="modal-close" onclick="fecharModal('modal-cadastro-loja')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2,#666);font-size:13px;margin-bottom:14px">Preencha os dados abaixo. Depois de enviar, nosso time analisa o cadastro e libera o acesso.</p>
+      <div class="form-row full"><div class="fi"><label>Nome da Loja</label><input id="cl-nome" placeholder="Ex: Pizzaria Central"/></div></div>
+      <div class="form-row full"><div class="fi"><label>Endereço</label><input id="cl-endereco" placeholder="Rua, número, bairro" autocomplete="off" onfocus="iniciarAutocompleteEndereco('cl-endereco','cl-lat','cl-lng','cl-endereco-feedback')"/><input type="hidden" id="cl-lat"/><input type="hidden" id="cl-lng"/></div></div>
+      <div id="cl-endereco-feedback" style="font-size:11px;margin:-8px 0 6px;min-height:16px"></div>
+      <div class="form-row">
+        <div class="fi"><label>Telefone da Loja</label><input id="cl-telefone" placeholder="(16) 3333-3333"/></div>
+        <div class="fi"><label>Telefone Financeiro</label><input id="cl-celular" placeholder="(16) 99999-9999"/></div>
+      </div>
+      <div class="form-row full"><div class="fi"><label>Nome do Responsável</label><input id="cl-responsavel" placeholder="Nome completo"/></div></div>
+      <div class="form-row">
+        <div class="fi"><label>E-mail</label><input type="email" id="cl-email" placeholder="loja@email.com"/></div>
+        <div class="fi"><label>Senha</label><div style="position:relative"><input type="password" id="cl-senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('cl-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div>
+      </div>
+      <div id="cl-feedback" style="margin-top:4px;min-height:18px;font-size:13px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="fecharModal('modal-cadastro-loja')">Cancelar</button>
+      <button class="btn-modal-primary" onclick="enviarCadastroLoja()">Enviar cadastro</button>
+    </div>
+  </div>
 </div>
 
 <!-- MENU LATERAL SIDEBAR -->

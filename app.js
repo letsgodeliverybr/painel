@@ -3515,11 +3515,19 @@ async function _renderCadastrosConteudo(aba){
 
 function _estabelecimentosSetFiltro(filtro){_estabelecimentosFiltro=filtro;_renderCadastrosConteudo('estabelecimentos');}
 
+// Mesmo padrão de abas Todos/Aprovados/Em Análise/Pendentes/Reprovados já
+// usado em Entregadores (_renderEntregadoresTab) — só que sem a conflação
+// com status operacional bloqueado/disponível que entregadores tem (lojas
+// não têm esse conceito), então "Pendentes" aqui é só status_cadastro
+// null/'pendente'. Fallback ||'aprovado' na leitura protege contra linhas
+// anteriores à migration add_lojas_status_cadastro.sql ainda não aplicada.
 async function _renderEstabelecimentosTab(el){
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const _cTotal=data.length;
-  const _cAtivas=data.filter(l=>l.ativo).length;
-  const _cInativas=_cTotal-_cAtivas;
+  const _cAprov=data.filter(l=>(l.status_cadastro||'aprovado')==='aprovado').length;
+  const _cAnalise=data.filter(l=>l.status_cadastro==='em_analise').length;
+  const _cPend=data.filter(l=>l.status_cadastro==='pendente').length;
+  const _cReprov=data.filter(l=>l.status_cadastro==='reprovado').length;
   const btnFiltro=(id,label,count)=>{
     const ativo=_estabelecimentosFiltro===id;
     const cBadge=count>0?` <span style="background:${ativo?'rgba(255,255,255,.3)':'#1A56DB'};color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:2px">${count}</span>`:'';
@@ -3527,12 +3535,85 @@ async function _renderEstabelecimentosTab(el){
   };
   const filtroBtns=`
     ${btnFiltro('todos','Todas',_cTotal)}
-    ${btnFiltro('ativas','✅ Ativas',_cAtivas)}
-    ${btnFiltro('inativas','⛔ Inativas',_cInativas)}`;
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
-  const filtered=_estabelecimentosFiltro==='ativas'?data.filter(l=>l.ativo):_estabelecimentosFiltro==='inativas'?data.filter(l=>!l.ativo):data;
+    ${btnFiltro('aprovadas','✅ Aprovadas',_cAprov)}
+    ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
+    ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
+    ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  let filtered;
+  if(_estabelecimentosFiltro==='aprovadas')filtered=data.filter(l=>(l.status_cadastro||'aprovado')==='aprovado');
+  else if(_estabelecimentosFiltro==='em_analise')filtered=data.filter(l=>l.status_cadastro==='em_analise');
+  else if(_estabelecimentosFiltro==='pendentes')filtered=data.filter(l=>l.status_cadastro==='pendente');
+  else if(_estabelecimentosFiltro==='reprovadas')filtered=data.filter(l=>l.status_cadastro==='reprovado');
+  else filtered=data;
   const tbody=document.getElementById('tbody-estabelecimentos');if(!tbody)return;
-  tbody.innerHTML=filtered.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;}).join('');
+  const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'em_rota');
+  tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
+    const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
+    const statusCad=l.status_cadastro||'aprovado';
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
+  }).join('');
+}
+function _abrirDropdownCadastroLoja(event,lojaId){
+  event.stopPropagation();
+  document.getElementById('dd-cadastro-loja')?.remove();
+  const opts=[
+    {key:'aprovado',label:'✅ Aprovado',color:'#10b981'},
+    {key:'em_analise',label:'🔍 Em Análise',color:'#3b82f6'},
+    {key:'pendente',label:'⏳ Pendente',color:'#6b7280'},
+    {key:'reprovado_com_motivo',label:'❌ Reprovado (com motivo)',color:'#ef4444'},
+  ];
+  const dd=document.createElement('div');
+  dd.id='dd-cadastro-loja';
+  dd.style.cssText='position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:180px';
+  const rect=event.currentTarget.getBoundingClientRect();
+  dd.style.top=(rect.bottom+4)+'px';dd.style.left=rect.left+'px';
+  const _lojaNomeDd=event.currentTarget.closest('tr')?.querySelector('td')?.textContent?.replace('🏪','').trim()||'';
+  dd.innerHTML=opts.map(o=>`<div onclick="${o.key==='reprovado_com_motivo'?`_reprovarLoja('${lojaId}','${_lojaNomeDd.replace(/'/g,"\\'")}')`:`_setCadastroStatusLoja('${lojaId}','${o.key}')`}" style="padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;color:${o.color};border-radius:6px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${o.label}</div>`).join('');
+  document.body.appendChild(dd);
+  setTimeout(()=>document.addEventListener('click',()=>document.getElementById('dd-cadastro-loja')?.remove(),{once:true}),0);
+}
+// Diferente de entregadores: aprovar/reprovar uma loja também precisa
+// espelhar em usuarios_painel.ativo (é essa coluna, não status_cadastro,
+// que o fazerLogin() já existente confere) — sem isso a loja aprovada
+// continuaria sem conseguir entrar.
+async function _setCadastroStatusLoja(lojaId,novoStatus){
+  document.getElementById('dd-cadastro-loja')?.remove();
+  const patch={status_cadastro:novoStatus,updated_at:new Date().toISOString()};
+  if(novoStatus==='aprovado')patch.ativo=true;
+  await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
+  await dbPatch('usuarios_painel',{ativo:novoStatus==='aprovado'},`?loja_id=eq.${lojaId}`);
+  showNotif(`Status atualizado: ${novoStatus}`,'');
+  renderCadastrosPage('estabelecimentos');
+}
+function _reprovarLoja(id,nome){
+  let modal=document.getElementById('modal-reprovar-loja');
+  if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">❌ Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
+      <div class="fi"><label>Motivo</label><textarea id="rep-loja-motivo" placeholder="Ex: Dados incompletos, endereço inválido..." style="min-height:80px;resize:vertical"></textarea></div>
+      <div id="rep-loja-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">Cancelar</button>
+      <button onclick="_confirmarReprovacaoLoja('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">❌ Confirmar</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+async function _confirmarReprovacaoLoja(id){
+  const motivo=document.getElementById('rep-loja-motivo')?.value?.trim()||'';
+  const fb=document.getElementById('rep-loja-feedback');
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=await dbPatch('lojas',{status_cadastro:'reprovado',motivo_reprovacao:motivo,ativo:false,updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  await dbPatch('usuarios_painel',{ativo:false},`?loja_id=eq.${id}`);
+  document.getElementById('modal-reprovar-loja')?.classList.remove('open');
+  showNotif('❌ Loja reprovada',motivo.substring(0,50),'var(--red)');
+  renderCadastrosPage('estabelecimentos');
 }
 
 // ── CLIENTES (app "Let's Go: Comida e Mercado") ──
@@ -5239,6 +5320,44 @@ async function criarLoja(){
   await logAcao('criar_loja',{nome,email});
   fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja cadastrada!</div>';showNotif('Loja criada!',`${nome} pode acessar com ${email}`);
   setTimeout(()=>fecharModal('modal-loja'),2000);
+}
+
+// Autocadastro público de loja (tela de login, sem sessão) — mesmo conceito
+// de "Em Análise" já usado pra motoboy (entregadores.status_cadastro), mas
+// sem precisar de trigger: lojas/usuarios_painel não têm RLS habilitada
+// hoje, então o INSERT direto com a chave anon (_authHeader cai pro
+// fallback `Bearer ${SB_KEY}` quando não há sessão) já funciona. Cria a
+// conta de login já na hora (mesma UX do motoboy — a loja só não consegue
+// entrar até ser aprovada, porque usuarios_painel.ativo nasce false; login
+// já exige ativo=eq.true, então não precisou de gate novo nenhum).
+async function enviarCadastroLoja(){
+  const g=(id)=>document.getElementById(id)?.value?.trim()||'';
+  const nome=g('cl-nome'),endereco=g('cl-endereco'),telefone=g('cl-telefone'),celular=g('cl-celular'),responsavel=g('cl-responsavel'),email=g('cl-email');
+  const senha=document.getElementById('cl-senha')?.value||'';
+  const fb=document.getElementById('cl-feedback');
+  if(!nome||!endereco||!telefone||!celular||!responsavel||!email||!senha){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Preencha todos os campos.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
+  fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">⏳ Enviando cadastro...</div>';
+  const auth=await _criarContaAuth(email,senha);
+  if(!auth.ok){fb.innerHTML=`<div style="color:var(--red,#ef4444);font-size:13px">❌ ${auth.error}</div>`;return;}
+  let lat=parseFloat(document.getElementById('cl-lat')?.value)||null;
+  let lng=parseFloat(document.getElementById('cl-lng')?.value)||null;
+  if(endereco&&(!lat||!lng)){
+    fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">📍 Geocodificando endereço...</div>';
+    const geo=await geocodificarEndereco(endereco).catch(()=>null);
+    if(geo){lat=geo.lat;lng=geo.lng;}
+  }
+  const payload={nome,endereco,telefone,celular,responsavel,email,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng};
+  const lojas=await db('lojas','POST',payload);
+  if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">❌ Erro ao enviar cadastro.</div>';return;}
+  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
+  fb.innerHTML='<div style="color:var(--green,#10b981);font-size:13px">✅ Cadastro enviado! Você será avisado quando for aprovado.</div>';
+  showNotif('✅ Cadastro enviado!','Nosso time vai analisar e liberar seu acesso em breve.');
+  setTimeout(()=>{
+    fecharModal('modal-cadastro-loja');
+    ['cl-nome','cl-endereco','cl-lat','cl-lng','cl-telefone','cl-celular','cl-responsavel','cl-email','cl-senha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    fb.innerHTML='';
+  },2500);
 }
 
 async function renderUsuariosPage(){
