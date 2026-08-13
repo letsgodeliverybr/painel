@@ -1414,7 +1414,7 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       #tabela-mapa-section { min-height: auto !important; max-height: 60vh !important; }
       #tabela-mapa-section > div:nth-child(2) { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
       #tabela-mapa-section table td, #tabela-mapa-section table th { font-size: 11px !important; padding: 6px 8px !important; }
-      .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 100 !important; top: 0 !important; bottom: 0 !important; left: 0 !important; transform: translateX(0); transition: transform 0.3s ease; }
+      .sb-dark { width: 100% !important; min-width: 0 !important; position: absolute !important; z-index: 1100 !important; top: 0 !important; bottom: 0 !important; left: 0 !important; transform: translateX(0); transition: transform 0.3s ease; }
       /* width:0 de .sb-minimized (não !important) perde pro width:100%!important
          acima — sem isso, minimizar não escondia nada no mobile, só "existia"
          invisível ocupando a tela inteira. transform desloca pra fora, width
@@ -2650,7 +2650,7 @@ function renderMapaPage(){
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important">
-          <button onclick="abrirNavSidebar()" title="Menu" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#111 !important;display:flex;align-items:center;justify-content:center">☰</button>
+          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#111 !important;display:flex;align-items:center;justify-content:center">☰</button>
           <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Finalizados hoje</div></div></div>
           <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
