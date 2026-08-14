@@ -5157,25 +5157,13 @@ async function renderMetricasPage(){
         <div style="padding:20px 20px 8px" id="mm-chart-pedidos-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">🏦 Metas de Caixa</span></div>
-      <div style="padding:20px">
-        <div class="fi" style="max-width:280px;margin-bottom:16px">
-          <label>Valor atual em caixa (R$)</label>
-          <div style="display:flex;gap:10px;align-items:center">
-            <input type="number" id="meta-caixa-valor" step="0.01" min="0" placeholder="0,00"/>
-            <button class="btn-modal-primary" onclick="_salvarMetaCaixa()">💾 Salvar</button>
-          </div>
-        </div>
-        <div id="meta-caixa-progresso"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
-      </div>
-    </div>`:''}
+    ${_METAS_CONFIG.map(_renderMetaCard).join('')}`:''}
   </div>`;
   _buscarMetricas();
   // Distribuição por categoria é foto do total atual, sem relação com o
   // filtro DE/ATÉ da tela — busca uma vez só, não refaz quando o usuário
   // clica "Aplicar" no período.
-  if(currentPerfil==='adm'){_buscarLojasPorCategoria();_buscarMetaCaixa();}
+  if(currentPerfil==='adm'){_buscarLojasPorCategoria();_buscarTodasMetas();}
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
@@ -5235,21 +5223,45 @@ async function _buscarMetricas(){
     chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo,clicavel:true,chartId:'pedidos'});
   }
 }
-// Metas de Caixa — card admin-only na tela Métricas Let's Go. Valor é
-// preenchido manualmente (não calculado de pedidos/GMV) e persistido na
-// tabela chave/valor `configuracoes` (mesma tabela/padrão já usado pelo
-// Preço Dinâmico — ver _pdChave/salvarPrecoDinamico), sem precisar criar
-// tabela nova. Marcos fixos definem 4 segmentos de progresso.
-const _META_CAIXA_CHAVE='meta_caixa_valor_atual';
-const _META_CAIXA_MARCOS=[1000,10000,100000,1000000];
+// Metas (Caixa Operacional/Saque Rápido/Patrimônio BTC/Patrimônio Imóveis)
+// — cards admin-only na tela Métricas Let's Go, mesma estrutura pros 4
+// (input de valor manual + Salvar + barra de progresso em 4 marcos fixos).
+// Valor é preenchido manualmente (não calculado de pedidos/GMV) e
+// persistido na tabela chave/valor `configuracoes` (mesmo padrão já usado
+// pelo Preço Dinâmico — ver _pdChave/salvarPrecoDinamico), uma linha por
+// meta (chave própria cada uma, nunca compartilham registro). `chave` do
+// primeiro mantida igual à original (meta_caixa_valor_atual) — só o
+// título mudou, o valor já salvo por quem já usava o card continua valendo.
+const _METAS_CONFIG=[
+  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional'},
+  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Caixa Saque Rápido'},
+  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta Patrimônio em BTC'},
+  {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis'},
+];
+const _META_MARCOS=[1000,10000,100000,1000000];
 function _fmtMoedaCaixa(v){return`R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+function _renderMetaCard(meta){
+  return`<div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">${meta.titulo}</span></div>
+      <div style="padding:20px">
+        <div class="fi" style="max-width:280px;margin-bottom:16px">
+          <label>Valor atual (R$)</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="number" id="meta-valor-${meta.id}" step="0.01" min="0" placeholder="0,00"/>
+            <button class="btn-modal-primary" onclick="_salvarMeta('${meta.id}')">💾 Salvar</button>
+          </div>
+        </div>
+        <div id="meta-progresso-${meta.id}"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
+      </div>
+    </div>`;
+}
 // Cada marco vira um segmento de largura igual na barra (0→1º marco, 1º→2º,
 // ...) — evita que R$1.000/R$10.000 fiquem microscópicos ao lado de
 // R$1.000.000 numa barra linear única.
-function _renderMetaCaixaProgresso(valor){
+function _renderMetaProgresso(valor){
   valor=Number(valor)||0;
-  const segmentos=_META_CAIXA_MARCOS.map((m,i)=>{
-    const start=i===0?0:_META_CAIXA_MARCOS[i-1];
+  const segmentos=_META_MARCOS.map((m,i)=>{
+    const start=i===0?0:_META_MARCOS[i-1];
     const end=m;
     const pct=valor<=start?0:valor>=end?100:(valor-start)/(end-start)*100;
     return{label:_fmtMoedaCaixa(m),pct,atingido:valor>=end};
@@ -5262,31 +5274,34 @@ function _renderMetaCaixaProgresso(valor){
     </div>`).join('');
   const proximoIdx=segmentos.findIndex(s=>!s.atingido);
   const resumo=proximoIdx===-1
-    ?`🏆 Meta máxima atingida! Caixa atual: <b>${_fmtMoedaCaixa(valor)}</b>`
-    :`Caixa atual: <b>${_fmtMoedaCaixa(valor)}</b> — ${proximoIdx>0?`passou de <b>${_fmtMoedaCaixa(_META_CAIXA_MARCOS[proximoIdx-1])}</b>, `:''}avançando rumo a <b>${_fmtMoedaCaixa(_META_CAIXA_MARCOS[proximoIdx])}</b> (<b>${segmentos[proximoIdx].pct.toFixed(1)}%</b>)`;
+    ?`🏆 Meta máxima atingida! Valor atual: <b>${_fmtMoedaCaixa(valor)}</b>`
+    :`Valor atual: <b>${_fmtMoedaCaixa(valor)}</b> — ${proximoIdx>0?`passou de <b>${_fmtMoedaCaixa(_META_MARCOS[proximoIdx-1])}</b>, `:''}avançando rumo a <b>${_fmtMoedaCaixa(_META_MARCOS[proximoIdx])}</b> (<b>${segmentos[proximoIdx].pct.toFixed(1)}%</b>)`;
   return`<div style="display:flex;gap:10px;margin-bottom:14px">${barras}</div><div style="font-size:13px;color:var(--text2)">${resumo}</div>`;
 }
-async function _buscarMetaCaixa(){
-  const el=document.getElementById('meta-caixa-progresso');if(!el)return;
-  const rows=await db('configuracoes','GET',null,`?chave=eq.${_META_CAIXA_CHAVE}`);
+async function _buscarMeta(metaId){
+  const meta=_METAS_CONFIG.find(m=>m.id===metaId);if(!meta)return;
+  const el=document.getElementById(`meta-progresso-${metaId}`);if(!el)return;
+  const rows=await db('configuracoes','GET',null,`?chave=eq.${meta.chave}`);
   const valor=parseFloat(rows?.[0]?.valor)||0;
-  const input=document.getElementById('meta-caixa-valor');
+  const input=document.getElementById(`meta-valor-${metaId}`);
   if(input)input.value=valor>0?valor.toFixed(2):'';
-  el.innerHTML=_renderMetaCaixaProgresso(valor);
+  el.innerHTML=_renderMetaProgresso(valor);
 }
-async function _salvarMetaCaixa(){
-  const input=document.getElementById('meta-caixa-valor');
+function _buscarTodasMetas(){return Promise.all(_METAS_CONFIG.map(m=>_buscarMeta(m.id)));}
+async function _salvarMeta(metaId){
+  const meta=_METAS_CONFIG.find(m=>m.id===metaId);if(!meta)return;
+  const input=document.getElementById(`meta-valor-${metaId}`);
   const valor=parseFloat(input?.value);
   if(!(valor>=0)){showNotif('⚠️ Valor inválido','Digite um valor válido em R$','var(--yellow)');return;}
   const agora=new Date().toISOString();
-  const existing=await db('configuracoes','GET',null,`?chave=eq.${_META_CAIXA_CHAVE}`);
+  const existing=await db('configuracoes','GET',null,`?chave=eq.${meta.chave}`);
   const res=(existing&&existing.length>0)
-    ?await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.${_META_CAIXA_CHAVE}`)
-    :await db('configuracoes','POST',{chave:_META_CAIXA_CHAVE,valor:String(valor),created_at:agora,updated_at:agora});
-  if(!res||res.length===0){showNotif('❌ Erro ao salvar','Não foi possível salvar o valor em caixa','var(--red)');return;}
-  showNotif('✅ Valor salvo!','Caixa atualizado com sucesso');
-  const el=document.getElementById('meta-caixa-progresso');
-  if(el)el.innerHTML=_renderMetaCaixaProgresso(valor);
+    ?await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.${meta.chave}`)
+    :await db('configuracoes','POST',{chave:meta.chave,valor:String(valor),created_at:agora,updated_at:agora});
+  if(!res||res.length===0){showNotif('❌ Erro ao salvar','Não foi possível salvar o valor','var(--red)');return;}
+  showNotif('✅ Valor salvo!',`${meta.titulo} atualizado com sucesso`);
+  const el=document.getElementById(`meta-progresso-${metaId}`);
+  if(el)el.innerHTML=_renderMetaProgresso(valor);
 }
 // Sem overflow-x/scroll de propósito — as barras encolhem (min-width:0)
 // pra caber todos os meses do período na largura do card, em vez de
