@@ -2067,8 +2067,10 @@ async function _criarEntregaRapida(){
     return;
   }
   const valorPedido=parseFloat(document.getElementById('cr-valor')?.value);
-  if(!(valorPedido>0)){
-    showNotif('Valor obrigatório','Preencha o valor do pedido que o motoboy deve cobrar do cliente','var(--yellow)');
+  // >=0, não >0 — 0 é um valor válido (pedido já pago, nada a cobrar na
+  // entrega). Só bloqueia vazio/inválido (NaN) ou negativo.
+  if(!(valorPedido>=0)){
+    showNotif('Valor obrigatório','Preencha o valor do pedido que o motoboy deve cobrar do cliente (0 se já estiver pago)','var(--yellow)');
     const _vlEl=document.getElementById('cr-valor');
     if(_vlEl){_vlEl.focus();_vlEl.style.borderColor='#ef4444';setTimeout(()=>{_vlEl.style.borderColor='#3A3A3A';},2500);}
     return;
