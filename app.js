@@ -1431,6 +1431,14 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       :root:not(.light) .pd-card:hover { border-color: #6366f1 !important; }
       :root:not(.light) .sb-group-dark { background: #1a3a5c !important; }
     }
+    /* Grid dos cards de Meta (Métricas Let's Go) — mobile-first: 1 coluna
+       por padrão (sempre cabe, sem depender de auto-fit/minmax encolher
+       abaixo de um mínimo, que estourava a largura em telas estreitas),
+       2 colunas só a partir de 900px. */
+    .metas-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 900px) {
+      .metas-grid { grid-template-columns: 1fr 1fr; }
+    }
     /* ── MOBILE ── */
     @media (max-width: 768px) {
       .mapa-container { height: 250px !important; flex-shrink: 0 !important; }
@@ -5157,7 +5165,7 @@ async function renderMetricasPage(){
         <div style="padding:20px 20px 8px" id="mm-chart-pedidos-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
-    ${_METAS_CONFIG.map(_renderMetaCard).join('')}`:''}
+    <div class="metas-grid">${_METAS_CONFIG.map(_renderMetaCard).join('')}</div>`:''}
   </div>`;
   _buscarMetricas();
   // Distribuição por categoria é foto do total atual, sem relação com o
@@ -5241,19 +5249,27 @@ const _METAS_CONFIG=[
 const _META_MARCOS=[1000,10000,100000,1000000];
 function _fmtMoedaCaixa(v){return`R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
 function _renderMetaCard(meta){
-  return`<div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">${meta.titulo}</span></div>
-      <div style="padding:20px">
-        <div class="fi" style="max-width:280px;margin-bottom:16px">
-          <label>Valor atual (R$)</label>
-          <div style="display:flex;gap:10px;align-items:center">
-            <input type="number" id="meta-valor-${meta.id}" step="0.01" min="0" placeholder="0,00"/>
-            <button class="btn-modal-primary" onclick="_salvarMeta('${meta.id}')">💾 Salvar</button>
+  return`<div class="card">
+      <div class="card-header" style="padding:10px 16px"><span class="card-title" style="font-size:13px">${meta.titulo}</span></div>
+      <div style="padding:14px 16px">
+        <div class="fi" style="margin-bottom:10px">
+          <label style="font-size:11px">Valor atual (R$)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="meta-valor-${meta.id}" step="0.01" min="0" placeholder="0,00" style="flex:1;min-width:0"/>
+            <button class="btn-modal-primary" onclick="_salvarMeta('${meta.id}')" style="padding:8px 14px;font-size:12px;white-space:nowrap;flex-shrink:0">💾 Salvar</button>
           </div>
         </div>
-        <div id="meta-progresso-${meta.id}"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
+        <div id="meta-progresso-${meta.id}"><div style="color:var(--text3);text-align:center;padding:12px;font-size:12px">Carregando...</div></div>
       </div>
     </div>`;
+}
+// Formato enxuto (R$1mil/R$10mil/R$100mil/R$1mi) só pro rótulo embaixo de
+// cada barra — precisa caber em ~90px numa coluna de grid, "R$ 100.000,00"
+// por extenso quebrava linha/estourava a largura do card compacto.
+function _fmtMoedaMarco(v){
+  if(v>=1000000){const n=v/1000000;return`R$${n%1===0?n:n.toFixed(1)}mi`;}
+  if(v>=1000){const n=v/1000;return`R$${n%1===0?n:n.toFixed(1)}mil`;}
+  return`R$${v}`;
 }
 // Cada marco vira um segmento de largura igual na barra (0→1º marco, 1º→2º,
 // ...) — evita que R$1.000/R$10.000 fiquem microscópicos ao lado de
@@ -5264,19 +5280,19 @@ function _renderMetaProgresso(valor){
     const start=i===0?0:_META_MARCOS[i-1];
     const end=m;
     const pct=valor<=start?0:valor>=end?100:(valor-start)/(end-start)*100;
-    return{label:_fmtMoedaCaixa(m),pct,atingido:valor>=end};
+    return{label:_fmtMoedaMarco(m),pct,atingido:valor>=end};
   });
   const barras=segmentos.map(s=>`<div style="flex:1;min-width:0">
-      <div style="background:var(--surface2);border-radius:6px;height:14px;overflow:hidden">
+      <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
         <div style="height:100%;width:${s.pct.toFixed(1)}%;background:${s.atingido?'#22c55e':'var(--accent)'};transition:width .4s ease"></div>
       </div>
-      <div style="font-size:11px;color:${s.atingido?'#22c55e':'var(--text3)'};font-weight:${s.atingido?'700':'500'};text-align:center;margin-top:4px;white-space:nowrap">${s.atingido?'✅ ':''}${s.label}</div>
+      <div style="font-size:10px;color:${s.atingido?'#22c55e':'var(--text3)'};font-weight:${s.atingido?'700':'500'};text-align:center;margin-top:3px;white-space:nowrap">${s.atingido?'✅':''}${s.label}</div>
     </div>`).join('');
   const proximoIdx=segmentos.findIndex(s=>!s.atingido);
   const resumo=proximoIdx===-1
     ?`🏆 Meta máxima atingida! Valor atual: <b>${_fmtMoedaCaixa(valor)}</b>`
-    :`Valor atual: <b>${_fmtMoedaCaixa(valor)}</b> — ${proximoIdx>0?`passou de <b>${_fmtMoedaCaixa(_META_MARCOS[proximoIdx-1])}</b>, `:''}avançando rumo a <b>${_fmtMoedaCaixa(_META_MARCOS[proximoIdx])}</b> (<b>${segmentos[proximoIdx].pct.toFixed(1)}%</b>)`;
-  return`<div style="display:flex;gap:10px;margin-bottom:14px">${barras}</div><div style="font-size:13px;color:var(--text2)">${resumo}</div>`;
+    :`Valor atual: <b>${_fmtMoedaCaixa(valor)}</b> — ${proximoIdx>0?`passou de <b>${_fmtMoedaMarco(_META_MARCOS[proximoIdx-1])}</b>, `:''}rumo a <b>${_fmtMoedaMarco(_META_MARCOS[proximoIdx])}</b> (<b>${segmentos[proximoIdx].pct.toFixed(1)}%</b>)`;
+  return`<div style="display:flex;gap:6px;margin-bottom:10px">${barras}</div><div style="font-size:12px;color:var(--text2);line-height:1.4">${resumo}</div>`;
 }
 async function _buscarMeta(metaId){
   const meta=_METAS_CONFIG.find(m=>m.id===metaId);if(!meta)return;
