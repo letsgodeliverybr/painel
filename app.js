@@ -47,6 +47,8 @@ let _tabelaPedidosDia=[],_tabelaPagina=0;
 let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
 let _estabelecimentosFiltro='todos';
+let _entBusca='',_entDataCache=[];
+let _estabelecimentosBusca='',_estabelecimentosDataCache=[];
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
@@ -3891,6 +3893,7 @@ function _estabelecimentosSetFiltro(filtro){_estabelecimentosFiltro=filtro;_rend
 // anteriores à migration add_lojas_status_cadastro.sql ainda não aplicada.
 async function _renderEstabelecimentosTab(el){
   const data=await db('lojas','GET',null,'?order=created_at.desc');
+  _estabelecimentosDataCache=data;
   const _cTotal=data.length;
   const _cAprov=data.filter(l=>(l.status_cadastro||'aprovado')==='aprovado').length;
   const _cAnalise=data.filter(l=>l.status_cadastro==='em_analise').length;
@@ -3907,13 +3910,21 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
     ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
     ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap">${filtroBtns}</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
-  let filtered;
-  if(_estabelecimentosFiltro==='aprovadas')filtered=data.filter(l=>(l.status_cadastro||'aprovado')==='aprovado');
-  else if(_estabelecimentosFiltro==='em_analise')filtered=data.filter(l=>l.status_cadastro==='em_analise');
-  else if(_estabelecimentosFiltro==='pendentes')filtered=data.filter(l=>l.status_cadastro==='pendente');
-  else if(_estabelecimentosFiltro==='reprovadas')filtered=data.filter(l=>l.status_cadastro==='reprovado');
-  else filtered=data;
+  const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  _renderTbodyEstabelecimentos();
+}
+// Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
+// a cada tecla digitada na busca, pra não perder o foco do campo (innerHTML
+// do container inteiro recriaria o <input>, tirando o cursor a cada letra).
+function _renderTbodyEstabelecimentos(){
+  let filtered=_estabelecimentosDataCache;
+  if(_estabelecimentosFiltro==='aprovadas')filtered=filtered.filter(l=>(l.status_cadastro||'aprovado')==='aprovado');
+  else if(_estabelecimentosFiltro==='em_analise')filtered=filtered.filter(l=>l.status_cadastro==='em_analise');
+  else if(_estabelecimentosFiltro==='pendentes')filtered=filtered.filter(l=>l.status_cadastro==='pendente');
+  else if(_estabelecimentosFiltro==='reprovadas')filtered=filtered.filter(l=>l.status_cadastro==='reprovado');
+  const termo=(_estabelecimentosBusca||'').trim().toLowerCase();
+  if(termo)filtered=filtered.filter(l=>(l.nome||'').toLowerCase().includes(termo));
   const tbody=document.getElementById('tbody-estabelecimentos');if(!tbody)return;
   const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'em_rota');
   tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
@@ -3922,6 +3933,7 @@ async function _renderEstabelecimentosTab(el){
     return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
   }).join('');
 }
+function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
 function _abrirDropdownCadastroLoja(event,lojaId){
   event.stopPropagation();
   document.getElementById('dd-cadastro-loja')?.remove();
@@ -4009,6 +4021,7 @@ async function _renderClientesAppTab(el){
 async function _renderEntregadoresTab(el){
   const _entQuery='?select=*&order=updated_at.desc';
   const data=await db('entregadores','GET',null,_entQuery);
+  _entDataCache=data;
   const _cTotal=data.length;
   const _cAprov=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado')).length;
   const _cAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
@@ -4026,12 +4039,43 @@ async function _renderEntregadoresTab(el){
     ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
     ${btnFiltro('reprovados','❌ Reprovados',_cReprov)}`;
 
+  const _buscaEsc=(_entBusca||'').replace(/"/g,'&quot;');
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar nome ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
+        <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
+      </div>
+    </div>
+    <div class="card"><div style="overflow-x:auto">
+      <table><thead id="thead-entregadores"></thead><tbody id="tbody-entregadores"></tbody></table>
+    </div></div>`;
+  _renderTbodyEntregadores();
+}
+// Nome ou CPF, comparação de CPF ignora pontuação (busca "12345678900" acha
+// "123.456.789-00" e vice-versa).
+function _entMatchBusca(e,termo){
+  if(!termo)return true;
+  const t=termo.trim().toLowerCase();
+  if((e.nome||'').toLowerCase().includes(t))return true;
+  const tDigits=t.replace(/\D/g,'');
+  if(tDigits&&(e.cpf||'').replace(/\D/g,'').includes(tDigits))return true;
+  return false;
+}
+// Só refiltra/re-renderiza thead+tbody (não o toolbar/input inteiro) —
+// chamado a cada tecla digitada na busca, pra não perder o foco do campo.
+// thead muda de colunas conforme o filtro de status (em_analise tem um
+// layout diferente dos demais) — por isso é recalculado aqui também, mas
+// sem tocar no <input> de busca, que fica intacto no DOM.
+function _renderTbodyEntregadores(){
   let filtered;
-  if(_entFiltro==='aprovados') filtered=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
-  else if(_entFiltro==='em_analise') filtered=data.filter(e=>e.status_cadastro==='em_analise');
-  else if(_entFiltro==='pendentes') filtered=data.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
-  else if(_entFiltro==='reprovados') filtered=data.filter(e=>e.status_cadastro==='reprovado');
-  else filtered=data;
+  if(_entFiltro==='aprovados') filtered=_entDataCache.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
+  else if(_entFiltro==='em_analise') filtered=_entDataCache.filter(e=>e.status_cadastro==='em_analise');
+  else if(_entFiltro==='pendentes') filtered=_entDataCache.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
+  else if(_entFiltro==='reprovados') filtered=_entDataCache.filter(e=>e.status_cadastro==='reprovado');
+  else filtered=_entDataCache;
+  filtered=filtered.filter(e=>_entMatchBusca(e,_entBusca));
 
   let theadHtml,tbodyHtml;
   const _fotoBtn=(url)=>url?`<button onclick="window.open('${url}','_blank')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
@@ -4076,18 +4120,10 @@ async function _renderEntregadoresTab(el){
       </tr>`).join('');
   }
 
-  el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">${filtroBtns}</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
-        <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
-      </div>
-    </div>
-    <div class="card"><div style="overflow-x:auto">
-      <table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>
-    </div></div>`;
+  const thead=document.getElementById('thead-entregadores');if(thead)thead.innerHTML=theadHtml;
+  const tbody=document.getElementById('tbody-entregadores');if(tbody)tbody.innerHTML=tbodyHtml;
 }
+function _entSetBusca(v){_entBusca=v;_renderTbodyEntregadores();}
 
 function _entSetFiltro(filtro){_entFiltro=filtro;renderCadastrosPage('entregadores');}
 
