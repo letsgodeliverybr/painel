@@ -5245,6 +5245,12 @@ const _METAS_CONFIG=[
   {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Caixa Saque Rápido - Caixa Econômica Federal'},
   {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta Patrimônio em BTC'},
   {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis'},
+  // Ordem importa: grid é 2 colunas preenchidas em ordem (linha a linha) —
+  // com os 4 acima ocupando exatamente 2 linhas, colocar Dólar/Euro em
+  // seguida os posiciona embaixo de BTC/Imóveis respectivamente, sem
+  // precisar de nenhuma lógica extra de posicionamento.
+  {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio em Dólar - Banco nos Estados Unidos'},
+  {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio em Euro - Banco na Europa'},
 ];
 const _META_MARCOS=[1000,10000,100000,1000000];
 function _fmtMoedaCaixa(v){return`R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
