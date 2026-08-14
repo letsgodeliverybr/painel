@@ -5241,8 +5241,8 @@ async function _buscarMetricas(){
 // primeiro mantida igual à original (meta_caixa_valor_atual) — só o
 // título mudou, o valor já salvo por quem já usava o card continua valendo.
 const _METAS_CONFIG=[
-  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional'},
-  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Caixa Saque Rápido'},
+  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional - Banco do Brasil'},
+  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Caixa Saque Rápido - Caixa Econômica Federal'},
   {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta Patrimônio em BTC'},
   {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis'},
 ];
