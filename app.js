@@ -4925,12 +4925,17 @@ async function _buscarPedidosAdmin(){
   const lojaId=document.getElementById('fp-loja')?.value;
   const entId=document.getElementById('fp-entregador')?.value;
   const numBusca=(document.getElementById('fp-numero')?.value||'').trim();
-  // limit alto (não 500) — com mais de 500 pedidos no período, os cards de
-  // resumo (Total, Finalizados, Cancelados, KM, Faturamento, Custo, Lucro)
-  // são todos calculados sobre esse array, e um limite baixo cortava tudo
-  // silenciosamente numa janela deslizante dos mais recentes.
-  let qs=`?order=created_at.desc&limit=10000${_lojaFiltro()}`;
-  let qsCreditos=`?select=tipo,valor,observacoes${_lojaFiltro()}`;
+  // Sem limit= aqui de propósito — mesmo um limit=10000 explícito não
+  // adianta, porque o projeto Supabase tem um teto de linhas por request
+  // configurado no lado do servidor (Max Rows da API, hoje 1000) que
+  // sobrepõe qualquer limit= maior mandado pelo client, cortando o
+  // resultado silenciosamente numa janela dos mais recentes. _dbTodasLinhas
+  // pagina em blocos (offset/limit) até esgotar de verdade, contornando
+  // esse teto pra qualquer volume no período. Os cards de resumo (Total,
+  // Finalizados, Cancelados, KM, Faturamento, Custo, Lucro) são todos
+  // calculados sobre esse array, então precisam do conjunto completo.
+  let qs=`?order=created_at.desc${_lojaFiltro()}`;
+  let qsCreditos=`?select=tipo,valor,observacoes&order=created_at.desc${_lojaFiltro()}`;
   // pedidos.created_at é `timestamp` SEM fuso, já em hora local de Brasília
   // (confirmado via information_schema) — compara direto, sem Date()/-03:00.
   // creditos_lojas.created_at é `timestamptz` de verdade (também confirmado)
@@ -4949,7 +4954,7 @@ async function _buscarPedidosAdmin(){
   // dataIni e o dia 1 do mês de dataFim já cobre todo mês entre os dois.
   const _mesIni=dataIni?dataIni.slice(0,7)+'-01':null;
   const _mesFim=dataFim?dataFim.slice(0,7)+'-01':null;
-  const qsContasPagar=_mesIni&&_mesFim?`?status=eq.pago&competencia=gte.${_mesIni}&competencia=lte.${_mesFim}`:'?status=eq.pago';
+  const qsContasPagar=(_mesIni&&_mesFim?`?status=eq.pago&competencia=gte.${_mesIni}&competencia=lte.${_mesFim}`:'?status=eq.pago')+'&order=id.asc';
   // Crédito/débito manual de entregador (Créditos > Crédito/Débito
   // Entregadores) listado aqui como linha extra, só pra adm — não é um pedido
   // de verdade, então não filtra por loja/número (não se aplicam) e não entra
@@ -4960,7 +4965,7 @@ async function _buscarPedidosAdmin(){
   if(entId)qsCreditosEnt+=`&entregador_id=eq.${entId}`;
   if(dataIni)qsCreditosEnt+=`&data=gte.${dataIni}`;
   if(dataFim)qsCreditosEnt+=`&data=lte.${dataFim}`;
-  const [_res,_creditosRes,_contasPagarRes,_creditosEntRes]=await Promise.all([db('pedidos','GET',null,qs),db('creditos_lojas','GET',null,qsCreditos),db('contas_pagar','GET',null,qsContasPagar),_mostrarCreditosEntregador?db('creditos_entregadores','GET',null,qsCreditosEnt):Promise.resolve([])]);
+  const [_res,_creditosRes,_contasPagarRes,_creditosEntRes]=await Promise.all([_dbTodasLinhas('pedidos',qs,1000),_dbTodasLinhas('creditos_lojas',qsCreditos,1000),_dbTodasLinhas('contas_pagar',qsContasPagar,1000),_mostrarCreditosEntregador?_dbTodasLinhas('creditos_entregadores',qsCreditosEnt,1000):Promise.resolve([])]);
   let arr=Array.isArray(_res)?_res:[];
   if(entId)arr=arr.filter(p=>(p.motoboy_id||p.entregador_id)===entId);
   if(numBusca)arr=arr.filter(p=>String(p.numero||'').includes(numBusca));
