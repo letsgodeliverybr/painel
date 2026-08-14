@@ -206,15 +206,48 @@ const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(data
 const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
 function formatarDataBR(data){if(!data)return'—';if(typeof data==='string'){const m=data.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;}const d=data instanceof Date?data:new Date(data);if(isNaN(d))return'—';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});}
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+// Timestamp "agora" pras colunas timestamp SEM fuso (pedidos.created_at/
+// updated_at/finalizado_em/pronto_em/aceito_em/em_rota_em, entregadores.
+// updated_at, lojas.created_at — mesma lista do comentário "REGRA DE FUSO"
+// abaixo). new Date().toISOString() é UTC com 'Z' — errado pra essas
+// colunas, que esperam os dígitos já em hora local de Brasília, sem
+// offset (o valor É a hora de parede de Brasília, guardado como texto).
+// Bug real encontrado em produção: no INSERT de pedido, tanto mandar
+// toISOString() quanto OMITIR created_at (contando com o DEFAULT now() da
+// coluna) gravava dígitos de UTC — o DEFAULT da coluna cai pro fuso da
+// sessão do Postgres (UTC), não Brasília. #003/#3462 confirmados
+// gravados 3h à frente do relógio real (14:19 gravado quando eram 11:19
+// em Brasília). NUNCA usar .toISOString() nem confiar no DEFAULT da
+// coluna pra essas colunas específicas — sempre mandar _agoraBrasilia()
+// explicitamente.
+const _agoraBrasilia=()=>{
+  const d=new Date();
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(d).map(x=>[x.type,x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}.${String(d.getMilliseconds()).padStart(3,'0')}`;
+};
 const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
 // Igual a _lojaFiltro(), mas pra usar direto na tabela lojas — ela não tem
 // coluna loja_id, a própria chave é id.
 const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&id=eq.${currentUser.loja_id}`:'';
 // ⚠️ REGRA DE FUSO — LER ANTES DE MEXER EM QUALQUER FILTRO DE DATA/HORA.
-// Confirmado via information_schema (ver migrations/add_pedidos_finalizados_por_mes_rpc.sql):
-//   pedidos.created_at / updated_at / finalizado_em / pronto_em / aceito_em / em_rota_em,
-//   entregadores.updated_at e lojas.created_at
+// Confirmado via information_schema (ver migrations/add_pedidos_finalizados_por_mes_rpc.sql)
+// e via inspeção direta de valores reais retornados pela API (presença/ausência
+// de offset '+00:00' na resposta — confirmado de novo 2026-08-14, bug do
+// horário +3h nos pedidos):
+//   pedidos.created_at / updated_at / finalizado_em / pronto_em / aceito_em /
+//   em_rota_em / pagamento_confirmado_em / agendado_para,
+//   entregadores.created_at / updated_at, lojas.created_at
 // são `timestamp` SEM fuso e o valor gravado JÁ É hora local de Brasília.
+// lojas.updated_at é DIFERENTE — é timestamptz de verdade (confirmado com
+// offset '+00:00' na resposta), trata como as tabelas timestamptz abaixo.
+//
+// NUNCA gravar new Date().toISOString() (UTC com 'Z') nessas colunas, e
+// NUNCA confiar no DEFAULT now() da coluna pra elas — os dois caem pro
+// fuso da sessão do Postgres (UTC), gravando os dígitos errados (3h à
+// frente do relógio real de Brasília). Sempre mandar _agoraBrasilia()
+// explicitamente no INSERT/UPDATE. Ler valores dessas colunas sempre via
+// _parseUtc/formatarHora/formatarDataHora (não _tsUtc — esse assume UTC
+// pra string sem offset, o oposto do que essas colunas precisam).
 // NUNCA aplicar AT TIME ZONE (SQL) nem _inicioDiaBrasilia/_fimDiaBrasilia ou
 // qualquer conversão -03:00 nessas colunas — compare a string local direto
 // (ex: `${data}T00:00:00`), igual pedidos_finalizados_por_mes faz.
@@ -1681,7 +1714,7 @@ async function _aplicarPrecoDinamico(p){
   const taxa_entrega=_calcTaxaLoja(merged);
   const mergedE={...p,preco_dinamico:pdE};
   const taxa_entrega_motoboy=_calcTaxaMotoboy(mergedE);
-  const patch={preco_dinamico:pdC,taxa_entrega,updated_at:new Date().toISOString()};
+  const patch={preco_dinamico:pdC,taxa_entrega,updated_at:_agoraBrasilia()};
   if(pdE>0)patch.taxa_entrega_motoboy=taxa_entrega_motoboy;
   await db('pedidos','PATCH',patch,`?id=eq.${p.id}`);
   Object.assign(p,patch);
@@ -1695,7 +1728,7 @@ async function processarAutoPronto(){
     const diff=(agora-new Date(base))/1000;
     if(diff>=60){
       const codigo=String(Math.floor(Math.random()*9000)+1000);
-      const res=await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora.toISOString(),codigo_confirmacao:codigo,updated_at:agora.toISOString()},`?id=eq.${p.id}`);
+      const res=await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:_agoraBrasilia(),codigo_confirmacao:codigo,updated_at:_agoraBrasilia()},`?id=eq.${p.id}`);
       if(res&&(Array.isArray(res)?res.length>0:res.id)){
         _pedidoStatusLock.set(p.id,{status:'pronto',status_detalhado:'pronto',expires:Infinity});
         p.status='pronto';p.status_detalhado='pronto';
@@ -1715,14 +1748,14 @@ async function processarPontosAutomaticos(){
   const prontos=allPedidos.filter(p=>(p.status_detalhado==='pronto'||p.status==='pronto')&&p.pronto_em&&!p.motoboy_id&&!p.entregador_id);
   for(const p of prontos){
     const base=p.pontos_base??p.pontos??4;
-    const minutos=(agora-_tsUtc(p.pronto_em))/60000;
+    const minutos=(agora-_parseUtc(p.pronto_em).getTime())/60000;
     let novosPontos;
     if(minutos<10)novosPontos=base;
     else if(minutos<20)novosPontos=base+150;
     else if(minutos<30)novosPontos=base+300;
     else novosPontos=base+700;
     if((p.pontos??base)!==novosPontos){
-      await db('pedidos','PATCH',{pontos:novosPontos,updated_at:new Date().toISOString()},`?id=eq.${p.id}`);
+      await db('pedidos','PATCH',{pontos:novosPontos,updated_at:_agoraBrasilia()},`?id=eq.${p.id}`);
       const el=document.getElementById(`pontos-${p.id}`);if(el)el.textContent=novosPontos;
       p.pontos=novosPontos;
     }
@@ -2038,7 +2071,7 @@ async function _criarEntregaRapida(){
   // visual (banner fixo + rótulo do botão) continua, ver
   // _atualizarBtnCriarEntrega(). Só saldo insuficiente (crédito) bloqueia
   // de verdade.
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const numFinal=((document.getElementById('cr-numero-pedido')?.value||'').trim())||String(Math.floor(Math.random()*9000+1000)).padStart(4,'0');
   const endFinal=complemento?`${endereco} - ${complemento}`:endereco;
   const geo=await geocodificarEndereco(endereco).catch(e=>{console.error('[CR] geocodificarEndereco erro:',e);return null;});
@@ -2060,7 +2093,7 @@ async function _criarEntregaRapida(){
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
   const _faixaCrSubmit=_faixasCr.find(f=>_distKm<=parseFloat(f.km_ate))||_faixasCr[_faixasCr.length-1];
   console.log(`[_criarEntregaRapida] origem_usada=loja distancia_km=${_distKm} faixa_aplicada=km_ate:${_faixaCrSubmit?.km_ate||'?'} pd_cliente=${_pdCliente}(${_pdOrigemCr}) taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -2227,7 +2260,7 @@ function abrirDropdownStatusTabela(event,pedidoId){
 
 async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   fecharDropdownStatus();
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='aceito')update.aceito_em=agora;
@@ -2249,7 +2282,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
 
 async function alterarStatusPedido(pedidoId,novoStatus){
   fecharDropdownStatus();
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
@@ -2285,7 +2318,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   if(tinhaMotoboy&&!confirm(`Desalocar o motoboy do pedido #${p?.numero||pedidoId.substring(0,6)} e voltar a ficar disponível para novo aceite?`))return;
   const btn=document.getElementById('btn-pronto-'+pedidoId);
   if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const update={status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora};
   if(tinhaMotoboy){update.motoboy_id=null;update.entregador_id=null;}
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
@@ -2470,7 +2503,8 @@ function _copiarCodigoPix(){
 
 async function confirmarPagamento(pedidoId){
   const _p=allPedidos.find(x=>x.id===pedidoId);
-  const patch={pagamento_confirmado:true,pagamento_confirmado_em:new Date().toISOString(),status:'finalizado',status_detalhado:'finalizado',finalizado_em:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const _agoraPg=_agoraBrasilia();
+  const patch={pagamento_confirmado:true,pagamento_confirmado_em:_agoraPg,status:'finalizado',status_detalhado:'finalizado',finalizado_em:_agoraPg,updated_at:_agoraPg};
   if(_p&&(_p.motoboy_id||_p.entregador_id)&&_p.taxa_entrega_motoboy==null)patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0);
   await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
   if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)){
@@ -2494,7 +2528,7 @@ function abrirInfoPedido(pedidoId){
   const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
   const sk=p.status_detalhado||p.status||'';
   const cor=corStatus(sk);
-  const previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+  const previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
   const restanteMs=previsaoMs-Date.now();
   const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
   const txMoto=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);
@@ -2777,7 +2811,7 @@ function renderMapaPage(){
 }
 
 async function _verificarAgendados(){
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const vencidos=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${agora}`);
   for(const p of vencidos){
     await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`);
@@ -3149,8 +3183,8 @@ function renderPedidosLista(){
       // cai no comportamento antigo (baseado em created_at).
       let previsaoMs,indicadorAtrasoHtml;
       if(p.pronto_em){
-        const minPassados=(Date.now()-_tsUtc(p.pronto_em))/60000;
-        previsaoMs=_tsUtc(p.pronto_em)+30*60*1000;
+        const minPassados=(Date.now()-_parseUtc(p.pronto_em).getTime())/60000;
+        previsaoMs=_parseUtc(p.pronto_em).getTime()+30*60*1000;
         if(minPassados<=30){
           const restanteMin=Math.round((previsaoMs-Date.now())/60000);
           indicadorAtrasoHtml=`<span style="font-weight:700;color:#10b981">${restanteMin}min</span>`;
@@ -3162,7 +3196,7 @@ function renderPedidosLista(){
           indicadorAtrasoHtml=`<span style="font-weight:700;color:#ef4444">Atrasado</span>`;
         }
       } else {
-        previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+        previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
         const restanteMin=Math.round((previsaoMs-Date.now())/60000);
         indicadorAtrasoHtml=`<span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min':'Atrasado'}</span>`;
       }
@@ -3464,8 +3498,15 @@ async function salvarEdicaoPedido(pedidoId){
     endereco_coleta:coletaOn?(document.getElementById('ep-endereco-coleta')?.value||null):null,
     contato_coleta:coletaOn?(document.getElementById('ep-contato-coleta')?.value||null):null,
     telefone_coleta:coletaOn?(document.getElementById('ep-telefone-coleta')?.value||null):null,
-    agendado_para:agendarOn&&agendadoParaVal?new Date(agendadoParaVal).toISOString():null,
-    updated_at:new Date().toISOString(),
+    // agendadoParaVal vem cru de um <input type="datetime-local"> ("YYYY-
+    // MM-DDTHH:MM") — já são os dígitos que o operador digitou, sem
+    // conceito de fuso nenhum. NÃO passar por new Date()/.toISOString():
+    // isso interpretaria como fuso do browser e devolveria UTC com 'Z',
+    // que o Postgres reconverte pelo fuso da sessão (UTC) ao gravar na
+    // coluna sem fuso — resultado 3h errado, mesma causa raiz do bug de
+    // created_at (ver _agoraBrasilia). Só completa segundos se faltar.
+    agendado_para:agendarOn&&agendadoParaVal?(agendadoParaVal.length===16?agendadoParaVal+':00':agendadoParaVal):null,
+    updated_at:_agoraBrasilia(),
   };
   if(_epTaxaExtraEl)update.taxa_extra=parseFloat(_epTaxaExtraEl.value)||0;
   if(_epGeo?.distKm){update.latitude=_epGeo.lat;update.longitude=_epGeo.lng;update.distancia_km=_epGeo.distKm;}
@@ -3478,7 +3519,7 @@ async function salvarEdicaoPedido(pedidoId){
   const pedidoMerge={...(pedidoAtual||{}), ...update};
   const novaTaxa=_calcTaxaLoja(pedidoMerge);
   if(novaTaxa>0){
-    await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:new Date().toISOString()},`?id=eq.${pedidoId}`);
+    await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:_agoraBrasilia()},`?id=eq.${pedidoId}`);
     update.taxa_entrega=novaTaxa;
   }
   const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],update);
@@ -3512,7 +3553,8 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
   const _p=allPedidos.find(x=>x.id===pedidoId);
   const taxaMotoboy=_p?(_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0)):0;
-  const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:new Date().toISOString(),updated_at:new Date().toISOString(),taxa_entrega_motoboy:taxaMotoboy};
+  const _patchAgora=_agoraBrasilia();
+  const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:_patchAgora,updated_at:_patchAgora,taxa_entrega_motoboy:taxaMotoboy};
   await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
@@ -3717,7 +3759,7 @@ async function _criarPedidoInterno(){
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando endereço...</div>';
   const geo=await geocodificarEndereco(endereco);
   if(!geo){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Endereço não encontrado. Verifique e tente novamente.</div>';return;}
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const finalLojaId=lojaIdSel;
   const _dupNp=await _checarEnderecoDuplicadoRecente(finalLojaId,geo,endereco);
   if(_dupNp){
@@ -3741,12 +3783,14 @@ async function _criarPedidoInterno(){
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const enderecoFinal=complemento?`${endereco} - ${complemento}`:endereco;
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,pontos_base:pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,pontos_base:pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
-  if(agendarOn&&agendadoParaVal)pedido.agendado_para=new Date(agendadoParaVal).toISOString();
+  // agendadoParaVal é cru do <input type="datetime-local"> — ver comentário
+  // igual em salvarEdicaoPedido (não passa por new Date()/.toISOString()).
+  if(agendarOn&&agendadoParaVal)pedido.agendado_para=agendadoParaVal.length===16?agendadoParaVal+':00':agendadoParaVal;
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
@@ -4028,7 +4072,7 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
   const novoValor=!atualDisponivel;
   const badge=document.getElementById('badge-disp-'+id);
   if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
-  const res=await dbPatch('entregadores',{disponivel:novoValor,updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  const res=await dbPatch('entregadores',{disponivel:novoValor,updated_at:_agoraBrasilia()},`?id=eq.${id}`);
   if(res===null){
     showNotif('❌ Erro ao atualizar disponibilidade','','var(--red)');
     if(badge){badge.textContent=atualDisponivel?'Online':'Offline';badge.style.background=atualDisponivel?'#10B981':'#6B7280';badge.style.cursor='pointer';badge.onclick=()=>_toggleDisponivelEntregador(id,atualDisponivel);}
@@ -4061,7 +4105,7 @@ async function _toggleStatusEntregador(id, statusAtual){
 }
 
 async function _aprovarEntregador(id){
-  const res=await dbPatch('entregadores',{aprovado:true,status_cadastro:'aprovado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  const res=await dbPatch('entregadores',{aprovado:true,status_cadastro:'aprovado',updated_at:_agoraBrasilia()},`?id=eq.${id}`);
   if(res===null){showNotif('❌ Erro ao aprovar','','var(--red)');return;}
   showNotif('✅ Entregador aprovado!','','var(--green)');
   renderCadastrosPage('entregadores');
@@ -4090,7 +4134,7 @@ async function _confirmarReprovacao(id){
   const fb=document.getElementById('rep-feedback');
   if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
-  const res=await dbPatch('entregadores',{aprovado:false,status_cadastro:'reprovado',motivo_reprovacao:motivo,updated_at:new Date().toISOString()},`?id=eq.${id}`);
+  const res=await dbPatch('entregadores',{aprovado:false,status_cadastro:'reprovado',motivo_reprovacao:motivo,updated_at:_agoraBrasilia()},`?id=eq.${id}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
   document.getElementById('modal-reprovar-ent')?.classList.remove('open');
   showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
@@ -4117,7 +4161,7 @@ function _abrirDropdownCadastro(event,entId){
 }
 async function _setCadastroStatus(entId,novoStatus){
   document.getElementById('dd-cadastro')?.remove();
-  const patch={status_cadastro:novoStatus,updated_at:new Date().toISOString()};
+  const patch={status_cadastro:novoStatus,updated_at:_agoraBrasilia()};
   if(novoStatus==='aprovado'){patch.aprovado=true;patch.status='ativo';}
   else if(novoStatus==='reprovado'||novoStatus==='em_analise'||novoStatus==='pendente'){patch.aprovado=false;}
   await dbPatch('entregadores',patch,`?id=eq.${entId}`);
@@ -4231,7 +4275,7 @@ async function salvarEdicaoEntregador(entId){
     tipo_pagamento:g('ee-tipo-pagamento'),banco:g('ee-banco'),
     tipo_chave_pix:g('ee-tipo-pix'),chave_pix:g('ee-chave-pix'),
     maquina_cartao:document.getElementById('ee-maquina-cartao')?.checked||false,
-    updated_at:new Date().toISOString()
+    updated_at:_agoraBrasilia()
   };
   if(emailMudou)update.email=novoEmail;
   if(dispVal==='bloqueado'){update.status='bloqueado';update.aprovado=false;update.disponivel=false;}
@@ -4266,7 +4310,7 @@ async function criarNovoEntregador(){
   try{
     const auth=await _criarContaAuth(email,senha);
     if(!auth.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${auth.error}</span>`;return;}
-    const criado=await db('entregadores','POST',{id:auth.userId,nome,email,cpf,telefone,disponivel,status:'livre',updated_at:new Date().toISOString()});
+    const criado=await db('entregadores','POST',{id:auth.userId,nome,email,cpf,telefone,disponivel,status:'livre',created_at:_agoraBrasilia(),updated_at:_agoraBrasilia()});
     if(!criado||criado.length===0){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Conta criada no Auth mas falhou ao salvar em entregadores. Veja o console.</span>';return;}
     if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador criado!</span>';
     setTimeout(()=>{document.getElementById('modal-novo-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
@@ -5415,7 +5459,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(!p)return;
   if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
   if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
-  const agora=new Date().toISOString();
+  const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto'){update.pronto_em=agora;if(!p.motoboy_id&&!p.entregador_id){update.motoboy_id=null;update.entregador_id=null;}}
   if(novoStatus==='aceito')update.aceito_em=agora;
@@ -5618,7 +5662,8 @@ async function criarLoja(){
     roterizador_raio_km:g('loja-rot-raio')!==''?parseFloat(g('loja-rot-raio'))||null:null,
     roterizador_max_pedidos:g('loja-rot-max')!==''?parseInt(g('loja-rot-max'))||null:null,
     roterizador_tempo_espera_seg:g('loja-rot-espera')!==''?parseInt(g('loja-rot-espera'))||null:null,
-    latitude:lat,longitude:lng
+    latitude:lat,longitude:lng,
+    created_at:_agoraBrasilia()
   };
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
@@ -5653,7 +5698,7 @@ async function enviarCadastroLoja(){
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
-  const payload={nome,endereco,telefone,celular,responsavel,email,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng};
+  const payload={nome,endereco,telefone,celular,responsavel,email,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng,created_at:_agoraBrasilia()};
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">❌ Erro ao enviar cadastro.</div>';return;}
   await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
@@ -5824,7 +5869,7 @@ async function _runAuditoria(){
     for(const arr of Object.values(grpDup)){
       if(arr.length<2)continue;
       for(let i=0;i<arr.length;i++){for(let j=i+1;j<arr.length;j++){
-        const diff=Math.abs(_tsUtc(arr[i].created_at)-_tsUtc(arr[j].created_at));
+        const diff=Math.abs(_parseUtc(arr[i].created_at).getTime()-_parseUtc(arr[j].created_at).getTime());
         if(diff<5*60*1000){
           const lojaNome=allLojas.find(l=>l.id===arr[i].loja_id)?.nome||'?';
           problemas.push({tipo:'DUPLICADO',descricao:`#${arr[i].numero} (${lojaNome}) — Dois pedidos com mesmo número criados com ${Math.round(diff/1000)}s de diferença`,pedidoId:arr[i].id,numero:arr[i].numero,cor:'#ef4444'});
@@ -6893,7 +6938,7 @@ async function _atualizarSaldoEntregador(entregador_id,valor){
   const valorPago=parseFloat(valor)||0;
   const novoSaldo=Math.max(0,saldoAtual-valorPago);
   console.log(`[SALDO] entregador=${entregador_id} | saldo_antes=R$${saldoAtual.toFixed(2)} | pago=R$${valorPago.toFixed(2)} | saldo_depois=R$${novoSaldo.toFixed(2)}`);
-  await dbPatch('entregadores',{saldo:Math.round(novoSaldo*100)/100,updated_at:new Date().toISOString()},`?id=eq.${entregador_id}`);
+  await dbPatch('entregadores',{saldo:Math.round(novoSaldo*100)/100,updated_at:_agoraBrasilia()},`?id=eq.${entregador_id}`);
   console.log(`[SALDO] atualização concluída para entregador=${entregador_id}`);
 }
 
@@ -8487,14 +8532,14 @@ async function _rastreioFetch(path){
 function _rastreioPrevisaoHtml(p){
   let previsaoMs,corTxt,texto;
   if(p.pronto_em){
-    const minPassados=(Date.now()-_tsUtc(p.pronto_em))/60000;
-    previsaoMs=_tsUtc(p.pronto_em)+30*60*1000;
+    const minPassados=(Date.now()-_parseUtc(p.pronto_em).getTime())/60000;
+    previsaoMs=_parseUtc(p.pronto_em).getTime()+30*60*1000;
     const restanteMin=Math.round((previsaoMs-Date.now())/60000);
     if(minPassados<=30){corTxt='#10b981';texto=`${restanteMin}min`;}
     else if(minPassados<=40){corTxt='#f97316';texto=`+${Math.round(minPassados-30)}min`;}
     else{corTxt='#ef4444';texto='Atrasado';}
   }else{
-    previsaoMs=_tsUtc(p.created_at)+30*60*1000;
+    previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
     const restanteMin=Math.round((previsaoMs-Date.now())/60000);
     corTxt=restanteMin>0?'#10b981':'#ef4444';
     texto=restanteMin>0?`${restanteMin}min`:'Atrasado';
@@ -8708,9 +8753,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
 let _schedulerInterval=null;
 async function _runScheduler(){
   try{
-    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
+    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${_agoraBrasilia()}`);
     if(!agendados.length)return;
-    const agora=new Date().toISOString();
+    const agora=_agoraBrasilia();
     await Promise.all(agendados.map(p=>db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`)));
     console.log(`[scheduler] ${agendados.length} pedido(s) liberado(s) para entrega`);
     atualizarTudo();
