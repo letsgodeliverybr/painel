@@ -235,11 +235,17 @@ const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&id=eq.${c
 // de offset '+00:00' na resposta — confirmado de novo 2026-08-14, bug do
 // horário +3h nos pedidos):
 //   pedidos.created_at / updated_at / finalizado_em / pronto_em / aceito_em /
-//   em_rota_em / pagamento_confirmado_em / agendado_para,
+//   em_rota_em / pagamento_confirmado_em,
 //   entregadores.created_at / updated_at, lojas.created_at
 // são `timestamp` SEM fuso e o valor gravado JÁ É hora local de Brasília.
-// lojas.updated_at é DIFERENTE — é timestamptz de verdade (confirmado com
-// offset '+00:00' na resposta), trata como as tabelas timestamptz abaixo.
+// lojas.updated_at e pedidos.agendado_para são DIFERENTES — timestamptz de
+// verdade (confirmado com offset '+00:00' na resposta — agendado_para
+// causou um bug real em produção, pedido #3919 salvo 3h antes do horário
+// escolhido, quando foi tratado como se fosse sem fuso igual as outras
+// colunas de pedidos — CUIDADO, é fácil generalizar demais essa lista só
+// por estar na mesma tabela). Tratar como as tabelas timestamptz abaixo:
+// new Date(valorDoInput).toISOString() pra gravar, _parseUtc/formatarHora
+// pra ler (que já detectam o offset e funcionam certo sem mudança nenhuma).
 //
 // NUNCA gravar new Date().toISOString() (UTC com 'Z') nessas colunas, e
 // NUNCA confiar no DEFAULT now() da coluna pra elas — os dois caem pro
@@ -2821,8 +2827,11 @@ function renderMapaPage(){
 }
 
 async function _verificarAgendados(){
+  // agendado_para é timestamptz de verdade (confirmado com offset '+00:00'
+  // nos dados reais — diferente de pronto_em/updated_at, que são timestamp
+  // sem fuso) — precisa comparar contra UTC real, não _agoraBrasilia().
+  const vencidos=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
   const agora=_agoraBrasilia();
-  const vencidos=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${agora}`);
   for(const p of vencidos){
     await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`);
     idsProntoNotificados.delete(p.id);
@@ -3508,14 +3517,17 @@ async function salvarEdicaoPedido(pedidoId){
     endereco_coleta:coletaOn?(document.getElementById('ep-endereco-coleta')?.value||null):null,
     contato_coleta:coletaOn?(document.getElementById('ep-contato-coleta')?.value||null):null,
     telefone_coleta:coletaOn?(document.getElementById('ep-telefone-coleta')?.value||null):null,
-    // agendadoParaVal vem cru de um <input type="datetime-local"> ("YYYY-
-    // MM-DDTHH:MM") — já são os dígitos que o operador digitou, sem
-    // conceito de fuso nenhum. NÃO passar por new Date()/.toISOString():
-    // isso interpretaria como fuso do browser e devolveria UTC com 'Z',
-    // que o Postgres reconverte pelo fuso da sessão (UTC) ao gravar na
-    // coluna sem fuso — resultado 3h errado, mesma causa raiz do bug de
-    // created_at (ver _agoraBrasilia). Só completa segundos se faltar.
-    agendado_para:agendarOn&&agendadoParaVal?(agendadoParaVal.length===16?agendadoParaVal+':00':agendadoParaVal):null,
+    // CORREÇÃO (bug real em produção, pedido #3919 salvo 3h antes do
+    // horário escolhido): agendado_para É timestamptz de verdade
+    // (confirmado com offset '+00:00' nos dados reais), DIFERENTE de
+    // created_at/pronto_em/etc — mandar os dígitos crus do
+    // datetime-local sem conversão (like era feito antes desta correção)
+    // fazia o Postgres reinterpretar esses dígitos LOCAIS como se fossem
+    // UTC, subtraindo 3h do horário real. new Date(agendadoParaVal)
+    // interpreta o valor do input como hora local do browser (Brasília)
+    // e .toISOString() converte pra UTC de verdade — comportamento
+    // correto pra essa coluna especificamente.
+    agendado_para:agendarOn&&agendadoParaVal?new Date(agendadoParaVal).toISOString():null,
     updated_at:_agoraBrasilia(),
   };
   if(_epTaxaExtraEl)update.taxa_extra=parseFloat(_epTaxaExtraEl.value)||0;
@@ -3798,9 +3810,10 @@ async function _criarPedidoInterno(){
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
   if(telefoneColeta)pedido.telefone_coleta=telefoneColeta;
-  // agendadoParaVal é cru do <input type="datetime-local"> — ver comentário
-  // igual em salvarEdicaoPedido (não passa por new Date()/.toISOString()).
-  if(agendarOn&&agendadoParaVal)pedido.agendado_para=agendadoParaVal.length===16?agendadoParaVal+':00':agendadoParaVal;
+  // agendado_para é timestamptz de verdade — ver comentário igual em
+  // salvarEdicaoPedido. new Date(agendadoParaVal).toISOString() converte
+  // a hora local escolhida (Brasília) pra UTC de verdade.
+  if(agendarOn&&agendadoParaVal)pedido.agendado_para=new Date(agendadoParaVal).toISOString();
   const result=await db('pedidos','POST',pedido);
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
@@ -8792,7 +8805,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
 let _schedulerInterval=null;
 async function _runScheduler(){
   try{
-    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${_agoraBrasilia()}`);
+    // agendado_para é timestamptz de verdade — compara contra UTC real, não
+    // _agoraBrasilia() (essa é só pra pronto_em/updated_at, timestamp sem fuso).
+    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
     if(!agendados.length)return;
     const agora=_agoraBrasilia();
     await Promise.all(agendados.map(p=>db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`)));
