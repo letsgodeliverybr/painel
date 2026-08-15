@@ -5006,7 +5006,7 @@ async function renderPedidosPage(){
     </div>`:''}
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição de Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?9:11}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
   const fpLoja=document.getElementById('fp-loja');
@@ -5020,7 +5020,7 @@ async function renderPedidosPage(){
 }
 async function _buscarPedidosAdmin(){
   const tbody=document.getElementById('tbody-pedidos');if(!tbody)return;
-  tbody.innerHTML=`<tr><td colspan="${currentPerfil==='adm'?13:currentPerfil==='suporte'?10:11}" style="text-align:center;padding:32px;color:var(--text3)">Buscando...</td></tr>`;
+  tbody.innerHTML=`<tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?11:12}" style="text-align:center;padding:32px;color:var(--text3)">Buscando...</td></tr>`;
   const dataIni=document.getElementById('fp-data-ini')?.value;
   const dataFim=document.getElementById('fp-data-fim')?.value;
   const horaIni=document.getElementById('fp-hora-ini')?.value||'00:00';
@@ -5164,10 +5164,10 @@ async function _buscarPedidosAdmin(){
   }
   const _showFin=currentPerfil==='adm';
   const _isSup=currentPerfil==='suporte';
-  const _fpCols=currentPerfil==='adm'?13:currentPerfil==='suporte'?9:11;
+  const _fpCols=currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td></tr>`;}).join('');
+  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td><td style="text-align:center"><button onclick="event.stopPropagation();_verLinhaTempoPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif;white-space:nowrap">⏱️ Ver</button></td></tr>`;}).join('');
   // Linhas extras de crédito/débito manual de entregador — só quando adm e
   // sem filtro de loja/número (não fazem sentido pra esses filtros). Usa o
   // mesmo formato de 13 colunas do adm; não participam de nenhum card de
@@ -5177,9 +5177,66 @@ async function _buscarPedidosAdmin(){
     const isCredito=c.tipo==='credito';
     const badge=isCredito?`<span class="p-badge" style="background:#d1fae520;color:#059669">💰 Crédito</span>`:`<span class="p-badge" style="background:#fee2e220;color:#ef4444">💸 Débito</span>`;
     const valorStr=`<span style="font-weight:700;color:${isCredito?'#10b981':'#ef4444'}">${isCredito?'+':'-'}R$ ${(parseFloat(c.valor)||0).toFixed(2)}</span>`;
-    return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito manual':'Débito manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td></tr>`;
+    return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito manual':'Débito manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td><td style="text-align:center;color:var(--text3)">—</td></tr>`;
   }).join('');
   tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
+}
+// Linha do Tempo — 3 tempos calculados a partir dos timestamps de status já
+// gravados (aceito_em/em_rota_em/retornando_em/finalizado_em), sem depender
+// de rastreamento de rota (que não existe hoje — o app do entregador só
+// sobrescreve entregadores.lat/lng a cada ~8s, não grava histórico de
+// posição; mostrar o trajeto real é escopo futuro separado, decidido assim
+// com o usuário).
+//
+// Não existe chegou_local_em/chegou_destino_em (esses dois são status só
+// visuais, sem timestamp próprio) — por isso os limites usados são:
+//   coleta: aceito_em -> em_rota_em (em_rota é setado exatamente quando o
+//     motoboy sai do local de coleta com o pedido em mãos).
+//   entrega: em_rota_em -> retornando_em (se com_retorno) ou -> finalizado_em
+//     (sem retorno, já que finalizado acontece direto após a entrega) —
+//     "retornando" só é marcado depois de já ter entregado, então serve
+//     como o fim da perna de entrega nesse caso.
+//   retorno: retornando_em -> finalizado_em, só quando com_retorno.
+function _calcularLinhaTempo(p){
+  const aceito=p.aceito_em?_parseUtc(p.aceito_em).getTime():null;
+  const emRota=p.em_rota_em?_parseUtc(p.em_rota_em).getTime():null;
+  const retornando=p.retornando_em?_parseUtc(p.retornando_em).getTime():null;
+  const finalizado=p.finalizado_em?_parseUtc(p.finalizado_em).getTime():null;
+  const comRetorno=!!(p.com_retorno||p.retorno);
+  const entregaFim=comRetorno?retornando:finalizado;
+  return{
+    coletaMs:(aceito&&emRota&&emRota>=aceito)?emRota-aceito:null,
+    entregaMs:(emRota&&entregaFim&&entregaFim>=emRota)?entregaFim-emRota:null,
+    retornoMs:(comRetorno&&retornando&&finalizado&&finalizado>=retornando)?finalizado-retornando:null,
+    comRetorno,
+  };
+}
+function _fmtDuracao(ms){
+  if(ms==null)return null;
+  const totalMin=Math.round(ms/60000);
+  const h=Math.floor(totalMin/60),m=totalMin%60;
+  return h>0?`${h}h ${m}min`:`${m}min`;
+}
+function _verLinhaTempoPedido(pedidoId){
+  const p=_fpPedidos.find(x=>x.id===pedidoId);
+  if(!p){showNotif('❌ Erro','Pedido não encontrado na lista atual','var(--red)');return;}
+  const{coletaMs,entregaMs,retornoMs,comRetorno}=_calcularLinhaTempo(p);
+  const faltouDado=!p.aceito_em||!p.em_rota_em||(comRetorno&&(!p.retornando_em||!p.finalizado_em))||(!comRetorno&&!p.finalizado_em);
+  let modal=document.getElementById('modal-linha-tempo');
+  if(!modal){modal=document.createElement('div');modal.id='modal-linha-tempo';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const linha=(icone,label,valor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text2)">${icone} ${label}</span><span style="font-size:14px;font-weight:700;color:${valor?'var(--text)':'var(--text3)'}">${valor||'— sem dado'}</span></div>`;
+  modal.innerHTML=`<div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">⏱️ Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      ${linha('📦','Tempo para coletar',_fmtDuracao(coletaMs))}
+      ${linha('🛵','Tempo em rota até entregar',_fmtDuracao(entregaMs))}
+      ${comRetorno?linha('↩️','Tempo de retorno',_fmtDuracao(retornoMs)):''}
+      ${faltouDado?`<div style="margin-top:14px;font-size:12px;color:var(--text3)">⚠️ Um ou mais horários não foram registrados pra esse pedido (comum em pedidos antigos, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas) — por isso algum tempo acima ficou sem dado.</div>`:''}
+      <div style="margin-top:14px;font-size:11px;color:var(--text3)">Rota real (GPS) ainda não é registrada pelo sistema — só o horário de cada mudança de status.</div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
 }
 async function renderMetricasPage(){
   const anoAtual=Number(_dataHojeBrasilia().slice(0,4));
