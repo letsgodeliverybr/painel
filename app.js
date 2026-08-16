@@ -1444,10 +1444,21 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
        abaixo de um mínimo, que estourava a largura em telas estreitas),
        2 colunas só a partir de 900px. */
     .metas-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    @media (min-width: 900px) {
-      .metas-grid { grid-template-columns: 1fr 1fr; }
-    }
     .metas-col { display: flex; flex-direction: column; gap: 14px; }
+    /* >=900px: metas-col vira subgrid de linhas — sem isso, os 2 cards de
+       cada linha (Empresa/Pessoal) desalinham verticalmente porque títulos
+       de tamanhos diferentes (ex: "Meta de Caixa Operacional - Banco do
+       Brasil 1%" vs "BTC") quebram em números de linhas diferentes, e como
+       as colunas são 2 flex independentes (não uma grid única), a altura
+       vai acumulando desalinhada — o desvio só fica visível na última
+       linha. subgrid faz as 2 colunas compartilharem a mesma altura de
+       linha, igual uma grid única faria, mas mantendo o cabeçalho
+       Empresa/Pessoal fora dos cards (que uma grid única não permitiria
+       sem duplicar a lógica de posicionamento por linha/coluna). */
+    @media (min-width: 900px) {
+      .metas-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, auto); }
+      .metas-col { display: grid; grid-template-rows: subgrid; grid-row: 1 / span 5; }
+    }
     .metas-col-titulo { font-size: 13px; font-weight: 700; color: var(--text2); padding: 0 2px; }
     /* ── MOBILE ── */
     @media (max-width: 768px) {
@@ -5361,7 +5372,7 @@ async function _buscarMetricas(){
 const _METAS_CONFIG=[
   {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional - Banco do Brasil 1%',col:'empresa'},
   {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Conta Salário - Caixa Econômica Federal 1%',col:'pessoal'},
-  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta de Caixa Saque Rápido - ITAU 5%',col:'empresa'},
+  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'🏦 Meta de Caixa Saque Rápido - ITAU 5%',col:'empresa'},
   {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis',col:'pessoal'},
   {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio em Dólar - Banco nos Estados Unidos',col:'empresa'},
   {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio em Euro - Banco na Europa',col:'pessoal'},
