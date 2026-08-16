@@ -1447,6 +1447,8 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
     @media (min-width: 900px) {
       .metas-grid { grid-template-columns: 1fr 1fr; }
     }
+    .metas-col { display: flex; flex-direction: column; gap: 14px; }
+    .metas-col-titulo { font-size: 13px; font-weight: 700; color: var(--text2); padding: 0 2px; }
     /* ── MOBILE ── */
     @media (max-width: 768px) {
       .mapa-container { height: 250px !important; flex-shrink: 0 !important; }
@@ -5273,7 +5275,10 @@ async function renderMetricasPage(){
         <div style="padding:20px 20px 8px" id="mm-chart-pedidos-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
-    <div class="metas-grid">${_METAS_CONFIG.map(_renderMetaCard).join('')}</div>`:''}
+    <div class="metas-grid">
+      <div class="metas-col"><div class="metas-col-titulo">🏢 Empresa</div>${_METAS_CONFIG.filter(m=>m.col==='empresa').map(_renderMetaCard).join('')}</div>
+      <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
+    </div>`:''}
   </div>`;
   _buscarMetricas();
   // Distribuição por categoria é foto do total atual, sem relação com o
@@ -5348,17 +5353,23 @@ async function _buscarMetricas(){
 // meta (chave própria cada uma, nunca compartilham registro). `chave` do
 // primeiro mantida igual à original (meta_caixa_valor_atual) — só o
 // título mudou, o valor já salvo por quem já usava o card continua valendo.
+// col: 'empresa' (coluna esquerda) ou 'pessoal' (coluna direita) — grid
+// deixou de ser posicional (8 cards em sequência preenchendo 2 colunas) e
+// virou 2 colunas semânticas de verdade, cada uma com seu próprio título
+// de seção, já que agora tem 2 cards mostrando o mesmo texto "BTC" e só a
+// coluna diferencia qual é qual.
 const _METAS_CONFIG=[
-  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional - Banco do Brasil 1%'},
-  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Caixa Saque Rápido - Caixa Econômica Federal 5%'},
-  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta Patrimônio em BTC'},
-  {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis'},
-  // Ordem importa: grid é 2 colunas preenchidas em ordem (linha a linha) —
-  // com os 4 acima ocupando exatamente 2 linhas, colocar Dólar/Euro em
-  // seguida os posiciona embaixo de BTC/Imóveis respectivamente, sem
-  // precisar de nenhuma lógica extra de posicionamento.
-  {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio em Dólar - Banco nos Estados Unidos'},
-  {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio em Euro - Banco na Europa'},
+  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional - Banco do Brasil 1%',col:'empresa'},
+  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Conta Salário - Caixa Econômica Federal 1%',col:'pessoal'},
+  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'₿ Meta de Caixa Saque Rápido - ITAU 5%',col:'empresa'},
+  {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis',col:'pessoal'},
+  {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio em Dólar - Banco nos Estados Unidos',col:'empresa'},
+  {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio em Euro - Banco na Europa',col:'pessoal'},
+  // Chave própria cada (não compartilham valor salvo) mesmo com o título
+  // exibido igual ("BTC" nos dois, a pedido do usuário) — só a coluna
+  // (Empresa/Pessoal) diferencia qual é qual.
+  {id:'btc-corporativo',chave:'meta_btc_corporativo_valor_atual',titulo:'₿ BTC',col:'empresa'},
+  {id:'btc-pessoa-fisica',chave:'meta_btc_pessoa_fisica_valor_atual',titulo:'₿ BTC',col:'pessoal'},
 ];
 const _META_MARCOS=[1000,10000,100000,1000000];
 function _fmtMoedaCaixa(v){return`R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
