@@ -103,13 +103,32 @@ async function ifoodFetch(path: string, token: string, init: RequestInit = {}) {
   });
 }
 
-// TODO confirmar contra a doc autenticada: schema exato do payload de
-// detalhes do pedido (endereços, itens, valores). Estrutura abaixo é uma
-// reconstrução a partir de documentação pública indireta — pesquisa não deu
-// acesso à página oficial (403). Ajustar os caminhos (d.merchant?.address
-// etc.) antes de ligar em produção, usando um pedido real do sandbox.
-function mapearPedidoIfood(d: any) {
+// Campos confirmados contra um pedido de teste real (Developer Portal do
+// iFood, pedido 59739b17-c690-4795-8c8a-ad9fa02d048c, 2026-07-25):
+// id, displayId, delivery.deliveryAddress.{formattedAddress,coordinates},
+// merchant.{id,name}, customer.name, customer.phone.number, items[],
+// total.{subTotal,deliveryFee,orderAmount}.
+//
+// NÃO existe endereço da loja nesse payload (merchant só tem id/name) — a
+// única fonte confiável de endereço/coordenadas da loja é o nosso próprio
+// cadastro, resolvido via merchant.id -> lojas.ifood_merchant_id (ver
+// migração add_ifood_merchant_id_lojas.sql). loja_id do pedido também vem
+// daqui — antes disso, pedidos do iFood eram gravados SEM loja_id nenhum.
+async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
+  if (!merchantId) return null;
+  const { data, error } = await supabase
+    .from("lojas")
+    .select("id, nome, endereco, latitude, longitude")
+    .eq("ifood_merchant_id", merchantId)
+    .limit(1);
+  if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
+  return data && data[0] ? data[0] : null;
+}
+async function mapearPedidoIfood(d: any) {
   const agora = new Date().toISOString();
+  const merchantId = d.merchant?.id ?? null;
+  const loja = await buscarLojaPorMerchantId(merchantId);
+  if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -118,21 +137,19 @@ function mapearPedidoIfood(d: any) {
     status: "pronto",
     status_detalhado: "pronto",
     pagamento_confirmado: true,
-    endereco: d.delivery?.deliveryAddress?.formattedAddress ?? d.deliveryAddress?.formattedAddress ?? "",
+    loja_id: loja?.id ?? null,
+    endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
     latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
     longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
-    endereco_coleta: d.merchant?.address?.formattedAddress ?? "",
-    latitude_coleta: d.merchant?.address?.coordinates?.latitude ?? null,
-    longitude_coleta: d.merchant?.address?.coordinates?.longitude ?? null,
-    contato_coleta: d.merchant?.name ?? null,
+    endereco_coleta: loja?.endereco ?? "",
+    latitude_coleta: loja?.latitude ?? null,
+    longitude_coleta: loja?.longitude ?? null,
+    contato_coleta: loja?.nome ?? d.merchant?.name ?? null,
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
     itens: d.items ?? [],
     valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
     total_pedido: d.total?.orderAmount ?? 0,
-    // TODO confirmar campo exato do valor repassado pelo iFood à LetsGo
-    // pela entrega (não confirmado contra a doc — pode ser um campo
-    // separado de "benefits"/"deliveryFee" no total).
     taxa_entrega: d.total?.deliveryFee ?? 0,
     recebido_em: agora,
     pronto_em: agora,
@@ -142,9 +159,9 @@ function mapearPedidoIfood(d: any) {
 }
 
 async function buscarDetalhesPedido(orderId: string, token: string) {
-  // TODO confirmar path exato (pesquisa pública indicou GET
-  // /logistics/orders/{id}, não confirmado contra doc autenticada).
-  const res = await ifoodFetch(`/logistics/orders/${orderId}`, token, { method: "GET" });
+  // Confirmado contra a doc oficial (Order API):
+  // https://developer.ifood.com.br/en-US/docs/guides/modules/order/details/
+  const res = await ifoodFetch(`/order/v1.0/orders/${orderId}`, token, { method: "GET" });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     await logErro("detalhes_pedido_http", { orderId, status: res.status, body });
@@ -191,7 +208,7 @@ async function pollOnce(token: string) {
       const detalhes = await buscarDetalhesPedido(orderId, token);
       if (!detalhes) continue; // erro já logado; sem ACK, tenta de novo
 
-      const pedido = mapearPedidoIfood(detalhes);
+      const pedido = await mapearPedidoIfood(detalhes);
       const { error: upsertErr } = await supabase
         .from("pedidos")
         .upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });

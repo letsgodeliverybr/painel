@@ -134,14 +134,32 @@ async function validarAssinaturaWebhook(rawBody: Uint8Array, assinaturaRecebida:
   return compararConstante(hex, assinaturaRecebida.toLowerCase());
 }
 
+// merchant.address não existe no payload do iFood (confirmado contra pedido
+// de teste real, 2026-07-25 — merchant só tem id/name) — a única fonte
+// confiável de endereço/coordenadas da loja é o nosso próprio cadastro,
+// resolvido via merchant.id -> lojas.ifood_merchant_id (ver migração
+// add_ifood_merchant_id_lojas.sql). loja_id do pedido também vem daqui —
+// antes disso, pedidos do iFood eram gravados SEM loja_id nenhum.
+async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
+  if (!merchantId) return null;
+  const { data, error } = await supabase
+    .from("lojas")
+    .select("id, nome, endereco, latitude, longitude")
+    .eq("ifood_merchant_id", merchantId)
+    .limit(1);
+  if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
+  return data && data[0] ? data[0] : null;
+}
+
 // Mesmo mapeamento usado em ifood-polling, duplicado aqui — cada Edge
 // Function é um deploy isolado, sem módulo compartilhado entre elas, mesmo
 // padrão já usado no resto do projeto. Campos confirmados contra um pedido
-// de teste real do Developer Portal do iFood (2026-07-25). NÃO confirmado:
-// merchant.address — a doc não lista endereço da loja nesse payload,
-// endereco_coleta fica vazio até vir de outra fonte.
-function mapearPedidoIfood(d: any) {
+// de teste real do Developer Portal do iFood (2026-07-25).
+async function mapearPedidoIfood(d: any) {
   const agora = new Date().toISOString();
+  const merchantId = d.merchant?.id ?? null;
+  const loja = await buscarLojaPorMerchantId(merchantId);
+  if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -150,13 +168,14 @@ function mapearPedidoIfood(d: any) {
     status: "pronto",
     status_detalhado: "pronto",
     pagamento_confirmado: true,
+    loja_id: loja?.id ?? null,
     endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
     latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
     longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
-    endereco_coleta: d.merchant?.address?.formattedAddress ?? "",
-    latitude_coleta: d.merchant?.address?.coordinates?.latitude ?? null,
-    longitude_coleta: d.merchant?.address?.coordinates?.longitude ?? null,
-    contato_coleta: d.merchant?.name ?? null,
+    endereco_coleta: loja?.endereco ?? "",
+    latitude_coleta: loja?.latitude ?? null,
+    longitude_coleta: loja?.longitude ?? null,
+    contato_coleta: loja?.nome ?? d.merchant?.name ?? null,
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
     itens: d.items ?? [],
@@ -205,7 +224,7 @@ async function processarEventoWebhook(evento: any): Promise<void> {
   const detalhes = await buscarDetalhesPedidoWebhook(orderId, token);
   if (!detalhes) throw new Error(`falha ao buscar detalhes do pedido ${orderId}`);
 
-  const pedido = mapearPedidoIfood(detalhes);
+  const pedido = await mapearPedidoIfood(detalhes);
   const { error } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });
   if (error) {
     await logErro("webhook_persistir_pedido", { orderId, message: error.message });
