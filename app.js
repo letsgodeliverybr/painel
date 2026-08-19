@@ -68,6 +68,11 @@ let _faturaVencidaLoja=false;
 let _faturaBannerCycleStart=null;
 let _faturaBannerTickInterval=null;
 let _faturaBannerRefreshInterval=null;
+// true = loja fechou o banner (botão X) nesta carga de página — fica assim
+// até o próximo F5/login/restauração de sessão (_iniciarFaturaBannerLoja
+// reseta), nunca é persistido (sessionStorage sobreviveria ao F5, o que
+// contraria o comportamento pedido: reaparecer a cada atualização de página).
+let _faturaBannerFechada=false;
 // Chat interno Loja <-> Admin/Suporte — conversa única e contínua por loja
 // (mensagens_chat.loja_id), ver migrations/add_mensagens_chat.sql.
 let _chatLojaAtual=null; // loja_id da conversa aberta agora (perfil loja: sempre a própria loja; perfil adm/suporte: a selecionada na lista)
@@ -345,6 +350,7 @@ function _iniciarFaturaBannerLoja(){
   if(currentPerfil!=='loja')return;
   clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);
   _faturaBannerCycleStart=Date.now();
+  _faturaBannerFechada=false;
   _carregarFaturaAtualLoja().then(_tickFaturaBanner);
   _faturaBannerTickInterval=setInterval(_tickFaturaBanner,15000);
   _faturaBannerRefreshInterval=setInterval(_carregarFaturaAtualLoja,5*60*1000);
@@ -358,6 +364,7 @@ function _tickFaturaBanner(){
   // "vencida" (diasAtraso>=1) ficam fixos na tela até a fatura ser paga
   // (não têm botão de fechar — só some quando o admin aprova o pagamento).
   if(_faturaAtualLoja._diasAtraso<0){
+    if(_faturaBannerFechada){el.style.display='none';return;}
     const elapsed=(Date.now()-_faturaBannerCycleStart)%_FATURA_BANNER_CICLO_MS;
     if(elapsed>=_FATURA_BANNER_VISIVEL_MS){el.style.display='none';return;}
   }
@@ -373,6 +380,11 @@ function _tickFaturaBanner(){
   const fecharBtn=document.getElementById('alerta-fatura-loja-fechar');
   if(fecharBtn)fecharBtn.style.display=_faturaAtualLoja._diasAtraso<0?'flex':'none';
   el.style.display='flex';
+}
+function _fecharAlertaFaturaLoja(){
+  _faturaBannerFechada=true;
+  const el=document.getElementById('alerta-fatura-loja');
+  if(el)el.style.display='none';
 }
 
 // ── CHAT INTERNO LOJA <-> ADMIN/SUPORTE ──
@@ -2756,7 +2768,7 @@ function renderMapaPage(){
             <div id="alerta-fatura-loja-titulo" style="font-size:12px;font-weight:600;color:#fbbf24;line-height:1.5;text-wrap:balance"></div>
             <div style="font-size:11px;color:#fbbf24;opacity:.7;margin-top:2px;white-space:nowrap">Clique para ver a fatura</div>
           </div>
-          <button id="alerta-fatura-loja-fechar" onclick="event.stopPropagation();document.getElementById('alerta-fatura-loja').style.display='none'" style="display:none;flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button id="alerta-fatura-loja-fechar" onclick="event.stopPropagation();_fecharAlertaFaturaLoja()" style="display:none;flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
@@ -8087,6 +8099,10 @@ async function _salvarConfigCliente(){
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
 
+// Aba "Integração" — pensada como o hub central de TODAS as integrações
+// externas (hoje só iFood; estrutura já vem pronta pra Rappi/99Food etc no
+// futuro, cada uma como seu próprio card nesta mesma aba, sem precisar
+// remodelar nada aqui quando isso acontecer).
 async function _renderConfigIntegracao(){
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:720px;margin:0 auto">
@@ -8095,7 +8111,24 @@ async function _renderConfigIntegracao(){
         <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log de erros da integração (autenticação, polling de pedidos, envio de status de volta pro iFood). Toda falha aparece aqui — nada acontece em silêncio.</div>
         <div id="ifood-erros-lista" style="font-size:13px;color:var(--text2)">Carregando...</div>
       </div>
+    </div>
+    <div class="card" style="max-width:720px;margin:20px auto 0">
+      <div style="padding:24px 28px">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">🏪 Vínculo de Lojas — iFood</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Vincula cada loja ao Merchant ID do app do iFood (Portal do Desenvolvedor → seu app → Merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Campo opcional — preencha só as lojas que vendem pelo iFood.</div>
+        <div style="max-height:420px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px">
+          <table style="width:100%;min-width:520px;border-collapse:collapse">
+            <thead style="position:sticky;top:0;background:var(--surface2);z-index:1"><tr>
+              <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px">Loja</th>
+              <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px">Merchant ID iFood</th>
+              <th style="padding:8px 12px"></th>
+            </tr></thead>
+            <tbody id="ifood-merchant-lista"><tr><td colspan="3" style="padding:16px;text-align:center;color:var(--text3)">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>`;
+  _carregarIfoodMerchantLojas();
   const logs=await db('logs_acoes','GET',null,'?acao=ilike.ifood_erro*&order=created_at.desc&limit=50');
   const el=document.getElementById('ifood-erros-lista');
   if(!el)return;
@@ -8114,6 +8147,55 @@ async function _renderConfigIntegracao(){
       <pre style="font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;margin:0;font-family:monospace">${JSON.stringify(l.detalhes||{},null,2)}</pre>
     </div>`;
   }).join('');
+}
+
+async function _carregarIfoodMerchantLojas(){
+  const el=document.getElementById('ifood-merchant-lista');
+  if(!el)return;
+  const lojas=await db('lojas','GET',null,'?select=id,nome,ifood_merchant_id&order=nome.asc');
+  if(!Array.isArray(lojas)){el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao carregar lojas</td></tr>';return;}
+  if(!lojas.length){el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--text3)">Nenhuma loja cadastrada</td></tr>';return;}
+  el.innerHTML=lojas.map(l=>{
+    const nomeEsc=(l.nome||'—').replace(/"/g,'&quot;');
+    const merchantEsc=(l.ifood_merchant_id||'').replace(/"/g,'&quot;');
+    return `<tr id="ifood-merchant-row-${l.id}">
+      <td style="padding:8px 12px;font-size:13px;color:var(--text);white-space:nowrap;border-top:1px solid var(--border)">${nomeEsc}</td>
+      <td style="padding:8px 12px;border-top:1px solid var(--border)"><input type="text" id="ifood-merchant-input-${l.id}" value="${merchantEsc}" placeholder="ex: cbdadf92-da29-4ea3-9fd9-afc6ca35b7c4" style="width:100%;min-width:260px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:monospace;background:var(--surface);color:var(--text);box-sizing:border-box"/></td>
+      <td style="padding:8px 12px;border-top:1px solid var(--border);white-space:nowrap;vertical-align:top">
+        <button onclick="_salvarIfoodMerchantId('${l.id}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar</button>
+        <div id="ifood-merchant-fb-${l.id}" style="font-size:11px;margin-top:4px;min-height:14px;white-space:normal;max-width:220px;line-height:1.4"></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Checagem prévia (antes do PATCH) pra dar uma mensagem específica com o
+// nome da loja conflitante — o índice único no banco (lojas_ifood_merchant_id_idx)
+// continua sendo a garantia de verdade contra duplicidade (protege até
+// contra 2 admins salvando o mesmo Merchant ID ao mesmo tempo); essa
+// checagem é só pra transformar o erro genérico de constraint em algo que
+// a pessoa entenda sem precisar saber o que é um índice único.
+async function _salvarIfoodMerchantId(lojaId){
+  const input=document.getElementById(`ifood-merchant-input-${lojaId}`);
+  const fb=document.getElementById(`ifood-merchant-fb-${lojaId}`);
+  if(!input)return;
+  const valor=input.value.trim();
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
+  if(valor){
+    const conflito=await db('lojas','GET',null,`?ifood_merchant_id=eq.${encodeURIComponent(valor)}&select=id,nome`);
+    const outraLoja=Array.isArray(conflito)?conflito.find(l=>l.id!==lojaId):null;
+    if(outraLoja){
+      if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado à loja "${outraLoja.nome}"</span>`;
+      return;
+    }
+  }
+  const res=await dbPatch('lojas',{ifood_merchant_id:valor||null,updated_at:new Date().toISOString()},`?id=eq.${lojaId}`);
+  if(res===null){
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado a outra loja</span>';
+    return;
+  }
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
+  setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
 
 function _renderConfigOperacao(){
