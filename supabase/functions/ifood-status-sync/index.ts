@@ -91,13 +91,15 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-// TODO confirmar contra a doc autenticada: paths exatos. Pesquisa pública
-// indicou POST /goingToOrigin, /arrivedAtOrigin, /dispatch,
-// /arrivedAtDestination sob o recurso do pedido de logistics — formato
-// abaixo (/logistics/orders/{id}/{evento}) é a reconstrução mais provável,
-// mas não confirmada. Ajustar antes de ligar em produção.
+// Confirmado contra a doc autenticada do Portal do Desenvolvedor iFood
+// (Logistics API v1.0, 2026-08-19): servidor base
+// https://merchant-api.ifood.com.br/logistics/v1.0, eventos POST
+// /orders/{id}/{assignDriver|goingToOrigin|arrivedAtOrigin|dispatch|arrivedAtDestination}.
+// O bug real era a falta do "/v1.0" no meio do path (a reconstrução por
+// pesquisa pública anterior tinha os nomes de evento certos, só faltava a
+// versão) — é o que causava o 404 visto em produção.
 function endpointParaEvento(ifoodOrderId: string, evento: string): string {
-  return `/logistics/orders/${ifoodOrderId}/${evento}`;
+  return `/logistics/v1.0/orders/${ifoodOrderId}/${evento}`;
 }
 
 // ═══════════════════════════════════════════════
