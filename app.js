@@ -8103,6 +8103,14 @@ async function _salvarConfigCliente(){
 // externas (hoje só iFood; estrutura já vem pronta pra Rappi/99Food etc no
 // futuro, cada uma como seu próprio card nesta mesma aba, sem precisar
 // remodelar nada aqui quando isso acontecer).
+// Mostra só os N mais recentes por padrão — meses de instabilidade
+// temporária do lado do iFood (já resolvida) deixavam essa lista enorme e
+// escondiam o que realmente importa: erro NOVO, de agora. "Ver histórico
+// completo" existe pra quem quiser investigar o passado, sem precisar
+// apagar nada do banco.
+const _IFOOD_ERROS_LIMITE_PADRAO=15;
+let _ifoodErrosCompleto=false;
+
 async function _renderConfigIntegracao(){
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:720px;margin:0 auto">
@@ -8110,12 +8118,18 @@ async function _renderConfigIntegracao(){
         <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">🔗 Integração — iFood Logistics</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log de erros da integração (autenticação, polling de pedidos, envio de status de volta pro iFood). Toda falha aparece aqui — nada acontece em silêncio.</div>
         <div id="ifood-erros-lista" style="font-size:13px;color:var(--text2)">Carregando...</div>
+        <div id="ifood-erros-legenda" style="font-size:11px;color:var(--text3);margin-top:10px"></div>
+        <div id="ifood-erros-btn-wrap" style="margin-top:10px"></div>
       </div>
     </div>
     <div class="card" style="max-width:720px;margin:20px auto 0">
       <div style="padding:24px 28px">
-        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">🏪 Vínculo de Lojas — iFood</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Vincula cada loja ao Merchant ID do app do iFood (Portal do Desenvolvedor → seu app → Merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Campo opcional — preencha só as lojas que vendem pelo iFood.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
+          <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Adicionar integração</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao Merchant ID do app do iFood (Portal do Desenvolvedor → seu app → Merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
+        <div id="ifood-merchant-contador" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Carregando...</div>
         <div style="max-height:420px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px">
           <table style="width:100%;min-width:520px;border-collapse:collapse">
             <thead style="position:sticky;top:0;background:var(--surface2);z-index:1"><tr>
@@ -8128,33 +8142,64 @@ async function _renderConfigIntegracao(){
         </div>
       </div>
     </div>`;
+  _ifoodErrosCompleto=false;
   _carregarIfoodMerchantLojas();
-  const logs=await db('logs_acoes','GET',null,'?acao=ilike.ifood_erro*&order=created_at.desc&limit=50');
+  await _carregarIfoodErros();
+}
+
+async function _carregarIfoodErros(){
   const el=document.getElementById('ifood-erros-lista');
+  const legenda=document.getElementById('ifood-erros-legenda');
+  const btnWrap=document.getElementById('ifood-erros-btn-wrap');
+  if(!el)return;
+  el.innerHTML='Carregando...';
+  const qs=_ifoodErrosCompleto
+    ?'?acao=ilike.ifood_erro*&order=created_at.desc'
+    :`?acao=ilike.ifood_erro*&order=created_at.desc&limit=${_IFOOD_ERROS_LIMITE_PADRAO}`;
+  const logs=await db('logs_acoes','GET',null,qs);
   if(!el)return;
   if(!Array.isArray(logs)||logs.length===0){
     el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">✅</div>Nenhum erro registrado.</div>`;
-    return;
+  } else {
+    el.innerHTML=logs.map(l=>{
+      const hora=l.created_at?formatarHora(l.created_at):'—';
+      const acaoLegivel=(l.acao||'').replace(/^ifood_erro_/,'');
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--surface2)">
+        <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span style="font-weight:700;color:#ef4444;font-size:12px">${acaoLegivel}</span>
+          <span style="font-size:11px;color:var(--text3)">${hora}</span>
+        </div>
+        <pre style="font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;margin:0;font-family:monospace">${JSON.stringify(l.detalhes||{},null,2)}</pre>
+      </div>`;
+    }).join('');
   }
-  el.innerHTML=logs.map(l=>{
-    const hora=l.created_at?formatarHora(l.created_at):'—';
-    const acaoLegivel=(l.acao||'').replace(/^ifood_erro_/,'');
-    return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--surface2)">
-      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
-        <span style="font-weight:700;color:#ef4444;font-size:12px">${acaoLegivel}</span>
-        <span style="font-size:11px;color:var(--text3)">${hora}</span>
-      </div>
-      <pre style="font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;margin:0;font-family:monospace">${JSON.stringify(l.detalhes||{},null,2)}</pre>
-    </div>`;
-  }).join('');
+  if(legenda)legenda.textContent=_ifoodErrosCompleto
+    ?`Mostrando histórico completo (${logs.length} registro${logs.length===1?'':'s'}).`
+    :`Mostrando os ${Math.min(_IFOOD_ERROS_LIMITE_PADRAO,logs.length)} mais recentes.`;
+  if(btnWrap)btnWrap.innerHTML=_ifoodErrosCompleto
+    ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar só recentes</button>`
+    :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📜 Ver histórico completo</button>`;
+}
+function _toggleIfoodErrosCompleto(){
+  _ifoodErrosCompleto=!_ifoodErrosCompleto;
+  _carregarIfoodErros();
 }
 
 async function _carregarIfoodMerchantLojas(){
   const el=document.getElementById('ifood-merchant-lista');
+  const contador=document.getElementById('ifood-merchant-contador');
   if(!el)return;
-  const lojas=await db('lojas','GET',null,'?select=id,nome,ifood_merchant_id&order=nome.asc');
-  if(!Array.isArray(lojas)){el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao carregar lojas</td></tr>';return;}
-  if(!lojas.length){el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--text3)">Nenhuma loja cadastrada</td></tr>';return;}
+  const lojas=await db('lojas','GET',null,'?select=id,nome,ifood_merchant_id&ifood_merchant_id=not.is.null&order=nome.asc');
+  if(!Array.isArray(lojas)){
+    el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao carregar lojas</td></tr>';
+    if(contador)contador.textContent='—';
+    return;
+  }
+  if(contador)contador.innerHTML=`🔗 <b>${lojas.length}</b> loja${lojas.length===1?'':'s'} vinculada${lojas.length===1?'':'s'} ao iFood`;
+  if(!lojas.length){
+    el.innerHTML='<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text3)">Nenhuma loja vinculada ainda. Clique em "➕ Adicionar integração" pra vincular a primeira.</td></tr>';
+    return;
+  }
   el.innerHTML=lojas.map(l=>{
     const nomeEsc=(l.nome||'—').replace(/"/g,'&quot;');
     const merchantEsc=(l.ifood_merchant_id||'').replace(/"/g,'&quot;');
@@ -8195,7 +8240,80 @@ async function _salvarIfoodMerchantId(lojaId){
     return;
   }
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
-  setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
+  // Lista principal só mostra vinculadas — se o campo ficou vazio (desvinculou),
+  // essa linha precisa sumir; recarregar tudo cobre esse caso e o de edição
+  // normal com o mesmo código, sem precisar de lógica condicional a mais.
+  setTimeout(()=>{_carregarIfoodMerchantLojas();},900);
+}
+
+// ── Modal "Adicionar Integração" — busca entre as lojas AINDA sem
+// Merchant ID vinculado (as já vinculadas somem da lista principal, então
+// não faz sentido oferecê-las de novo aqui). Criado sob demanda (mesmo
+// padrão do modal de Linha do Tempo) — não precisa de placeholder estático
+// no HTML.
+let _ifoodAddLojaSelecionadaId=null;
+let _ifoodAddLojasDisponiveis=[];
+async function _abrirModalAdicionarIntegracaoIfood(){
+  let modal=document.getElementById('modal-ifood-add-loja');
+  if(!modal){modal=document.createElement('div');modal.id='modal-ifood-add-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
+  _ifoodAddLojaSelecionadaId=null;
+  modal.innerHTML=`<div class="modal" style="max-width:440px">
+    <div class="modal-header"><span class="modal-title">➕ Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="fi" style="position:relative">
+        <label>Loja</label>
+        <input type="text" id="ifood-add-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)" style="${_ss}"/>
+        <div id="ifood-add-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:999;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div>
+      </div>
+      <div id="ifood-add-merchant-bloco" style="display:none;margin-top:18px">
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Merchant ID iFood — <span id="ifood-add-loja-nome" style="color:var(--accent)"></span></label>
+        <input type="text" id="ifood-add-merchant-input" placeholder="ex: cbdadf92-da29-4ea3-9fd9-afc6ca35b7c4" style="${_ss};font-family:monospace"/>
+        <div id="ifood-add-feedback" style="margin-top:8px;font-size:12px;min-height:16px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">Cancelar</button>
+      <button class="btn-modal-primary" onclick="_salvarNovaIntegracaoIfood()">💾 Vincular</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
+  const lojas=await db('lojas','GET',null,'?select=id,nome&ifood_merchant_id=is.null&order=nome.asc');
+  _ifoodAddLojasDisponiveis=Array.isArray(lojas)?lojas:[];
+}
+function _ifoodAddFiltrarLojas(termo){
+  const dd=document.getElementById('ifood-add-dropdown');
+  if(!dd)return;
+  const t=(termo||'').toLowerCase().trim();
+  const filtradas=t?_ifoodAddLojasDisponiveis.filter(l=>(l.nome||'').toLowerCase().includes(t)):_ifoodAddLojasDisponiveis;
+  if(!filtradas.length){dd.innerHTML=`<div style="padding:10px 12px;color:var(--text3);font-size:12px">Nenhuma loja encontrada</div>`;dd.style.display='block';return;}
+  dd.innerHTML=filtradas.slice(0,50).map(l=>`<div onclick="_ifoodAddSelecionarLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="padding:9px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">${(l.nome||'—').replace(/</g,'&lt;')}</div>`).join('');
+  dd.style.display='block';
+}
+function _ifoodAddSelecionarLoja(id,nome){
+  _ifoodAddLojaSelecionadaId=id;
+  const busca=document.getElementById('ifood-add-busca');if(busca)busca.value=nome;
+  const dd=document.getElementById('ifood-add-dropdown');if(dd)dd.style.display='none';
+  const bloco=document.getElementById('ifood-add-merchant-bloco');if(bloco)bloco.style.display='block';
+  const nomeEl=document.getElementById('ifood-add-loja-nome');if(nomeEl)nomeEl.textContent=nome;
+  const input=document.getElementById('ifood-add-merchant-input');if(input){input.value='';input.focus();}
+}
+async function _salvarNovaIntegracaoIfood(){
+  const fb=document.getElementById('ifood-add-feedback');
+  if(!_ifoodAddLojaSelecionadaId){if(fb)fb.innerHTML='<span style="color:var(--red)">Selecione uma loja primeiro</span>';return;}
+  const valor=(document.getElementById('ifood-add-merchant-input')?.value||'').trim();
+  if(!valor){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe o Merchant ID</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
+  const conflito=await db('lojas','GET',null,`?ifood_merchant_id=eq.${encodeURIComponent(valor)}&select=id,nome`);
+  const outraLoja=Array.isArray(conflito)?conflito.find(l=>l.id!==_ifoodAddLojaSelecionadaId):null;
+  if(outraLoja){if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado à loja "${outraLoja.nome}"</span>`;return;}
+  const res=await dbPatch('lojas',{ifood_merchant_id:valor,updated_at:new Date().toISOString()},`?id=eq.${_ifoodAddLojaSelecionadaId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado a outra loja</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Vinculado!</span>';
+  setTimeout(()=>{
+    document.getElementById('modal-ifood-add-loja')?.classList.remove('open');
+    _carregarIfoodMerchantLojas();
+  },900);
 }
 
 function _renderConfigOperacao(){
