@@ -1451,6 +1451,13 @@ const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).
       :root:not(.light) .pd-card:hover { border-color: #6366f1 !important; }
       :root:not(.light) .sb-group-dark { background: #1a3a5c !important; }
     }
+    /* Campo de busca do modal "Adicionar Integração iFood" — !important pra
+       vencer .fi input (padding/font-size), mas ainda herda background/
+       border/border-radius/foco daquela classe (mesma linguagem visual do
+       resto do painel, só com mais destaque: maior, com espaço pro ícone). */
+    .ifood-busca-wrap { position: relative; }
+    .ifood-busca-wrap input { padding: 14px 16px 14px 44px !important; font-size: 15px !important; border-radius: 12px !important; }
+    .ifood-busca-wrap .ifood-busca-icone { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text3); pointer-events: none; }
     /* Grid dos cards de Meta (Métricas Let's Go) — mobile-first: 1 coluna
        por padrão (sempre cabe, sem depender de auto-fit/minmax encolher
        abaixo de um mínimo, que estourava a largura em telas estreitas),
@@ -8257,18 +8264,26 @@ async function _abrirModalAdicionarIntegracaoIfood(){
   let modal=document.getElementById('modal-ifood-add-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-ifood-add-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   _ifoodAddLojaSelecionadaId=null;
-  modal.innerHTML=`<div class="modal" style="max-width:440px">
+  modal.innerHTML=`<div class="modal" style="max-width:560px;width:92vw">
     <div class="modal-header"><span class="modal-title">➕ Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">✕</button></div>
-    <div class="modal-body">
-      <div class="fi" style="position:relative">
-        <label>Loja</label>
-        <input type="text" id="ifood-add-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)" style="${_ss}"/>
-        <div id="ifood-add-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:999;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div>
+    <div class="modal-body" style="padding:28px !important;max-height:75vh;overflow-y:auto">
+      <div class="fi ifood-busca-wrap" style="position:relative;gap:8px">
+        <label>🏪 Buscar loja</label>
+        <span class="ifood-busca-icone">🔍</span>
+        <input type="text" id="ifood-add-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)"/>
       </div>
-      <div id="ifood-add-merchant-bloco" style="display:none;margin-top:18px">
-        <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Merchant ID iFood — <span id="ifood-add-loja-nome" style="color:var(--accent)"></span></label>
-        <input type="text" id="ifood-add-merchant-input" placeholder="ex: cbdadf92-da29-4ea3-9fd9-afc6ca35b7c4" style="${_ss};font-family:monospace"/>
-        <div id="ifood-add-feedback" style="margin-top:8px;font-size:12px;min-height:16px"></div>
+      <!-- Fluxo normal (não position:absolute) de propósito: .modal tem
+           overflow:auto (regra num media query), que clipava um dropdown
+           flutuante bem no fundo curto do modal, cortando a lista sem dó
+           mesmo com max-height alto — a lista crescer no fluxo normal (o
+           modal-body é quem rola, igual todo outro modal do painel) resolve
+           isso e continua funcionando porque o bloco de Merchant ID só
+           aparece DEPOIS da lista sumir (nunca os dois ao mesmo tempo). -->
+      <div id="ifood-add-dropdown" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;max-height:320px;overflow-y:auto"></div>
+      <div id="ifood-add-merchant-bloco" class="fi" style="display:none;margin-top:28px;gap:8px">
+        <label>🔗 Merchant ID iFood — <span id="ifood-add-loja-nome" style="color:var(--accent);text-transform:none;letter-spacing:normal;font-weight:700"></span></label>
+        <input type="text" id="ifood-add-merchant-input" placeholder="ex: cbdadf92-da29-4ea3-9fd9-afc6ca35b7c4" style="font-family:ui-monospace,monospace;padding:13px 16px !important;font-size:14px !important;border-radius:12px !important"/>
+        <div id="ifood-add-feedback" style="font-size:12px;min-height:16px;line-height:1.5"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -8286,15 +8301,15 @@ function _ifoodAddFiltrarLojas(termo){
   if(!dd)return;
   const t=(termo||'').toLowerCase().trim();
   const filtradas=t?_ifoodAddLojasDisponiveis.filter(l=>(l.nome||'').toLowerCase().includes(t)):_ifoodAddLojasDisponiveis;
-  if(!filtradas.length){dd.innerHTML=`<div style="padding:10px 12px;color:var(--text3);font-size:12px">Nenhuma loja encontrada</div>`;dd.style.display='block';return;}
-  dd.innerHTML=filtradas.slice(0,50).map(l=>`<div onclick="_ifoodAddSelecionarLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="padding:9px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">${(l.nome||'—').replace(/</g,'&lt;')}</div>`).join('');
+  if(!filtradas.length){dd.innerHTML=`<div style="padding:20px 16px;color:var(--text3);font-size:13px;text-align:center">🔎 Nenhuma loja encontrada</div>`;dd.style.display='block';return;}
+  dd.innerHTML=filtradas.slice(0,50).map((l,i)=>`<div onclick="_ifoodAddSelecionarLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="padding:13px 16px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);${i<filtradas.length-1?'border-bottom:1px solid var(--border);':''}transition:background .1s" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">🏪 ${(l.nome||'—').replace(/</g,'&lt;')}</div>`).join('');
   dd.style.display='block';
 }
 function _ifoodAddSelecionarLoja(id,nome){
   _ifoodAddLojaSelecionadaId=id;
   const busca=document.getElementById('ifood-add-busca');if(busca)busca.value=nome;
   const dd=document.getElementById('ifood-add-dropdown');if(dd)dd.style.display='none';
-  const bloco=document.getElementById('ifood-add-merchant-bloco');if(bloco)bloco.style.display='block';
+  const bloco=document.getElementById('ifood-add-merchant-bloco');if(bloco)bloco.style.display='flex';
   const nomeEl=document.getElementById('ifood-add-loja-nome');if(nomeEl)nomeEl.textContent=nome;
   const input=document.getElementById('ifood-add-merchant-input');if(input){input.value='';input.focus();}
 }
