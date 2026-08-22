@@ -6589,7 +6589,7 @@ const _RANKING_PREMIOS=[100,80,70,60,50,40,30,20,15,10];
 let _rankingAba='ranking';
 async function renderRankingPage(aba){
   _rankingAba=aba||_rankingAba||'ranking';
-  const abas=[{id:'ranking',icon:'🏆',label:'Ranking'},{id:'clas',icon:'🐺',label:'Clãs'}];
+  const abas=[{id:'ranking',icon:'🏆',label:'Ranking'},{id:'clas',icon:'👑',label:'Clãs'}];
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div>
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
@@ -6668,10 +6668,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
   const lojasDisponiveis=lojasAll.filter(l=>!lojasOcupadas.has(l.id));
   const entDisponiveis=entAll.filter(e=>!entOcupados.has(e.id));
   return `<div class="card"><div style="padding:20px 24px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:15px;font-weight:800;color:var(--text)">🐺 ${cidade.toUpperCase()} - ${cla.uf}</div>
-      <span onclick="_excluirCla('${cla.id}','${cidadeEsc}')" style="font-size:11px;color:#ef4444;cursor:pointer;font-weight:600">🗑️ Excluir clã</span>
-    </div>
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:14px">👑 ${cidade.toUpperCase()} - ${cla.uf}</div>
     ${_claPickerHtml('loja',cidSafe,lojasDisponiveis,lojasDoCla)}
     ${_claPickerHtml('ent',cidSafe,entDisponiveis,entDoCla)}
     <div id="cla-feedback-${cidSafe}" style="margin:10px 0;font-size:12px"></div>
@@ -6684,11 +6681,8 @@ function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   const multiId=`cla-multi-${tipo}-${cidSafe}`;
   const optionsHtml=entidades.map(e=>`<label class="cla-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   return `<div class="fi" style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <label style="margin:0">${label}</label>
-      <span onclick="_claSelecionarTodos('${multiId}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none" id="cla-selall-${tipo}-${cidSafe}">Selecionar todos</span>
-    </div>
-    <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value,'${tipo}','${cidSafe}')"
+    <label style="margin:0;display:block;margin-bottom:6px">${label}</label>
+    <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value)"
       style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
     <div id="${multiId}" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
       ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum disponível (todos já estão em outro clã)</div>'}
@@ -6696,34 +6690,13 @@ function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   </div>`;
 }
 
-function _claFiltrarOpcoes(multiId,busca,tipo,cidSafe){
+function _claFiltrarOpcoes(multiId,busca){
   const q=(busca||'').trim().toLowerCase();
   const wrap=document.getElementById(multiId);if(!wrap)return;
-  const visiveis=[];
   wrap.querySelectorAll('.cla-opt').forEach(lbl=>{
     const nome=lbl.textContent.toLowerCase();
-    const vis=!q||nome.includes(q);
-    lbl.style.display=vis?'':'none';
-    if(vis)visiveis.push(lbl.querySelector('input[type=checkbox]'));
+    lbl.style.display=(!q||nome.includes(q))?'':'none';
   });
-  const selAllEl=document.getElementById(`cla-selall-${tipo}-${cidSafe}`);
-  if(selAllEl){
-    const todosChecked=visiveis.length>0&&visiveis.every(cb=>cb?.checked);
-    selAllEl.textContent=todosChecked?'Desmarcar todos':'Selecionar todos';
-  }
-}
-
-function _claSelecionarTodos(multiId){
-  const wrap=document.getElementById(multiId);if(!wrap)return;
-  const visiveis=[...wrap.querySelectorAll('.cla-opt')].filter(lbl=>lbl.style.display!=='none');
-  const cbs=visiveis.map(lbl=>lbl.querySelector('input[type=checkbox]')).filter(Boolean);
-  const todosChecked=cbs.length>0&&cbs.every(cb=>cb.checked);
-  cbs.forEach(cb=>cb.checked=!todosChecked);
-  const m=multiId.match(/^cla-multi-(loja|ent)-(.+)$/);
-  if(m){
-    const selAllEl=document.getElementById(`cla-selall-${m[1]}-${m[2]}`);
-    if(selAllEl)selAllEl.textContent=todosChecked?'Selecionar todos':'Desmarcar todos';
-  }
 }
 
 async function _criarCla(cidade,cidSafe){
@@ -6731,13 +6704,6 @@ async function _criarCla(cidade,cidSafe){
   const res=await db('clas','POST',{cidade,uf});
   if(!Array.isArray(res)||!res.length){showNotif('❌ Erro ao criar clã','','var(--red)');return;}
   showNotif('✅ Clã criado','','var(--green)');
-  _renderClasTab();
-}
-
-async function _excluirCla(claId,cidade){
-  if(!confirm(`Excluir o clã de ${cidade}? Isso remove a exclusividade de despacho — lojas e entregadores voltam ao pool normal.`))return;
-  await db('clas','DELETE',null,`?id=eq.${claId}`);
-  showNotif('🗑️ Clã excluído','','var(--red)');
   _renderClasTab();
 }
 
