@@ -6631,7 +6631,7 @@ async function _renderClasTab(){
   el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div>';
   const [lojas,entregadores,clas,clasLojas,clasEnt]=await Promise.all([
     db('lojas','GET',null,'?select=id,nome,cidade&order=nome.asc'),
-    db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),
+    db('entregadores','GET',null,'?select=id,nome,cpf&order=nome.asc'),
     db('clas','GET',null,'?order=cidade.asc'),
     db('clas_lojas','GET',null,''),
     db('clas_entregadores','GET',null,''),
@@ -6679,7 +6679,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
 function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   const label=tipo==='loja'?`🏪 Lojas do clã (${selecionadosIds.length})`:`🛵 Entregadores do clã (${selecionadosIds.length})`;
   const multiId=`cla-multi-${tipo}-${cidSafe}`;
-  const optionsHtml=entidades.map(e=>`<label class="cla-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
+  const optionsHtml=entidades.map(e=>`<label class="cla-opt" data-doc="${tipo==='ent'?(e.cpf||'').replace(/\D/g,''):''}" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   return `<div class="fi" style="margin-bottom:14px">
     <label style="margin:0;display:block;margin-bottom:6px">${label}</label>
     <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value)"
@@ -6690,12 +6690,19 @@ function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   </div>`;
 }
 
+// Busca por nome OU documento (CPF, hoje só disponível pra entregadores —
+// lojas não têm nenhum campo de CNPJ cadastrado no banco, confirmado nas
+// colunas de public.lojas). Documento comparado só por dígitos, sem exigir
+// a formatação exata (com ou sem pontuação bate igual).
 function _claFiltrarOpcoes(multiId,busca){
   const q=(busca||'').trim().toLowerCase();
+  const qDigits=q.replace(/\D/g,'');
   const wrap=document.getElementById(multiId);if(!wrap)return;
   wrap.querySelectorAll('.cla-opt').forEach(lbl=>{
     const nome=lbl.textContent.toLowerCase();
-    lbl.style.display=(!q||nome.includes(q))?'':'none';
+    const doc=lbl.dataset.doc||'';
+    const match=!q||nome.includes(q)||(!!qDigits&&doc.includes(qDigits));
+    lbl.style.display=match?'':'none';
   });
 }
 
