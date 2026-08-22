@@ -6677,7 +6677,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
 }
 
 function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
-  const label=tipo==='loja'?'Lojas do clã':'Entregadores do clã';
+  const label=tipo==='loja'?`🏪 Lojas do clã (${selecionadosIds.length})`:`🛵 Entregadores do clã (${selecionadosIds.length})`;
   const multiId=`cla-multi-${tipo}-${cidSafe}`;
   const optionsHtml=entidades.map(e=>`<label class="cla-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   return `<div class="fi" style="margin-bottom:14px">
