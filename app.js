@@ -4076,6 +4076,7 @@ async function _renderEntregadoresTab(el){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar nome ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
       <div style="display:flex;gap:8px">
+        ${_entFiltro!=='em_analise'?`<button class="btn-sm" onclick="_toggleTodosDisponivel(true)" style="background:#10B98120;color:#10B981;border:1px solid #10B98155;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🟢 Ligar todos</button><button class="btn-sm" onclick="_toggleTodosDisponivel(false)" style="background:#6B728020;color:#6B7280;border:1px solid #6B728055;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">⚫ Desligar todos</button>`:''}
         <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
         <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
       </div>
@@ -4084,6 +4085,19 @@ async function _renderEntregadoresTab(el){
       <table><thead id="thead-entregadores"></thead><tbody id="tbody-entregadores"></tbody></table>
     </div></div>`;
   _renderTbodyEntregadores();
+}
+// Mesma filtragem usada pelo tbody (aba de status + busca) — fatorada aqui
+// pra também servir de escopo do toggle em massa de disponibilidade: age só
+// sobre quem está visível na lista no momento (filtro+busca aplicados), não
+// sobre a base inteira de entregadores.
+function _entListaFiltrada(){
+  let filtered;
+  if(_entFiltro==='aprovados') filtered=_entDataCache.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
+  else if(_entFiltro==='em_analise') filtered=_entDataCache.filter(e=>e.status_cadastro==='em_analise');
+  else if(_entFiltro==='pendentes') filtered=_entDataCache.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
+  else if(_entFiltro==='reprovados') filtered=_entDataCache.filter(e=>e.status_cadastro==='reprovado');
+  else filtered=_entDataCache;
+  return filtered.filter(e=>_entMatchBusca(e,_entBusca));
 }
 // Nome ou CPF, comparação de CPF ignora pontuação (busca "12345678900" acha
 // "123.456.789-00" e vice-versa).
@@ -4101,13 +4115,7 @@ function _entMatchBusca(e,termo){
 // layout diferente dos demais) — por isso é recalculado aqui também, mas
 // sem tocar no <input> de busca, que fica intacto no DOM.
 function _renderTbodyEntregadores(){
-  let filtered;
-  if(_entFiltro==='aprovados') filtered=_entDataCache.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado'));
-  else if(_entFiltro==='em_analise') filtered=_entDataCache.filter(e=>e.status_cadastro==='em_analise');
-  else if(_entFiltro==='pendentes') filtered=_entDataCache.filter(e=>e.status==='bloqueado'||e.status_cadastro==='em_analise'||(!e.aprovado&&(!e.status_cadastro||e.status_cadastro==='pendente')));
-  else if(_entFiltro==='reprovados') filtered=_entDataCache.filter(e=>e.status_cadastro==='reprovado');
-  else filtered=_entDataCache;
-  filtered=filtered.filter(e=>_entMatchBusca(e,_entBusca));
+  const filtered=_entListaFiltrada();
 
   let theadHtml,tbodyHtml;
   const _fotoBtn=(url)=>url?`<button onclick="window.open('${url}','_blank')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
@@ -4176,6 +4184,55 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
     badge.onclick=()=>_toggleDisponivelEntregador(id,novoValor);
   }
   showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+}
+
+// Toggle em massa — afeta despacho real (entregador offline não recebe
+// pedido), por isso: (1) confirmação explícita com a contagem de quem
+// realmente muda, (2) PATCH individual por entregador (não um único PATCH
+// em lote) pra poder reportar exatamente quem falhou, e (3) o badge de cada
+// linha só reflete "Online"/"Offline" depois da resposta do banco — nunca
+// otimista. Escopo é a lista filtrada/buscada na tela no momento (mesma
+// função usada pelo tbody), não a base inteira de entregadores.
+async function _toggleTodosDisponivel(ligar){
+  const alvo=_entListaFiltrada().filter(e=>!!e.disponivel!==ligar);
+  if(!alvo.length){showNotif(ligar?'Todos já estão online':'Todos já estão offline','','var(--text3)');return;}
+  const acao=ligar?'ligar':'desligar';
+  const sujeito=ligar?'offline':'disponíveis';
+  if(!confirm(`Tem certeza que quer ${acao} TODOS os ${alvo.length} entregadores ${sujeito} agora?`))return;
+
+  alvo.forEach(e=>{
+    const badge=document.getElementById('badge-disp-'+e.id);
+    if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
+  });
+
+  const resultados=await Promise.allSettled(alvo.map(e=>dbPatch('entregadores',{disponivel:ligar,updated_at:_agoraBrasilia()},`?id=eq.${e.id}`)));
+
+  const falhas=[];
+  resultados.forEach((r,i)=>{
+    const e=alvo[i];
+    const ok=r.status==='fulfilled'&&r.value!==null;
+    const badge=document.getElementById('badge-disp-'+e.id);
+    // Reflete o estado REAL gravado: só marca "ligado" no cache/badge se o
+    // PATCH realmente confirmou — em falha, volta pro valor anterior (não
+    // assume sucesso silencioso).
+    const valorReal=ok?ligar:e.disponivel;
+    if(!ok)falhas.push(e.nome||e.id?.substring(0,8)||'—');
+    const entCache=_entDataCache.find(x=>x.id===e.id);
+    if(entCache)entCache.disponivel=valorReal;
+    if(badge){
+      badge.textContent=valorReal?'Online':'Offline';
+      badge.style.background=valorReal?'#10B981':'#6B7280';
+      badge.style.cursor='pointer';
+      badge.onclick=()=>_toggleDisponivelEntregador(e.id,valorReal);
+    }
+  });
+
+  const sucesso=alvo.length-falhas.length;
+  if(!falhas.length){
+    showNotif(ligar?`🟢 ${sucesso} entregador(es) ligado(s)`:`⚫ ${sucesso} entregador(es) desligado(s)`,'','var(--green)');
+  }else{
+    showNotif(`⚠️ ${sucesso} de ${alvo.length} atualizados`,`Falhou pra: ${falhas.join(', ')}`,'var(--yellow)');
+  }
 }
 
 async function _toggleStatusEntregador(id, statusAtual){
@@ -4281,8 +4338,14 @@ async function excluirLoja(id,nome){
 }
 
 async function abrirEditarEntregador(entId){
-  const arr=await db('entregadores','GET',null,`?id=eq.${entId}`);
+  const [arr,clasArr,claVinculoArr]=await Promise.all([
+    db('entregadores','GET',null,`?id=eq.${entId}`),
+    db('clas','GET',null,'?order=cidade.asc'),
+    db('clas_entregadores','GET',null,`?entregador_id=eq.${entId}&select=cla_id`),
+  ]);
   const e=Array.isArray(arr)?arr[0]:arr;if(!e)return;
+  const clasList=Array.isArray(clasArr)?clasArr:[];
+  const claAtualId=Array.isArray(claVinculoArr)&&claVinculoArr[0]?claVinculoArr[0].cla_id:'';
   let modal=document.getElementById('modal-editar-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
   const sel=(id,val,opts)=>`<select id="${id}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px">${opts.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}</select>`;
@@ -4295,7 +4358,7 @@ async function abrirEditarEntregador(entId){
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
 ${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
-${row1(fi('Código de Cadastro',inp('ee-codigo-cadastro',e.codigo_cadastro,'')))}
+${row1(fi('Clã de Entregador',sel('ee-cla',claAtualId,[['','Sem clã'],...clasList.map(c=>[c.id,`${c.cidade.toUpperCase()} - ${c.uf}`])])))}
 ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
@@ -4355,7 +4418,6 @@ async function salvarEdicaoEntregador(entId){
 
   const update={
     nome:g('ee-nome'),telefone:g('ee-telefone'),cpf:g('ee-cpf'),
-    codigo_cadastro:g('ee-codigo-cadastro')||null,
     rg:g('ee-rg'),data_nascimento:g('ee-nascimento')||null,
     cep:g('ee-cep'),bairro:g('ee-bairro'),logradouro:g('ee-logradouro'),
     numero_endereco:g('ee-end-numero'),complemento_end:g('ee-complemento'),
@@ -4374,6 +4436,9 @@ async function salvarEdicaoEntregador(entId){
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
+  const claId=g('ee-cla');
+  await db('clas_entregadores','DELETE',null,`?entregador_id=eq.${entId}`);
+  if(claId)await db('clas_entregadores','POST',{cla_id:claId,entregador_id:entId});
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado com sucesso!','','var(--green)');
   setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
 }
@@ -6521,8 +6586,24 @@ function _renderFaturaAtualCard(c){
 
 // ── RANKING ENTREGADOR ──
 const _RANKING_PREMIOS=[100,80,70,60,50,40,30,20,15,10];
-async function renderRankingPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div><div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 da semana atual por pontos — só informativo, sem pagamento automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div></div>`;
+let _rankingAba='ranking';
+async function renderRankingPage(aba){
+  _rankingAba=aba||_rankingAba||'ranking';
+  const abas=[{id:'ranking',icon:'🏆',label:'Ranking'},{id:'clas',icon:'🐺',label:'Clãs'}];
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div>
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
+      ${abas.map(a=>`<button onclick="renderRankingPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_rankingAba===a.id?'var(--accent)':'transparent'};color:${_rankingAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+    </div>
+    <div id="ranking-content"></div>
+  </div>`;
+  if(_rankingAba==='clas'){_renderClasTab();return;}
+  _renderRankingLista();
+}
+
+async function _renderRankingLista(){
+  const el=document.getElementById('ranking-content');if(!el)return;
+  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 da semana atual por pontos — só informativo, sem pagamento automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&pontos_semana=gt.0&order=pontos_semana.desc&limit=10');
   const lista=document.getElementById('ranking-lista');if(!lista)return;
   const arr=Array.isArray(entregadores)?entregadores:[];
@@ -6534,6 +6615,144 @@ async function renderRankingPage(){
     <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
     <td style="font-weight:700;color:#22c55e">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2)}</td>
   </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── CLÃS DE ENTREGADOR ──
+// Grupo exclusivo loja(s)+entregador(es) por cidade — regra de despacho, não
+// só rótulo (ver migrations/add_clas_entregador.sql e entregadores_no_raio).
+// Cardinalidade 1:1: uma loja/entregador pertence a no máximo 1 clã — os
+// pickers abaixo escondem quem já está em outro clã, pra não dar pra
+// selecionar de novo (mesma regra que o banco já garante via UNIQUE).
+const _UF_LIST=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+let _clasCache=[],_clasLojasCache=[],_clasEntCache=[];
+
+async function _renderClasTab(){
+  const el=document.getElementById('ranking-content');if(!el)return;
+  el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div>';
+  const [lojas,entregadores,clas,clasLojas,clasEnt]=await Promise.all([
+    db('lojas','GET',null,'?select=id,nome,cidade&order=nome.asc'),
+    db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),
+    db('clas','GET',null,'?order=cidade.asc'),
+    db('clas_lojas','GET',null,''),
+    db('clas_entregadores','GET',null,''),
+  ]);
+  _clasCache=Array.isArray(clas)?clas:[];
+  _clasLojasCache=Array.isArray(clasLojas)?clasLojas:[];
+  _clasEntCache=Array.isArray(clasEnt)?clasEnt:[];
+  const lojasAll=Array.isArray(lojas)?lojas:[];
+  const entAll=Array.isArray(entregadores)?entregadores:[];
+  const cidades=[...new Set(lojasAll.map(l=>l.cidade).filter(Boolean))].sort();
+  const elFinal=document.getElementById('ranking-content');if(!elFinal)return;
+  if(!cidades.length){elFinal.innerHTML='<div class="card"><div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cidade com loja cadastrada ainda.</div></div>';return;}
+  elFinal.innerHTML=`<div style="display:flex;flex-direction:column;gap:16px">${cidades.map(c=>_claCardHtml(c,lojasAll,entAll)).join('')}</div>`;
+}
+
+function _claCardHtml(cidade,lojasAll,entAll){
+  const cla=_clasCache.find(c=>c.cidade===cidade);
+  const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
+  const cidadeEsc=cidade.replace(/'/g,"\\'");
+  if(!cla){
+    return `<div class="card"><div style="padding:20px 24px">
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">${cidade}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Nenhum clã criado pra essa cidade ainda.</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="cla-uf-${cidSafe}" style="${_ss};max-width:100px">${_UF_LIST.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
+        <button class="btn-modal-primary" onclick="_criarCla('${cidadeEsc}','${cidSafe}')">➕ Criar Clã de ${cidade}</button>
+      </div>
+    </div></div>`;
+  }
+  const lojasDoCla=_clasLojasCache.filter(cl=>cl.cla_id===cla.id).map(cl=>cl.loja_id);
+  const entDoCla=_clasEntCache.filter(ce=>ce.cla_id===cla.id).map(ce=>ce.entregador_id);
+  const lojasOcupadas=new Set(_clasLojasCache.filter(cl=>cl.cla_id!==cla.id).map(cl=>cl.loja_id));
+  const entOcupados=new Set(_clasEntCache.filter(ce=>ce.cla_id!==cla.id).map(ce=>ce.entregador_id));
+  const lojasDisponiveis=lojasAll.filter(l=>!lojasOcupadas.has(l.id));
+  const entDisponiveis=entAll.filter(e=>!entOcupados.has(e.id));
+  return `<div class="card"><div style="padding:20px 24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)">🐺 ${cidade.toUpperCase()} - ${cla.uf}</div>
+      <span onclick="_excluirCla('${cla.id}','${cidadeEsc}')" style="font-size:11px;color:#ef4444;cursor:pointer;font-weight:600">🗑️ Excluir clã</span>
+    </div>
+    ${_claPickerHtml('loja',cidSafe,lojasDisponiveis,lojasDoCla)}
+    ${_claPickerHtml('ent',cidSafe,entDisponiveis,entDoCla)}
+    <div id="cla-feedback-${cidSafe}" style="margin:10px 0;font-size:12px"></div>
+    <button class="btn-modal-primary" onclick="_salvarCla('${cla.id}','${cidSafe}')">💾 Salvar</button>
+  </div></div>`;
+}
+
+function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
+  const label=tipo==='loja'?'Lojas do clã':'Entregadores do clã';
+  const multiId=`cla-multi-${tipo}-${cidSafe}`;
+  const optionsHtml=entidades.map(e=>`<label class="cla-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
+  return `<div class="fi" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <label style="margin:0">${label}</label>
+      <span onclick="_claSelecionarTodos('${multiId}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none" id="cla-selall-${tipo}-${cidSafe}">Selecionar todos</span>
+    </div>
+    <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value,'${tipo}','${cidSafe}')"
+      style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
+    <div id="${multiId}" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
+      ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum disponível (todos já estão em outro clã)</div>'}
+    </div>
+  </div>`;
+}
+
+function _claFiltrarOpcoes(multiId,busca,tipo,cidSafe){
+  const q=(busca||'').trim().toLowerCase();
+  const wrap=document.getElementById(multiId);if(!wrap)return;
+  const visiveis=[];
+  wrap.querySelectorAll('.cla-opt').forEach(lbl=>{
+    const nome=lbl.textContent.toLowerCase();
+    const vis=!q||nome.includes(q);
+    lbl.style.display=vis?'':'none';
+    if(vis)visiveis.push(lbl.querySelector('input[type=checkbox]'));
+  });
+  const selAllEl=document.getElementById(`cla-selall-${tipo}-${cidSafe}`);
+  if(selAllEl){
+    const todosChecked=visiveis.length>0&&visiveis.every(cb=>cb?.checked);
+    selAllEl.textContent=todosChecked?'Desmarcar todos':'Selecionar todos';
+  }
+}
+
+function _claSelecionarTodos(multiId){
+  const wrap=document.getElementById(multiId);if(!wrap)return;
+  const visiveis=[...wrap.querySelectorAll('.cla-opt')].filter(lbl=>lbl.style.display!=='none');
+  const cbs=visiveis.map(lbl=>lbl.querySelector('input[type=checkbox]')).filter(Boolean);
+  const todosChecked=cbs.length>0&&cbs.every(cb=>cb.checked);
+  cbs.forEach(cb=>cb.checked=!todosChecked);
+  const m=multiId.match(/^cla-multi-(loja|ent)-(.+)$/);
+  if(m){
+    const selAllEl=document.getElementById(`cla-selall-${m[1]}-${m[2]}`);
+    if(selAllEl)selAllEl.textContent=todosChecked?'Selecionar todos':'Desmarcar todos';
+  }
+}
+
+async function _criarCla(cidade,cidSafe){
+  const uf=document.getElementById(`cla-uf-${cidSafe}`)?.value;if(!uf)return;
+  const res=await db('clas','POST',{cidade,uf});
+  if(!Array.isArray(res)||!res.length){showNotif('❌ Erro ao criar clã','','var(--red)');return;}
+  showNotif('✅ Clã criado','','var(--green)');
+  _renderClasTab();
+}
+
+async function _excluirCla(claId,cidade){
+  if(!confirm(`Excluir o clã de ${cidade}? Isso remove a exclusividade de despacho — lojas e entregadores voltam ao pool normal.`))return;
+  await db('clas','DELETE',null,`?id=eq.${claId}`);
+  showNotif('🗑️ Clã excluído','','var(--red)');
+  _renderClasTab();
+}
+
+async function _salvarCla(claId,cidSafe){
+  const fb=document.getElementById(`cla-feedback-${cidSafe}`);
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const lojaIds=[...document.querySelectorAll(`#cla-multi-loja-${cidSafe} input[type=checkbox]:checked`)].map(cb=>cb.value);
+  const entIds=[...document.querySelectorAll(`#cla-multi-ent-${cidSafe} input[type=checkbox]:checked`)].map(cb=>cb.value);
+  await db('clas_lojas','DELETE',null,`?cla_id=eq.${claId}`);
+  await db('clas_entregadores','DELETE',null,`?cla_id=eq.${claId}`);
+  if(lojaIds.length)await db('clas_lojas','POST',lojaIds.map(id=>({cla_id:claId,loja_id:id})));
+  if(entIds.length)await db('clas_entregadores','POST',entIds.map(id=>({cla_id:claId,entregador_id:id})));
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
+  showNotif('✅ Clã atualizado','','var(--green)');
+  setTimeout(_renderClasTab,900);
 }
 
 // ── VAGAS DE MOTOBOY FIXO ──

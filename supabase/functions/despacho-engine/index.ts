@@ -223,8 +223,9 @@ serve(async () => {
         const refP = pedidosRota[0];
         const agoraRota = new Date();
         const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
-          lat: refP.latitude, lng: refP.longitude,
-          raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
+          p_lat: refP.latitude, p_lng: refP.longitude,
+          p_raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
+          p_loja_id: rota.loja_id,
         });
         logErr(`buscar entregadores no raio da rota ${rota.id}`, entRaioErr);
 
@@ -264,8 +265,9 @@ serve(async () => {
     // ── FIM DESPACHO DE ROTAS ─────────────────────────────────────────────────
 
     // Loop de despacho normal — pedidos sem rota (incluindo recém-desagrupados)
+    // loja_id: precisa pra checar exclusividade de clã em entregadores_no_raio.
     const { data: pedidos } = await supabase
-      .from("pedidos").select("id, numero, latitude, longitude, created_at")
+      .from("pedidos").select("id, numero, latitude, longitude, created_at, loja_id")
       .eq("status", "pronto").is("motoboy_id", null)
       .is("rota_agrupada_id", null);
 
@@ -311,8 +313,9 @@ serve(async () => {
         const idsJaReceberam = (jaReceberam || []).map((r: any) => r.entregador_id);
 
         const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
-          lat: pedido.latitude, lng: pedido.longitude,
-          raio_km: 40075, // sem limite de raio — metade da circunferência da Terra
+          p_lat: pedido.latitude, p_lng: pedido.longitude,
+          p_raio_km: 40075, // sem limite de raio — metade da circunferência da Terra
+          p_loja_id: pedido.loja_id,
         });
         logErr(`buscar entregadores no raio (fallback, pedido ${pedido.id})`, entRaioErr);
 
@@ -360,8 +363,9 @@ serve(async () => {
         if ((jaEnviado.data?.length || 0) > 0) continue;
 
         const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
-          lat: pedido.latitude, lng: pedido.longitude,
-          raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
+          p_lat: pedido.latitude, p_lng: pedido.longitude,
+          p_raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
+          p_loja_id: pedido.loja_id,
         });
         logErr(`buscar entregadores no raio (pedido ${pedido.id})`, entRaioErr);
 
@@ -407,7 +411,8 @@ serve(async () => {
         const idsJaReceberam = (jaReceberam || []).map((r: any) => r.entregador_id);
 
         const { data: entregadores, error: entRaioOndaErr } = await supabase.rpc("entregadores_no_raio", {
-          lat: pedido.latitude, lng: pedido.longitude, raio_km: ondaAtual.raio,
+          p_lat: pedido.latitude, p_lng: pedido.longitude, p_raio_km: ondaAtual.raio,
+          p_loja_id: pedido.loja_id,
         });
         logErr(`buscar entregadores no raio (onda ${ondaNum}, pedido ${pedido.id})`, entRaioOndaErr);
 
