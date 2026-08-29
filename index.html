@@ -278,6 +278,8 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
         <div class="fi"><label>Telefone Financeiro</label><input id="cl-celular" placeholder="(16) 99999-9999"/></div>
       </div>
       <div class="form-row full"><div class="fi"><label>Nome do Responsável</label><input id="cl-responsavel" placeholder="Nome completo"/></div></div>
+      <div class="form-row full"><div class="fi"><label>CPF ou CNPJ</label><input id="cl-documento" placeholder="000.000.000-00" maxlength="18" oninput="_maskDocumentoLoja(this)"/></div></div>
+      <div id="cl-documento-feedback" style="font-size:11px;margin:-8px 0 6px;min-height:16px"></div>
       <div class="form-row">
         <div class="fi"><label>E-mail</label><input type="email" id="cl-email" placeholder="loja@email.com"/></div>
         <div class="fi"><label>Senha</label><div style="position:relative"><input type="password" id="cl-senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('cl-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div>

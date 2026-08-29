@@ -5956,12 +5956,59 @@ async function criarLoja(){
 // conta de login já na hora (mesma UX do motoboy — a loja só não consegue
 // entrar até ser aprovada, porque usuarios_painel.ativo nasce false; login
 // já exige ativo=eq.true, então não precisou de gate novo nenhum).
+// Máscara automática CPF/CNPJ pelo tamanho (detecta enquanto digita: até
+// 11 dígitos formata como CPF, 12+ como CNPJ) — mesma ideia de
+// _formatarTelefone já usado em outros lugares deste arquivo, só que pros
+// dois formatos possíveis nesse campo único.
+function _maskDocumentoLoja(el){
+  let v=el.value.replace(/\D/g,'').slice(0,14);
+  if(v.length<=11){
+    v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  }else{
+    v=v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  }
+  el.value=v;
+}
+// Validação de dígito verificador de verdade (algoritmo padrão da Receita),
+// não só tamanho — rejeita sequências óbvias tipo 111.111.111-11 também.
+function _validarCPF(cpf){
+  cpf=(cpf||'').replace(/\D/g,'');
+  if(cpf.length!==11||/^(\d)\1{10}$/.test(cpf))return false;
+  let soma=0;for(let i=0;i<9;i++)soma+=parseInt(cpf[i])*(10-i);
+  let resto=(soma*10)%11;if(resto===10||resto===11)resto=0;
+  if(resto!==parseInt(cpf[9]))return false;
+  soma=0;for(let i=0;i<10;i++)soma+=parseInt(cpf[i])*(11-i);
+  resto=(soma*10)%11;if(resto===10||resto===11)resto=0;
+  return resto===parseInt(cpf[10]);
+}
+function _validarCNPJ(cnpj){
+  cnpj=(cnpj||'').replace(/\D/g,'');
+  if(cnpj.length!==14||/^(\d)\1{13}$/.test(cnpj))return false;
+  const calc=(tam)=>{
+    const nums=cnpj.substring(0,tam);
+    let soma=0,pos=tam-7;
+    for(let i=tam;i>=1;i--){soma+=parseInt(nums[tam-i])*pos--;if(pos<2)pos=9;}
+    const resto=soma%11;
+    return resto<2?0:11-resto;
+  };
+  return calc(12)===parseInt(cnpj[12])&&calc(13)===parseInt(cnpj[13]);
+}
+function _validarDocumentoLoja(v){
+  const digits=(v||'').replace(/\D/g,'');
+  if(digits.length===11)return _validarCPF(digits);
+  if(digits.length===14)return _validarCNPJ(digits);
+  return false;
+}
+
 async function enviarCadastroLoja(){
   const g=(id)=>document.getElementById(id)?.value?.trim()||'';
   const nome=g('cl-nome'),endereco=g('cl-endereco'),telefone=g('cl-telefone'),celular=g('cl-celular'),responsavel=g('cl-responsavel'),email=g('cl-email');
   const senha=document.getElementById('cl-senha')?.value||'';
+  const documentoRaw=g('cl-documento');
+  const documento=documentoRaw.replace(/\D/g,'');
   const fb=document.getElementById('cl-feedback');
-  if(!nome||!endereco||!telefone||!celular||!responsavel||!email||!senha){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Preencha todos os campos.</div>';return;}
+  if(!nome||!endereco||!telefone||!celular||!responsavel||!email||!senha||!documentoRaw){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Preencha todos os campos.</div>';return;}
+  if(!_validarDocumentoLoja(documento)){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">CPF ou CNPJ inválido — confere os números.</div>';return;}
   if(senha.length<6){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">⏳ Enviando cadastro...</div>';
   const auth=await _criarContaAuth(email,senha);
@@ -5973,7 +6020,7 @@ async function enviarCadastroLoja(){
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
-  const payload={nome,endereco,telefone,celular,responsavel,email,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng,created_at:_agoraBrasilia()};
+  const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng,created_at:_agoraBrasilia()};
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">❌ Erro ao enviar cadastro.</div>';return;}
   await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
@@ -5981,7 +6028,7 @@ async function enviarCadastroLoja(){
   showNotif('✅ Cadastro enviado!','Nosso time vai analisar e liberar seu acesso em breve.');
   setTimeout(()=>{
     fecharModal('modal-cadastro-loja');
-    ['cl-nome','cl-endereco','cl-lat','cl-lng','cl-telefone','cl-celular','cl-responsavel','cl-email','cl-senha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['cl-nome','cl-endereco','cl-lat','cl-lng','cl-telefone','cl-celular','cl-responsavel','cl-email','cl-senha','cl-documento'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     fb.innerHTML='';
   },2500);
 }
