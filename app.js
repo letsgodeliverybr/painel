@@ -6642,6 +6642,7 @@ async function _renderRankingLista(){
 // selecionar de novo (mesma regra que o banco já garante via UNIQUE).
 const _UF_LIST=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 let _clasCache=[],_clasLojasCache=[],_clasEntCache=[];
+let _claVerCache={};
 
 async function _renderClasTab(){
   const el=document.getElementById('ranking-content');if(!el)return;
@@ -6695,16 +6696,39 @@ function _claCardHtml(cidade,lojasAll,entAll){
 
 function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   const label=tipo==='loja'?`🏪 Lojas do clã (${selecionadosIds.length})`:`🛵 Entregadores do clã (${selecionadosIds.length})`;
+  const verLabel=tipo==='loja'?'Ver lojas':'Ver entregadores';
   const multiId=`cla-multi-${tipo}-${cidSafe}`;
+  _claVerCache[multiId]=entidades.filter(e=>selecionadosIds.includes(e.id)).map(e=>e.nome);
   const optionsHtml=entidades.map(e=>`<label class="cla-opt" data-doc="${tipo==='ent'?(e.cpf||'').replace(/\D/g,''):''}" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
   return `<div class="fi" style="margin-bottom:14px">
-    <label style="margin:0;display:block;margin-bottom:6px">${label}</label>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <label style="margin:0">${label}</label>
+      <span onclick="_claVerLista('${multiId}','${verLabel}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none">👁️ ${verLabel}</span>
+    </div>
     <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value)"
       style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
     <div id="${multiId}" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
       ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum disponível (todos já estão em outro clã)</div>'}
     </div>
   </div>`;
+}
+// Popup simples com os nomes já selecionados naquele picker no momento em
+// que _claPickerHtml renderizou (_claVerCache[multiId]) — não lê os
+// checkboxes ao vivo de propósito: é "o que está salvo", não "o que está
+// marcado na tela sem ter salvo ainda" (evita confundir seleção pendente
+// com o que já é clã de verdade). Mesmo padrão de modal dinâmico já usado
+// em abrirAlocarMotoboy (cria/reaproveita a div, sem depender de markup
+// fixo no index.html).
+function _claVerLista(multiId,verLabel){
+  const nomes=_claVerCache[multiId]||[];
+  let modal=document.getElementById('modal-cla-ver-lista');
+  if(!modal){modal=document.createElement('div');modal.id='modal-cla-ver-lista';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const listaHtml=nomes.length
+    ?nomes.map(n=>`<div style="padding:9px 2px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)">${n}</div>`).join('')
+    :`<div style="text-align:center;padding:24px;color:var(--text3)">Nenhum selecionado ainda</div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${verLabel} (${nomes.length})</span><button class="modal-close" onclick="fecharModal('modal-cla-ver-lista')">✕</button></div><div class="modal-body" style="max-height:340px;overflow-y:auto">${listaHtml}</div></div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
 }
 
 // Busca por nome OU documento (CPF, hoje só disponível pra entregadores —
