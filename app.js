@@ -8569,7 +8569,7 @@ const _PLATAFORMAS_CARDAPIO_PDV=['Anota AI','Goomer','Cardápio Web','Oimenu','D
 // Status por plataforma — default "não iniciado" pra quem não está aqui.
 // Atualiza esse mapa conforme uma integração avança (não iniciado → em
 // andamento → concluído), sem precisar mexer na estrutura dos cards.
-const _PLATAFORMAS_STATUS={'Anota AI':'em_andamento'};
+const _PLATAFORMAS_STATUS={'Anota AI':'em_andamento','Goomer':'em_andamento','Cardápio Web':'em_andamento'};
 function _cardPlataforma(nome){
   const status=_PLATAFORMAS_STATUS[nome]||'nao_iniciado';
   const statusInfo={
