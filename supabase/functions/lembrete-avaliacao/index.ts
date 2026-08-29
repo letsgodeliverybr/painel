@@ -1,16 +1,20 @@
 // Push periódico (a cada 3 dias, via pg_cron — ver migration
 // add_cron_lembrete_avaliacao.sql) pedindo pro entregador avaliar o app na
-// Play Store. Mesmo padrão de autenticação dos outros crons deste projeto
-// (despacho-engine-cron, ifood-polling-cron): Authorization: Bearer com o
-// cron_dispatch_key guardado no Vault, chamado direto via net.http_post.
+// Play Store. Mesma function serve 3 chamadores, sem duplicar lógica:
+//   1. pg_cron (body:'{}') — broadcast real, automático.
+//   2. Painel, botão "Enviar agora pra todos" (body:'{}' também, mesmo
+//      broadcast — é a mesma chamada de novo, só disparada na mão).
+//   3. Painel, botão "Testar" (body:{entregador_id_teste:'...'}) — manda
+//      só pra 1 entregador, pra conferir o texto antes de mandar geral.
 //
-// Lógica de envio (JWT do service account do Firebase + sendFCM) segue o
-// MESMO padrão já usado em notify-novo-pedido/index.ts — não tem módulo
-// compartilhado entre Edge Functions neste projeto hoje (cada function é
-// isolada, sem import cross-function), então isso duplica esse trecho
-// (é a mesma duplicação que já existe entre despacho-engine e
-// notify-novo-pedido). Se um dia vier a fazer sentido, dá pra extrair pra
-// supabase/functions/_shared/fcm.ts.
+// Autenticação: x-webhook-secret (mesmo padrão de delete-entregador/
+// update-entregador-email) — trocado do antigo Authorization Bearer +
+// cron_dispatch_key porque agora o painel (browser) também precisa
+// chamar essa function direto, e o jeito mais simples/consistente com o
+// resto do projeto de habilitar isso é esse header + verify_jwt=false
+// (ver supabase/config.toml), igual as outras 2 functions chamadas pelo
+// painel. A migration do cron foi atualizada junto pra mandar esse mesmo
+// header em vez do Bearer antigo.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const FCM_PROJECT_ID = "lets-go-delivery-df74d";
@@ -18,6 +22,20 @@ const FCM_PROJECT_ID = "lets-go-delivery-df74d";
 // namespace (com.letsgodelivery.entregador), que é usado só como bundle
 // id no iOS/Firebase.
 const ANDROID_PACKAGE_ID = "br.com.letsgodelivery.parceiro";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "content-type, x-webhook-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
 
 async function getFirebaseAccessToken(): Promise<string> {
   const sa = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!);
@@ -87,12 +105,12 @@ async function getFirebaseAccessToken(): Promise<string> {
 // uma avaliação com nota fixa ("review manipulation"), risco real de
 // suspensão do app. Convite genérico pra avaliar é permitido.
 //
-// Só referência/documentação — o texto real que aparece pro entregador
-// vive em notification_service.dart (showAvaliarAppLocal), já que o
-// payload é data-only e quem decide título/corpo é o app, não o servidor.
-// Manter os dois iguais na mão se o texto mudar de novo.
-const TITULO = "Gostando do app? 💙🩵";
-const CORPO = "Deixa sua avaliação pra gente na Play Store!";
+// Fallback só — o texto de verdade vive na tabela `configuracoes` (chaves
+// notif_avaliar_app_titulo/notif_avaliar_app_corpo), editável pelo admin
+// no painel (Disparo WhatsApp → Disparar Notificações). Esses literais só
+// entram em jogo se essas linhas ainda não existirem na tabela.
+const TITULO_PADRAO = "Gostando do app? 💙🩵";
+const CORPO_PADRAO = "Deixa sua avaliação pra gente na Play Store!";
 
 // Data-only DE PROPÓSITO (sem bloco `notification`) — mesmo padrão já
 // corrigido e comprovado no despacho-engine (ver enviarPushFCM). Testado
@@ -105,7 +123,12 @@ const CORPO = "Deixa sua avaliação pra gente na Play Store!";
 // payload:'avaliar_app'), cujo toque é tratado por
 // onDidReceiveNotificationResponse (flutter_local_notifications), mais
 // confiável que depender do tap-tracking do FCM/Android.
-async function sendFCM(token: string, accessToken: string): Promise<boolean> {
+async function sendFCM(
+  token: string,
+  accessToken: string,
+  titulo: string,
+  corpo: string,
+): Promise<boolean> {
   const res = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FCM_PROJECT_ID}/messages:send`,
     {
@@ -117,7 +140,7 @@ async function sendFCM(token: string, accessToken: string): Promise<boolean> {
       body: JSON.stringify({
         message: {
           token,
-          data: { tipo: "avaliar_app" },
+          data: { tipo: "avaliar_app", titulo, corpo },
           android: { priority: "normal" },
         },
       }),
@@ -131,24 +154,21 @@ async function sendFCM(token: string, accessToken: string): Promise<boolean> {
   return res.ok;
 }
 
-// Autenticação: NÃO verifica nada internamente, de propósito — mesmo
-// padrão de despacho-engine/ifood-polling/ifood-status-sync (todos
-// chamados por pg_cron do mesmo jeito, com Authorization: Bearer +
-// cron_dispatch_key do Vault). Nenhum deles confere esse header dentro do
-// próprio código; a verificação acontece no gateway de Edge Functions do
-// Supabase (JWT padrão), não é um secret de app. Diferente de
-// notify-novo-pedido, que É chamado direto por um trigger SQL com
-// --no-verify-jwt e por isso confere um x-webhook-secret próprio.
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: CORS_HEADERS });
+
+  const secret = req.headers.get("x-webhook-secret");
+  if (secret !== WEBHOOK_SECRET) return json({ error: "Unauthorized" }, 401);
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   // Body opcional { entregador_id_teste: "..." } — pra testar manualmente
-  // mirando 1 entregador só, sem disparar pra todo mundo. pg_cron sempre
-  // manda body:'{}' (sem esse campo), então o disparo automático real
-  // nunca é afetado por isso.
+  // mirando 1 entregador só, sem disparar pra todo mundo. pg_cron e o
+  // botão "Enviar agora pra todos" do painel sempre mandam body:'{}' (sem
+  // esse campo), então o disparo broadcast nunca é afetado por isso.
   let entregadorIdTeste: string | undefined;
   try {
     const body = await req.json();
@@ -156,6 +176,15 @@ Deno.serve(async (req) => {
   } catch (_) {
     // body vazio/não-JSON (caso do pg_cron, body:'{}') — segue broadcast normal.
   }
+
+  // Texto: busca na tabela configuracoes (editável pelo admin), cai pro
+  // literal padrão se a linha ainda não existir.
+  const { data: cfg } = await supabase
+    .from("configuracoes")
+    .select("chave, valor")
+    .in("chave", ["notif_avaliar_app_titulo", "notif_avaliar_app_corpo"]);
+  const titulo = cfg?.find((c) => c.chave === "notif_avaliar_app_titulo")?.valor || TITULO_PADRAO;
+  const corpo = cfg?.find((c) => c.chave === "notif_avaliar_app_corpo")?.valor || CORPO_PADRAO;
 
   // "Ativos" = conta aprovada, com token FCM salvo — não filtra por
   // disponivel=true (isso é sobre estar online pra receber pedido, não
@@ -173,11 +202,11 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error("[lembrete-avaliacao] erro ao buscar entregadores:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return json({ error: error.message }, 500);
   }
 
   if (!entregadores?.length) {
-    return new Response(JSON.stringify({ sent: 0, total: 0 }), { status: 200 });
+    return json({ sent: 0, total: 0 });
   }
 
   const accessToken = await getFirebaseAccessToken();
@@ -190,15 +219,12 @@ Deno.serve(async (req) => {
       continue;
     }
     try {
-      const ok = await sendFCM(e.fcm_token, accessToken);
+      const ok = await sendFCM(e.fcm_token, accessToken, titulo, corpo);
       if (ok) sent++;
     } catch (err) {
       console.error(`[lembrete-avaliacao] erro no envio pro entregador ${e.id}:`, err);
     }
   }
 
-  return new Response(
-    JSON.stringify({ sent, total: entregadores.length, package: ANDROID_PACKAGE_ID }),
-    { status: 200 },
-  );
+  return json({ sent, total: entregadores.length, package: ANDROID_PACKAGE_ID });
 });

@@ -1,15 +1,31 @@
-// Push periódico (a cada 7 dias, ver migration add_cron_lembrete_indicacao.sql)
-// convidando o entregador a indicar um motoboy ou uma loja nova pro
-// programa de indicação. Mesmo padrão de tudo: autenticação via gateway
-// (cron_dispatch_key do Vault, não verificado aqui dentro — igual
-// despacho-engine/ifood-polling), payload data-only (mesmo motivo já
-// documentado em lembrete-avaliacao: notification+data não disparava o
-// tap de forma confiável, testado em produção), lógica de envio duplicada
-// do mesmo padrão de notify-novo-pedido/lembrete-avaliacao (sem módulo
-// compartilhado entre Edge Functions neste projeto ainda).
+// Push periódico (a cada 3 dias, mesmo ciclo do lembrete-avaliacao — ver
+// migration add_cron_lembrete_indicacao.sql) convidando o entregador a
+// indicar um motoboy ou uma loja nova pro programa de indicação. Mesma
+// function serve 3 chamadores, sem duplicar lógica — ver comentário
+// equivalente em lembrete-avaliacao/index.ts (pg_cron / botão "Enviar
+// agora pra todos" / botão "Testar" do painel).
+//
+// Autenticação: x-webhook-secret (mesmo padrão de delete-entregador/
+// update-entregador-email) — ver comentário completo em
+// lembrete-avaliacao/index.ts sobre a troca do antigo Authorization
+// Bearer + cron_dispatch_key pra esse header.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const FCM_PROJECT_ID = "lets-go-delivery-df74d";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "content-type, x-webhook-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
 
 async function getFirebaseAccessToken(): Promise<string> {
   const sa = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!);
@@ -74,19 +90,25 @@ async function getFirebaseAccessToken(): Promise<string> {
   return access_token;
 }
 
-// Só referência/documentação — quem decide o texto real é o app
-// (showIndicacaoLocal em notification_service.dart), payload é data-only.
-// Texto e valores confirmados com o usuário, não alterar sem confirmar de novo:
-// R$2/km (motoboy ou loja indicada), R$150 de bônus extra se a indicação
-// for uma loja nova, contato (11) 99170-2772.
-const TITULO = "🛵 Ei, motoboy!";
-const CORPO =
+// Fallback só — o texto de verdade vive na tabela `configuracoes` (chaves
+// notif_indicacao_titulo/notif_indicacao_corpo), editável pelo admin no
+// painel (Disparo WhatsApp → Disparar Notificações). Valores confirmados
+// com o usuário antes de virar padrão: R$2/km (motoboy ou loja indicada),
+// R$150 de bônus extra se a indicação for uma loja nova, contato
+// (11) 99170-2772.
+const TITULO_PADRAO = "🛵 Ei, motoboy!";
+const CORPO_PADRAO =
   "Já tá gostando de faturar R$2 por km rodado nas entregas? Indique um " +
   "motoboy ou uma loja nova pra Let's Go Delivery e fature ainda mais — " +
   "R$150 de bônus por loja indicada! Chama (11) 99170-2772, time de " +
   "expansão nacional Let's Go Delivery.";
 
-async function sendFCM(token: string, accessToken: string): Promise<boolean> {
+async function sendFCM(
+  token: string,
+  accessToken: string,
+  titulo: string,
+  corpo: string,
+): Promise<boolean> {
   const res = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FCM_PROJECT_ID}/messages:send`,
     {
@@ -98,7 +120,7 @@ async function sendFCM(token: string, accessToken: string): Promise<boolean> {
       body: JSON.stringify({
         message: {
           token,
-          data: { tipo: "indicacao" },
+          data: { tipo: "indicacao", titulo, corpo },
           android: { priority: "normal" },
         },
       }),
@@ -113,6 +135,11 @@ async function sendFCM(token: string, accessToken: string): Promise<boolean> {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: CORS_HEADERS });
+
+  const secret = req.headers.get("x-webhook-secret");
+  if (secret !== WEBHOOK_SECRET) return json({ error: "Unauthorized" }, 401);
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -128,6 +155,13 @@ Deno.serve(async (req) => {
     // body vazio/não-JSON (caso do pg_cron) — segue broadcast normal.
   }
 
+  const { data: cfg } = await supabase
+    .from("configuracoes")
+    .select("chave, valor")
+    .in("chave", ["notif_indicacao_titulo", "notif_indicacao_corpo"]);
+  const titulo = cfg?.find((c) => c.chave === "notif_indicacao_titulo")?.valor || TITULO_PADRAO;
+  const corpo = cfg?.find((c) => c.chave === "notif_indicacao_corpo")?.valor || CORPO_PADRAO;
+
   let query = supabase
     .from("entregadores")
     .select("id, fcm_token")
@@ -139,11 +173,11 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error("[lembrete-indicacao] erro ao buscar entregadores:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return json({ error: error.message }, 500);
   }
 
   if (!entregadores?.length) {
-    return new Response(JSON.stringify({ sent: 0, total: 0 }), { status: 200 });
+    return json({ sent: 0, total: 0 });
   }
 
   const accessToken = await getFirebaseAccessToken();
@@ -154,15 +188,12 @@ Deno.serve(async (req) => {
       continue;
     }
     try {
-      const ok = await sendFCM(e.fcm_token, accessToken);
+      const ok = await sendFCM(e.fcm_token, accessToken, titulo, corpo);
       if (ok) sent++;
     } catch (err) {
       console.error(`[lembrete-indicacao] erro no envio pro entregador ${e.id}:`, err);
     }
   }
 
-  return new Response(
-    JSON.stringify({ sent, total: entregadores.length }),
-    { status: 200 },
-  );
+  return json({ sent, total: entregadores.length });
 });

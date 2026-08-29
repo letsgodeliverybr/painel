@@ -6,3 +6,13 @@ project_id = "astbkmpegcmqljltmdpx"
 # validarAssinaturaWebhook em ifood-status-sync/index.ts).
 [functions.ifood-status-sync]
 verify_jwt = false
+
+# Chamadas direto pelo painel (browser, botões "Enviar agora"/"Testar" da
+# aba Disparar Notificações) além do pg_cron — mesmo motivo/padrão de
+# delete-entregador/update-entregador-email: autenticação via
+# x-webhook-secret checado no próprio código, não pelo JWT do gateway.
+[functions.lembrete-avaliacao]
+verify_jwt = false
+
+[functions.lembrete-indicacao]
+verify_jwt = false
