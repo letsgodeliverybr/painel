@@ -8365,10 +8365,13 @@ async function _npRenderPeriodicos(){
   const rows=await db('configuracoes','GET',null,`?chave=in.(${chaves.join(',')})`);
   const valores={};
   (Array.isArray(rows)?rows:[]).forEach(r=>{valores[r.chave]=r.valor;});
-  const linha=(horario)=>`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    ${_NP_DIAS.map(dia=>_npCardPeriodico(dia,horario,valores)).join('')}
+  // 1 linha por dia da semana, com os 2 cards daquele MESMO dia lado a
+  // lado (manhã 09:09 + noite 18:18) — não agrupa por horário entre dias
+  // diferentes.
+  const linha=(dia)=>`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    ${_NP_HORARIOS.map(horario=>_npCardPeriodico(dia,horario,valores)).join('')}
   </div>`;
-  return linha(_NP_HORARIOS[0])+linha(_NP_HORARIOS[1]);
+  return _NP_DIAS.map(linha).join('');
 }
 
 function _npCardPeriodico(dia,horario,valores){
