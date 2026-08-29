@@ -8566,10 +8566,20 @@ let _ifoodErrosCompleto=false;
 const _PLATAFORMAS_MARKETPLACE=['Rappi','Aiqfome','99Food','Keeta','UaiRango','DeliveryMuch','Zé Delivery','Cornershop','QueroDelivery','James Delivery','Daki Delivery','Delivery 2U'];
 const _PLATAFORMAS_CARDAPIO_PDV=['Anota AI','Goomer','Cardápio Web','Oimenu','Delivery Direto','Neemo','Saipos','JotaJá','Foody Delivery','Entrega Fácil'];
 
+// Status por plataforma — default "não iniciado" pra quem não está aqui.
+// Atualiza esse mapa conforme uma integração avança (não iniciado → em
+// andamento → concluído), sem precisar mexer na estrutura dos cards.
+const _PLATAFORMAS_STATUS={'Anota AI':'em_andamento'};
 function _cardPlataforma(nome){
+  const status=_PLATAFORMAS_STATUS[nome]||'nao_iniciado';
+  const statusInfo={
+    nao_iniciado:{label:'Não iniciado',emoji:'⏳',cor:'var(--text3)'},
+    em_andamento:{label:'Em andamento',emoji:'🚧',cor:'#f59e0b'},
+    concluido:{label:'Concluído',emoji:'✅',cor:'#10b981'},
+  }[status];
   return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
     <div style="font-size:13px;font-weight:700;color:var(--text)">${nome}</div>
-    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--text3);width:fit-content">⏳ Não iniciado</div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid ${statusInfo.cor};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:${statusInfo.cor};width:fit-content">${statusInfo.emoji} ${statusInfo.label}</div>
     <button disabled style="background:var(--surface);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;opacity:.6">⚙️ Configurar</button>
   </div>`;
 }
