@@ -3973,6 +3973,17 @@ async function _renderEstabelecimentosTab(el){
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
 // a cada tecla digitada na busca, pra não perder o foco do campo (innerHTML
 // do container inteiro recriaria o <input>, tirando o cursor a cada letra).
+// Placeholder de importação em massa (rede/franquia): campo todo em zeros
+// depois de tirar a máscara — mesma regra da migration
+// validar_documento_telefone_loja_com_placeholder.sql (banco), só que aqui
+// é pra decidir se mostra o badge, não pra bloquear nada.
+function _ehPlaceholderCampo(v){
+  const d=(v||'').toString().replace(/\D/g,'');
+  return d.length>0 && /^0+$/.test(d);
+}
+function _lojaDadosPendentes(l){
+  return _ehPlaceholderCampo(l.documento)||_ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular);
+}
 function _renderTbodyEstabelecimentos(){
   let filtered=_estabelecimentosDataCache;
   if(_estabelecimentosFiltro==='aprovadas')filtered=filtered.filter(l=>(l.status_cadastro||'aprovado')==='aprovado');
@@ -3986,7 +3997,8 @@ function _renderTbodyEstabelecimentos(){
   tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
+    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="CPF/CNPJ ou telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':'';
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -5760,7 +5772,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏪 Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="CPF/CNPJ ou telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -5792,6 +5804,7 @@ ${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig=
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
 ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
 ${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
+${r1(fi('CPF ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
 ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-original-email="${v(l.email)}" style="${is}"/>`),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
 ${sec('Tabelas de Preço')}
@@ -5866,12 +5879,23 @@ async function salvarEdicaoLoja(lojaId){
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const g=(id)=>document.getElementById(id)?.value||'';
   const pj=g('el-pessoa-juridica');
+  // Documento: placeholder de importação em massa ("0000...") passa livre
+  // (o mesmo trigger no banco também aceita) — só valida dígito verificador
+  // quando não for placeholder e o campo não estiver vazio, exatamente o
+  // caso de "editar a loja depois e trocar o placeholder por um CPF/CNPJ
+  // real" (ver migration validar_documento_telefone_loja_com_placeholder.sql).
+  const documentoRaw=g('el-documento');
+  const documentoDigits=documentoRaw.replace(/\D/g,'');
+  if(documentoDigits && !/^0+$/.test(documentoDigits) && !_validarDocumentoLoja(documentoDigits)){
+    if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">CPF ou CNPJ inválido — confere os números.</div>';return;
+  }
   const update={
     nome:g('el-nome'),razao_social:g('el-razao-social'),categoria:g('el-categoria')||null,
     inscricao_estadual:g('el-insc-estadual'),inscricao_municipal:g('el-insc-municipal'),
     endereco:g('el-endereco'),cep:g('el-cep'),complemento:g('el-complemento'),
     tipo_cliente:g('el-tipo-cliente')||null,responsavel:g('el-responsavel'),
     telefone:g('el-telefone'),celular:g('el-celular'),email:g('el-email'),
+    documento:documentoDigits||null,
     pessoa_juridica:pj===''?null:pj==='true',
     ativo:g('el-ativo')==='true',
     ativo_app:document.getElementById('el-ativo-app')?.checked||false,
@@ -8199,6 +8223,7 @@ async function renderWhatsappPage(){
         <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">🛵 Mensagem em Rota</button>
         <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">💵 Financeiro</button>
         <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">⚙️ Configuração API</button>
+        <button onclick="_waGoAba('notif-push')" id="wat-notif-push" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">🔔 Disparar Notificações</button>
       </div>
       <div id="wa-content"></div>
     </div>`;
@@ -8208,8 +8233,8 @@ async function renderWhatsappPage(){
 
 async function _waGoAba(aba){
   _waAba=aba;
-  const corMap={'em-rota':'var(--accent)','financeiro':'#10b981','config':'#f59e0b'};
-  ['em-rota','financeiro','config'].forEach(id=>{
+  const corMap={'em-rota':'var(--accent)','financeiro':'#10b981','config':'#f59e0b','notif-push':'#8b5cf6'};
+  ['em-rota','financeiro','config','notif-push'].forEach(id=>{
     const el=document.getElementById('wat-'+id);if(!el)return;
     const active=id===aba;
     el.style.borderBottom=`2px solid ${active?corMap[id]:'transparent'}`;
@@ -8265,6 +8290,127 @@ async function _waGoAba(aba){
       </div>
     </div>`;
     return;
+  }
+
+  if(aba==='notif-push'){
+    const [avTituloR,avCorpoR,inTituloR,inCorpoR]=await Promise.all([
+      db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_titulo'),
+      db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_corpo'),
+      db('configuracoes','GET',null,'?chave=eq.notif_indicacao_titulo'),
+      db('configuracoes','GET',null,'?chave=eq.notif_indicacao_corpo'),
+    ]);
+    const avTitulo=((avTituloR&&avTituloR[0]?.valor)||'Gostando do app? 💙🩵').replace(/"/g,'&quot;');
+    const avCorpo=(avCorpoR&&avCorpoR[0]?.valor)||'Deixa sua avaliação pra gente na Play Store!';
+    const inTitulo=((inTituloR&&inTituloR[0]?.valor)||'🛵 Ei, motoboy!').replace(/"/g,'&quot;');
+    const inCorpo=(inCorpoR&&inCorpoR[0]?.valor)||"Já tá gostando de faturar R$2 por km rodado nas entregas? Indique um motoboy ou uma loja nova pra Let's Go Delivery e fature ainda mais — R$150 de bônus por loja indicada! Chama (11) 99170-2772, time de expansão nacional Let's Go Delivery.";
+    el.innerHTML=`
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;max-width:940px">Os 2 disparos automáticos rodam sozinhos a cada 3 dias (72h), às 9h. O texto salvo aqui é o <strong>mesmo</strong> usado pelo disparo automático E pelo botão "Enviar agora pra todos" — editar aqui muda os dois de uma vez só.</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div class="card" style="max-width:460px;flex:1;min-width:320px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px">⭐ Avaliar App</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Pede pro entregador avaliar o app na Play Store. Texto neutro de propósito — políticas da Play Store proíbem pedir uma nota específica.</div>
+          <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-av-titulo" value="${avTitulo}"/></div>
+          <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-av-corpo" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${avCorpo}</textarea></div>
+          <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
+            <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
+            <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
+          </div>
+        </div>
+        <div class="card" style="max-width:460px;flex:1;min-width:320px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px">🤝 Indicação</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Convida o entregador a indicar motoboy ou loja nova (R$2/km, R$150 de bônus por loja indicada).</div>
+          <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-in-titulo" value="${inTitulo}"/></div>
+          <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-in-corpo" rows="5" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${inCorpo}</textarea></div>
+          <div id="np-in-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
+            <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
+            <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+}
+
+// ── "Disparar Notificações" — texto compartilhado (tabela configuracoes)
+// entre o disparo automático (pg_cron -> lembrete-avaliacao/lembrete-indicacao)
+// e os botões manuais abaixo. Gabriel Eliziário é o entregador de teste
+// usado no botão "Testar comigo" (mesmo entregador usado nos testes ao
+// vivo desta feature) — nunca dispara pra todo mundo sem confirmação.
+const _NP_GABRIEL_ID='8ee06688-0f13-4cf5-9629-d66caa246894';
+const _NP_MAP={
+  avaliar_app:{tituloId:'np-av-titulo',corpoId:'np-av-corpo',fbId:'np-av-fb',chaveTitulo:'notif_avaliar_app_titulo',chaveCorpo:'notif_avaliar_app_corpo',fn:'lembrete-avaliacao'},
+  indicacao:{tituloId:'np-in-titulo',corpoId:'np-in-corpo',fbId:'np-in-fb',chaveTitulo:'notif_indicacao_titulo',chaveCorpo:'notif_indicacao_corpo',fn:'lembrete-indicacao'},
+};
+
+async function _npSalvarChave(chave,valor){
+  const agora=new Date().toISOString();
+  const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
+  if(existing&&existing.length>0){
+    await db('configuracoes','PATCH',{valor,updated_at:agora},`?chave=eq.${chave}`);
+  }else{
+    await db('configuracoes','POST',{chave,valor,created_at:agora,updated_at:agora});
+  }
+}
+
+async function _npSalvarTexto(tipo){
+  const m=_NP_MAP[tipo];
+  const fb=document.getElementById(m.fbId);
+  const titulo=document.getElementById(m.tituloId)?.value.trim();
+  const corpo=document.getElementById(m.corpoId)?.value.trim();
+  if(!titulo||!corpo){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha título e mensagem</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
+  try{
+    await Promise.all([_npSalvarChave(m.chaveTitulo,titulo),_npSalvarChave(m.chaveCorpo,corpo)]);
+    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo! Já vale pro próximo disparo automático e pro botão "Enviar agora".</span>';
+  }catch(e){
+    console.error('[np] erro ao salvar texto:',e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
+  }
+}
+
+async function _npChamarFn(tipo,body){
+  const m=_NP_MAP[tipo];
+  const r=await fetch(`${SB_URL}/functions/v1/${m.fn}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
+    body:JSON.stringify(body),
+  });
+  return r.json();
+}
+
+async function _npTestar(tipo){
+  const m=_NP_MAP[tipo];
+  const fb=document.getElementById(m.fbId);
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando teste...</span>';
+  try{
+    const res=await _npChamarFn(tipo,{entregador_id_teste:_NP_GABRIEL_ID});
+    if(res&&res.sent>0){
+      if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Teste enviado às ${formatarHora(new Date().toISOString())}</span>`;
+    }else{
+      if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Não enviou (${(res&&res.error)||'sem token FCM salvo?'})</span>`;
+    }
+  }catch(e){
+    console.error('[np] erro ao testar:',e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao chamar a function</span>';
+  }
+}
+
+async function _npEnviarTodos(tipo){
+  const m=_NP_MAP[tipo];
+  const fb=document.getElementById(m.fbId);
+  if(!confirm('Confirma o envio dessa notificação pra TODOS os entregadores aprovados agora?'))return;
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando pra todos...</span>';
+  try{
+    const res=await _npChamarFn(tipo,{});
+    const hora=formatarHora(new Date().toISOString());
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Enviado pra ${(res&&res.sent)||0} entregadores às ${hora}</span>`;
+  }catch(e){
+    console.error('[np] erro ao enviar pra todos:',e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao enviar</span>';
   }
 }
 
