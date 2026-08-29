@@ -6553,12 +6553,13 @@ async function _flBuscar(){
     ?`<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`
     :`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   histWrap.innerHTML=`<div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Período</th><th>Valor</th><th>Status</th></tr></thead>
+    <thead><tr><th>Data</th><th>Período</th><th>Valor</th><th>Status</th><th>Ver Fatura</th></tr></thead>
     <tbody>${hist.map(c=>`<tr>
       <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
       <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
       <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.status==='pago'&&c.valor_pago_final!=null?c.valor_pago_final:c.valor_total)||0).toFixed(2)}${c.status==='pago'&&c.valor_pago_final!=null&&c.valor_pago_final!==c.valor_total?`<div style="font-size:10px;font-weight:600;color:var(--text3)">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`:''}</td>
       <td>${badge(c)}</td>
+      <td><button onclick="verFaturaCobranca('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📄 Ver Fatura</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
