@@ -8273,6 +8273,7 @@ function renderConfiguracaoPage(aba){
   const abas=[
     {id:'cliente',       icon:'👤', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
     {id:'integracao',    icon:'🔗', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
+    {id:'logs-ifood',    icon:'📋', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
     {id:'open-delivery', icon:'🚀', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
     {id:'operacao',      icon:'🛠️', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
   ];
@@ -8287,6 +8288,7 @@ function renderConfiguracaoPage(aba){
   if(_configAba==='operacao'){_renderConfigOperacao();return;}
   if(_configAba==='cliente'){_renderConfigCliente();return;}
   if(_configAba==='integracao'){_renderConfigIntegracao();return;}
+  if(_configAba==='logs-ifood'){_renderConfigLogsIfood();return;}
   const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
@@ -8415,18 +8417,54 @@ async function _salvarConfigCliente(){
 const _IFOOD_ERROS_LIMITE_PADRAO=15;
 let _ifoodErrosCompleto=false;
 
-async function _renderConfigIntegracao(){
+const _PLATAFORMAS_MARKETPLACE=['Rappi','Aiqfome','99Food','Keeta','UaiRango','DeliveryMuch','Zé Delivery','Cornershop','QueroDelivery','James Delivery','Daki Delivery','Delivery 2U'];
+const _PLATAFORMAS_CARDAPIO_PDV=['Anota AI','Goomer','Cardápio Web','Oimenu','Delivery Direto','Neemo','Saipos','JotaJá','Foody Delivery','Entrega Fácil'];
+
+function _cardPlataforma(nome){
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:13px;font-weight:700;color:var(--text)">${nome}</div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--text3);width:fit-content">⏳ Não iniciado</div>
+    <button disabled style="background:var(--surface);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;opacity:.6">⚙️ Configurar</button>
+  </div>`;
+}
+
+function _htmlOutrasPlataformas(){
+  return `<div class="card" style="max-width:720px;margin:20px auto 0">
+    <div style="padding:24px 28px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">🧩 Outras plataformas</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Integrações planejadas — cada card muda de status conforme a gente for implementando, uma por uma.</div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Marketplaces</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px">
+        ${_PLATAFORMAS_MARKETPLACE.map(_cardPlataforma).join('')}
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio digital / PDV e gestão</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+        ${_PLATAFORMAS_CARDAPIO_PDV.map(_cardPlataforma).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function _renderConfigLogsIfood(){
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
-        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">🔗 Integração — iFood Logistics</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">📋 Logs iFood</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log de erros da integração (autenticação, polling de pedidos, envio de status de volta pro iFood). Toda falha aparece aqui — nada acontece em silêncio.</div>
         <div id="ifood-erros-lista" style="font-size:13px;color:var(--text2)">Carregando...</div>
         <div id="ifood-erros-legenda" style="font-size:11px;color:var(--text3);margin-top:10px"></div>
         <div id="ifood-erros-btn-wrap" style="margin-top:10px"></div>
       </div>
-    </div>
-    <div class="card" style="max-width:720px;margin:20px auto 0">
+    </div>`;
+  _ifoodErrosCompleto=false;
+  await _carregarIfoodErros();
+}
+
+async function _renderConfigIntegracao(){
+  document.getElementById('config-content').innerHTML=`
+    <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
           <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
@@ -8445,10 +8483,9 @@ async function _renderConfigIntegracao(){
           </table>
         </div>
       </div>
-    </div>`;
-  _ifoodErrosCompleto=false;
+    </div>
+    ${_htmlOutrasPlataformas()}`;
   _carregarIfoodMerchantLojas();
-  await _carregarIfoodErros();
 }
 
 async function _carregarIfoodErros(){
