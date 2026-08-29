@@ -8419,9 +8419,9 @@ function renderConfiguracaoPage(aba){
   const abas=[
     {id:'cliente',       icon:'👤', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
     {id:'integracao',    icon:'🔗', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
-    {id:'logs-ifood',    icon:'📋', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
     {id:'open-delivery', icon:'🚀', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
     {id:'operacao',      icon:'🛠️', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
+    {id:'logs-ifood',    icon:'📋', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
