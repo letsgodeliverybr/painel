@@ -21,6 +21,13 @@ function _tsUtc(ts){const s=ts||'';return new Date(s.includes('Z')||s.includes('
 
 let currentUser=null,currentPerfil=null,map=null;
 let motoboyMarkers={},pedidoMarkers={},lojaMarkers={},coletaMarkers={},realtimeInterval=null;
+// Controla o setView do pin da loja em atualizarMarcadores() — só centraliza
+// UMA VEZ por instância de mapa (na primeira leva de marcadores depois que
+// o mapa é criado), não a cada re-render periódico (atualizarMarcadores
+// roda a cada 5s via setInterval). Sem isso, o mapa recentralizava sozinho
+// repetidamente e o usuário não conseguia arrastar/navegar livremente.
+// Resetada pra false toda vez que `map` é recriado do zero (L.map(...)).
+let _mapaJaCentralizado=false;
 let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedidoId=null,_pedidosSelecionados=new Set();
 // Pedidos ativos GLOBAIS (todas as lojas, campos mínimos) — usado só pra saber
 // se um entregador está ocupado em qualquer lugar. Diferente de allPedidos, que
@@ -2838,6 +2845,7 @@ function renderMapaPage(){
   }
   setTimeout(()=>{
     if(map){map.remove();map=null;}
+    _mapaJaCentralizado=false;
     map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);
     L.control.zoom({position:'bottomright'}).addTo(map);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
@@ -3370,7 +3378,7 @@ function atualizarMarcadores(){
     :_estadoLojas===2?[]:_estadoLojas===1?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
   console.log('[MAPA] perfil:',currentPerfil,'loja_id:',currentUser?.loja_id,'lojas visíveis:',lojasVisiveis.length);
   const _svgPin=`<svg width="38" height="48" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="#1A56DB" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
-  lojasVisiveis.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja')map.setView([lat,lng],14);});
+  lojasVisiveis.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja'&&!_mapaJaCentralizado){map.setView([lat,lng],14);_mapaJaCentralizado=true;}});
   const _statusAtivos=['aceito','no_local','chegou_no_local','chegou_local','em_rota','chegou_destino','retornando'];
   // Checagem de "ocupado" usa _pedidosAtivosGlobal (todas as lojas) — allPedidos
   // é filtrado pela loja atual quando currentPerfil==='loja', então um entregador
@@ -8828,7 +8836,7 @@ async function renderLojaPedidosPage(){
 }
 function renderLojaMapaPage(){
   document.getElementById('app-body').innerHTML=`<div style="flex:1;position:relative;overflow:hidden;height:100%"><div class="mapa-stats"><div class="mapa-stat"><span style="font-size:16px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos">0</div><div class="mapa-stat-label">Pedidos</div></div></div></div><div id="map" style="width:100%;height:100%"></div></div>`;
-  setTimeout(()=>{if(map){map.remove();map=null;}map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);const at=async()=>{const p=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];allPedidos=p;const ms=document.getElementById('ms-pedidos');if(ms)ms.textContent=p.length;atualizarMarcadores();};at();realtimeInterval=setInterval(at,5000);},100);
+  setTimeout(()=>{if(map){map.remove();map=null;}_mapaJaCentralizado=false;map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);const at=async()=>{const p=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];allPedidos=p;const ms=document.getElementById('ms-pedidos');if(ms)ms.textContent=p.length;atualizarMarcadores();};at();realtimeInterval=setInterval(at,5000);},100);
 }
 async function renderLojaRelatorioPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📈 Relatório</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="lr-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="lr-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="lr-fat" style="color:var(--accent)">—</div></div></div></div>`;
