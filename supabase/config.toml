@@ -16,3 +16,6 @@ verify_jwt = false
 
 [functions.lembrete-indicacao]
 verify_jwt = false
+
+[functions.lembrete-periodico]
+verify_jwt = false

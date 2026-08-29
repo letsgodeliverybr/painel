@@ -8330,9 +8330,62 @@ async function _waGoAba(aba){
             <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
           </div>
         </div>
-      </div>`;
+      </div>
+
+      <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por dia da semana</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 Brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
+      ${await _npRenderPeriodicos()}`;
     return;
   }
+}
+
+// ── 14 cards de lembrete periódico (7 dias × 2 horários, ver
+// migrations/add_cron_14_lembretes_periodicos.sql) — registrados dentro do
+// mesmo _NP_MAP (abaixo) pra reaproveitar _npSalvarTexto/_npTestar sem
+// duplicar lógica nenhuma; só _npChamarFn precisou de 1 linha a mais pra
+// incluir `chave` no body (a function lembrete-periodico é genérica,
+// precisa saber qual dos 14 textos usar).
+const _NP_DIAS=[
+  {chave:'seg',emoji:'🦥',label:'Segunda'},
+  {chave:'ter',emoji:'🎯',label:'Terça'},
+  {chave:'qua',emoji:'🦅',label:'Quarta'},
+  {chave:'qui',emoji:'🚀',label:'Quinta'},
+  {chave:'sex',emoji:'🎉',label:'Sexta'},
+  {chave:'sab',emoji:'🏖️',label:'Sábado'},
+  {chave:'dom',emoji:'🌅',label:'Domingo'},
+];
+const _NP_HORARIOS=[
+  {sufixo:'manha',label:'Manhã',horaBrasilia:'09:09'},
+  {sufixo:'noite',label:'Noite',horaBrasilia:'18:18'},
+];
+
+async function _npRenderPeriodicos(){
+  const chaves=[];
+  _NP_DIAS.forEach(d=>_NP_HORARIOS.forEach(h=>{chaves.push(`notif_${d.chave}_${h.sufixo}_titulo`,`notif_${d.chave}_${h.sufixo}_corpo`);}));
+  const rows=await db('configuracoes','GET',null,`?chave=in.(${chaves.join(',')})`);
+  const valores={};
+  (Array.isArray(rows)?rows:[]).forEach(r=>{valores[r.chave]=r.valor;});
+  const linha=(horario)=>`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    ${_NP_DIAS.map(dia=>_npCardPeriodico(dia,horario,valores)).join('')}
+  </div>`;
+  return linha(_NP_HORARIOS[0])+linha(_NP_HORARIOS[1]);
+}
+
+function _npCardPeriodico(dia,horario,valores){
+  const chave=`${dia.chave}_${horario.sufixo}`;
+  const titulo=(valores[`notif_${chave}_titulo`]||'').replace(/"/g,'&quot;');
+  const corpo=valores[`notif_${chave}_corpo`]||'';
+  return `<div class="card" style="min-width:190px;flex:1;padding:12px 14px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:1px">${dia.emoji} ${dia.label}</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${horario.label} · ${horario.horaBrasilia} Brasília</div>
+    <div class="fi" style="margin-bottom:5px"><label style="font-size:10px">Título</label><input id="np-${chave}-titulo" value="${titulo}" placeholder="vazio = não dispara" style="font-size:12px"/></div>
+    <div class="fi" style="margin-bottom:5px"><label style="font-size:10px">Mensagem</label><textarea id="np-${chave}-corpo" rows="2" placeholder="vazio = não dispara" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px;color:var(--text);font-family:Inter,sans-serif;font-size:12px;line-height:1.4;resize:vertical">${corpo}</textarea></div>
+    <div id="np-${chave}-fb" style="min-height:14px;margin-bottom:6px;font-size:11px"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button onclick="_npSalvarTexto('${chave}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">💾 Salvar</button>
+      <button onclick="_npTestar('${chave}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">🧪 Testar</button>
+    </div>
+  </div>`;
 }
 
 // ── "Disparar Notificações" — texto compartilhado (tabela configuracoes)
@@ -8345,6 +8398,19 @@ const _NP_MAP={
   avaliar_app:{tituloId:'np-av-titulo',corpoId:'np-av-corpo',fbId:'np-av-fb',chaveTitulo:'notif_avaliar_app_titulo',chaveCorpo:'notif_avaliar_app_corpo',fn:'lembrete-avaliacao'},
   indicacao:{tituloId:'np-in-titulo',corpoId:'np-in-corpo',fbId:'np-in-fb',chaveTitulo:'notif_indicacao_titulo',chaveCorpo:'notif_indicacao_corpo',fn:'lembrete-indicacao'},
 };
+// 14 cards de lembrete periódico registrados aqui — mesmos campos do
+// padrão acima + `chave`, usado só por _npChamarFn pra saber qual dos 14
+// textos a function lembrete-periodico deve usar.
+['seg','ter','qua','qui','sex','sab','dom'].forEach(diaChave=>{
+  ['manha','noite'].forEach(horaSufixo=>{
+    const chave=`${diaChave}_${horaSufixo}`;
+    _NP_MAP[chave]={
+      tituloId:`np-${chave}-titulo`,corpoId:`np-${chave}-corpo`,fbId:`np-${chave}-fb`,
+      chaveTitulo:`notif_${chave}_titulo`,chaveCorpo:`notif_${chave}_corpo`,
+      fn:'lembrete-periodico',chave,
+    };
+  });
+});
 
 async function _npSalvarChave(chave,valor){
   const agora=new Date().toISOString();
@@ -8374,10 +8440,14 @@ async function _npSalvarTexto(tipo){
 
 async function _npChamarFn(tipo,body){
   const m=_NP_MAP[tipo];
+  // lembrete-periodico é genérica (serve os 14 cards de dia/horário) —
+  // precisa saber QUAL card via `chave` no body; avaliar_app/indicacao têm
+  // function própria e não usam esse campo.
+  const bodyFinal=m.chave?{...body,chave:m.chave}:body;
   const r=await fetch(`${SB_URL}/functions/v1/${m.fn}`,{
     method:'POST',
     headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
-    body:JSON.stringify(body),
+    body:JSON.stringify(bodyFinal),
   });
   return r.json();
 }
