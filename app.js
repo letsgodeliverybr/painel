@@ -7919,8 +7919,17 @@ async function verFaturaCobranca(cobId){
   const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
   const totalGorjetas=Math.round(pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0)*100)/100;
   const valorOriginalFatura=totalEntregas+totalGorjetas;
-  const {diasAtraso,multa,juros,taxaFixa,valorAtualizado}=_calcularJurosMultaFatura(valorOriginalFatura,vencYMD);
-  const faturaVencida=diasAtraso>=1;
+  // Fatura já paga: NÃO recalcula juros/multa vivos contra hoje — o valor
+  // real cobrado já foi congelado em valor_pago_final no momento da
+  // aprovação (ver comentário em _aprovarCobrancaUnica/_aprovarCobrancaLote
+  // acima). Sem isso, reabrir o modal de uma fatura paga há semanas mostrava
+  // juros acumulando pra sempre, como se ainda estivesse em aberto.
+  const jaPago=c.status==='pago';
+  const {diasAtraso,multa,juros,taxaFixa,valorAtualizado}=jaPago
+    ?{diasAtraso:0,multa:0,juros:0,taxaFixa:0,valorAtualizado:valorOriginalFatura}
+    :_calcularJurosMultaFatura(valorOriginalFatura,vencYMD);
+  const faturaVencida=!jaPago&&diasAtraso>=1;
+  const valorFinalExibido=jaPago?(parseFloat(c.valor_pago_final??c.valor_total)||valorOriginalFatura):(faturaVencida?valorAtualizado:valorOriginalFatura);
   const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
   const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
   const tdQ='padding:14px 12px;text-align:center;font-size:14px;color:#374151';
@@ -7943,9 +7952,9 @@ async function verFaturaCobranca(cobId){
         ${lojaEmail?`<div style="font-size:13px;color:#6b7280">✉️ ${lojaEmail}</div>`:''}
       </div>
       <div style="text-align:right;min-width:140px">
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Total a pagar</div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${jaPago?'Total pago':'Total a pagar'}</div>
         ${faturaVencida?`<div style="font-size:13px;color:#9ca3af;text-decoration:line-through">R$ ${valorOriginalFatura.toFixed(2)}</div>`:''}
-        <div style="font-size:30px;font-weight:800;color:${faturaVencida?'#dc2626':'#1A56DB'};line-height:1">R$ ${(faturaVencida?valorAtualizado:valorOriginalFatura).toFixed(2)}</div>
+        <div style="font-size:30px;font-weight:800;color:${jaPago?'#059669':faturaVencida?'#dc2626':'#1A56DB'};line-height:1">R$ ${valorFinalExibido.toFixed(2)}</div>
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
