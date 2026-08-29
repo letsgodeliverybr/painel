@@ -55,17 +55,22 @@ async function enviarPushFCM(fcmToken: string, pedidoId: string, numero: string)
         "Authorization": `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
+        // Data-only de propósito (sem bloco `notification`): um payload com
+        // `notification` é renderizado pelo próprio Android direto do
+        // sistema quando o app está em background/morto, sem nunca chamar
+        // código do app — nesse caminho não tem como pedir full-screen
+        // intent nem controlar o som (esse campo não existe no formato
+        // `notification` do FCM), e também foi assim que um channel_id
+        // desatualizado (sem o sufixo _v3, achado nesta correção) foi
+        // parar em produção sem ninguém notar — nada validava contra os
+        // canais reais criados no app. Data-only força a entrega sempre
+        // passar pelo código do app (_firebaseBackgroundHandler em
+        // main.dart, mesmo com o app morto), que constrói a notificação
+        // local com fullScreenIntent de verdade, usando os canais reais.
         message: {
           token: fcmToken,
           data: { tipo: "novo_pedido", pedido_id: pedidoId, numero: String(numero) },
-          notification: {
-            title: "LET'S GO MOTOCA 🛵",
-            body: `Pedido #${numero} disponível! Vem pra rua!`,
-          },
-          android: {
-            priority: "HIGH",
-            notification: { sound: "letsgo", channel_id: "letsgo_novo_pedido" },
-          },
+          android: { priority: "HIGH" },
         },
       }),
     });
