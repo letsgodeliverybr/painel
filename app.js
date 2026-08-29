@@ -40,7 +40,7 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -2726,7 +2726,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -8223,7 +8223,6 @@ async function renderWhatsappPage(){
         <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">🛵 Mensagem em Rota</button>
         <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">💵 Financeiro</button>
         <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">⚙️ Configuração API</button>
-        <button onclick="_waGoAba('notif-push')" id="wat-notif-push" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">🔔 Disparar Notificações</button>
       </div>
       <div id="wa-content"></div>
     </div>`;
@@ -8233,8 +8232,8 @@ async function renderWhatsappPage(){
 
 async function _waGoAba(aba){
   _waAba=aba;
-  const corMap={'em-rota':'var(--accent)','financeiro':'#10b981','config':'#f59e0b','notif-push':'#8b5cf6'};
-  ['em-rota','financeiro','config','notif-push'].forEach(id=>{
+  const corMap={'em-rota':'var(--accent)','financeiro':'#10b981','config':'#f59e0b'};
+  ['em-rota','financeiro','config'].forEach(id=>{
     const el=document.getElementById('wat-'+id);if(!el)return;
     const active=id===aba;
     el.style.borderBottom=`2px solid ${active?corMap[id]:'transparent'}`;
@@ -8292,51 +8291,62 @@ async function _waGoAba(aba){
     return;
   }
 
-  if(aba==='notif-push'){
-    const [avTituloR,avCorpoR,inTituloR,inCorpoR]=await Promise.all([
-      db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_titulo'),
-      db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_corpo'),
-      db('configuracoes','GET',null,'?chave=eq.notif_indicacao_titulo'),
-      db('configuracoes','GET',null,'?chave=eq.notif_indicacao_corpo'),
-    ]);
-    const avTitulo=((avTituloR&&avTituloR[0]?.valor)||'Gostando do app? 💙🩵').replace(/"/g,'&quot;');
-    const avCorpo=(avCorpoR&&avCorpoR[0]?.valor)||'Deixa sua avaliação pra gente na Play Store!';
-    const inTitulo=((inTituloR&&inTituloR[0]?.valor)||'🛵 Ei, motoboy!').replace(/"/g,'&quot;');
-    const inCorpo=(inCorpoR&&inCorpoR[0]?.valor)||"Já tá gostando de faturar R$2 por km rodado nas entregas? Indique um motoboy ou uma loja nova pra Let's Go Delivery e fature ainda mais — R$150 de bônus por loja indicada! Chama (11) 99170-2772, time de expansão nacional Let's Go Delivery.";
-    el.innerHTML=`
-      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;max-width:940px">Os 2 disparos automáticos rodam sozinhos a cada 3 dias (72h), às 9h. O texto salvo aqui é o <strong>mesmo</strong> usado pelo disparo automático E pelo botão "Enviar agora pra todos" — editar aqui muda os dois de uma vez só.</div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
-        <div class="card" style="max-width:460px;flex:1;min-width:320px">
-          <div style="font-size:15px;font-weight:700;margin-bottom:4px">⭐ Avaliar App</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Pede pro entregador avaliar o app na Play Store. Texto neutro de propósito — políticas da Play Store proíbem pedir uma nota específica.</div>
-          <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-av-titulo" value="${avTitulo}"/></div>
-          <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-av-corpo" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${avCorpo}</textarea></div>
-          <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
-            <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
-            <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
-          </div>
-        </div>
-        <div class="card" style="max-width:460px;flex:1;min-width:320px">
-          <div style="font-size:15px;font-weight:700;margin-bottom:4px">🤝 Indicação</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Convida o entregador a indicar motoboy ou loja nova (R$2/km, R$150 de bônus por loja indicada).</div>
-          <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-in-titulo" value="${inTitulo}"/></div>
-          <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-in-corpo" rows="5" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${inCorpo}</textarea></div>
-          <div id="np-in-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
-            <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
-            <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
-          </div>
+}
+
+// ── "Disparar Notificações" — item PRÓPRIO no menu principal (não é mais
+// sub-aba de Disparo WhatsApp), logo abaixo dele. Mesmo conteúdo de
+// sempre (2 cards fixos + 14 de lembrete por dia), só que como página
+// standalone em vez de aba dentro de outra tela.
+async function renderDisparoNotificacoesPage(){
+  document.getElementById('app-body').innerHTML=`
+    <div class="alt-page">
+      <div class="page-header"><div class="page-title">🔔 Disparar Notificações</div></div>
+      <div id="dn-content"><div style="padding:24px;color:var(--text3)">⏳ Carregando...</div></div>
+    </div>`;
+  const el=document.getElementById('dn-content');if(!el)return;
+
+  const [avTituloR,avCorpoR,inTituloR,inCorpoR]=await Promise.all([
+    db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_titulo'),
+    db('configuracoes','GET',null,'?chave=eq.notif_avaliar_app_corpo'),
+    db('configuracoes','GET',null,'?chave=eq.notif_indicacao_titulo'),
+    db('configuracoes','GET',null,'?chave=eq.notif_indicacao_corpo'),
+  ]);
+  const avTitulo=((avTituloR&&avTituloR[0]?.valor)||'Gostando do app? 💙🩵').replace(/"/g,'&quot;');
+  const avCorpo=(avCorpoR&&avCorpoR[0]?.valor)||'Deixa sua avaliação pra gente na Play Store!';
+  const inTitulo=((inTituloR&&inTituloR[0]?.valor)||'🛵 Ei, motoboy!').replace(/"/g,'&quot;');
+  const inCorpo=(inCorpoR&&inCorpoR[0]?.valor)||"Já tá gostando de faturar R$2 por km rodado nas entregas? Indique um motoboy ou uma loja nova pra Let's Go Delivery e fature ainda mais — R$150 de bônus por loja indicada! Chama (11) 99170-2772, time de expansão nacional Let's Go Delivery.";
+  el.innerHTML=`
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;max-width:940px">Os 2 disparos automáticos rodam sozinhos a cada 3 dias (72h), às 9h. O texto salvo aqui é o <strong>mesmo</strong> usado pelo disparo automático E pelo botão "Enviar agora pra todos" — editar aqui muda os dois de uma vez só.</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="card" style="max-width:460px;flex:1;min-width:320px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">⭐ Avaliar App</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Pede pro entregador avaliar o app na Play Store. Texto neutro de propósito — políticas da Play Store proíbem pedir uma nota específica.</div>
+        <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-av-titulo" value="${avTitulo}"/></div>
+        <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-av-corpo" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${avCorpo}</textarea></div>
+        <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
+          <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
+          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
         </div>
       </div>
+      <div class="card" style="max-width:460px;flex:1;min-width:320px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">🤝 Indicação</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Convida o entregador a indicar motoboy ou loja nova (R$2/km, R$150 de bônus por loja indicada).</div>
+        <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-in-titulo" value="${inTitulo}"/></div>
+        <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-in-corpo" rows="5" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${inCorpo}</textarea></div>
+        <div id="np-in-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
+          <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
+          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
+        </div>
+      </div>
+    </div>
 
-      <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por dia da semana</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 Brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
-      ${await _npRenderPeriodicos()}`;
-    return;
-  }
+    <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por dia da semana</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 Brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
+    ${await _npRenderPeriodicos()}`;
 }
 
 // ── 14 cards de lembrete periódico (7 dias × 2 horários, ver
