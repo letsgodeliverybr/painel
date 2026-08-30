@@ -5878,52 +5878,15 @@ ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
-${sec('🗺️ Roterizador')}
-<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-rot-ativo" ${l.roterizador_ativo?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
-${r2(fi('Raio de agrupamento (km)',inp('el-rot-raio',l.roterizador_raio_km??'','ex: 1.5','number')),fi('Máximo de pedidos por rota',inp('el-rot-max',l.roterizador_max_pedidos??'','ex: 3','number')))}
-${r1(fi('Tempo de espera para agrupar (segundos)',inp('el-rot-espera',l.roterizador_tempo_espera_seg??'','ex: 60','number')))}
-${sec('💰 Creditar Saldo Manualmente')}
-<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px">Saldo atual: <b id="elc-saldo-atual" style="color:var(--text)">carregando...</b></div>
-${r2(fi('Valor a creditar (R$)',inp('elc-valor','','0.00','number')),fi('Observações',inp('elc-obs','','Ex: Recarga Pix conferida via WhatsApp')))}
-<div id="elc-feedback" style="font-size:12px;margin:-4px 0 10px;min-height:16px"></div>
-<div class="form-row full"><div class="fi"><button type="button" onclick="_elCreditarSaldo('${lojaId}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">➕ Creditar</button></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
-  _elCarregarSaldoAtual(lojaId);
 }
-async function _elCarregarSaldoAtual(lojaId){
-  const el=document.getElementById('elc-saldo-atual');if(!el)return;
-  const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${lojaId}`);
-  const arr=Array.isArray(rows)?rows:[];
-  const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-  const totD=arr.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-  const totB=arr.filter(r=>r.tipo==='bonus').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-  const saldo=totC+totB-totD;
-  el.textContent=`R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-  el.style.color=saldo>=0?'#10b981':'#ef4444';
-}
-async function _elCreditarSaldo(lojaId){
-  const valor=parseFloat(document.getElementById('elc-valor')?.value||0);
-  const observacoes=(document.getElementById('elc-obs')?.value||'').trim();
-  const fb=document.getElementById('elc-feedback');
-  if(!(valor>0)){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe um valor válido</span>';return;}
-  const agora=new Date().toISOString();
-  const payload={loja_id:lojaId,tipo:'credito',valor,observacoes:observacoes||'Crédito manual (admin)',manual:true,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora};
-  const res=await db('creditos_lojas','POST',payload);
-  if(res&&(Array.isArray(res)?res.length>0:res.id)){
-    await logAcao('creditar_saldo_manual',{loja_id:lojaId,valor,observacoes});
-    showNotif('✅ Saldo creditado!',`R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})} adicionado`);
-    document.getElementById('elc-valor').value='';
-    document.getElementById('elc-obs').value='';
-    if(fb)fb.innerHTML='';
-    _elCarregarSaldoAtual(lojaId);
-    if(currentUser?.loja_id===lojaId)_carregarSaldoTopbar();
-  }else{
-    if(fb)fb.innerHTML='<span style="color:var(--red)">Erro ao creditar — verifique permissões da tabela creditos_lojas</span>';
-  }
-}
+// _elCarregarSaldoAtual/_elCreditarSaldo removidas — duplicavam Créditos
+// → aba Lojas (renderCreditosPage/_scAbrirModal), que já cobre crédito
+// manual de loja com histórico completo. Ver commit de remoção do
+// Roterizador/Creditar Saldo do modal Editar Loja.
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
   if(!endereco){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha o endereço primeiro</span>';return;}
@@ -5970,10 +5933,10 @@ async function salvarEdicaoLoja(lojaId){
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
     pontos_padrao:g('el-pontos-padrao')!==''?parseInt(g('el-pontos-padrao'))||4:4,
-    roterizador_ativo:document.getElementById('el-rot-ativo')?.checked||false,
-    roterizador_raio_km:g('el-rot-raio')!==''?parseFloat(g('el-rot-raio'))||null:null,
-    roterizador_max_pedidos:g('el-rot-max')!==''?parseInt(g('el-rot-max'))||null:null,
-    roterizador_tempo_espera_seg:g('el-rot-espera')!==''?parseInt(g('el-rot-espera'))||null:null,
+    // Roterizador removido deste modal (duplicava Configuração → Cliente,
+    // que já cobre isso por loja — ver _renderConfigCliente/_rcSalvar) —
+    // não inclui mais esses campos no PATCH, pra não sobrescrever com
+    // false/null o que já foi configurado por aquela tela.
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
