@@ -3977,7 +3977,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
     ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">📥 Importar Rede de Lojas</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -3994,6 +3994,177 @@ function _ehPlaceholderCampo(v){
 function _lojaDadosPendentes(l){
   return _ehPlaceholderCampo(l.documento)||_ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular);
 }
+
+// ── Importar Rede de Lojas — CSV (nome_loja, endereco, whatsapp) ────────
+// Não existia nenhuma feature de importação em massa antes disso (só o
+// trigger de banco validar_documento_telefone_loja_com_placeholder.sql e
+// o badge _lojaDadosPendentes/_ehPlaceholderCampo, ambos reaproveitados
+// aqui sem duplicar nada). Cada loja importada nasce com documento
+// placeholder ('00000000000000', todo zero — o mesmo trigger já aceita
+// isso) e sem email/senha (sem conta de login ainda) — aparece com o
+// badge "⚠️ Dados pendentes" na lista, pro admin completar depois em
+// Editar Loja.
+function _baixarModeloCsvLojas(){
+  const conteudo='nome_loja,endereco,whatsapp\r\nPizzaria Exemplo,"Rua das Flores, 123 - Centro",16999998888\r\n';
+  const blob=new Blob([conteudo],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='modelo_importar_lojas.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Parser CSV mínimo com suporte a campo entre aspas (endereço quase
+// sempre tem vírgula: "Rua X, 123 - Bairro") — sem lib externa disponível
+// neste projeto, cobre o básico do RFC4180 (aspas escapadas com "").
+function _parseCsvLinhas(texto){
+  const linhas=[];
+  let campo='',linha=[],dentroAspas=false;
+  const t=(texto||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(dentroAspas){
+      if(c==='"'){ if(t[i+1]==='"'){campo+='"';i++;} else dentroAspas=false; }
+      else campo+=c;
+    }else{
+      if(c==='"')dentroAspas=true;
+      else if(c===','){linha.push(campo);campo='';}
+      else if(c==='\n'){linha.push(campo);linhas.push(linha);linha=[];campo='';}
+      else campo+=c;
+    }
+  }
+  if(campo!==''||linha.length){linha.push(campo);linhas.push(linha);}
+  return linhas.filter(l=>!(l.length===1&&l[0].trim()===''));
+}
+
+// Aceita com ou sem o 9º dígito extra (DDD + 8 ou 9 dígitos) — normaliza
+// pro mesmo formato mascarado usado no resto do painel, ex: "(16) 99999-8888".
+function _normalizarWhatsapp(v){
+  const d=(v||'').toString().replace(/\D/g,'');
+  if(d.length===10)return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  if(d.length===11)return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  return null;
+}
+
+let _importLojasValidadas=[];
+async function _abrirModalImportarLojas(){
+  let modal=document.getElementById('modal-importar-lojas');
+  if(!modal){modal=document.createElement('div');modal.id='modal-importar-lojas';modal.className='modal-overlay';document.body.appendChild(modal);}
+  _importLojasValidadas=[];
+  modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
+    <div class="modal-header"><span class="modal-title">📥 Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ Dados pendentes" pra você completar individualmente depois em Editar Loja.</div>
+      <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">⬇️ Baixar modelo CSV</button>
+      <div class="fi" style="margin-bottom:16px"><label>Planilha preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
+      <div id="import-lojas-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">Cancelar</button>
+      <button id="import-lojas-btn-confirmar" onclick="_confirmarImportarLojas()" disabled style="opacity:.4;cursor:not-allowed;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;font-family:Inter,sans-serif">Confirmar importação</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
+}
+
+function _processarArquivoImportarLojas(inputEl){
+  const file=inputEl.files?.[0];if(!file)return;
+  const preview=document.getElementById('import-lojas-preview');
+  const btnConfirmar=document.getElementById('import-lojas-btn-confirmar');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const linhas=_parseCsvLinhas(e.target.result);
+    if(!linhas.length){
+      if(preview)preview.innerHTML='<div style="color:var(--red);font-size:13px">Arquivo vazio ou ilegível.</div>';
+      return;
+    }
+    // Cabeçalho flexível: aceita ordem diferente, exige as 3 colunas por nome.
+    const cabecalho=linhas[0].map(h=>(h||'').trim().toLowerCase());
+    const idxNome=cabecalho.indexOf('nome_loja');
+    const idxEnd=cabecalho.indexOf('endereco');
+    const idxWhats=cabecalho.indexOf('whatsapp');
+    if(idxNome<0||idxEnd<0||idxWhats<0){
+      if(preview)preview.innerHTML='<div style="color:var(--red);font-size:13px">Cabeçalho inválido — a primeira linha precisa ter exatamente as colunas: nome_loja, endereco, whatsapp.</div>';
+      return;
+    }
+    const corpo=linhas.slice(1);
+    const validadas=corpo.map((linha,i)=>{
+      const nome=(linha[idxNome]||'').trim();
+      const endereco=(linha[idxEnd]||'').trim();
+      const whatsappRaw=(linha[idxWhats]||'').trim();
+      const numeroLinha=i+2; // +2: pula o cabeçalho e volta pra base 1
+      if(!nome)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Nome da loja obrigatório'};
+      if(!endereco)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Endereço obrigatório'};
+      const whatsapp=_normalizarWhatsapp(whatsappRaw);
+      if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp inválido — precisa de DDD + 8 ou 9 dígitos'};
+      return {numeroLinha,nome,endereco,whatsapp,erro:null};
+    });
+    _importLojasValidadas=validadas.filter(v=>!v.erro);
+    const comErro=validadas.filter(v=>v.erro);
+    if(preview){
+      preview.innerHTML=`
+        <div style="display:flex;gap:16px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:#10b981">✅ ${_importLojasValidadas.length} válida${_importLojasValidadas.length===1?'':'s'}</div>
+          <div style="font-size:13px;font-weight:700;color:${comErro.length?'#ef4444':'var(--text3)'}">❌ ${comErro.length} com erro</div>
+        </div>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+          <table style="width:100%;min-width:480px;border-collapse:collapse">
+            <thead style="position:sticky;top:0;background:var(--surface2)"><tr>
+              <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Linha</th>
+              <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Nome</th>
+              <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Endereço</th>
+              <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">WhatsApp</th>
+              <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Status</th>
+            </tr></thead>
+            <tbody>${validadas.map(v=>`<tr style="border-top:1px solid var(--border)">
+              <td style="padding:6px 10px;font-size:12px;color:var(--text3)">${v.numeroLinha}</td>
+              <td style="padding:6px 10px;font-size:12px;color:var(--text)">${(v.nome||'—').replace(/</g,'&lt;')}</td>
+              <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${(v.endereco||'—').replace(/</g,'&lt;')}</td>
+              <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${v.whatsapp||v.whatsappRaw||'—'}</td>
+              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:'<span style="color:#10b981">✅ Ok</span>'}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+    if(btnConfirmar){
+      const n=_importLojasValidadas.length;
+      btnConfirmar.textContent=n>0?`Confirmar importação de ${n} loja${n===1?'':'s'}`:'Confirmar importação';
+      btnConfirmar.disabled=n===0;
+      btnConfirmar.style.opacity=n===0?'.4':'1';
+      btnConfirmar.style.cursor=n===0?'not-allowed':'pointer';
+    }
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+async function _confirmarImportarLojas(){
+  if(!_importLojasValidadas.length)return;
+  const btnConfirmar=document.getElementById('import-lojas-btn-confirmar');
+  if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='⏳ Importando...';}
+  const agora=_agoraBrasilia();
+  let sucesso=0,falhas=0;
+  for(const loja of _importLojasValidadas){
+    const payload={
+      nome:loja.nome,endereco:loja.endereco,telefone:loja.whatsapp,
+      documento:'00000000000000', // placeholder — trigger do banco aceita, badge "Dados pendentes" cobre
+      ativo:true,ativo_app:true,tipo_cobranca:'faturamento',
+      created_at:agora,updated_at:agora,
+    };
+    const res=await db('lojas','POST',payload);
+    if(res&&(Array.isArray(res)?res.length>0:res.id))sucesso++;else falhas++;
+  }
+  document.getElementById('modal-importar-lojas')?.classList.remove('open');
+  if(falhas>0)showNotif('⚠️ Importação parcial',`${sucesso} importadas, ${falhas} falharam — confira o console`,'var(--yellow)');
+  else showNotif('✅ Importação concluída!',`${sucesso} loja${sucesso===1?'':'s'} importada${sucesso===1?'':'s'}, marcada${sucesso===1?'':'s'} como "Dados pendentes"`);
+  await logAcao('importar_rede_lojas',{total:_importLojasValidadas.length,sucesso,falhas});
+  _importLojasValidadas=[];
+  // _renderTbodyEstabelecimentos() sozinho só re-renderizaria o cache
+  // antigo (_estabelecimentosDataCache) — precisa do fluxo completo pra
+  // buscar de novo no banco e trazer as lojas recém-importadas.
+  _renderCadastrosConteudo('estabelecimentos');
+}
+
 function _renderTbodyEstabelecimentos(){
   let filtered=_estabelecimentosDataCache;
   if(_estabelecimentosFiltro==='aprovadas')filtered=filtered.filter(l=>(l.status_cadastro||'aprovado')==='aprovado');
