@@ -11,7 +11,7 @@ const SB_KEY='sb_publishable_7lNXC4ipqerGckfvUQvlnQ_ObfWXhmI';
 const _rastreioIdUrl=new URLSearchParams(window.location.search).get('rastrear');
 
 function corStatus(status){
-  const cores={'agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','no_local':'#38BDF8','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
+  const cores={'aguardando_pagamento':'#f59e0b','agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','no_local':'#38BDF8','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
   return cores[status]||'#6b7280';
 }
 // Supabase pode retornar timestamps sem sufixo de fuso (ex: "2026-06-12T15:00:00").
@@ -40,7 +40,7 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -2576,7 +2576,7 @@ async function confirmarPagamento(pedidoId){
   showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');await atualizarTudo();
 }
 
-const STATUS_LABEL={recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
+const STATUS_LABEL={aguardando_pagamento:'Aguardando Pagamento',recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
 const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',no_local:'#38BDF8',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
@@ -2729,7 +2729,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'mapa':renderMapaPage,'aguardando-pagamento':renderAguardandoPagamentoPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -5115,6 +5115,63 @@ async function renderNovoPedidoPage(){
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
+// ── Aguardando Pagamento — fila de pedidos do app do cliente
+// (lets_go_food) esperando a loja confirmar manualmente (via WhatsApp)
+// que o pagamento foi feito, antes de entrar no fluxo normal. Sem
+// gateway de pagamento automático por decisão explícita (lançar mais
+// rápido) — ver PedidoService.criarPedido no app do cliente, que grava
+// status='aguardando_pagamento' em vez de 'recebido'. Nenhum cron/trigger
+// de despacho pega esse status (auto-pronto-pedidos e
+// processarAutoPronto só olham status='recebido'), então o pedido fica
+// parado aqui até alguém clicar em "Confirmar Pagamento".
+async function renderAguardandoPagamentoPage(){
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">⏳ Aguardando Pagamento</div><button class="btn-sm btn-primary-sm" onclick="renderAguardandoPagamentoPage()">↻ Atualizar</button></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:820px">Pedidos feitos pelo app do cliente, esperando confirmação manual de pagamento (combinado por WhatsApp com a loja) antes de entrar em preparo/despacho.</div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Horário</th><th>Ação</th></tr></thead><tbody id="tbody-aguardando-pagamento"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
+  </div>`;
+  await _carregarAguardandoPagamento();
+}
+async function _carregarAguardandoPagamento(){
+  const tbody=document.getElementById('tbody-aguardando-pagamento');if(!tbody)return;
+  const qs=`?status=eq.aguardando_pagamento&select=id,numero,cliente,telefone,valor,total_pedido,forma_pagamento,created_at,loja_id,lojas(nome,telefone,celular)&order=created_at.asc${_lojaFiltro()}`;
+  const data=await db('pedidos','GET',null,qs);
+  if(!tbody)return;
+  const lista=Array.isArray(data)?data:[];
+  if(!lista.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">✅ Nenhum pedido esperando confirmação de pagamento.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=lista.map(p=>{
+    const loja=p.lojas||{};
+    const whatsLoja=loja.celular||loja.telefone||'—';
+    const valor=parseFloat(p.total_pedido??p.valor)||0;
+    return `<tr>
+      <td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td>
+      <td>${loja.nome||'—'}<div style="font-size:11px;color:var(--text3)">📲 ${whatsLoja}</div></td>
+      <td>${p.cliente||'—'}<div style="font-size:11px;color:var(--text3)">${p.telefone||''}</div></td>
+      <td style="font-weight:700">R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td>${(p.forma_pagamento||'—')}</td>
+      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td>
+      <td><button onclick="_confirmarPagamentoPedido('${p.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">✅ Confirmar Pagamento</button></td>
+    </tr>`;
+  }).join('');
+}
+// Único ponto que faz um pedido do app do cliente sair de
+// 'aguardando_pagamento' e entrar no fluxo normal — mesmos campos que a
+// criação de pedido normal (Novo Pedido/Entrega Rápida) já grava na hora
+// de criar (status/status_detalhado='recebido' + recebido_em=agora), pra
+// entrar exatamente no mesmo pipeline já testado (cron auto-pronto-pedidos
+// pega daqui a 1 minuto, vira 'pronto', despacho-engine despacha).
+async function _confirmarPagamentoPedido(id){
+  if(!confirm('Confirma que o pagamento desse pedido foi combinado/recebido? Ele vai entrar no preparo normal.'))return;
+  const agora=_agoraBrasilia();
+  const res=await db('pedidos','PATCH',{status:'recebido',status_detalhado:'recebido',recebido_em:agora,updated_at:agora},`?id=eq.${id}`);
+  if(!res||(Array.isArray(res)&&res.length===0)){showNotif('❌ Erro ao confirmar pagamento','','var(--red)');return;}
+  showNotif('✅ Pagamento confirmado!','Pedido entrou no fluxo normal');
+  _carregarAguardandoPagamento();
+}
+
 async function renderPedidosPage(){
   const hoje=_dataHojeBrasilia();
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
