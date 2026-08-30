@@ -1911,8 +1911,7 @@ async function abrirModal(id){
           <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div>
           <div class="fi"></div>
         </div>
-        <div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div>
-        <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div>
+                <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div>
         <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-coleta-toggle').click()">
           <input type="checkbox" id="np-coleta-toggle" onchange="_toggleColetaExterna()" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
@@ -2150,7 +2149,11 @@ async function _criarEntregaRapida(){
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
   const _faixaCrSubmit=_faixasCr.find(f=>_distKm<=parseFloat(f.km_ate))||_faixasCr[_faixasCr.length-1];
   console.log(`[_criarEntregaRapida] origem_usada=loja distancia_km=${_distKm} faixa_aplicada=km_ate:${_faixaCrSubmit?.km_ate||'?'} pd_cliente=${_pdCliente}(${_pdOrigemCr}) taxa_entrega=${_taxaEntrega} taxa_motoboy=${_taxaMotoboy}`);
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:4,pontos_base:4,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
+  // ⭐ Pontos: ponto de partida vem da loja (campo "Pontos Padrão") — allLojas
+  // já está carregado em memória, não precisa de fetch extra. Mesmo motivo/
+  // comentário de _criarPedidoInterno().
+  const _pontosPadraoCr=allLojas.find(l=>l.id===lojaId)?.pontos_padrao??4;
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -3822,7 +3825,6 @@ async function _criarPedidoInterno(){
   const telefonePedido=(document.getElementById('np-telefone')||{}).value||'';
   const taxaInput=parseFloat((document.getElementById('np-taxa')||{}).value)||0;
   const gorjeta=parseFloat((document.getElementById('np-gorjeta')||{}).value)||0;
-  const pontos=parseInt((document.getElementById('np-pontos')||{}).value)||4;
   const lojaIdSel=document.getElementById('np-loja-id')?.value||currentUser?.loja_id||null;
   const coletaOn=document.getElementById('np-coleta-toggle')?.checked;
   const enderecoColeta=coletaOn?(document.getElementById('np-endereco-coleta')?.value||''):'';
@@ -3846,8 +3848,16 @@ async function _criarPedidoInterno(){
     if(fb)fb.innerHTML='';
     if(!confirm(`Você acabou de criar uma entrega (#${_dupNp.numero}) para este mesmo endereço há poucos minutos.\nDeseja criar outra entrega mesmo assim?`))return;
   }
-  let latLoja=-21.1775,lngLoja=-47.8103;
-  if(finalLojaId){const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}}
+  let latLoja=-21.1775,lngLoja=-47.8103,pontosPadrao=4;
+  if(finalLojaId){
+    const lojaData=await db('lojas','GET',null,`?id=eq.${finalLojaId}`);
+    if(lojaData&&lojaData[0]?.latitude){latLoja=lojaData[0].latitude;lngLoja=lojaData[0].longitude;}
+    // ⭐ Pontos: ponto de partida vem da loja agora (campo "Pontos Padrão",
+    // editável em Nova Loja/Editar Loja) — não é mais digitado na hora de
+    // criar o pedido. O crescimento ao longo do tempo (processarPontosAutomaticos)
+    // continua igual, só muda o valor inicial (pontos_base) usado como piso.
+    if(lojaData&&lojaData[0]?.pontos_padrao!=null)pontosPadrao=lojaData[0].pontos_padrao;
+  }
   let latOrigem=latLoja,lngOrigem=lngLoja,origemUsada='loja',geoColeta=null;
   if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
   const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
@@ -3863,7 +3873,7 @@ async function _criarPedidoInterno(){
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const enderecoFinal=complemento?`${endereco} - ${complemento}`:endereco;
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos,pontos_base:pontos,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos:pontosPadrao,pontos_base:pontosPadrao,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
@@ -5809,7 +5819,7 @@ ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-or
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}"><option value="">Padrão do sistema</option>${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}"><option value="">Padrão do sistema</option>${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
-${r1(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`))}
+${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 ${sec('🗺️ Roterizador')}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-rot-ativo" ${l.roterizador_ativo?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativar roterizador para esta loja</label></div></div>
@@ -5902,6 +5912,7 @@ async function salvarEdicaoLoja(lojaId){
     tabela_cobranca_id:g('el-tabela-cobranca')||null,
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
+    pontos_padrao:g('el-pontos-padrao')!==''?parseInt(g('el-pontos-padrao'))||4:4,
     roterizador_ativo:document.getElementById('el-rot-ativo')?.checked||false,
     roterizador_raio_km:g('el-rot-raio')!==''?parseFloat(g('el-rot-raio'))||null:null,
     roterizador_max_pedidos:g('el-rot-max')!==''?parseInt(g('el-rot-max'))||null:null,
@@ -5957,6 +5968,7 @@ async function criarLoja(){
     tabela_cobranca_id:g('loja-tabela-cobranca')||null,
     tabela_pagamento_id:g('loja-tabela-pagamento')||null,
     tipo_cobranca:g('loja-tipo-cobranca')||'faturamento',
+    pontos_padrao:g('loja-pontos-padrao')!==''?parseInt(g('loja-pontos-padrao'))||4:4,
     roterizador_ativo:document.getElementById('loja-rot-ativo')?.checked||false,
     roterizador_raio_km:g('loja-rot-raio')!==''?parseFloat(g('loja-rot-raio'))||null:null,
     roterizador_max_pedidos:g('loja-rot-max')!==''?parseInt(g('loja-rot-max'))||null:null,
