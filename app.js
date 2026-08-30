@@ -4056,6 +4056,7 @@ async function _abrirModalImportarLojas(){
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ Dados pendentes" pra você completar individualmente depois em Editar Loja.</div>
       <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">⬇️ Baixar modelo CSV</button>
+      <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado padrão (pra geocodificar endereços sem cidade no texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
       <div class="fi" style="margin-bottom:16px"><label>Planilha preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
       <div id="import-lojas-preview"></div>
     </div>
@@ -4145,19 +4146,49 @@ function _processarArquivoImportarLojas(inputEl){
 // geocodificação nunca trava a importação — loja entra do mesmo jeito,
 // só sem lat/lng (fica pendente de correção manual, igual qualquer
 // endereço que já falhava antes na tela Nova Loja/Editar Loja).
+// Bug real encontrado (lote de 204 lojas importado antes desse fix): 79
+// delas foram geocodificadas em CIDADES/ESTADOS completamente errados
+// (SP capital, Rio, Manaus...) porque o endereço da planilha não menciona
+// cidade nenhuma (ex: "R. Espírito Santo, 468") — sem esse contexto, o
+// Google (e o Nominatim) geocodificam pra qualquer rua homônima no
+// Brasil inteiro, sem viés nenhum pra região certa. Corrigido de 2 formas:
+// 1) sempre anexa a "Cidade/Estado padrão" configurada no modal na busca
+//    (não só quando "detecta" que falta — detectar isso de forma
+//    confiável é frágil; anexar sempre é seguro e não atrapalha endereços
+//    que já mencionam a cidade);
+// 2) valida a distância do resultado até o centro dessa cidade — se ficar
+//    muito longe mesmo com o contexto forçado, não aceita cegamente, fica
+//    sem lat/lng (mesmo tratamento de "endereço não encontrado").
+const _IMPORT_LOJAS_RAIO_MAX_KM=40;
 async function _confirmarImportarLojas(){
   if(!_importLojasValidadas.length)return;
   const btnConfirmar=document.getElementById('import-lojas-btn-confirmar');
   const total=_importLojasValidadas.length;
   const agora=_agoraBrasilia();
-  let sucesso=0,falhas=0,semGeo=0;
+  const cidadePadrao=(document.getElementById('import-lojas-cidade-padrao')?.value||'').trim();
+
+  // Geocodifica a cidade padrão UMA vez só, pra ter um centro de
+  // referência pra validar contra (evita aceitar um resultado que "deu
+  // certo" mas caiu em outro estado só porque uma rua homônima existe lá).
+  let centroRef=null;
+  if(cidadePadrao){
+    const geoCidade=await geocodificarEndereco(cidadePadrao).catch(()=>null);
+    if(geoCidade)centroRef={lat:geoCidade.lat,lng:geoCidade.lng};
+  }
+
+  let sucesso=0,falhas=0,semGeo=0,suspeitas=0;
   for(let i=0;i<total;i++){
     const loja=_importLojasValidadas[i];
     if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent=`⏳ Importando e geocodificando... ${i+1}/${total}`;}
     let lat=null,lng=null;
     try{
-      const geo=await geocodificarEndereco(loja.endereco);
-      if(geo){lat=geo.lat;lng=geo.lng;}else semGeo++;
+      const enderecoBusca=cidadePadrao?`${loja.endereco}, ${cidadePadrao}`:loja.endereco;
+      const geo=await geocodificarEndereco(enderecoBusca);
+      if(!geo){semGeo++;}
+      else if(centroRef&&calcularDistancia(centroRef.lat,centroRef.lng,geo.lat,geo.lng)>_IMPORT_LOJAS_RAIO_MAX_KM){
+        suspeitas++;
+        console.error(`[importar-lojas] geocodificação suspeita pra "${loja.nome}" (endereço: "${loja.endereco}") — resultado longe demais de "${cidadePadrao}", não aceito. lat=${geo.lat} lng=${geo.lng}`);
+      }else{lat=geo.lat;lng=geo.lng;}
     }catch(e){semGeo++;console.error(`[importar-lojas] geocodificação falhou pra "${loja.nome}":`,e);}
     const payload={
       nome:loja.nome,endereco:loja.endereco,telefone:loja.whatsapp,
@@ -4170,10 +4201,11 @@ async function _confirmarImportarLojas(){
     if(res&&(Array.isArray(res)?res.length>0:res.id))sucesso++;else falhas++;
   }
   document.getElementById('modal-importar-lojas')?.classList.remove('open');
-  const avisoGeo=semGeo>0?` (${semGeo} sem geocodificação — endereço não encontrado, corrija manualmente)`:'';
+  const semGeoTotal=semGeo+suspeitas;
+  const avisoGeo=semGeoTotal>0?` (${semGeoTotal} sem geocodificação${suspeitas?` — ${suspeitas} resultado(s) suspeito(s) descartado(s), veja o console`:''} — corrija manualmente)`:'';
   if(falhas>0)showNotif('⚠️ Importação parcial',`${sucesso} importadas, ${falhas} falharam${avisoGeo} — confira o console`,'var(--yellow)');
   else showNotif('✅ Importação concluída!',`${sucesso} loja${sucesso===1?'':'s'} importada${sucesso===1?'':'s'}, marcada${sucesso===1?'':'s'} como "Dados pendentes"${avisoGeo}`);
-  await logAcao('importar_rede_lojas',{total,sucesso,falhas,semGeo});
+  await logAcao('importar_rede_lojas',{total,sucesso,falhas,semGeo,suspeitas});
   _importLojasValidadas=[];
   // _renderTbodyEstabelecimentos() sozinho só re-renderizaria o cache
   // antigo (_estabelecimentosDataCache) — precisa do fluxo completo pra
