@@ -4035,7 +4035,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
     ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">📥 Importar Rede de Lojas</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">📥 Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">🔄 Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -4054,8 +4054,12 @@ function _ehPlaceholderCampo(v){
 // "Dados pendentes" sozinho (as 195 lojas do lote já têm e-mail/telefone
 // reais, só o documento ainda é placeholder, e isso não deve mais travar
 // o badge).
+// !l.telefone (sem placeholder) cobre o caso de importação sem WhatsApp —
+// telefone genuinamente vazio conta como pendente. NÃO faz o mesmo pra
+// celular: esse campo é opcional pra praticamente toda loja do sistema
+// (raramente preenchido por design), então vazio ali é normal, não pendência.
 function _lojaDadosPendentes(l){
-  return _ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular);
+  return _ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular)||!l.telefone;
 }
 
 // ── Importar Rede de Lojas — CSV (nome_loja, endereco, whatsapp) ────────
@@ -4210,9 +4214,17 @@ function _processarArquivoImportarLojas(inputEl){
       const numeroLinha=i+2; // +2: pula o cabeçalho e volta pra base 1
       if(!nome)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Nome da loja obrigatório'};
       if(!endereco)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Endereço obrigatório'};
-      const whatsapp=_normalizarWhatsapp(whatsappRaw);
-      if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp inválido — precisa de DDD + 8 ou 9 dígitos'};
-      return {numeroLinha,nome,endereco,whatsapp,erro:null};
+      // WhatsApp não é mais obrigatório — linha em branco entra como
+      // válida, sem telefone (fica "Dados pendentes" igual já fazemos com
+      // CPF/CNPJ, pra completar depois em Editar Loja). Só bloqueia se
+      // vier PREENCHIDO com formato inválido (não dá pra saber se foi erro
+      // de digitação e importar errado calado).
+      let whatsapp=null;
+      if(whatsappRaw){
+        whatsapp=_normalizarWhatsapp(whatsappRaw);
+        if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp inválido — precisa de DDD + 8 ou 9 dígitos (ou deixe em branco)'};
+      }
+      return {numeroLinha,nome,endereco,whatsapp,whatsappRaw,erro:null};
     });
     // Checa cada linha válida contra as lojas já cadastradas — só avisa,
     // não bloqueia (o admin decide se remove a linha do CSV e reimporta,
@@ -4247,7 +4259,7 @@ function _processarArquivoImportarLojas(inputEl){
               <td style="padding:6px 10px;font-size:12px;color:var(--text)">${(v.nome||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${(v.endereco||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${v.whatsapp||v.whatsappRaw||'—'}</td>
-              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:'<span style="color:#10b981">✅ Ok</span>'}</td>
+              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:!v.whatsapp?'<span style="color:#10b981">✅ Ok</span> <span style="color:#f59e0b;font-size:11px" title="Vai entrar como Dados pendentes, complete depois em Editar Loja">(sem WhatsApp)</span>':'<span style="color:#10b981">✅ Ok</span>'}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>`;
@@ -4334,6 +4346,42 @@ async function _confirmarImportarLojas(){
   // _renderTbodyEstabelecimentos() sozinho só re-renderizaria o cache
   // antigo (_estabelecimentosDataCache) — precisa do fluxo completo pra
   // buscar de novo no banco e trazer as lojas recém-importadas.
+  _renderCadastrosConteudo('estabelecimentos');
+}
+
+// Recalcula lat/lng das lojas "⚠️ Dados pendentes" (escopo confirmado com
+// o usuário — não todas as lojas ativas, nem seleção manual na tela) a
+// partir do endereço cadastrado hoje, útil depois que alguém corrige o
+// endereço em Editar Loja mas a coordenada antiga ficou desatualizada.
+//
+// Difere de _confirmarImportarLojas() de propósito: NÃO força nenhuma
+// "cidade padrão" na busca. As lojas com Dados pendentes hoje incluem
+// lojas de outras cidades de verdade (Recife-PE, Santa Cruz-RN, não só
+// Ribeirão Preto) — forçar um contexto de cidade fixo quebraria a
+// geocodificação correta dessas. Geocodifica o endereço exatamente como
+// está escrito, e só sobrescreve lat/lng se vier resultado novo — nunca
+// apaga uma coordenada que já funcionava só porque a nova tentativa falhou.
+async function _recalcularEnderecosDadosPendentes(){
+  const lojas=(_estabelecimentosDataCache||[]).filter(l=>l.ativo&&_lojaDadosPendentes(l)&&l.endereco);
+  if(!lojas.length){showNotif('ℹ️ Nada pra recalcular','Nenhuma loja "Dados pendentes" com endereço cadastrado no momento','var(--text3)');return;}
+  if(!confirm(`Recalcular endereço de ${lojas.length} loja${lojas.length===1?'':'s'} marcada${lojas.length===1?'':'s'} "Dados pendentes"? Isso busca a coordenada de novo a partir do endereço cadastrado hoje.`))return;
+  let sucesso=0,semGeo=0,falhas=0;
+  const btn=document.querySelector('button[onclick="_recalcularEnderecosDadosPendentes()"]');
+  for(let i=0;i<lojas.length;i++){
+    const loja=lojas[i];
+    if(btn)btn.textContent=`⏳ Recalculando... ${i+1}/${lojas.length}`;
+    try{
+      const geo=await geocodificarEndereco(loja.endereco);
+      if(!geo){semGeo++;console.warn(`[recalcular-enderecos] sem resultado pra "${loja.nome}" (endereço: "${loja.endereco}") — coordenada antiga mantida.`);continue;}
+      const res=await dbPatch('lojas',{latitude:geo.lat,longitude:geo.lng,updated_at:_agoraBrasilia()},`?id=eq.${loja.id}`);
+      if(res===null){falhas++;continue;}
+      sucesso++;
+    }catch(e){falhas++;console.error(`[recalcular-enderecos] erro pra "${loja.nome}":`,e);}
+  }
+  if(btn){btn.textContent='🔄 Recalcular Endereços em Massa';}
+  const avisoFalha=(semGeo+falhas)>0?` (${semGeo+falhas} sem sucesso — veja o console)`:'';
+  showNotif(sucesso>0?'✅ Recálculo concluído':'⚠️ Nenhuma coordenada atualizada',`${sucesso} de ${lojas.length} loja${lojas.length===1?'':'s'} recalculada${sucesso===1?'':'s'}${avisoFalha}`,sucesso>0?'var(--green)':'var(--yellow)');
+  await logAcao('recalcular_enderecos_dados_pendentes',{total:lojas.length,sucesso,semGeo,falhas});
   _renderCadastrosConteudo('estabelecimentos');
 }
 
@@ -6033,10 +6081,10 @@ const _GRUPOS_CATEGORIA_DEF=[
   // mesmo padrão que Zé Delivery já usava. Marcas SEM loja cadastrada hoje
   // (McDonald's, Zamp, Madero, Rede Graal, IMC, Coco Bambu, Grupo Trigo,
   // Bob's, Giraffas, Oggi Sorvetes, Chiquinho Sorvetes, Halipar, Bacio di
-  // Latte, Domino's, Mania de Churrasco) e Sodie Doces (marca única, só 1
-  // loja, não é rede) continuam aqui — pré-cadastradas pra quando/se
-  // aparecer uma loja de fato.
-  {grupo:'Pulverizados',categorias:['Pulverizados','Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco']},
+  // Latte, Domino's, Mania de Churrasco) continuam aqui — pré-cadastradas
+  // pra quando/se aparecer uma loja de fato. Sodie Doces saiu também
+  // (grupo próprio abaixo), mesmo padrão das outras redes.
+  {grupo:'Pulverizados',categorias:['Pulverizados','Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte',"Domino's",'Mania de Churrasco']},
   {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],marcas:[]},
   {grupo:'Pet Shop',categorias:['Pet Shop'],marcas:[]},
   {grupo:'Farmácia',categorias:['Farmácia'],marcas:['RD','DPSP','Pague Menos','São João','Panvel','Araujo','Clamed','Drogal','Nissei','Indiana','Venancio','Rede d1000','Grupo Total','Farma Conde','Farmais','Redepharma','Drogarias Globo','Permanente','Grupo Tapajós']},
@@ -6059,6 +6107,7 @@ const _GRUPOS_CATEGORIA_DEF=[
   // precisar mexer de novo (exceção à regra de "só 2+ lojas", confirmada
   // com o usuário).
   {grupo:'Camarada Camarão',categorias:[],marcas:['Camarada Camarão']},
+  {grupo:'Sodie Doces',categorias:[],marcas:['Sodie Doces']},
 ];
 const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>[...g.categorias,...g.marcas].map(c=>[c,g.grupo])));
 // Marca específica de rede/franquia (ex: "Habib's") vs categoria genérica
@@ -6090,6 +6139,7 @@ const _CORES_GRUPO={
   'A Predileta Doceria':'#6366f1',
   'Congelô Refeições Congeladas':'#0891b2',
   'Camarada Camarão':'#c026d3',
+  'Sodie Doces':'#ea580c',
   'Sem categoria':'#475569',
 };
 function _corGrupo(grupo){return _CORES_GRUPO[grupo]||_corEstavelPorNome(grupo);}
