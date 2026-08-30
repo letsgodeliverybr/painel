@@ -64,6 +64,20 @@ const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 // — não apaga nada do banco. Pedidos "no prazo" continuam contando desde
 // sempre, sem corte, porque são entregas reais.
 const DATA_CORTE_METRICAS='2026-08-30';
+// Mesmo critério usado no card Cancelados e no gráfico de SLA — reaproveitado
+// aqui pro card "Todos os Pedidos" bater com a soma dos cards de baixo.
+// Cancelado ou finalizado-atrasado (SLA aceito_em->chegou_destino_em > 30min)
+// de antes do corte não conta na visão geral; qualquer outro status (em
+// andamento) ou finalizado no prazo/sem dado de SLA conta sempre.
+function _pedidoVisivelMetricas(p){
+  const sk=getStatusKey(p);
+  if(sk==='cancelado')return p.created_at>=DATA_CORTE_METRICAS;
+  if(sk==='finalizado'&&p.aceito_em&&p.chegou_destino_em){
+    const _min=(new Date(p.chegou_destino_em)-new Date(p.aceito_em))/60000;
+    if(_min>30)return p.created_at>=DATA_CORTE_METRICAS;
+  }
+  return true;
+}
 let _faixasPagamento=[];
 let _faixasCobranca=[];
 let _faixasCachePorTabela={};
@@ -5630,12 +5644,13 @@ async function _buscarPedidosAdmin(){
   const lucroBruto=fat-desp;
   const contasPagarTotal=(Array.isArray(_contasPagarRes)?_contasPagarRes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   const lucroLiquido=lucroBruto-contasPagarTotal;
-  if(_ct)_ct.textContent=arr.length;
+  // "Todos os Pedidos": mesmo corte histórico do card Cancelados/gráfico de
+  // SLA, pra bater com a soma de Finalizados+Cancelados+outros status
+  // visíveis (não apaga nada do banco — arr/merc/fatBase etc. acima
+  // continuam com o conjunto completo, isso só afeta a exibição desse card).
+  if(_ct)_ct.textContent=arr.filter(_pedidoVisivelMetricas).length;
   if(_cf)_cf.textContent=finalizados.length;
-  // Cancelados: pedidos de teste anteriores à DATA_CORTE_METRICAS saem da
-  // contagem visual (não apaga nada do banco — arr/merc/fatBase etc. acima
-  // continuam com o conjunto completo, isso só afeta esse card).
-  if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado'&&p.created_at>=DATA_CORTE_METRICAS).length;
+  if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado'&&_pedidoVisivelMetricas(p)).length;
   if(_ck)_ck.textContent=finalizados.reduce((s,p)=>s+(parseFloat(p.distancia_km)||0),0).toFixed(1)+'km';
   if(_cFat)_cFat.textContent='R$ '+fat.toFixed(2);
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
