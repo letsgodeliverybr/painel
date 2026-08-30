@@ -1,0 +1,52 @@
+-- Corrige categorização: 172 lojas estavam com categoria='Pulverizados'
+-- LITERAL no campo (valor direto), quando "Pulverizados" deveria ser só o
+-- GRUPO agregado (ver _GRUPOS_CATEGORIA_DEF em app.js) que junta várias
+-- categorias específicas (Padaria, Pizzaria, Açaí, Sorveteria etc.).
+--
+-- Cada uma das 172 lojas foi classificada pela categoria específica real
+-- usando o nome (e endereço quando ajudou) como indicador, sempre usando
+-- um valor JÁ EXISTENTE em _GRUPOS_CATEGORIA_DEF — nenhuma categoria nova
+-- foi inventada. 166 casos claros + 6 ambíguos resolvidos manualmente
+-- com o usuário (Avenida Acessórios->Auto Peças, Casa de Sucos Nokopo->
+-- Comida Fit, Maskavo Bakery Brownie->Confeitaria, San Bruno's->
+-- Restaurantes, Santa Tradição->Restaurantes, Warehouse Dona Cida->
+-- Mercado).
+--
+-- 2 casos usaram o nome da MARCA já cadastrada em vez da categoria
+-- genérica, por bater exatamente com uma rede/franquia conhecida:
+-- "Farmácia Drogal" -> categoria='Drogal' (marca do grupo Farmácia) e
+-- "Sodié Doces" -> categoria='Sodie Doces' (marca do grupo Pulverizados,
+-- sem acento pra bater exato com o valor já registrado).
+--
+-- Resultado final (RPC lojas_por_categoria): Padaria 49, Confeitaria 29,
+-- Restaurantes 27, Farmácia 21, Comida Fit 19, Pet Shop 19, Casa de
+-- Carnes 15, Pizzaria 13, Japonesa 11, Marmitaria 10, Auto Peças 10,
+-- Açaí 10, Sorveteria 9, Empório 4, Drogal 1, Sodie Doces 1 (+ os outros
+-- valores que já existiam antes desse lote). 0 categorias sem grupo, 0
+-- lojas com 'Pulverizados' literal restante.
+--
+-- Aplicado via REST (cada loja recebe categoria diferente, não dá pra
+-- expressar como UPDATE em lote) — este arquivo documenta a mudança de
+-- dados pra fins de histórico/auditoria, a aplicação real foi feita
+-- loja por loja via script.
+
+-- Padaria (33): Bakery San Rafael, Bakery Wheat Flower, Isaac Padaria,
+-- Jardim Paulista Bakery, Lider Pan, Marcelus Panificadora, Minas Pães e
+-- Empório, Nexo Ribeirão - Padaria & Brunch, Nossa Padoca, Padaria A
+-- Moderna, Padaria Doce Delícia, Padaria e Rotisserie Ana Maria, Padaria
+-- Família Sant, Padaria Nª Srª Aparecida, Padaria Panini, Panificadora
+-- Catedral, Panificadora da Lapa, Panificadora Doce Paladar, Panificadora
+-- e Confeitaria Doce Pão, Panificadora e Mercearia Delícias, Panificadora
+-- Espírito Santo, Panificadora Ki-Pão, Panificadora Liberdade,
+-- Panificadora Nosso Pão, Panificadora Novatta, Panificadora Pão Quente
+-- & Cia, Panificadora Progresso, Panificadora Renascer, Panificadora
+-- Sant'Ana, Panificadora Siam, Panificadora Sorriso, Panificadora Vó
+-- Luzia, Por do Sol Panificadora.
+--
+-- Confeitaria (19), Farmácia (18), Pet Shop (17), Comida Fit (14),
+-- Japonesa (10), Casa de Carnes (10), Auto Peças (9), Pizzaria (9),
+-- Açaí (8), Sorveteria (6), Marmitaria (6), Empório (3), Mercado (2),
+-- Restaurantes (3), Drogal (1), Sodie Doces (1) — lista completa de
+-- nomes por categoria ficou registrada na conversa que gerou essa
+-- migration (Claude Code), não duplicada aqui pra não deixar o arquivo
+-- gigante; os valores batem com o resultado final documentado acima.
