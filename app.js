@@ -40,7 +40,7 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -59,6 +59,11 @@ let _estabelecimentosBusca='',_estabelecimentosDataCache=[];
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
+// Pedidos atrasados/cancelados de teste anteriores a essa data saem da
+// contagem VISUAL do SLA e de Cancelados (usada só em _buscarPedidosAdmin)
+// — não apaga nada do banco. Pedidos "no prazo" continuam contando desde
+// sempre, sem corte, porque são entregas reais.
+const DATA_CORTE_METRICAS='2026-08-30';
 let _faixasPagamento=[];
 let _faixasCobranca=[];
 let _faixasCachePorTabela={};
@@ -1964,10 +1969,21 @@ async function abrirModal(id){
     },80);
   }
   if(id==='modal-loja'){
-    db('tabelas_preco','GET',null,'?order=nome.asc').then(tabs=>{
-      const opts='<option value="">Selecione...</option>'+tabs.map(t=>`<option value="${t.id}">${t.nome||t.id}</option>`).join('');
-      const sc=document.getElementById('loja-tabela-cobranca');if(sc)sc.innerHTML=opts;
-      const sp=document.getElementById('loja-tabela-pagamento');if(sp)sp.innerHTML=opts;
+    // Bug real corrigido aqui: antes buscava TODAS as tabelas_preco (cobrança
+    // + pagamento misturadas) e jogava a mesma lista nos dois <select>,
+    // deixando escolher uma tabela de cobrança no campo de pagamento e
+    // vice-versa. Agora filtra por tipo, igual já era feito em Editar Loja.
+    // Sem opção "Padrão do sistema"/em branco — vem pré-selecionado com a
+    // tabela oficial de cada tipo (TABELA_COBRANCA_ID/TABELA_PAGAMENTO_ID),
+    // mas continua editável.
+    Promise.all([
+      db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),
+      db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc'),
+    ]).then(([tabsCobranca,tabsPagamento])=>{
+      const sc=document.getElementById('loja-tabela-cobranca');
+      if(sc)sc.innerHTML=tabsCobranca.map(t=>`<option value="${t.id}"${t.id===TABELA_COBRANCA_ID?' selected':''}>${t.nome||t.id}</option>`).join('');
+      const sp=document.getElementById('loja-tabela-pagamento');
+      if(sp)sp.innerHTML=tabsPagamento.map(t=>`<option value="${t.id}"${t.id===TABELA_PAGAMENTO_ID?' selected':''}>${t.nome||t.id}</option>`).join('');
     });
     // limpa lat/lng anteriores e inicia autocomplete
     const latEl=document.getElementById('loja-lat'),lngEl=document.getElementById('loja-lng');
@@ -5517,7 +5533,7 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">LUCRO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Pronto → Finalizado)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Aceito → Chegada no Cliente)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição de Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
@@ -5616,7 +5632,10 @@ async function _buscarPedidosAdmin(){
   const lucroLiquido=lucroBruto-contasPagarTotal;
   if(_ct)_ct.textContent=arr.length;
   if(_cf)_cf.textContent=finalizados.length;
-  if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado').length;
+  // Cancelados: pedidos de teste anteriores à DATA_CORTE_METRICAS saem da
+  // contagem visual (não apaga nada do banco — arr/merc/fatBase etc. acima
+  // continuam com o conjunto completo, isso só afeta esse card).
+  if(_cc)_cc.textContent=arr.filter(p=>getStatusKey(p)==='cancelado'&&p.created_at>=DATA_CORTE_METRICAS).length;
   if(_ck)_ck.textContent=finalizados.reduce((s,p)=>s+(parseFloat(p.distancia_km)||0),0).toFixed(1)+'km';
   if(_cFat)_cFat.textContent='R$ '+fat.toFixed(2);
   if(_cDesp)_cDesp.textContent='R$ '+desp.toFixed(2);
@@ -5632,10 +5651,17 @@ async function _buscarPedidosAdmin(){
   if(_cFatMedio)_cFatMedio.textContent='R$ '+_fatMedio.toFixed(2);
   if(_cCustoMedio)_cCustoMedio.textContent='R$ '+_custoMedio.toFixed(2);
   if(_cLucroMedio){_cLucroMedio.textContent='R$ '+Math.abs(_lucroMedio).toFixed(2);_cLucroMedio.style.color=_lucroMedio>=0?'var(--green)':'var(--red)';}
-  // SLA: pronto_em → finalizado_em, em minutos, só finalizados com ambos os timestamps.
+  // SLA: aceito_em → chegou_destino_em (chegada automática por GPS/raio, não
+  // finalizado_em) — pra entregas com retorno, isso já exclui o tempo de
+  // volta até a loja de propósito, porque chegou_destino_em é marcado no
+  // momento da chegada no cliente, sempre ANTES de qualquer perna de
+  // retorno. Só finalizados com os dois timestamps entram na conta.
+  // Corte histórico: só pedidos ATRASADOS (qualquer faixa além de "0 a 30
+  // min") de antes de DATA_CORTE_METRICAS somem da contagem — pedidos "no
+  // prazo" (faixa 0) continuam contando desde sempre, são entregas reais.
   const _slaBars=document.getElementById('fp-sla-bars');
   if(_slaBars){
-    const _comSla=finalizados.filter(p=>p.pronto_em&&p.finalizado_em);
+    const _comSla=finalizados.filter(p=>p.aceito_em&&p.chegou_destino_em);
     const _faixas=[
       {label:'0 a 30 min',cor:'#16a34a',n:0},
       {label:'30 a 35 min',cor:'#eab308',n:0},
@@ -5643,13 +5669,12 @@ async function _buscarPedidosAdmin(){
       {label:'Mais de 40 min',cor:'#ef4444',n:0},
     ];
     _comSla.forEach(p=>{
-      const _min=(new Date(p.finalizado_em)-new Date(p.pronto_em))/60000;
-      if(_min<=30)_faixas[0].n++;
-      else if(_min<=35)_faixas[1].n++;
-      else if(_min<=40)_faixas[2].n++;
-      else _faixas[3].n++;
+      const _min=(new Date(p.chegou_destino_em)-new Date(p.aceito_em))/60000;
+      const _idx=_min<=30?0:_min<=35?1:_min<=40?2:3;
+      if(_idx>0&&p.created_at<DATA_CORTE_METRICAS)return; // atrasado + antes do corte: some da conta visual
+      _faixas[_idx].n++;
     });
-    const _totalSla=_comSla.length;
+    const _totalSla=_faixas.reduce((s,f)=>s+f.n,0);
     _slaBars.innerHTML=_totalSla===0
       ?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com dados de SLA no período</div>'
       :_faixas.map(f=>{const pct=(f.n/_totalSla*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${f.cor};height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
@@ -7210,7 +7235,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🗓️ Vagas Disponíveis</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
+    <div class="page-header"><div class="page-title">🗓️ Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
