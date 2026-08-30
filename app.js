@@ -4047,10 +4047,60 @@ function _normalizarWhatsapp(v){
 }
 
 let _importLojasValidadas=[];
+// Checagem de duplicata na importação em massa (achado real: o lote de 204
+// lojas criou 9 duplicatas de lojas que já existiam — mesmo endereço/nome,
+// ex: "FAMILIARE EMPÓRIO GOURMET" duplicando "FAMILIARE GOURMET" já
+// cadastrada com login/e-mail real). Critério (mesmo usado pra detectar e
+// resolver aquele caso manualmente): compara núcleo do endereço (texto
+// antes do primeiro " - ", ignora variação de bairro) e nome normalizado
+// via similaridade de Levenshtein — só AVISA na prévia, nunca bloqueia
+// nem remove linha sozinho, decisão final fica com quem importa.
+let _importLojasExistentesCache=[];
+function _normalizarTextoDup(s){
+  return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+function _nucleoEnderecoDup(endereco){
+  return _normalizarTextoDup((endereco||'').split(' - ')[0]);
+}
+function _levenshteinDup(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i;
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+  return dp[m][n];
+}
+function _similaridadeDup(a,b){
+  if(!a.length&&!b.length)return 1;
+  return 1-_levenshteinDup(a,b)/Math.max(a.length,b.length);
+}
+// Retorna a loja existente mais parecida (ou null) — mesmo critério
+// validado manualmente na limpeza das 9 duplicatas: endereço quase
+// idêntico (>=0.85) OU nome muito parecido (>=0.55 ou substring) E
+// endereço pelo menos parecido (>=0.5).
+function _acharPossivelDuplicata(nome,endereco){
+  const nomeNorm=_normalizarTextoDup(nome);
+  const nucleoNovo=_nucleoEnderecoDup(endereco);
+  for(const ex of _importLojasExistentesCache){
+    const simEndereco=nucleoNovo&&ex.nucleoEnd?_similaridadeDup(nucleoNovo,ex.nucleoEnd):0;
+    const simNome=_similaridadeDup(nomeNorm,ex.nomeNorm);
+    const enderecoIgual=simEndereco>=0.85;
+    const nomeParecido=simNome>=0.55||(nomeNorm&&ex.nomeNorm&&(nomeNorm.includes(ex.nomeNorm)||ex.nomeNorm.includes(nomeNorm)));
+    if(enderecoIgual||(nomeParecido&&simEndereco>=0.5))return ex;
+  }
+  return null;
+}
 async function _abrirModalImportarLojas(){
   let modal=document.getElementById('modal-importar-lojas');
   if(!modal){modal=document.createElement('div');modal.id='modal-importar-lojas';modal.className='modal-overlay';document.body.appendChild(modal);}
   _importLojasValidadas=[];
+  _importLojasExistentesCache=[];
+  // Busca as lojas ativas já cadastradas em paralelo com o resto (não
+  // trava a abertura do modal) — usada só pra avisar de possível
+  // duplicata na prévia, antes de confirmar a importação.
+  db('lojas','GET',null,'?select=nome,endereco&ativo=eq.true').then(r=>{
+    _importLojasExistentesCache=(r||[]).map(l=>({nome:l.nome,nomeNorm:_normalizarTextoDup(l.nome),nucleoEnd:_nucleoEnderecoDup(l.endereco)}));
+  }).catch(()=>{_importLojasExistentesCache=[];});
   modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
     <div class="modal-header"><span class="modal-title">📥 Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
@@ -4101,16 +4151,27 @@ function _processarArquivoImportarLojas(inputEl){
       if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp inválido — precisa de DDD + 8 ou 9 dígitos'};
       return {numeroLinha,nome,endereco,whatsapp,erro:null};
     });
+    // Checa cada linha válida contra as lojas já cadastradas — só avisa,
+    // não bloqueia (o admin decide se remove a linha do CSV e reimporta,
+    // ou segue mesmo assim porque é coincidência de nome/rua).
+    validadas.forEach(v=>{
+      if(v.erro)return;
+      const dup=_acharPossivelDuplicata(v.nome,v.endereco);
+      v.possivelDuplicataDe=dup?dup.nome:null;
+    });
     _importLojasValidadas=validadas.filter(v=>!v.erro);
     const comErro=validadas.filter(v=>v.erro);
+    const comDuplicata=validadas.filter(v=>v.possivelDuplicataDe);
     if(preview){
       preview.innerHTML=`
-        <div style="display:flex;gap:16px;margin-bottom:12px">
+        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:700;color:#10b981">✅ ${_importLojasValidadas.length} válida${_importLojasValidadas.length===1?'':'s'}</div>
           <div style="font-size:13px;font-weight:700;color:${comErro.length?'#ef4444':'var(--text3)'}">❌ ${comErro.length} com erro</div>
+          <div style="font-size:13px;font-weight:700;color:${comDuplicata.length?'#f59e0b':'var(--text3)'}">⚠️ ${comDuplicata.length} possível duplicata</div>
         </div>
+        ${comDuplicata.length?'<div style="font-size:12px;color:#f59e0b;margin-bottom:10px">Linhas marcadas em amarelo parecem já existir no sistema (mesmo endereço ou nome parecido) — confira antes de confirmar. Isso não bloqueia a importação, é só um aviso.</div>':''}
         <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-          <table style="width:100%;min-width:480px;border-collapse:collapse">
+          <table style="width:100%;min-width:560px;border-collapse:collapse">
             <thead style="position:sticky;top:0;background:var(--surface2)"><tr>
               <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Linha</th>
               <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Nome</th>
@@ -4118,12 +4179,12 @@ function _processarArquivoImportarLojas(inputEl){
               <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">WhatsApp</th>
               <th style="text-align:left;padding:6px 10px;font-size:11px;color:var(--text3)">Status</th>
             </tr></thead>
-            <tbody>${validadas.map(v=>`<tr style="border-top:1px solid var(--border)">
+            <tbody>${validadas.map(v=>`<tr style="border-top:1px solid var(--border);${v.possivelDuplicataDe?'background:#f59e0b14':''}">
               <td style="padding:6px 10px;font-size:12px;color:var(--text3)">${v.numeroLinha}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text)">${(v.nome||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${(v.endereco||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${v.whatsapp||v.whatsappRaw||'—'}</td>
-              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:'<span style="color:#10b981">✅ Ok</span>'}</td>
+              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:'<span style="color:#10b981">✅ Ok</span>'}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>`;
