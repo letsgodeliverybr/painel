@@ -4138,15 +4138,30 @@ function _processarArquivoImportarLojas(inputEl){
   reader.readAsText(file,'utf-8');
 }
 
+// Geocodifica cada loja JÁ NA IMPORTAÇÃO (mesmo geocodificarEndereco() de
+// sempre — Google primário, Nominatim fallback) — achado real: as 212
+// primeiras lojas importadas por essa feature ficaram sem lat/lng, sem
+// aparecer no mapa, porque essa chamada não existia ainda. Erro de
+// geocodificação nunca trava a importação — loja entra do mesmo jeito,
+// só sem lat/lng (fica pendente de correção manual, igual qualquer
+// endereço que já falhava antes na tela Nova Loja/Editar Loja).
 async function _confirmarImportarLojas(){
   if(!_importLojasValidadas.length)return;
   const btnConfirmar=document.getElementById('import-lojas-btn-confirmar');
-  if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='⏳ Importando...';}
+  const total=_importLojasValidadas.length;
   const agora=_agoraBrasilia();
-  let sucesso=0,falhas=0;
-  for(const loja of _importLojasValidadas){
+  let sucesso=0,falhas=0,semGeo=0;
+  for(let i=0;i<total;i++){
+    const loja=_importLojasValidadas[i];
+    if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent=`⏳ Importando e geocodificando... ${i+1}/${total}`;}
+    let lat=null,lng=null;
+    try{
+      const geo=await geocodificarEndereco(loja.endereco);
+      if(geo){lat=geo.lat;lng=geo.lng;}else semGeo++;
+    }catch(e){semGeo++;console.error(`[importar-lojas] geocodificação falhou pra "${loja.nome}":`,e);}
     const payload={
       nome:loja.nome,endereco:loja.endereco,telefone:loja.whatsapp,
+      latitude:lat,longitude:lng,
       documento:'00000000000000', // placeholder — trigger do banco aceita, badge "Dados pendentes" cobre
       ativo:true,ativo_app:true,tipo_cobranca:'faturamento',
       created_at:agora,updated_at:agora,
@@ -4155,9 +4170,10 @@ async function _confirmarImportarLojas(){
     if(res&&(Array.isArray(res)?res.length>0:res.id))sucesso++;else falhas++;
   }
   document.getElementById('modal-importar-lojas')?.classList.remove('open');
-  if(falhas>0)showNotif('⚠️ Importação parcial',`${sucesso} importadas, ${falhas} falharam — confira o console`,'var(--yellow)');
-  else showNotif('✅ Importação concluída!',`${sucesso} loja${sucesso===1?'':'s'} importada${sucesso===1?'':'s'}, marcada${sucesso===1?'':'s'} como "Dados pendentes"`);
-  await logAcao('importar_rede_lojas',{total:_importLojasValidadas.length,sucesso,falhas});
+  const avisoGeo=semGeo>0?` (${semGeo} sem geocodificação — endereço não encontrado, corrija manualmente)`:'';
+  if(falhas>0)showNotif('⚠️ Importação parcial',`${sucesso} importadas, ${falhas} falharam${avisoGeo} — confira o console`,'var(--yellow)');
+  else showNotif('✅ Importação concluída!',`${sucesso} loja${sucesso===1?'':'s'} importada${sucesso===1?'':'s'}, marcada${sucesso===1?'':'s'} como "Dados pendentes"${avisoGeo}`);
+  await logAcao('importar_rede_lojas',{total,sucesso,falhas,semGeo});
   _importLojasValidadas=[];
   // _renderTbodyEstabelecimentos() sozinho só re-renderizaria o cache
   // antigo (_estabelecimentosDataCache) — precisa do fluxo completo pra
