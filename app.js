@@ -6028,7 +6028,15 @@ function _renderMetricasChart(meses,opts){
 // específicas que também contam pro grupo pai nos gráficos agregados, mas
 // aparecem separadas das genéricas no drill-down (ver _MARCAS_ESPECIFICAS).
 const _GRUPOS_CATEGORIA_DEF=[
-  {grupo:'Pulverizados',categorias:['Pulverizados','Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero',"Habib's",'Outback','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco','Villa Sucrêa','More Cookies','The Butters','La Francese',"Let's Cookies",'A Predileta Doceria','Congelô Refeições Congeladas']},
+  // Redes de verdade (2+ lojas cadastradas hoje, confirmado visualmente no
+  // drill-down do dashboard) saíram daqui e viraram grupo próprio abaixo —
+  // mesmo padrão que Zé Delivery já usava. Marcas SEM loja cadastrada hoje
+  // (McDonald's, Zamp, Madero, Rede Graal, IMC, Coco Bambu, Grupo Trigo,
+  // Bob's, Giraffas, Oggi Sorvetes, Chiquinho Sorvetes, Halipar, Bacio di
+  // Latte, Domino's, Mania de Churrasco) e Sodie Doces (marca única, só 1
+  // loja, não é rede) continuam aqui — pré-cadastradas pra quando/se
+  // aparecer uma loja de fato.
+  {grupo:'Pulverizados',categorias:['Pulverizados','Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco']},
   {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],marcas:[]},
   {grupo:'Pet Shop',categorias:['Pet Shop'],marcas:[]},
   {grupo:'Farmácia',categorias:['Farmácia'],marcas:['RD','DPSP','Pague Menos','São João','Panvel','Araujo','Clamed','Drogal','Nissei','Indiana','Venancio','Rede d1000','Grupo Total','Farma Conde','Farmais','Redepharma','Drogarias Globo','Permanente','Grupo Tapajós']},
@@ -6037,6 +6045,20 @@ const _GRUPOS_CATEGORIA_DEF=[
   {grupo:'Auto Peças',categorias:['Auto Peças'],marcas:[]},
   {grupo:"App Let's Go",categorias:["App Let's Go"],marcas:[]},
   {grupo:'Zé Delivery',categorias:[],marcas:['Armazém da Cerveja']},
+  {grupo:"Habib's",categorias:[],marcas:["Habib's"]},
+  {grupo:'Outback',categorias:[],marcas:['Outback']},
+  {grupo:'Villa Sucrêa',categorias:[],marcas:['Villa Sucrêa']},
+  {grupo:'More Cookies',categorias:[],marcas:['More Cookies']},
+  {grupo:'The Butters',categorias:[],marcas:['The Butters']},
+  {grupo:'La Francese',categorias:[],marcas:['La Francese']},
+  {grupo:"Let's Cookies",categorias:[],marcas:["Let's Cookies"]},
+  {grupo:'A Predileta Doceria',categorias:[],marcas:['A Predileta Doceria']},
+  {grupo:'Congelô Refeições Congeladas',categorias:[],marcas:['Congelô Refeições Congeladas']},
+  // Rede nacional real, só 1 loja cadastrada hoje mas com expansão prevista
+  // — grupo criado já agora pra próximas unidades caírem certo sem
+  // precisar mexer de novo (exceção à regra de "só 2+ lojas", confirmada
+  // com o usuário).
+  {grupo:'Camarada Camarão',categorias:[],marcas:['Camarada Camarão']},
 ];
 const _GRUPO_CATEGORIA=Object.fromEntries(_GRUPOS_CATEGORIA_DEF.flatMap(g=>[...g.categorias,...g.marcas].map(c=>[c,g.grupo])));
 // Marca específica de rede/franquia (ex: "Habib's") vs categoria genérica
@@ -6058,16 +6080,38 @@ const _CORES_GRUPO={
   'Tabacarias':'#64748b',
   "App Let's Go":'#ec4899',
   'Zé Delivery':'#dc2626',
+  "Habib's":'#a855f7',
+  'Outback':'#65a30d',
+  'Villa Sucrêa':'#0ea5e9',
+  'More Cookies':'#d946ef',
+  'The Butters':'#84cc16',
+  'La Francese':'#14b8a6',
+  "Let's Cookies":'#f43f5e',
+  'A Predileta Doceria':'#6366f1',
+  'Congelô Refeições Congeladas':'#0891b2',
+  'Camarada Camarão':'#c026d3',
   'Sem categoria':'#475569',
 };
-function _corGrupo(grupo){return _CORES_GRUPO[grupo]||'#475569';}
-// Paleta pro drill-down dentro de um grupo (genéricas + marcas, todas
-// aparecem separadas) — cor estável por nome (índice fixo na mesma ordem
-// de CATEGORIAS_LOJA), cicla se acabar.
+function _corGrupo(grupo){return _CORES_GRUPO[grupo]||_corEstavelPorNome(grupo);}
+// Paleta usada tanto pelo fallback de _corGrupo (grupo novo que ainda não
+// ganhou entrada fixa acima) quanto pelo drill-down por marca/categoria
+// específica (_corMarca) — cor 100% estável por NOME (hash determinístico
+// da string), não por índice de posição num array. Antes usava
+// CATEGORIAS_LOJA.indexOf(categoria), que muda de valor toda vez que
+// _GRUPOS_CATEGORIA_DEF é editado (adicionar/remover/reordenar categoria
+// desloca o índice de tudo que vem depois) — cada edição futura mudaria a
+// cor de categorias que nem foram tocadas. Hash por nome não tem esse
+// problema: a cor de "Farmácia" ou "Villa Sucrêa" nunca muda, não importa
+// quantas categorias existem nem em que ordem foram definidas.
 const _PALETA_MARCAS=['#eab308','#f97316','#ec4899','#8b5cf6','#06b6d4','#22c55e','#e11d48','#0ea5e9','#a855f7','#84cc16','#f59e0b','#14b8a6','#6366f1','#d946ef','#65a30d','#0891b2','#c026d3','#ea580c'];
+function _corEstavelPorNome(nome){
+  const s=String(nome||'');
+  let hash=0;
+  for(let i=0;i<s.length;i++)hash=((hash<<5)-hash+s.charCodeAt(i))|0;
+  return _PALETA_MARCAS[Math.abs(hash)%_PALETA_MARCAS.length];
+}
 function _corMarca(categoria){
-  const idx=CATEGORIAS_LOJA.indexOf(categoria);
-  return _PALETA_MARCAS[(idx<0?0:idx)%_PALETA_MARCAS.length];
+  return _corEstavelPorNome(categoria);
 }
 // Soma quantidade por grupo (COALESCE já resolvido pelas RPCs pra 'Sem
 // categoria' quando a categoria original é NULL) — usado pelos dois
