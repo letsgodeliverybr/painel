@@ -3381,7 +3381,35 @@ function atualizarMarcadores(){
     :_estadoLojas===2?[]:_estadoLojas===1?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
   console.log('[MAPA] perfil:',currentPerfil,'loja_id:',currentUser?.loja_id,'lojas visíveis:',lojasVisiveis.length);
   const _svgPin=`<svg width="38" height="48" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="#1A56DB" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
-  lojasVisiveis.forEach(l=>{const lat=l.latitude,lng=l.longitude;if(!lat||!lng)return;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja'&&!_mapaJaCentralizado){map.setView([lat,lng],14);_mapaJaCentralizado=true;}});
+  // Achado real: algumas lojas dividem prédio/shopping (ex: OUTBACK e MORE
+  // COOKIES no mesmo endereço do Shopping Santa Úrsula) e geocodificam pro
+  // MESMO ponto exato — sem ajuste, o Leaflet empilha os pins um em cima
+  // do outro e só o de cima fica visível/clicável. Agrupa por coordenada
+  // EXATA (6 casas decimais ~= 0.1m) e, só pros grupos com 2+ lojas,
+  // espalha em círculo (raio pequeno, poucos metros) por índice — não
+  // representa a posição real com mais precisão, só separa visualmente.
+  // Ordena por id (não pela ordem que a API devolveu) pra ficar
+  // determinístico entre recarregamentos.
+  function _offsetCoordDuplicada(lat,lng,indice,total){
+    const raioMetros=18;
+    const angulo=(2*Math.PI*indice)/total;
+    const deltaLat=(raioMetros*Math.cos(angulo))/111320;
+    const deltaLng=(raioMetros*Math.sin(angulo))/(111320*Math.cos(lat*Math.PI/180));
+    return {lat:lat+deltaLat,lng:lng+deltaLng};
+  }
+  const _gruposCoordLoja={};
+  lojasVisiveis.forEach(l=>{
+    if(!l.latitude||!l.longitude)return;
+    const key=l.latitude.toFixed(6)+','+l.longitude.toFixed(6);
+    (_gruposCoordLoja[key]=_gruposCoordLoja[key]||[]).push(l);
+  });
+  const _coordAjustadaLoja={};
+  Object.values(_gruposCoordLoja).forEach(grupo=>{
+    if(grupo.length<2){const l=grupo[0];_coordAjustadaLoja[l.id]={lat:l.latitude,lng:l.longitude};return;}
+    grupo.sort((a,b)=>a.id<b.id?-1:1);
+    grupo.forEach((l,idx)=>{_coordAjustadaLoja[l.id]=_offsetCoordDuplicada(l.latitude,l.longitude,idx,grupo.length);});
+  });
+  lojasVisiveis.forEach(l=>{const c=_coordAjustadaLoja[l.id];if(!c)return;const lat=c.lat,lng=c.lng;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja'&&!_mapaJaCentralizado){map.setView([lat,lng],14);_mapaJaCentralizado=true;}});
   const _statusAtivos=['aceito','no_local','chegou_no_local','chegou_local','em_rota','chegou_destino','retornando'];
   // Checagem de "ocupado" usa _pedidosAtivosGlobal (todas as lojas) — allPedidos
   // é filtrado pela loja atual quando currentPerfil==='loja', então um entregador
@@ -3991,8 +4019,13 @@ function _ehPlaceholderCampo(v){
   const d=(v||'').toString().replace(/\D/g,'');
   return d.length>0 && /^0+$/.test(d);
 }
+// CPF/CNPJ (documento) saiu desse critério de propósito — o campo continua
+// existindo e editável normalmente em Editar Loja, só não sinaliza mais
+// "Dados pendentes" sozinho (as 195 lojas do lote já têm e-mail/telefone
+// reais, só o documento ainda é placeholder, e isso não deve mais travar
+// o badge).
 function _lojaDadosPendentes(l){
-  return _ehPlaceholderCampo(l.documento)||_ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular);
+  return _ehPlaceholderCampo(l.telefone)||_ehPlaceholderCampo(l.celular);
 }
 
 // ── Importar Rede de Lojas — CSV (nome_loja, endereco, whatsapp) ────────
@@ -4287,7 +4320,7 @@ function _renderTbodyEstabelecimentos(){
   tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
-    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="CPF/CNPJ ou telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':'';
+    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':'';
     return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
   }).join('');
 }
@@ -6119,7 +6152,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏪 Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="CPF/CNPJ ou telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
