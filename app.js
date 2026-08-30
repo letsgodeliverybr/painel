@@ -5894,7 +5894,7 @@ function _renderMetricasChart(meses,opts){
 // específicas que também contam pro grupo pai nos gráficos agregados, mas
 // aparecem separadas das genéricas no drill-down (ver _MARCAS_ESPECIFICAS).
 const _GRUPOS_CATEGORIA_DEF=[
-  {grupo:'Pulverizados',categorias:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero',"Habib's",'Outback','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco']},
+  {grupo:'Pulverizados',categorias:['Pulverizados','Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Empório','Café'],marcas:["Arcos Dorados (McDonald's)",'Zamp','Madero',"Habib's",'Outback','Rede Graal','IMC','Coco Bambu','Grupo Trigo',"Bob's",'Giraffas','Oggi Sorvetes','Chiquinho Sorvetes','Halipar','Bacio di Latte','Sodie Doces',"Domino's",'Mania de Churrasco','Villa Sucrêa','More Cookies','The Butters','La Francese',"Let's Cookies",'A Predileta Doceria','Congelô Refeições Congeladas']},
   {grupo:'Mercado',categorias:['Mercado','Conveniência','Adega'],marcas:[]},
   {grupo:'Pet Shop',categorias:['Pet Shop'],marcas:[]},
   {grupo:'Farmácia',categorias:['Farmácia'],marcas:['RD','DPSP','Pague Menos','São João','Panvel','Araujo','Clamed','Drogal','Nissei','Indiana','Venancio','Rede d1000','Grupo Total','Farma Conde','Farmais','Redepharma','Drogarias Globo','Permanente','Grupo Tapajós']},
