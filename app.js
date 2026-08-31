@@ -73,7 +73,7 @@ function _pedidoVisivelMetricas(p){
   const sk=getStatusKey(p);
   if(sk==='cancelado')return p.created_at>=DATA_CORTE_METRICAS;
   if(sk==='finalizado'&&p.aceito_em&&p.chegou_destino_em){
-    const _min=(new Date(p.chegou_destino_em)-new Date(p.aceito_em))/60000;
+    const _min=(_parseUtc(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
     if(_min>30)return p.created_at>=DATA_CORTE_METRICAS;
   }
   return true;
@@ -2612,15 +2612,55 @@ function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
 function getStatusCor(p){return corStatus(getStatusKey(p));}
 
+// Indicador de prazo/atraso — MESMA âncora do gráfico "SLA de Entrega" do
+// dashboard (aceito_em -> chegou_destino_em, ajustado antes): só conta
+// prazo depois que um ENTREGADOR ACEITA o pedido, nunca antes. Achado real
+// (bug em produção): pedido agendado mostrava "Atrasado" horas antes do
+// horário marcado, porque o cálculo antigo usava created_at+30min pra
+// qualquer pedido sem pronto_em — não olhava status nem agendado_para.
+// Trocar a âncora pra aceito_em resolve os dois casos de uma vez: agendado
+// (fica neutro até aceitar) e pronto-mas-sem-entregador (mesma coisa,
+// espera não é atraso de entrega). Um lugar só — usado em
+// renderPedidosLista, abrirInfoPedido e _rastreioPrevisaoHtml, pra nunca
+// mais desalinhar entre eles nem com o gráfico do dashboard.
+function _indicadorPrazoPedido(p){
+  const sk=getStatusKey(p);
+  if(p.aceito_em){
+    // Se já chegou no destino, o relógio para AÍ — pedido com_retorno
+    // (maquininha/troco de volta pra loja) não pode continuar contando
+    // como se a perna de retorno fosse atraso na ENTREGA, que já
+    // aconteceu. Sem isso, todo pedido com_retorno pareceria atrasado
+    // assim que o retorno passasse de poucos minutos.
+    const jaChegou=!!p.chegou_destino_em;
+    const fimRef=jaChegou?_parseUtc(p.chegou_destino_em).getTime():Date.now();
+    const minPassados=(fimRef-_parseUtc(p.aceito_em).getTime())/60000;
+    const previsaoMs=_parseUtc(p.aceito_em).getTime()+30*60*1000;
+    let cor,texto;
+    if(minPassados<=30){cor='#10b981';texto=jaChegou?'No prazo':`${Math.round((previsaoMs-Date.now())/60000)}min`;}
+    else if(minPassados<=35){cor='#eab308';texto=`+${Math.round(minPassados-30)}min`;}
+    else if(minPassados<=40){cor='#f97316';texto=`+${Math.round(minPassados-30)}min`;}
+    else{cor='#ef4444';texto='Atrasado';}
+    return{previsaoMs,cor,texto,neutro:false};
+  }
+  if(sk==='agendado'){
+    const previsaoMs=p.agendado_para?_parseUtc(p.agendado_para).getTime():_parseUtc(p.created_at).getTime();
+    return{previsaoMs,cor:'#6b7280',texto:'⏰ Agendado',neutro:true};
+  }
+  // recebido/pronto ainda sem entregador aceito — espera por entregador,
+  // não atraso de entrega (isso só existe depois do aceite).
+  const previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
+  return{previsaoMs,cor:'#6b7280',texto:'Aguardando aceite',neutro:true};
+}
+
 function abrirInfoPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!p)return;
   const motoboy=allMotoboys.find(e=>e.id===(p.motoboy_id||p.entregador_id));
   const sk=p.status_detalhado||p.status||'';
   const cor=corStatus(sk);
-  const previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
-  const restanteMs=previsaoMs-Date.now();
-  const restanteTxt=restanteMs>0?`${Math.floor(restanteMs/60000)}min restantes`:'Atrasado';
+  const _prazo=_indicadorPrazoPedido(p);
+  const previsaoMs=_prazo.previsaoMs;
+  const restanteTxt=_prazo.texto;
   const txMoto=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p);
   const stepsDone=(s)=>['aceito','chegou_local','em_rota','chegou_destino','retornando','finalizado'].includes(s);
   const stepsA=(s)=>['em_rota','chegou_destino','retornando','finalizado'].includes(s);
@@ -2647,7 +2687,7 @@ function abrirInfoPedido(pedidoId){
     <div class="modal-body" style="max-height:80vh;overflow-y:auto;padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:16px">
         <div><div style="font-size:11px;color:var(--text3);font-weight:600">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
-        <div style="font-size:12px;font-weight:700;color:${restanteMs>0?'#10b981':'#ef4444'}">${restanteTxt}</div>
+        <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
         ${step(true,'Em Preparo')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
@@ -3272,28 +3312,11 @@ function renderPedidosLista(){
         <div style="display:flex;align-items:center;margin-bottom:4px">${_dot(0)}${_line(0)}${_dot(1)}${_line(1)}${_dot(2)}${_line(2)}${_dot(3)}</div>
         <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
       </div>`;
-      // Indicador de atraso: baseado em pronto_em (mesmo marco do SLA da tela
-      // Pedidos) quando existir; se o pedido ainda não foi marcado como pronto,
-      // cai no comportamento antigo (baseado em created_at).
-      let previsaoMs,indicadorAtrasoHtml;
-      if(p.pronto_em){
-        const minPassados=(Date.now()-_parseUtc(p.pronto_em).getTime())/60000;
-        previsaoMs=_parseUtc(p.pronto_em).getTime()+30*60*1000;
-        if(minPassados<=30){
-          const restanteMin=Math.round((previsaoMs-Date.now())/60000);
-          indicadorAtrasoHtml=`<span style="font-weight:700;color:#10b981">${restanteMin}min</span>`;
-        } else if(minPassados<=35){
-          indicadorAtrasoHtml=`<span style="font-weight:700;color:#eab308">+${Math.round(minPassados-30)}min</span>`;
-        } else if(minPassados<=40){
-          indicadorAtrasoHtml=`<span style="font-weight:700;color:#f97316">+${Math.round(minPassados-30)}min</span>`;
-        } else {
-          indicadorAtrasoHtml=`<span style="font-weight:700;color:#ef4444">Atrasado</span>`;
-        }
-      } else {
-        previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
-        const restanteMin=Math.round((previsaoMs-Date.now())/60000);
-        indicadorAtrasoHtml=`<span style="font-weight:700;color:${restanteMin>0?'#10b981':'#ef4444'}">${restanteMin>0?restanteMin+'min':'Atrasado'}</span>`;
-      }
+      // Indicador de prazo/atraso — ver _indicadorPrazoPedido (mesma âncora
+      // do gráfico de SLA do dashboard: aceito_em, nunca antes disso).
+      const _prazo=_indicadorPrazoPedido(p);
+      const previsaoMs=_prazo.previsaoMs;
+      const indicadorAtrasoHtml=`<span style="font-weight:700;color:${_prazo.cor}">${_prazo.texto}</span>`;
       const mbIniciais=motoboy?.nome?motoboy.nome.trim().split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase():'?';
       const itens=Array.isArray(p.itens)?p.itens:[];
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
@@ -5732,7 +5755,12 @@ async function _buscarPedidosAdmin(){
       {label:'Mais de 40 min',cor:'#ef4444',n:0},
     ];
     _comSla.forEach(p=>{
-      const _min=(new Date(p.chegou_destino_em)-new Date(p.aceito_em))/60000;
+      // _parseUtc (não new Date() puro) porque chegou_destino_em é
+      // timestamptz de verdade (vem com +00:00) mas aceito_em é timestamp
+      // sem fuso (hora local Brasília) — new Date() só dava o resultado
+      // certo por acidente, dependendo do fuso do navegador de quem abre
+      // o painel. _parseUtc trata os dois certo, não importa o fuso local.
+      const _min=(_parseUtc(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
       const _idx=_min<=30?0:_min<=35?1:_min<=40?2:3;
       if(_idx>0&&p.created_at<DATA_CORTE_METRICAS)return; // atrasado + antes do corte: some da conta visual
       _faixas[_idx].n++;
@@ -9957,27 +9985,15 @@ async function _rastreioFetch(path){
   }catch(e){return null;}
 }
 // Mesma lógica de previsão já usada em renderPedidosLista/abrirInfoPedido
-// (janela fixa de 30min a partir de pronto_em, ou created_at se ainda não
-// tiver ficado pronto) — não existe ETA real baseado em distância/rota em
-// nenhum lugar do sistema hoje. Chamar a Routes API a cada poll (5s) desta
-// página pública e não-autenticada custaria e seria abusável por qualquer
-// um com um pedido_id válido, então reaproveitei o heurístico já existente
-// em vez de criar uma chamada nova.
+// (_indicadorPrazoPedido — janela fixa de 30min a partir de aceito_em) —
+// não existe ETA real baseado em distância/rota em nenhum lugar do sistema
+// hoje. Chamar a Routes API a cada poll (5s) desta página pública e
+// não-autenticada custaria e seria abusável por qualquer um com um
+// pedido_id válido, então reaproveitei o heurístico já existente em vez
+// de criar uma chamada nova.
 function _rastreioPrevisaoHtml(p){
-  let previsaoMs,corTxt,texto;
-  if(p.pronto_em){
-    const minPassados=(Date.now()-_parseUtc(p.pronto_em).getTime())/60000;
-    previsaoMs=_parseUtc(p.pronto_em).getTime()+30*60*1000;
-    const restanteMin=Math.round((previsaoMs-Date.now())/60000);
-    if(minPassados<=30){corTxt='#10b981';texto=`${restanteMin}min`;}
-    else if(minPassados<=40){corTxt='#f97316';texto=`+${Math.round(minPassados-30)}min`;}
-    else{corTxt='#ef4444';texto='Atrasado';}
-  }else{
-    previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
-    const restanteMin=Math.round((previsaoMs-Date.now())/60000);
-    corTxt=restanteMin>0?'#10b981':'#ef4444';
-    texto=restanteMin>0?`${restanteMin}min`:'Atrasado';
-  }
+  const _prazo=_indicadorPrazoPedido(p);
+  const previsaoMs=_prazo.previsaoMs,corTxt=_prazo.cor,texto=_prazo.texto;
   return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:8px 12px;margin-bottom:10px">
     <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
     <div style="font-size:16px;font-weight:800;color:${corTxt}">${texto}</div>
@@ -10075,7 +10091,7 @@ async function _iniciarRastreioPublico(pedidoId){
   let lojaMarker=null,motoboyMarker=null,destinoMarker=null,primeiraCarga=true,pararPolling=false;
 
   async function atualizar(){
-    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em`);
+    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em,aceito_em,agendado_para`);
     const p=pedidos?.[0];
     if(!p){
       cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido Não Encontrado.</div>`;
