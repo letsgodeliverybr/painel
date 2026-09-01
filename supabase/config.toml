@@ -19,3 +19,13 @@ verify_jwt = false
 
 [functions.lembrete-periodico]
 verify_jwt = false
+
+# Redirect URI e Webhook URL do app cadastrado no Cardápio Web — chamadas
+# vêm direto do navegador da loja (redirect do OAuth) e dos servidores
+# deles (webhook), nenhum dos dois manda o JWT do Supabase. Mesmo motivo
+# do ifood-status-sync acima.
+[functions.cardapioweb-oauth-callback]
+verify_jwt = false
+
+[functions.cardapioweb-webhook-pedido]
+verify_jwt = false
