@@ -9,6 +9,11 @@ const SB_KEY='sb_publishable_7lNXC4ipqerGckfvUQvlnQ_ObfWXhmI';
 // pra qualquer fluxo de sessão/login mais abaixo poder se desligar cedo
 // quando esse parâmetro estiver presente.
 const _rastreioIdUrl=new URLSearchParams(window.location.search).get('rastrear');
+// URL de instalação cadastrada no formulário de app do Cardápio Web
+// (?integracao=cardapioweb) — mesmo padrão de página pública sem
+// login/sessão do rastreio acima. Só existe pra não dar 404 quando o
+// formulário deles (ou uma loja) acessar; sem fluxo OAuth real ainda.
+const _integracaoCardapiowebUrl=new URLSearchParams(window.location.search).get('integracao')==='cardapioweb';
 
 function corStatus(status){
   const cores={'aguardando_pagamento':'#f59e0b','agendado':'#ef4444','recebido':'#ef4444','cancelado':'#ef4444','pronto':'#e91e8c','aceito':'#eab308','no_local':'#38BDF8','chegou_no_local':'#06b6d4','chegou_local':'#06b6d4','em_rota':'#1A56DB','chegou_destino':'#7c3aed','retornando':'#16a34a','finalizado':'#16a34a'};
@@ -10174,8 +10179,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   _iniciarRastreioPublico(_rastreioIdUrl);
 });
 
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!_integracaoCardapiowebUrl)return;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('integracao-cardapioweb-screen').style.display='flex';
+});
+
 document.addEventListener('DOMContentLoaded',async()=>{
-  if(_rastreioIdUrl)return;
+  if(_rastreioIdUrl||_integracaoCardapiowebUrl)return;
   const sessao=sessionStorage.getItem('lg_user'),sessaoAuth=sessionStorage.getItem('lg_session');
   if(!sessao||!sessaoAuth)return;
   try{
