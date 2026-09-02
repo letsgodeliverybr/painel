@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.cardapioweb-webhook-pedido]
 verify_jwt = false
+
+# Chamada direto por um trigger SQL (fn_intercept_realocacao_manual, via
+# net.http_post) — mesmo padrão de autenticação por x-webhook-secret dos
+# outros acima, não manda o JWT do Supabase.
+[functions.notify-pedido-realocado]
+verify_jwt = false
