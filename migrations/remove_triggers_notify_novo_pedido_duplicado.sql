@@ -1,0 +1,21 @@
+-- Removidos após auditoria (2026-09-02): entregador recebia 3 pushes por
+-- pedido — despacho-engine (data-only, o único que aciona fullScreenIntent
+-- + o fluxo custom do app em background/morto) + 2 triggers redundantes
+-- chamando notify-novo-pedido (bloco `notification`, exibido nativamente
+-- pelo Android em background SEM passar pelo código do app — bypassa
+-- fullScreenIntent, som customizado e navegação automática).
+--
+-- tg_pedido_pronto_notify (fn_notify_pedido_pronto): além de redundante,
+-- ignorava raio de 32km/modo de despacho/exclusividade de clã — mandava
+-- pra TODO entregador online do sistema, não só os elegíveis.
+--
+-- tg_despacho_fila_notify (fn_notify_despacho_fila): disparava a cada
+-- INSERT em despacho_fila — ou seja, uma vez por entregador, no MESMO
+-- instante em que despacho-engine já tinha acabado de mandar o push B
+-- pra esse mesmo entregador.
+--
+-- Funções mantidas (não usadas mais por trigger nenhum, só a chamada
+-- direta pelo despacho-engine que continua) — DROP TRIGGER, não DROP
+-- FUNCTION, pra ficar reversível sem precisar recriar a função inteira.
+DROP TRIGGER IF EXISTS tg_pedido_pronto_notify ON public.pedidos;
+DROP TRIGGER IF EXISTS tg_despacho_fila_notify ON public.despacho_fila;
