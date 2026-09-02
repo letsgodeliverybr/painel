@@ -271,14 +271,30 @@ serve(async () => {
 
     // Loop de despacho normal — pedidos sem rota (incluindo recém-desagrupados)
     // loja_id: precisa pra checar exclusividade de clã em entregadores_no_raio.
+    // pronto_em: ver comentário abaixo sobre segundosPassados — precisa
+    // vir junto pra não depender de um segundo round-trip por pedido.
     const { data: pedidos } = await supabase
-      .from("pedidos").select("id, numero, latitude, longitude, created_at, loja_id")
+      .from("pedidos").select("id, numero, latitude, longitude, created_at, pronto_em, loja_id")
       .eq("status", "pronto").is("motoboy_id", null)
       .is("rota_agrupada_id", null);
 
     for (const pedido of pedidos || []) {
       const agora = new Date();
-      const segundosPassados = (agora.getTime() - new Date(pedido.created_at).getTime()) / 1000;
+      // Relógio do timeout (12min de reset, escalada de ondas) conta a
+      // partir de PRONTO_EM (quando o pedido passou a poder ser
+      // despachado), não de created_at (quando foi criado no sistema).
+      // Bug real encontrado em auditoria (2026-09-02): pedido criado às
+      // 11:42 mas só marcado 'pronto' às 14:43 (preparo real de ~3h, ou
+      // agendamento) media segundosPassados a partir das 11:42 — na hora
+      // que ficava 'pronto' já tinha estourado os 12min de tempoReset
+      // antes mesmo do primeiro tick rodar, pulando direto pro fallback de
+      // raio ilimitado (ver abaixo) sem nunca passar pelo despacho normal
+      // (broadcast único em 32km no modo "todos", ou onda 1 no sequencial).
+      // pronto_em é sempre preenchido junto do status virar 'pronto'
+      // (trigger fn_reset_motoboy_on_pronto/auto_pronto_pedidos) — o
+      // fallback pra created_at é só defensivo, não deveria disparar nunca
+      // pra um pedido que já está com status='pronto' aqui.
+      const segundosPassados = (agora.getTime() - new Date(pedido.pronto_em ?? pedido.created_at).getTime()) / 1000;
 
       // Verificação: pedido cancelado ou já aceito por outro entregador
       const { data: pedidoAtual, error: pedidoAtualErr } = await supabase
@@ -296,16 +312,30 @@ serve(async () => {
         // reset sem aceite em nenhuma onda, dispara pra QUALQUER entregador
         // disponível que ainda não tenha recebido oferta nenhuma pra esse
         // pedido (qualquer onda/tentativa anterior, não só 'aguardando' —
-        // ver comentário abaixo), SEM limite de raio. Antes disso ficava
-        // capado em despacho_raio_busca_km (32km) e só rodava uma vez
-        // (sentinel onda=99); um pedido fora desse raio, ou cujos únicos
-        // candidatos não aceitassem, ficava preso pra sempre depois do
-        // timeout. Sem o cap de raio e sem o sentinel de "uma vez só", isso
-        // roda em todo tick subsequente e para sozinho quando não sobrar
-        // mais ninguém pra notificar (disponiveis.length === 0) — inclusive
-        // alcançando quem ficar disponível depois do timeout.
+        // ver comentário abaixo). Roda em todo tick subsequente e para
+        // sozinho quando não sobrar mais ninguém pra notificar
+        // (disponiveis.length === 0) — inclusive alcançando quem ficar
+        // disponível depois do timeout.
+        //
+        // Raio CAPADO em despacho_raio_busca_km (32km, mesma config do
+        // broadcast normal) — auditoria (2026-09-02) achou isso rodando
+        // sem limite de raio (40075km, meia volta ao planeta), o que
+        // sozinho já quebra a promessa de "notifica todo mundo em 32km"
+        // pra qualquer pedido que caísse aqui. O motivo histórico de ter
+        // sido tirado (pedido preso pra sempre com raio capado) era na
+        // real causado por isso rodar UMA VEZ SÓ (sentinel onda=99) — como
+        // já roda em todo tick desde então, capar o raio de novo não
+        // reintroduz aquele bug: se ninguém em 32km aceitar, o próximo
+        // tick tenta de novo com o raio de sempre, sem nunca travar.
+        //
+        // .lt("expira_em", ...) adicionado aqui — antes expirava QUALQUER
+        // linha 'aguardando' em todo tick, mesmo uma oferta que acabou de
+        // ser criada e ainda estava dentro da janela de exibição (29s),
+        // cortando o entregador antes da hora. Só marca expirado o que já
+        // passou do prazo de verdade.
         const { error: expirarErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
-          .eq("pedido_id", pedido.id).eq("status", "aguardando");
+          .eq("pedido_id", pedido.id).eq("status", "aguardando")
+          .lt("expira_em", agora.toISOString());
         logErr(`expirar despacho_fila do pedido ${pedido.id} (fallback)`, expirarErr);
 
         // Todo mundo que já recebeu oferta pra esse pedido em qualquer onda
@@ -319,7 +349,7 @@ serve(async () => {
 
         const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
           p_lat: pedido.latitude, p_lng: pedido.longitude,
-          p_raio_km: 40075, // sem limite de raio — metade da circunferência da Terra
+          p_raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
           p_loja_id: pedido.loja_id,
         });
         logErr(`buscar entregadores no raio (fallback, pedido ${pedido.id})`, entRaioErr);
@@ -374,11 +404,28 @@ serve(async () => {
         });
         logErr(`buscar entregadores no raio (pedido ${pedido.id})`, entRaioErr);
 
+        // expira_em NÃO usa mais tempoExibicao (29s) aqui — auditoria
+        // (2026-09-02) achou que isso fazia toda oferta "todos" expirar
+        // ANTES do próximo tick do cron (roda a cada 60s, 29s < 60s), ou
+        // seja, TODA oferta em modo "todos" era derrubada e recriada do
+        // zero em praticamente todo tick, mesmo sem nada ter mudado — é
+        // exatamente o "aparece e some" relatado, só que causado pelo
+        // próprio broadcast de "todos" se auto-destruindo, não por onda
+        // nenhuma (ondas continuam 100% isoladas no branch `else` abaixo,
+        // igual já era). tempoExibicao continua sendo o "prazo de resposta
+        // de UM entregador" — não se aplica a um broadcast simultâneo pra
+        // todo mundo em 32km, que devia continuar visível até: alguém
+        // aceitar (expirado na checagem "fora do estado despachável" no
+        // topo do loop), o pedido ser cancelado (idem), ou até o teto do
+        // fallback (tempoReset) — daí a nova expira_em ser ancorada em
+        // pronto_em + tempoReset, não em agora + tempoExibicao.
+        const expiraTodos = new Date(
+          new Date(pedido.pronto_em ?? pedido.created_at).getTime() + tempoReset * 1000
+        );
         for (const e of entregadores || []) {
-          const expira = new Date(agora.getTime() + tempoExibicao * 1000);
           const { error: filaErr } = await supabase.from("despacho_fila").insert({
             pedido_id: pedido.id, entregador_id: e.id,
-            status: "aguardando", onda: 1, expira_em: expira.toISOString(),
+            status: "aguardando", onda: 1, expira_em: expiraTodos.toISOString(),
           });
           logErr(`inserir despacho_fila (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
           const { data: ent, error: entErr } = await supabase.from("entregadores")
