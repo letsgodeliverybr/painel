@@ -1,0 +1,15 @@
+-- Campo pra sinalizar quando um pedido criado manualmente (origem='backend'
+-- ou 'loja', digitado no formulário "Novo Pedido") veio ORIGINALMENTE do
+-- iFood, mas a loja não é integrada — o atendente recebeu no app do iFood
+-- da loja (com notinha impressa/código de confirmação de 8 dígitos) e
+-- digitou o pedido na mão pra Let's Go entregar.
+--
+-- Distinto de `origem`, que continua reservado pro pedido 100% automático
+-- (webhook/polling da integração real com o iFood — ifood-status-sync/
+-- ifood-polling), cuja confirmação de entrega já acontece sozinha via API.
+--
+-- Usado pelo app do entregador (entrega_screen.dart) pra decidir quando
+-- mostrar o botão manual "Confirmar no iFood" na etapa de finalizar
+-- entrega — só quando plataforma_origem='ifood_manual', nunca mais baseado
+-- em origem='ifood'.
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS plataforma_origem text;
