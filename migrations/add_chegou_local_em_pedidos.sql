@@ -1,0 +1,13 @@
+-- Marco "Chegou no Estabelecimento" da Linha do Tempo (Relatório de Entregas).
+-- Não existia timestamp dedicado pra esse momento — a transição pra
+-- status='no_local' (entrega_screen.dart, quando o motoboy confirma chegada
+-- na loja/local de coleta) só gravava status/status_detalhado/updated_at,
+-- que é sobrescrito a cada mudança de status seguinte e não serve como
+-- histórico. Mesmo padrão de tipo das colunas irmãs (aceito_em, em_rota_em,
+-- finalizado_em): timestamp sem fuso, já em hora local de Brasília.
+--
+-- Só passa a ser preenchida em pedidos NOVOS a partir do deploy do app do
+-- entregador que grava esse campo — pedidos antigos ficam sem esse marco
+-- específico (a Linha do Tempo mostra "sem dado" pra eles, os outros 4
+-- marcos continuam normais).
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS chegou_local_em timestamp without time zone;

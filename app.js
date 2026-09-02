@@ -5815,38 +5815,28 @@ async function _buscarPedidosAdmin(){
   }).join('');
   tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
 }
-// Linha do Tempo — 3 tempos calculados a partir dos timestamps de status já
-// gravados (aceito_em/em_rota_em/retornando_em/finalizado_em), sem depender
-// de rastreamento de rota (que não existe hoje — o app do entregador só
-// sobrescreve entregadores.lat/lng a cada ~8s, não grava histórico de
-// posição; mostrar o trajeto real é escopo futuro separado, decidido assim
-// com o usuário).
+// Linha do Tempo — 5 marcos reais do pedido, em ordem cronológica, cada um
+// com o horário exato gravado no banco (created_at/aceito_em/
+// chegou_local_em/em_rota_em/finalizado_em). Timeline visual vertical
+// (ponto + linha conectando, mesmo padrão de cor do stepper de rastreio
+// público: verde #10b981 preenchido = já aconteceu, cinza/contorno = ainda
+// não). Marco sem timestamp = "ainda não aconteceu" (cinza), não erro —
+// isso é o estado normal de um pedido em andamento.
 //
-// Não existe chegou_local_em/chegou_destino_em (esses dois são status só
-// visuais, sem timestamp próprio) — por isso os limites usados são:
-//   coleta: aceito_em -> em_rota_em (em_rota é setado exatamente quando o
-//     motoboy sai do local de coleta com o pedido em mãos).
-//   entrega: em_rota_em -> retornando_em (se com_retorno) ou -> finalizado_em
-//     (sem retorno, já que finalizado acontece direto após a entrega) —
-//     "retornando" só é marcado depois de já ter entregado, então serve
-//     como o fim da perna de entrega nesse caso.
-//   retorno: retornando_em -> finalizado_em, só quando com_retorno.
-function _calcularLinhaTempo(p){
-  const aceito=p.aceito_em?_parseUtc(p.aceito_em).getTime():null;
-  const emRota=p.em_rota_em?_parseUtc(p.em_rota_em).getTime():null;
-  const retornando=p.retornando_em?_parseUtc(p.retornando_em).getTime():null;
-  const finalizado=p.finalizado_em?_parseUtc(p.finalizado_em).getTime():null;
-  const comRetorno=!!(p.com_retorno||p.retorno);
-  const entregaFim=comRetorno?retornando:finalizado;
-  return{
-    coletaMs:(aceito&&emRota&&emRota>=aceito)?emRota-aceito:null,
-    entregaMs:(emRota&&entregaFim&&entregaFim>=emRota)?entregaFim-emRota:null,
-    retornoMs:(comRetorno&&retornando&&finalizado&&finalizado>=retornando)?finalizado-retornando:null,
-    comRetorno,
-  };
-}
-function _fmtDuracao(ms){
-  if(ms==null)return null;
+// chegou_local_em (marco 3, "Chegou no Estabelecimento") é o mais novo dos
+// 5 — só existe pra pedidos aceitos depois do deploy que passou a gravar
+// esse campo (entrega_screen.dart). Pedidos antigos vão mostrar esse marco
+// específico como "sem dado", mesmo já finalizados — os outros 4 sempre
+// existiram e continuam normais.
+const LINHA_TEMPO_MARCOS=[
+  {campo:'created_at',label:'Pedido Criado',icone:'📝'},
+  {campo:'aceito_em',label:'Pedido Aceito',icone:'🙋'},
+  {campo:'chegou_local_em',label:'Chegou no Estabelecimento',icone:'🏪'},
+  {campo:'em_rota_em',label:'Saiu em Rota',icone:'🛵'},
+  {campo:'finalizado_em',label:'Finalizado (Entregue)',icone:'✅'},
+];
+function _fmtDuracaoMs(ms){
+  if(ms==null||ms<0)return null;
   const totalMin=Math.round(ms/60000);
   const h=Math.floor(totalMin/60),m=totalMin%60;
   return h>0?`${h}h ${m}min`:`${m}min`;
@@ -5854,19 +5844,41 @@ function _fmtDuracao(ms){
 function _verLinhaTempoPedido(pedidoId){
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p){showNotif('❌ Erro','Pedido não encontrado na lista atual','var(--red)');return;}
-  const{coletaMs,entregaMs,retornoMs,comRetorno}=_calcularLinhaTempo(p);
-  const faltouDado=!p.aceito_em||!p.em_rota_em||(comRetorno&&(!p.retornando_em||!p.finalizado_em))||(!comRetorno&&!p.finalizado_em);
+  const sk=getStatusKey(p);
+  // Só cobra "faltou dado" de pedido já concluído — marco futuro vazio num
+  // pedido ainda em andamento é esperado, não é falha de registro.
+  const concluido=sk==='finalizado'||sk==='cancelado';
+  let ultimoTs=null,faltouDadoNoMeio=false;
+  const passos=LINHA_TEMPO_MARCOS.map((m,i)=>{
+    const ts=p[m.campo]?_parseUtc(p[m.campo]).getTime():null;
+    const done=ts!=null;
+    if(!done&&concluido&&i<LINHA_TEMPO_MARCOS.length-1)faltouDadoNoMeio=true;
+    const duracao=(done&&ultimoTs!=null&&ts>=ultimoTs)?_fmtDuracaoMs(ts-ultimoTs):null;
+    if(done)ultimoTs=ts;
+    return{...m,done,duracao,tsRaw:p[m.campo]};
+  });
   let modal=document.getElementById('modal-linha-tempo');
   if(!modal){modal=document.createElement('div');modal.id='modal-linha-tempo';modal.className='modal-overlay';document.body.appendChild(modal);}
-  const linha=(icone,label,valor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text2)">${icone} ${label}</span><span style="font-size:14px;font-weight:700;color:${valor?'var(--text)':'var(--text3)'}">${valor||'— sem dado'}</span></div>`;
-  modal.innerHTML=`<div class="modal" style="max-width:420px">
+  const linhaMarco=(m,i)=>{
+    const ehUltimo=i===passos.length-1;
+    return `<div style="display:flex;gap:12px">
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+        <div style="width:26px;height:26px;border-radius:50%;background:${m.done?'#10b981':'var(--surface2)'};border:2px solid ${m.done?'#10b981':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${m.done?'<span style="color:#fff;font-weight:700">✓</span>':m.icone}</div>
+        ${!ehUltimo?`<div style="width:2px;flex:1;min-height:26px;background:${m.done?'#10b981':'var(--border)'};margin:2px 0"></div>`:''}
+      </div>
+      <div style="padding-bottom:${ehUltimo?2:20}px;flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:${m.done?'var(--text)':'var(--text3)'}">${m.icone} ${m.label}</div>
+        <div style="font-size:12px;color:${m.done?'var(--text2)':'var(--text3)'};margin-top:2px">${m.done?formatarDataHora(m.tsRaw):'— ainda não aconteceu'}</div>
+        ${m.duracao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">⏱️ ${m.duracao} depois do marco anterior</div>`:''}
+      </div>
+    </div>`;
+  };
+  modal.innerHTML=`<div class="modal" style="max-width:440px">
     <div class="modal-header"><span class="modal-title">⏱️ Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">✕</button></div>
     <div class="modal-body">
-      ${linha('📦','Tempo para coletar',_fmtDuracao(coletaMs))}
-      ${linha('🛵','Tempo em rota até entregar',_fmtDuracao(entregaMs))}
-      ${comRetorno?linha('↩️','Tempo de retorno',_fmtDuracao(retornoMs)):''}
-      ${faltouDado?`<div style="margin-top:14px;font-size:12px;color:var(--text3)">⚠️ Um ou mais horários não foram registrados pra esse pedido (comum em pedidos antigos, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas) — por isso algum tempo acima ficou sem dado.</div>`:''}
-      <div style="margin-top:14px;font-size:11px;color:var(--text3)">Rota real (GPS) ainda não é registrada pelo sistema — só o horário de cada mudança de status.</div>
+      ${passos.map(linhaMarco).join('')}
+      ${faltouDadoNoMeio?`<div style="margin-top:6px;font-size:12px;color:var(--text3)">⚠️ Um ou mais marcos não foram registrados pra esse pedido (comum em pedidos antigos — anteriores ao marco existir no sistema —, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas).</div>`:''}
+      <div style="margin-top:14px;font-size:11px;color:var(--text3)">Rota real (GPS) ainda não é registrada pelo sistema — só o horário de cada marco acima.</div>
     </div>
   </div>`;
   modal.classList.add('open');
