@@ -79,6 +79,44 @@ async function enviarPushFCM(fcmToken: string, pedidoId: string, numero: string)
   }
 }
 
+// pedidos.pronto_em/created_at são `timestamp` SEM fuso, e o valor gravado
+// é hora de PAREDE de Brasília, não UTC — regra documentada e já corrigida
+// no painel (app.js, ver _parseUtc()/REGRA DE FUSO): quem escreve essas
+// colunas usa _agoraBrasilia() (app.js) ou DateTime.now() local (app
+// Flutter), nunca UTC. `new Date(string)` direto, sem essa correção,
+// interpreta a string como se já fosse UTC — inflava segundosPassados em
+// ~3h (offset fixo de Brasília, sem horário de verão) em TODO cálculo
+// deste arquivo. Bug real e severo encontrado em auditoria (2026-09-04,
+// pedido real #3507 como evidência): como a inflação de 3h sempre supera
+// tempoReset (12min padrão), TODO pedido caía direto no fallback (onda 99)
+// já no primeiro tick — o branch "todos" (broadcast simultâneo de
+// verdade, pensado pra ficar visível até 12min ou aceite) nunca era
+// alcançado, pra nenhum pedido, desde sempre. Confirmado com o mesmo
+// pedido: segundos reais ~752s, calculado sem essa correção ~11552s
+// (diferença de exatos 10800s = 3h). Mesma lógica do _parseUtc() do
+// painel: se a string já vier com Z/offset explícito (defensivo — as
+// colunas envolvidas nunca deveriam vir assim, mas não custa cobrir),
+// usa como está; senão assume Brasília (-03:00).
+function parsePedidoTimestamp(s: string): Date {
+  const t = s.trim().replace(" ", "T");
+  return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t) ? t : t + "-03:00");
+}
+
+// Inverso de parsePedidoTimestamp — formata um instante real (UTC) como o
+// texto ingênuo (Brasília, sem 'Z') que bate com o que a coluna realmente
+// guarda, pra usar em filtros PostgREST (.gte/.lte) contra pronto_em/
+// created_at. Achado na mesma auditoria (2026-09-04): o filtro do
+// roterizador (.gte("created_at", janela), abaixo) comparava um texto UTC
+// de verdade contra a coluna ingênua-mas-Brasília — confirmado com dado
+// real que isso SEMPRE dá falso negativo pra pedido recente (Postgres
+// trata a coluna sem fuso como se já fosse UTC no cast implícito do
+// PostgREST), ou seja, o roterizador nunca achava pedido nenhum dentro da
+// janela de espera, silenciosamente. Sem horário de verão em Brasília
+// desde 2019 — offset fixo de -3h, sem precisar de tabela de fuso.
+function formatarBrasiliaNaive(d: Date): string {
+  return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().replace("Z", "");
+}
+
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -130,7 +168,9 @@ serve(async () => {
     for (const loja of lojasRoter || []) {
       const tempoEspera = loja.roterizador_tempo_espera_seg || 120;
       const raioKm = parseFloat(loja.roterizador_raio_km || "3");
-      const janela = new Date(Date.now() - tempoEspera * 1000).toISOString();
+      // formatarBrasiliaNaive() (não .toISOString() puro) — created_at é
+      // ingênua-mas-Brasília, ver comentário completo no topo do arquivo.
+      const janela = formatarBrasiliaNaive(new Date(Date.now() - tempoEspera * 1000));
 
       const { data: pedidosLoja } = await supabase
         .from("pedidos")
@@ -294,7 +334,11 @@ serve(async () => {
       // (trigger fn_reset_motoboy_on_pronto/auto_pronto_pedidos) — o
       // fallback pra created_at é só defensivo, não deveria disparar nunca
       // pra um pedido que já está com status='pronto' aqui.
-      const segundosPassados = (agora.getTime() - new Date(pedido.pronto_em ?? pedido.created_at).getTime()) / 1000;
+      //
+      // parsePedidoTimestamp() (não new Date() direto) — ver comentário
+      // completo no topo do arquivo: essas colunas são hora de Brasília
+      // sem fuso, não UTC.
+      const segundosPassados = (agora.getTime() - parsePedidoTimestamp(pedido.pronto_em ?? pedido.created_at).getTime()) / 1000;
 
       // Verificação: pedido cancelado ou já aceito por outro entregador
       const { data: pedidoAtual, error: pedidoAtualErr } = await supabase
@@ -307,7 +351,15 @@ serve(async () => {
         continue;
       }
 
-      if (segundosPassados > tempoReset) {
+      // modo !== "todos": o fallback de emergência (onda 99) só faz sentido
+      // pro modo Sequencial/ondas, que tem timeout de verdade (escalada por
+      // onda, teto em tempoReset — ver comentário logo abaixo). Modo
+      // "Todos" NÃO tem mais timeout nenhum (pedido do usuário, 2026-09-04:
+      // fica visível pra sempre até aceite ou cancelamento, os dois já
+      // tratados pelo trigger SQL fn_expirar_despacho_fila_pedido_nao_pronto,
+      // independente deste arquivo) — sem timeout, não existe "emergência"
+      // pra reagir, esse bloco nunca deveria rodar pra esse modo.
+      if (modo !== "todos" && segundosPassados > tempoReset) {
         // Rede de segurança final (decisão de negócio): depois do tempo de
         // reset sem aceite em nenhuma onda, dispara pra QUALQUER entregador
         // disponível que ainda não tenha recebido oferta nenhuma pra esse
@@ -371,27 +423,23 @@ serve(async () => {
       }
 
       if (modo === "todos") {
-        // Expira ofertas vencidas ANTES de checar "já enviado" — sem isso,
-        // uma vez que a janela de expira_em passa sem ninguém aceitar, a
-        // linha continua 'aguardando' pra sempre (nada nunca a marcava como
-        // 'expirado' neste modo, diferente do modo 'ondas', que já fazia
-        // essa varredura). O motoboy para de ver/tocar o pedido (respeitando
-        // expira_em no client), mas o banco segue achando que "ainda tem
-        // gente olhando" e nunca redespacha — pedido fica pronto e invisível
-        // pra sempre. Bug real, reproduzido em produção (Novigo, 2026-07-12).
-        const { error: expirarTodosErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
-          .eq("pedido_id", pedido.id).eq("status", "aguardando")
-          .lt("expira_em", agora.toISOString());
-        logErr(`expirar ofertas vencidas do pedido ${pedido.id} (modo todos)`, expirarTodosErr);
-
+        // SEM expiração por tempo (pedido do usuário, 2026-09-04) — modo
+        // "Todos" fica visível pra QUALQUER entregador elegível até: (a)
+        // alguém aceitar, ou (b) o pedido ser cancelado. Os dois já são
+        // tratados pelo trigger SQL fn_expirar_despacho_fila_pedido_nao_pronto
+        // (AFTER UPDATE ON pedidos, dispara quando status sai de 'pronto'),
+        // que expira as ofertas de todo mundo automaticamente — não precisa
+        // de nenhuma varredura por tempo aqui. Histórico (não se aplica
+        // mais): esse bloco antes expirava ofertas vencidas por
+        // expira_em antes de checar "já enviado" — existia só porque
+        // expira_em tinha um timeout de verdade (pronto_em+tempoReset);
+        // sem timeout, não tem "vencida" pra expirar.
+        //
         // Escopado a 'aguardando' (não "qualquer linha que já existiu"): um
         // pedido aceito e depois desalocado (ou que voltou a ficar
         // disponível por qualquer outro motivo) tem que poder ser
-        // redespachado. Checar por qualquer status histórico travava esse
-        // pedido pra sempre, mesmo já liberado de volta pro broadcast. Com a
-        // expiração acima, isso agora também cobre o retry natural: uma vez
-        // que a onda expira sem aceite, este check libera um novo broadcast
-        // completo no próximo tick.
+        // redespachado — checar por qualquer status histórico travaria esse
+        // pedido pra sempre, mesmo já liberado de volta pro broadcast.
         const jaEnviado = await supabase.from("despacho_fila")
           .select("id").eq("pedido_id", pedido.id).eq("status", "aguardando").limit(1);
         logErr(`verificar envio existente do pedido ${pedido.id}`, jaEnviado.error);
@@ -404,24 +452,13 @@ serve(async () => {
         });
         logErr(`buscar entregadores no raio (pedido ${pedido.id})`, entRaioErr);
 
-        // expira_em NÃO usa mais tempoExibicao (29s) aqui — auditoria
-        // (2026-09-02) achou que isso fazia toda oferta "todos" expirar
-        // ANTES do próximo tick do cron (roda a cada 60s, 29s < 60s), ou
-        // seja, TODA oferta em modo "todos" era derrubada e recriada do
-        // zero em praticamente todo tick, mesmo sem nada ter mudado — é
-        // exatamente o "aparece e some" relatado, só que causado pelo
-        // próprio broadcast de "todos" se auto-destruindo, não por onda
-        // nenhuma (ondas continuam 100% isoladas no branch `else` abaixo,
-        // igual já era). tempoExibicao continua sendo o "prazo de resposta
-        // de UM entregador" — não se aplica a um broadcast simultâneo pra
-        // todo mundo em 32km, que devia continuar visível até: alguém
-        // aceitar (expirado na checagem "fora do estado despachável" no
-        // topo do loop), o pedido ser cancelado (idem), ou até o teto do
-        // fallback (tempoReset) — daí a nova expira_em ser ancorada em
-        // pronto_em + tempoReset, não em agora + tempoExibicao.
-        const expiraTodos = new Date(
-          new Date(pedido.pronto_em ?? pedido.created_at).getTime() + tempoReset * 1000
-        );
+        // expira_em: coluna é NOT NULL, mas modo "Todos" não tem timeout
+        // nenhum mais (pedido do usuário, 2026-09-04) — nada neste arquivo
+        // (nem gatilho SQL, confirmado) lê/age sobre esse valor pra esse
+        // modo, é só placeholder pra satisfazer o schema. 100 anos no
+        // futuro deixa isso óbvio pra quem olhar a linha direto no banco —
+        // não é "expira daqui a pouco", é "não expira".
+        const expiraTodos = new Date(agora.getTime() + 100 * 365 * 24 * 60 * 60 * 1000);
         for (const e of entregadores || []) {
           const { error: filaErr } = await supabase.from("despacho_fila").insert({
             pedido_id: pedido.id, entregador_id: e.id,
