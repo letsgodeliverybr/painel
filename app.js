@@ -2843,7 +2843,7 @@ function renderMapaPage(){
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
           <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
           <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
-          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" style="background:#eab308;border:2px solid #eab308;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
+          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -3173,11 +3173,16 @@ function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'
 // valor inicial e a ordem do ciclo mudaram, não o que cada estado faz.
 let _estadoLojas=1;
 const _LOJAS_TITLES=['Mostrar todas as lojas','Escondendo lojas sem pedido','Lojas ocultas'];
-const _LOJAS_CORES=['transparent','#eab308','#ef4444'];
+// Cor também invertida entre os índices 0 e 1 (achado visual, 2026-09-03):
+// a lógica virou mas o estilo continuava marcando o estado 0 (mostrar
+// todas, agora o não-padrão/ativado por clique) como neutro — o destaque
+// amarelo precisa acompanhar "saiu do padrão", não mais o índice fixo.
+// Índice 2 (ocultas) não muda, continua vermelho.
+const _LOJAS_CORES=['#eab308','transparent','#ef4444'];
 function toggleFiltroLojas(){
   _estadoLojas=_estadoLojas===1?0:_estadoLojas===0?2:1;
   const btn=document.getElementById('btn-filtro-lojas');
-  if(btn){btn.style.background=_LOJAS_CORES[_estadoLojas];btn.style.border='2px solid '+(_estadoLojas===0?'#E5E7EB':_LOJAS_CORES[_estadoLojas]);btn.title=_LOJAS_TITLES[_estadoLojas];}
+  if(btn){btn.style.background=_LOJAS_CORES[_estadoLojas];btn.style.border='2px solid '+(_estadoLojas===1?'#E5E7EB':_LOJAS_CORES[_estadoLojas]);btn.title=_LOJAS_TITLES[_estadoLojas];}
   atualizarMarcadores();
 }
 let _estadoMotoboys=0;
