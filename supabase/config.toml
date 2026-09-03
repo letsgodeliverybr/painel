@@ -35,3 +35,12 @@ verify_jwt = false
 # outros acima, não manda o JWT do Supabase.
 [functions.notify-pedido-realocado]
 verify_jwt = false
+
+# Chamada direto do navegador (app.js, _notificarPedidoPronto()) — mesmo
+# padrão de autenticação por x-webhook-secret, não manda o JWT do
+# Supabase. Achado 2026-09-03: essa função não tinha entrada aqui (só um
+# verify_jwt=false configurado no dashboard, fora do config.toml local) —
+# redeployar via CLI sem essa entrada resetou pro default (exige JWT),
+# quebrando a autenticação. Nunca mais redeployar sem essa entrada.
+[functions.notify-novo-pedido]
+verify_jwt = false
