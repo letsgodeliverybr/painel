@@ -244,6 +244,18 @@ const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(data
 const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
 function formatarDataBR(data){if(!data)return'—';if(typeof data==='string'){const m=data.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;}const d=data instanceof Date?data:new Date(data);if(isNaN(d))return'—';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});}
 const _dataHojeBrasilia=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+// Badge "Agendado": mostra só a hora quando o agendamento é hoje (comportamento
+// original), mas inclui DD/MM quando é outro dia — senão um pedido agendado
+// pra amanhã/semana que vem aparece com hora sem contexto de data nenhum.
+const formatarAgendado=(dataStr)=>{
+  if(!dataStr)return'—';
+  const d=_parseUtc(dataStr);
+  const hora=d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+  const dataAgend=d.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  if(dataAgend===_dataHojeBrasilia())return hora;
+  const[,mm,dd]=dataAgend.split('-');
+  return`${dd}/${mm} ${hora}`;
+};
 // Timestamp "agora" pras colunas timestamp SEM fuso (pedidos.created_at/
 // updated_at/finalizado_em/pronto_em/aceito_em/em_rota_em, entregadores.
 // updated_at, lojas.created_at — mesma lista do comentário "REGRA DE FUSO"
@@ -3016,7 +3028,7 @@ function _buildTabelaRows(filtered,from){
       ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(lucroMapaStr,'text-align:right',rowBg):''}
       ${TD(_iconsLogistica(p),'text-align:center;padding:3px 5px',rowBg)}
       ${currentPerfil!=='suporte'?TD(`<span style="color:#BBB">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`,'',rowBg):''}
-      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
+      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
     </tr>`;
   }).join('');
 }
@@ -3374,7 +3386,7 @@ function renderPedidosLista(){
             <span style="color:var(--sb-text3)">⏱ Previsão ${formatarHora(new Date(previsaoMs).toISOString())}</span>
             ${indicadorAtrasoHtml}
           </div>
-          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarHora(p.agendado_para)}</div>`:''}
+          ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarAgendado(p.agendado_para)}</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
             <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
@@ -3400,7 +3412,7 @@ function renderPedidosLista(){
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${(p.motoboy_id||p.entregador_id)?'Desalocar motoboy e voltar a disponível':'Marcar como pronto'}" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${sk==='pronto'?'#e91e8c':(p.motoboy_id||p.entregador_id)?'#ef4444':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
-                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarHora(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
+                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
                 </span>
               </div>
             </div>
