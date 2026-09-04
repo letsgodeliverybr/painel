@@ -2358,7 +2358,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   fecharDropdownStatus();
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
-  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
@@ -2384,7 +2384,7 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();_notificarPedidoPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
   await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
@@ -2403,10 +2403,6 @@ async function _estornarDebitoEntrega(pedido){
   await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
   _carregarSaldoTopbar();
 }
-function _notificarPedidoPronto(){
-  fetch(`${SB_URL}/functions/v1/notify-novo-pedido`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({tipo:'novo_pedido'})}).catch(e=>console.warn('[FCM] falha ao notificar:',e));
-}
-
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
@@ -2432,7 +2428,6 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:'pronto',via:'botao_rapido',desalocou_motoboy:tinhaMotoboy});
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
-  _notificarPedidoPronto();
   showNotif(tinhaMotoboy?'🔓 Motoboy desalocado':'🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');
   await atualizarTudo();
 }
