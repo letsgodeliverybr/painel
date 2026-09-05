@@ -1921,7 +1921,7 @@ async function abrirModal(id){
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
         <div style="display:flex;gap:16px;height:100%;min-height:0">
-        <div style="flex:1 1 400px;min-width:280px;height:100%;overflow-y:auto;padding-right:4px">
+        <div style="${isAdm?'flex:1 1 400px;min-width:280px':'flex:1 1 auto;width:100%'};height:100%;overflow-y:auto;padding-right:4px">
         ${blocoLoja}
         <div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div>
         <div class="form-row">
@@ -1975,11 +1975,17 @@ async function abrirModal(id){
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
         </div>
-        <div style="flex:1 1 500px;min-width:300px;height:100%;display:flex;flex-direction:column">
+        ${isAdm?`<div style="flex:1 1 500px;min-width:300px;height:100%;display:flex;flex-direction:column">
           <div id="np-map" style="width:100%;flex:1;min-height:0;border-radius:10px;overflow:hidden;background:var(--surface2)"></div>
-        </div>
+        </div>`:''}
         </div>`;
-      if(!_npMap){
+      // Mapa só existe pro perfil ADM/suporte (pedido do usuário, 2026-09-05)
+      // — perfil loja não vê a rota/localização durante a criação. Sem a
+      // div #np-map no DOM (bloco acima), L.map('np-map') lançaria erro; só
+      // inicializa quando isAdm. _npDesenharRota/invalidateSize já são
+      // null-safe (_npMap?. / if(_npMap)), então deixar _npMap null pro
+      // perfil loja não quebra nada — só não desenha nada, como esperado.
+      if(isAdm&&!_npMap){
         _npMap=L.map('np-map',{zoomControl:true}).setView([-21.1775,-47.8103],13);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_npMap);
       }
