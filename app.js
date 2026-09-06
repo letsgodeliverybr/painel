@@ -2373,16 +2373,37 @@ function abrirDropdownStatusTabela(event,pedidoId){
 
 async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   fecharDropdownStatus();
+  // Mesma trava do botão "Marcar Pronto" (marcarPedidoPronto), agora
+  // também no dropdown de status — causa raiz dos incidentes de Sorocaba
+  // 2026-09-05: esse caminho não tinha guarda nenhuma, dava pra reabrir
+  // "pronto" com motoboy já alocado.
+  if(novoStatus==='pronto'){
+    const _pChk=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+    if(_pChk?.motoboy_id||_pChk?.entregador_id){
+      showNotif('Pedido já tem entregador','Remova o motoboy alocado antes de marcar como pronto de novo.','var(--yellow)');
+      return;
+    }
+  }
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
-  if(novoStatus==='pronto'){update.pronto_em=agora;idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto')update.pronto_em=agora;
   if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
-  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  // Backend: só aplica o PATCH pra 'pronto' se ainda não tiver motoboy —
+  // cobre a corrida entre abas que a checagem acima (dado em memória) não
+  // pega sozinha.
+  const filtro=novoStatus==='pronto'?`?id=eq.${pedidoId}&motoboy_id=is.null&entregador_id=is.null`:`?id=eq.${pedidoId}`;
+  const resultPatch=await db('pedidos','PATCH',update,filtro);
+  if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
+    showNotif('Pedido já tem entregador','Outra pessoa já alocou/alterou esse pedido.','var(--yellow)');
+    await atualizarTudo();
+    return;
+  }
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
@@ -2395,15 +2416,34 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
 
 async function alterarStatusPedido(pedidoId,novoStatus){
   fecharDropdownStatus();
+  // Mesma trava do botão "Marcar Pronto" (marcarPedidoPronto) e de
+  // alterarStatusPedidoTabela — impede reabrir "pronto" por esse dropdown
+  // quando o pedido já tem motoboy alocado.
+  if(novoStatus==='pronto'){
+    const _pChk=allPedidos.find(x=>x.id===pedidoId);
+    if(_pChk?.motoboy_id||_pChk?.entregador_id){
+      showNotif('Pedido já tem entregador','Remova o motoboy alocado antes de marcar como pronto de novo.','var(--yellow)');
+      return;
+    }
+  }
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
-  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  // Backend: só aplica o PATCH pra 'pronto' se ainda não tiver motoboy —
+  // cobre a corrida entre abas que a checagem acima (dado em memória) não
+  // pega sozinha.
+  const filtro=novoStatus==='pronto'?`?id=eq.${pedidoId}&motoboy_id=is.null&entregador_id=is.null`:`?id=eq.${pedidoId}`;
+  const resultPatch=await db('pedidos','PATCH',update,filtro);
+  if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
+    showNotif('Pedido já tem entregador','Outra pessoa já alocou/alterou esse pedido.','var(--yellow)');
+    await atualizarTudo();
+    return;
+  }
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
   // Trava o status local por 5s para o Realtime não sobrescrever
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const _pl=allPedidos.find(x=>x.id===pedidoId);
