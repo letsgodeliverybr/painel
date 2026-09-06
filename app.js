@@ -2431,7 +2431,21 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const agora=_agoraBrasilia();
   const update={status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora};
   if(tinhaMotoboy){update.motoboy_id=null;update.entregador_id=null;}
-  await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  // Trava contra corrida entre abas/pessoas (causa raiz dos incidentes de
+  // Sorocaba, 2026-09-05: loja e admin marcando pronto no mesmo pedido com
+  // segundos de diferença): quando NÃO está desalocando motoboy, o PATCH só
+  // aplica se o pedido ainda não estiver 'pronto' — se outra aba já marcou
+  // um instante antes, o filtro não bate em nenhuma linha (0 resultados),
+  // em vez de reprocessar/renotificar um pedido que já está pronto. O botão
+  // desabilitado (ver renderPedidosLista) já evita isso na mesma sessão;
+  // isso cobre a segunda aba/sessão desatualizada.
+  const filtroPatch=tinhaMotoboy?`?id=eq.${pedidoId}`:`?id=eq.${pedidoId}&status=neq.pronto`;
+  const resultPatch=await db('pedidos','PATCH',update,filtroPatch);
+  if(!tinhaMotoboy&&(!resultPatch||resultPatch.length===0)){
+    showNotif('Já estava pronto','Outra pessoa já marcou esse pedido como pronto.','var(--yellow)');
+    await atualizarTudo();
+    return;
+  }
   if(tinhaMotoboy){
     // Expira ofertas antigas de despacho_fila — sem isso o motor de despacho
     // (modo 'todos') vê que já existiu envio pra esse pedido e nunca mais
@@ -3393,6 +3407,7 @@ function renderPedidosLista(){
             ${indicadorAtrasoHtml}
           </div>
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarAgendado(p.agendado_para)}</div>`:''}
+          ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido já classificado como pronto</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
             <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
@@ -3416,7 +3431,7 @@ function renderPedidosLista(){
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
-                ${sk!=='finalizado'&&sk!=='cancelado'?`<button onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${(p.motoboy_id||p.entregador_id)?'Desalocar motoboy e voltar a disponível':'Marcar como pronto'}" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${sk==='pronto'?'#e91e8c':(p.motoboy_id||p.entregador_id)?'#ef4444':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
+                ${sk!=='finalizado'&&sk!=='cancelado'?`<button ${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'disabled':''} onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto'}" style="background:${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB1a':'#2a2a2a'};border:0.5px solid ${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB55':'#3A3A3A'};border-radius:6px;padding:5px 7px;cursor:${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'default':'pointer'};display:inline-flex;align-items:center;opacity:${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'0.7':'1'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
                 </span>
