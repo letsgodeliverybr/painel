@@ -157,11 +157,33 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
 // Function é um deploy isolado, sem módulo compartilhado entre elas, mesmo
 // padrão já usado no resto do projeto. Campos confirmados contra um pedido
 // de teste real do Developer Portal do iFood (2026-07-25).
+// payments/benefits/customer.documentNumber confirmados contra a doc
+// pública do iFood (Order Details / Order events, 2026-09-07) — vinham na
+// resposta de /order/v1.0/orders/{id} e eram descartados até aqui. Mesma
+// extração usada em ifood-polling, duplicada aqui pelo mesmo motivo do
+// resto do arquivo (nenhuma function compartilha módulo).
+function extrairPagamento(d: any) {
+  const metodo = d.payments?.methods?.[0] ?? null;
+  return {
+    forma_pagamento: metodo?.method ?? metodo?.type ?? null,
+    bandeira_cartao: metodo?.card?.brand ?? null,
+    troco_para: metodo?.cash?.changeFor ?? null,
+  };
+}
+function extrairCupom(d: any) {
+  const benefits = Array.isArray(d.benefits) ? d.benefits : null;
+  if (!benefits || benefits.length === 0) return { cupom_valor: null, cupom_detalhes: null };
+  const total = benefits.reduce((soma: number, b: any) => soma + (Number(b?.value) || 0), 0);
+  return { cupom_valor: total, cupom_detalhes: benefits };
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = new Date().toISOString();
   const merchantId = d.merchant?.id ?? null;
   const loja = await buscarLojaPorMerchantId(merchantId);
   if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
+  const pagamento = extrairPagamento(d);
+  const cupom = extrairCupom(d);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -171,6 +193,7 @@ async function mapearPedidoIfood(d: any) {
     status_detalhado: "pronto",
     pagamento_confirmado: true,
     loja_id: loja?.id ?? null,
+    retirada: d.orderType === "TAKEOUT",
     endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
     latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
     longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
@@ -180,10 +203,13 @@ async function mapearPedidoIfood(d: any) {
     contato_coleta: loja?.nome ?? d.merchant?.name ?? null,
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
+    cliente_documento: d.customer?.documentNumber ?? null,
     itens: d.items ?? [],
     valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
     total_pedido: d.total?.orderAmount ?? 0,
     taxa_entrega: d.total?.deliveryFee ?? 0,
+    ...pagamento,
+    ...cupom,
     recebido_em: agora,
     pronto_em: agora,
     created_at: agora,
@@ -209,17 +235,53 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
   }
 }
 
-// Um evento de webhook = uma mudança de status (ou pedido novo) — busca os
-// detalhes atuais do pedido na Order API e faz upsert em `pedidos`, mesmo
-// fluxo que ifood-polling já faz pra cada evento do polling. Lança exceção
-// em qualquer falha real (não em "evento sem orderId", que é esperado pra
-// presence events) — o chamador decide se isso vira 5xx (retry do iFood).
+// Códigos de evento confirmados contra a doc pública do iFood (Order
+// events, 2026-09-07): PLC=PLACED, CFM=CONFIRMED, SPS=SEPARATION_STARTED,
+// SPE=SEPARATION_ENDED, RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED,
+// CAN=CANCELLED. Mesma lógica usada em ifood-polling, duplicada aqui.
+//
+// Bug real corrigido aqui: `ignoreDuplicates:true` fazia ON CONFLICT DO
+// NOTHING — pra um ifood_order_id que já existe na tabela, cancelamento
+// pelo cliente/iFood ou conclusão por outro app (Gestor de Pedidos) era
+// descartado sem efeito nenhum. Um evento de webhook = uma mudança de
+// status (ou pedido novo): pedido novo entra pelo fluxo de sempre; pedido
+// já existente só é tocado se o evento for CAN ou CON — qualquer outro
+// evento é só confirmado (202), sem sobrescrever progresso interno
+// (em_rota/chegou_destino etc., escrito pelo app do entregador). Lança
+// exceção em qualquer falha real (não em "evento sem orderId", que é
+// esperado pra presence events) — o chamador decide se isso vira 5xx
+// (retry do iFood).
 async function processarEventoWebhook(evento: any): Promise<void> {
   const orderId = evento?.orderId ?? evento?.id;
   if (!orderId) {
     await logErro("webhook_evento_sem_orderId", { evento });
     return;
   }
+  const code = evento?.code ?? evento?.fullCode ?? null;
+
+  const { data: existente, error: existeErr } = await supabase
+    .from("pedidos")
+    .select("id, status")
+    .eq("ifood_order_id", orderId)
+    .limit(1);
+  if (existeErr) throw new Error(`falha ao checar pedido existente ${orderId}: ${existeErr.message}`);
+
+  if (existente && existente[0]) {
+    const atual = existente[0] as { id: string; status: string | null };
+    if (code === "CAN" && atual.status !== "cancelado") {
+      const { error } = await supabase.from("pedidos").update({
+        status: "cancelado", status_detalhado: "cancelado", updated_at: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) throw new Error(`falha ao cancelar pedido ${orderId}: ${error.message}`);
+    } else if (code === "CON" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      const { error } = await supabase.from("pedidos").update({
+        status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) throw new Error(`falha ao concluir pedido ${orderId}: ${error.message}`);
+    }
+    return;
+  }
+
   const token = await getAccessToken();
   if (!token) throw new Error("sem token de acesso pra buscar detalhes do pedido");
 
@@ -227,7 +289,7 @@ async function processarEventoWebhook(evento: any): Promise<void> {
   if (!detalhes) throw new Error(`falha ao buscar detalhes do pedido ${orderId}`);
 
   const pedido = await mapearPedidoIfood(detalhes);
-  const { error } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });
+  const { error } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id" });
   if (error) {
     await logErro("webhook_persistir_pedido", { orderId, message: error.message });
     throw new Error(`falha ao persistir pedido ${orderId}: ${error.message}`);

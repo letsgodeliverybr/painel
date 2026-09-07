@@ -2766,14 +2766,16 @@ function abrirInfoPedido(pedidoId){
       </div>
       ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens do Pedido</div>
         <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
-          ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border)"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span></div>`).join('')}
+          ${itens.map(it=>`<div style="padding:8px 12px;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span></div>${it.observations?`<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${it.observations}</div>`:''}</div>`).join('')}
           ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:8px 12px;font-weight:700"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
         </div>
       </div>`:''}
-      ${p.forma_pagamento?`<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">💳 <strong>Pagamento:</strong> ${p.forma_pagamento}</div>`:''}
+      ${p.forma_pagamento?`<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">💳 <strong>Pagamento:</strong> ${p.forma_pagamento}${p.bandeira_cartao?` (${p.bandeira_cartao})`:''}${p.troco_para?` — troco para R$ ${parseFloat(p.troco_para).toFixed(2)}`:''}</div>`:''}
+      ${p.cupom_valor?`<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">🏷️ <strong>Cupom:</strong> R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (custeado por ${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
       <div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👤 Cliente</div>
         <div style="background:var(--surface2);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px">
           ${p.nome_cliente||p.cliente?`<div style="font-size:14px;font-weight:600;color:var(--text)">${p.nome_cliente||p.cliente}</div>`:''}
+          ${p.cliente_documento?`<div style="font-size:12px;color:var(--text3)">🪪 ${p.cliente_documento}</div>`:''}
           ${p.telefone?`<div style="font-size:13px;color:var(--text2)">📞 <a href="https://wa.me/55${p.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600">${p.telefone}</a></div>`:''}
           ${p.endereco||p.endereco_entrega?`<div style="font-size:13px;color:var(--text2)">📍 ${p.endereco_entrega||p.endereco}</div>`:''}
           ${p.observacoes?`<div style="font-size:12px;color:var(--text3);background:var(--surface);border-radius:6px;padding:6px 8px">💬 ${p.observacoes}</div>`:''}

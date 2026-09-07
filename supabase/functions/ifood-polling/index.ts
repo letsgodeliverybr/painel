@@ -124,11 +124,34 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
   if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
   return data && data[0] ? data[0] : null;
 }
+// payments/benefits/customer.documentNumber confirmados contra a doc
+// pública do iFood (Order Details / Order events, 2026-09-07) — vinham na
+// resposta de /order/v1.0/orders/{id} e eram descartados até aqui.
+// payments.methods[] pode ter mais de um método (split payment); pegamos o
+// primeiro pra exibição — suficiente pro requisito de homologação (mostrar
+// bandeira/troco em tela), não é uma reconciliação financeira completa.
+function extrairPagamento(d: any) {
+  const metodo = d.payments?.methods?.[0] ?? null;
+  return {
+    forma_pagamento: metodo?.method ?? metodo?.type ?? null,
+    bandeira_cartao: metodo?.card?.brand ?? null,
+    troco_para: metodo?.cash?.changeFor ?? null,
+  };
+}
+function extrairCupom(d: any) {
+  const benefits = Array.isArray(d.benefits) ? d.benefits : null;
+  if (!benefits || benefits.length === 0) return { cupom_valor: null, cupom_detalhes: null };
+  const total = benefits.reduce((soma: number, b: any) => soma + (Number(b?.value) || 0), 0);
+  return { cupom_valor: total, cupom_detalhes: benefits };
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = new Date().toISOString();
   const merchantId = d.merchant?.id ?? null;
   const loja = await buscarLojaPorMerchantId(merchantId);
   if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
+  const pagamento = extrairPagamento(d);
+  const cupom = extrairCupom(d);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -138,6 +161,7 @@ async function mapearPedidoIfood(d: any) {
     status_detalhado: "pronto",
     pagamento_confirmado: true,
     loja_id: loja?.id ?? null,
+    retirada: d.orderType === "TAKEOUT",
     endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
     latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
     longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
@@ -147,10 +171,13 @@ async function mapearPedidoIfood(d: any) {
     contato_coleta: loja?.nome ?? d.merchant?.name ?? null,
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
+    cliente_documento: d.customer?.documentNumber ?? null,
     itens: d.items ?? [],
     valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
     total_pedido: d.total?.orderAmount ?? 0,
     taxa_entrega: d.total?.deliveryFee ?? 0,
+    ...pagamento,
+    ...cupom,
     recebido_em: agora,
     pronto_em: agora,
     created_at: agora,
@@ -173,6 +200,59 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
     await logErro("detalhes_pedido_parse", { orderId, message: String(e) });
     return null;
   }
+}
+
+// Códigos de evento confirmados contra a doc pública do iFood (Order
+// events, 2026-09-07): PLC=PLACED, CFM=CONFIRMED, SPS=SEPARATION_STARTED,
+// SPE=SEPARATION_ENDED, RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED,
+// CAN=CANCELLED.
+//
+// Bug real corrigido aqui: o upsert antigo usava `ignoreDuplicates:true`,
+// que faz ON CONFLICT DO NOTHING — pra um ifood_order_id que já existe na
+// tabela, QUALQUER evento subsequente (inclusive cancelamento pelo cliente,
+// ou conclusão por outro app tipo Gestor de Pedidos) era descartado sem
+// nenhum efeito. Agora: pedido novo entra pelo fluxo de sempre; pedido já
+// existente só é tocado se o evento for CAN ou CON (os únicos que mudam o
+// status de forma inequívoca) — qualquer outro evento pra pedido existente
+// é só reconhecido (ACK), sem sobrescrever progresso interno já em
+// andamento (em_rota/chegou_destino etc., escritos pelo app do entregador).
+async function processarEventoPedido(orderId: string, code: string | null, token: string): Promise<boolean> {
+  const { data: existente, error: existeErr } = await supabase
+    .from("pedidos")
+    .select("id, status")
+    .eq("ifood_order_id", orderId)
+    .limit(1);
+  if (existeErr) { await logErro("checar_pedido_existente", { orderId, message: existeErr.message }); return false; }
+
+  if (existente && existente[0]) {
+    const atual = existente[0] as { id: string; status: string | null };
+    if (code === "CAN" && atual.status !== "cancelado") {
+      const { error } = await supabase.from("pedidos").update({
+        status: "cancelado", status_detalhado: "cancelado", updated_at: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) { await logErro("atualizar_status_cancelado", { orderId, message: error.message }); return false; }
+    } else if (code === "CON" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      const { error } = await supabase.from("pedidos").update({
+        status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) { await logErro("atualizar_status_concluido", { orderId, message: error.message }); return false; }
+    }
+    return true;
+  }
+
+  // Pedido novo (primeira vez que vemos esse ifood_order_id): busca
+  // detalhes completos e cria. upsert (não insert puro) como rede de
+  // segurança pra corrida rara entre polling e webhook processando o mesmo
+  // pedido novo ao mesmo tempo.
+  const detalhes = await buscarDetalhesPedido(orderId, token);
+  if (!detalhes) return false;
+  const pedido = await mapearPedidoIfood(detalhes);
+  const { error: upsertErr } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id" });
+  if (upsertErr) {
+    await logErro("persistir_pedido", { orderId, message: upsertErr.message });
+    return false;
+  }
+  return true;
 }
 
 async function pollOnce(token: string) {
@@ -203,21 +283,11 @@ async function pollOnce(token: string) {
       await logErro("polling_evento_sem_orderId", { evento });
       continue; // sem ACK — se for evento real, volta no próximo polling
     }
+    const code = evento.code ?? evento.fullCode ?? null;
 
     try {
-      const detalhes = await buscarDetalhesPedido(orderId, token);
-      if (!detalhes) continue; // erro já logado; sem ACK, tenta de novo
-
-      const pedido = await mapearPedidoIfood(detalhes);
-      const { error: upsertErr } = await supabase
-        .from("pedidos")
-        .upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });
-
-      if (upsertErr) {
-        await logErro("persistir_pedido", { orderId, message: upsertErr.message });
-        continue; // sem ACK — tenta de novo no próximo polling
-      }
-
+      const ok = await processarEventoPedido(orderId, code, token);
+      if (!ok) continue; // erro já logado; sem ACK, tenta de novo
       acks.push(evento.id ?? orderId);
     } catch (e) {
       await logErro("processar_evento_excecao", { orderId, message: String(e) });
