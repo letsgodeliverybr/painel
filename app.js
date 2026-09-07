@@ -2767,8 +2767,8 @@ function _blocoTrocaEndereco(p){
     <div style="font-size:13px;color:#78350f;margin-bottom:8px">${enderecoTxt||'—'}</div>
     <div style="font-size:11px;color:#92400e;margin-bottom:10px">${expirado?'Prazo de 15min expirado — o iFood já rejeitou automaticamente':`Prazo: ${restanteMin}min restantes`}</div>
     <div style="display:flex;gap:8px">
-      <button onclick="_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Aceitar novo endereço</button>
-      <button onclick="_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Rejeitar</button>
+      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Aceitar novo endereço</button>
+      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Rejeitar</button>
     </div>
   </div>`;
 }
@@ -2779,7 +2779,6 @@ async function _ifoodResponderTroca(pedidoId,action){
     if(!r.ok||!j.ok){showNotif('Erro',j.error||'Falha ao responder troca de endereço','var(--red)');return;}
     showNotif(action==='aceitar'?'✅ Endereço atualizado':'Troca de endereço rejeitada','','var(--green)');
     await atualizarTudo();
-    abrirInfoPedido(pedidoId);
   }catch(e){
     showNotif('Erro','Falha ao responder troca de endereço','var(--red)');
   }
@@ -3515,9 +3514,10 @@ function renderPedidosLista(){
       const expandido=isExpanded?`
         <div style="margin-top:10px;border-top:1px solid var(--sb-border);padding-top:10px">
           ${itens.length?`<div style="margin-bottom:12px">${_sec('📦 Itens do Pedido')}
-            ${itens.map(it=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--sb-border)"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>`).join('')}
+            ${itens.map(it=>`<div style="padding:3px 0;border-bottom:1px solid var(--sb-border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>${it.observations?`<div style="font-size:10px;color:var(--sb-text3);margin-top:1px">💬 ${it.observations}</div>`:''}</div>`).join('')}
             ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
-            ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}</div>`:''}
+            ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}${p.bandeira_cartao?` (${p.bandeira_cartao})`:''}${p.troco_para?` — troco para R$ ${parseFloat(p.troco_para).toFixed(2)}`:''}</div>`:''}
+            ${p.cupom_valor?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">🏷️ Cupom: R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
           </div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
           ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
@@ -3532,10 +3532,12 @@ function renderPedidosLista(){
           </div>`:''}
           <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('👤 Cliente')}
             ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
+            ${p.cliente_documento?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:3px">🪪 ${p.cliente_documento}</div>`:''}
             ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${telefone}</a></div>`:''}
-            ${(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
+            ${p.retirada?`<div style="font-size:11px;margin-bottom:2px;font-weight:700;color:var(--sb-text2)">🏪 Retirada na loja</div>`:(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
             ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
           </div>
+          ${p.troca_endereco_novo&&p.troca_endereco_solicitada_em?_blocoTrocaEndereco(p):''}
           ${motoboy?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🛵 Entregador')}
             <div style="display:flex;align-items:center;gap:8px">
               <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${mbIniciais}</div>
@@ -3557,6 +3559,7 @@ function renderPedidosLista(){
           ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido já classificado como pronto</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
+            <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🖨️ Comanda</button>
             <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
           </div>
         </div>`:'';
