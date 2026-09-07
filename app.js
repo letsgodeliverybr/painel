@@ -2827,6 +2827,38 @@ async function _confirmarCancelamentoIfood(pedidoId){
   }
 }
 
+// Fase 5 do checklist de homologação (achado ao investigar o item 9):
+// pickupCode/DDCR(delivery code) precisam ser exibidos E validados de
+// volta pro iFood (POST validatePickupCode/verifyDeliveryCode) — não
+// existe UI no app do entregador pra isso ainda, então quem confirma é
+// admin/loja no painel, digitando o código que o motoboy reportou.
+function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
+  if(!codigo)return'';
+  if(validadoEm)return`<div style="background:#052e1a;border:1px solid #16a34a55;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#4ade80">✓ ${titulo} — validado</div>`;
+  const inputId=`ifood-codigo-${action}-${p.id}`;
+  return`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
+    <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: <span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span></div>
+    <div style="display:flex;gap:6px">
+      <input id="${inputId}" placeholder="Código informado pelo motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
+      <button onclick="event.stopPropagation();_ifoodValidarCodigo('${p.id}','${action}','${inputId}')" style="background:#1A56DB;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Validar</button>
+    </div>
+  </div>`;
+}
+async function _ifoodValidarCodigo(pedidoId,action,inputId){
+  const el=document.getElementById(inputId);
+  const code=(el?.value||'').trim();
+  if(!code){showNotif('Digite o código','','var(--yellow)');return;}
+  try{
+    const r=await fetch(`${SB_URL}/functions/v1/ifood-validar-codigo`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action,pedido_id:pedidoId,code})});
+    const j=await r.json();
+    if(!r.ok||!j.ok){showNotif('Código não validado',j.error||'Confere o código com o motoboy','var(--red)');return;}
+    showNotif('✅ Código validado','','var(--green)');
+    await atualizarTudo();
+  }catch(e){
+    showNotif('Erro','Falha ao validar código','var(--red)');
+  }
+}
+
 function abrirInfoPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!p)return;
@@ -3520,6 +3552,8 @@ function renderPedidosLista(){
             ${p.cupom_valor?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">🏷️ Cupom: R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
           </div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
+          ${_blocoCodigoIfood(p,'coleta','📦 Código de coleta (iFood)',p.ifood_pickup_code,p.ifood_pickup_validado_em)}
+          ${_blocoCodigoIfood(p,'entrega','🔑 Código de entrega (iFood)',p.ifood_delivery_code,p.ifood_entrega_validada_em)}
           ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
             <div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${loja.nome||'—'}</div>
             ${loja.telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📞 ${loja.telefone}</a></div>`:''}
@@ -8829,8 +8863,12 @@ function _imprimirComanda(pedidoId){
     .item-linha{display:flex;justify-content:space-between;font-size:13px}
     .obs{font-size:11px;padding-left:10px;font-style:italic}
     .total{font-weight:700;font-size:15px;border-top:2px dashed #000;margin-top:8px;padding-top:8px}
+    .codigo{text-align:center;border:2px solid #000;border-radius:6px;padding:8px;margin-top:8px}
+    .codigo .lbl{font-size:10px;letter-spacing:1px}
+    .codigo .num{font-size:22px;font-weight:700;letter-spacing:6px}
   </style></head><body>
     <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 RETIRADA NA LOJA':'🛵 ENTREGA'}</div></div>
+    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">CÓDIGO DE COLETA (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
     <div class="secao">
       <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
       ${p.cliente_documento?`<div class="linha"><span>CPF/CNPJ:</span><span>${_escHtml(p.cliente_documento)}</span></div>`:''}

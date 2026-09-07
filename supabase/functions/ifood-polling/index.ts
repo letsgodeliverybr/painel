@@ -192,6 +192,7 @@ async function mapearPedidoIfood(d: any) {
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
     cliente_documento: d.customer?.documentNumber ?? null,
+    ifood_pickup_code: d.pickupCode ?? null,
     itens: d.items ?? [],
     valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
     total_pedido: d.total?.orderAmount ?? 0,
@@ -229,15 +230,18 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
 // RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
 // DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
 // novo; lojista tem 15min corridos pra aceitar/rejeitar antes do iFood
-// rejeitar automaticamente).
+// rejeitar automaticamente), DDCR=DELIVERY_DROP_CODE_REQUESTED (só
+// disparado quando o código de confirmação de entrega é obrigatório —
+// telefone do cliente informado; código vem em metadata.CODE, validado
+// depois via POST .../verifyDeliveryCode).
 //
 // Bug real corrigido aqui: o upsert antigo usava `ignoreDuplicates:true`,
 // que faz ON CONFLICT DO NOTHING — pra um ifood_order_id que já existe na
 // tabela, QUALQUER evento subsequente (inclusive cancelamento pelo cliente,
 // ou conclusão por outro app tipo Gestor de Pedidos) era descartado sem
 // nenhum efeito. Agora: pedido novo entra pelo fluxo de sempre; pedido já
-// existente só é tocado se o evento for CAN, CON ou DAR (os únicos que
-// mudam algo de forma inequívoca) — qualquer outro evento pra pedido
+// existente só é tocado se o evento for CAN, CON, DAR ou DDCR (os únicos
+// que mudam algo de forma inequívoca) — qualquer outro evento pra pedido
 // existente é só reconhecido (ACK), sem sobrescrever progresso interno já
 // em andamento (em_rota/chegou_destino etc., escritos pelo app do
 // entregador).
@@ -266,6 +270,12 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
       }).eq("id", atual.id);
       if (error) { await logErro("registrar_troca_endereco", { orderId, message: error.message }); return false; }
+    } else if (code === "DDCR") {
+      const codigo = metadata?.CODE ?? metadata?.code ?? null;
+      if (codigo) {
+        const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
+        if (error) { await logErro("registrar_codigo_entrega", { orderId, message: error.message }); return false; }
+      }
     }
     return true;
   }

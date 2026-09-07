@@ -55,3 +55,6 @@ verify_jwt = false
 
 [functions.ifood-troca-endereco]
 verify_jwt = false
+
+[functions.ifood-validar-codigo]
+verify_jwt = false
