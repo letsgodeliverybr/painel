@@ -21,6 +21,23 @@ async function logErro(fonte: string, detalhes: Record<string, unknown>) {
   }
 }
 
+// Item 16 do checklist de homologação: respeitar rate limit. Mesmo helper
+// de ifood-polling, duplicado aqui. Confirmado contra a doc pública do
+// iFood (Rate limit, 2026-09-07): 429 vem com header Retry-After
+// (segundos). Vira log dedicado (searchável separado dos outros erros
+// HTTP) e sinaliza pro chamador parar de insistir nessa rodada.
+function retryAfterSec(res: Response): number | null {
+  const ra = res.headers.get("Retry-After");
+  if (!ra) return null;
+  const n = Number(ra);
+  return Number.isFinite(n) ? n : null;
+}
+async function logSeRateLimited(fonte: string, res: Response): Promise<boolean> {
+  if (res.status !== 429) return false;
+  await logErro(`rate_limit_${fonte}`, { retryAfterSec: retryAfterSec(res) });
+  return true;
+}
+
 async function upsertConfig(chave: string, valor: string) {
   const { data, error: selErr } = await supabase.from("configuracoes").select("chave").eq("chave", chave).limit(1);
   if (selErr) { await logErro("config_ler", { chave, message: selErr.message }); return; }
@@ -63,6 +80,7 @@ async function getAccessToken(): Promise<string | null> {
       }),
     });
 
+    if (await logSeRateLimited("auth", res)) return null;
     const bodyText = await res.text();
     if (!res.ok) {
       await logErro("auth_http", { status: res.status, body: bodyText });
@@ -222,6 +240,7 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (await logSeRateLimited("webhook_detalhes_pedido", res)) return null;
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     await logErro("webhook_detalhes_pedido_http", { orderId, status: res.status, body });
@@ -326,9 +345,11 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
 
   try {
     // Paralelo — precisa responder em até 5s (exigência da doc), não dá
-    // pra serializar se vier mais de um evento no mesmo webhook. Upsert é
-    // idempotente (ignoreDuplicates), então retry do iFood em 5xx nunca
-    // duplica os eventos que já tinham sido processados com sucesso.
+    // pra serializar se vier mais de um evento no mesmo webhook. Cada
+    // branch de processarEventoWebhook é idempotente por natureza (setar
+    // status pra 'cancelado'/'finalizado' de novo, ou upsert do mesmo
+    // pedido mapeado de novo, não duplica nem corrompe nada), então retry
+    // do iFood em 5xx é seguro.
     await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
   } catch (e) {
     await logErro("webhook_processar_excecao", { message: String(e) });
@@ -391,6 +412,13 @@ serve(async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
+
+      // Item 16 do checklist de homologação: 429 aqui é limite global do
+      // token, não culpa desse item específico da fila — não gasta uma das
+      // MAX_TENTATIVAS dele, deixa 'pendente' como está e para de bater no
+      // resto da fila nessa rodada (senão os outros ~49 itens repetem o
+      // mesmo 429 em sequência). Próxima invocação do cron tenta de novo.
+      if (await logSeRateLimited("enviar_status", res)) break;
 
       if (res.ok) {
         await supabase.from("ifood_status_queue").update({

@@ -66,6 +66,7 @@ async function getAccessToken(): Promise<string | null> {
       }),
     });
 
+    if (await logSeRateLimited("auth", res)) return null;
     const bodyText = await res.text();
     if (!res.ok) {
       await logErro("auth_http", { status: res.status, body: bodyText });
@@ -101,6 +102,25 @@ async function ifoodFetch(path: string, token: string, init: RequestInit = {}) {
     ...init,
     headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` },
   });
+}
+
+// Item 16 do checklist de homologação: respeitar rate limit. Confirmado
+// contra a doc pública do iFood (Rate limit, 2026-09-07): 429 vem com
+// header Retry-After (segundos); polling especificamente é limitado a 1
+// request/30s por token. Qualquer 429 vira log dedicado (searchável
+// separado dos outros erros HTTP) e sinaliza pro chamador parar de bater
+// nessa rodada em vez de insistir — a rodada seguinte do cron (ou a
+// próxima invocação) tenta de novo.
+function retryAfterSec(res: Response): number | null {
+  const ra = res.headers.get("Retry-After");
+  if (!ra) return null;
+  const n = Number(ra);
+  return Number.isFinite(n) ? n : null;
+}
+async function logSeRateLimited(fonte: string, res: Response): Promise<boolean> {
+  if (res.status !== 429) return false;
+  await logErro(`rate_limit_${fonte}`, { retryAfterSec: retryAfterSec(res) });
+  return true;
 }
 
 // Campos confirmados contra um pedido de teste real (Developer Portal do
@@ -189,6 +209,7 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
   // Confirmado contra a doc oficial (Order API):
   // https://developer.ifood.com.br/en-US/docs/guides/modules/order/details/
   const res = await ifoodFetch(`/order/v1.0/orders/${orderId}`, token, { method: "GET" });
+  if (await logSeRateLimited("detalhes_pedido", res)) return null;
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     await logErro("detalhes_pedido_http", { orderId, status: res.status, body });
@@ -264,16 +285,19 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
   return true;
 }
 
-async function pollOnce(token: string) {
+// Retorna true quando o polling levou 429 (rate limit) — sinal pro serve()
+// não insistir na segunda iteração da mesma invocação.
+async function pollOnce(token: string): Promise<boolean> {
   // excludeHeartbeat=true é obrigatório para integradores de Logistics
   // (senão conta como "abrir a loja" e trava cancelamento no lado iFood).
   const res = await ifoodFetch("/events/v1.0/events:polling?excludeHeartbeat=true", token, { method: "GET" });
 
-  if (res.status === 204) return;
+  if (await logSeRateLimited("polling", res)) return true;
+  if (res.status === 204) return false;
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     await logErro("polling_http", { status: res.status, body });
-    return;
+    return false;
   }
 
   let eventos: any[];
@@ -281,7 +305,7 @@ async function pollOnce(token: string) {
     eventos = await res.json();
   } catch (e) {
     await logErro("polling_parse", { message: String(e) });
-    return;
+    return false;
   }
 
   const acks: string[] = [];
@@ -311,11 +335,13 @@ async function pollOnce(token: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(acks.map((id) => ({ id }))),
     });
+    if (await logSeRateLimited("acknowledgment", ackRes)) return true;
     if (!ackRes.ok) {
       const body = await ackRes.text().catch(() => "");
       await logErro("acknowledgment_http", { status: ackRes.status, body, acks });
     }
   }
+  return false;
 }
 
 serve(async () => {
@@ -323,6 +349,13 @@ serve(async () => {
   // iFood recomenda polling a cada ~30s; pg_cron deste projeto só agenda de
   // minuto em minuto — duas iterações internas por invocação aproximam a
   // cadência recomendada sem exigir nada fora do padrão já usado no cron.
+  //
+  // Item 16 do checklist de homologação: o limite documentado é 1
+  // request/30s POR TOKEN nesse endpoint especificamente. O intervalo
+  // original aqui era 28000ms — MENOR que o limite, arriscando 429 de
+  // verdade em produção (as duas chamadas usam o mesmo token cacheado).
+  // Subido pra 31000ms (folga de 1s) e, se mesmo assim vier 429, a segunda
+  // iteração é pulada em vez de insistir.
   for (let i = 0; i < 2; i++) {
     const token = await getAccessToken();
     if (!token) {
@@ -330,12 +363,16 @@ serve(async () => {
       break;
     }
     try {
-      await pollOnce(token);
+      const rateLimited = await pollOnce(token);
+      if (rateLimited) {
+        problemas.push("rate limit (429) — ver logs_acoes (ifood_erro_rate_limit_*)");
+        break;
+      }
     } catch (e) {
       await logErro("poll_loop_excecao", { message: String(e) });
       problemas.push(String(e));
     }
-    if (i === 0) await new Promise((r) => setTimeout(r, 28000));
+    if (i === 0) await new Promise((r) => setTimeout(r, 31000));
   }
   return new Response(JSON.stringify({ ok: problemas.length === 0, problemas }), { status: 200 });
 });

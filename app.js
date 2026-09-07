@@ -2902,6 +2902,7 @@ function abrirInfoPedido(pedidoId){
       </div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
+        <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir comanda</button>
         <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar link de rastreio</button>
       </div>
     </div>
@@ -8795,6 +8796,52 @@ function _enviarComprovanteWhatsappFatura(cobId,numFatura,periodo,valorTotal){
   const lojaNome=(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome)||currentUser?.nome||'';
   const msg=`Olá! Segue o comprovante de pagamento da fatura.\n\nLoja: ${lojaNome}\nFatura Nº ${numFatura}\nPeríodo: ${periodo}\nValor total: R$ ${parseFloat(valorTotal).toFixed(2)}`;
   window.open(`https://wa.me/5511991702772?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// Item 10 do checklist de homologação iFood — comanda impressa no modelo
+// pedido pelo iFood: ID do pedido, itens com observações, modo de entrega,
+// CPF/CNPJ, troco, info de cupom. Todos os campos já vêm mapeados desde a
+// Fase 1 (mapearPedidoIfood/app.js) — aqui só monta a página de impressão,
+// igual ao padrão já usado em _imprimirFatura (janela nova + print()).
+// Funciona pra qualquer pedido (não só iFood), omitindo os campos vazios.
+function _escHtml(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _imprimirComanda(pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  if(!p)return;
+  const itens=Array.isArray(p.itens)?p.itens:[];
+  const dataHora=p.created_at?formatarData(p.created_at)+' '+formatarHora(p.created_at):'';
+  const itensHtml=itens.map(it=>`<div class="item"><div class="item-linha"><span>${it.quantidade||it.quantity||1}x ${_escHtml(it.nome||it.name||'—')}</span><span>R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>${it.observations?`<div class="obs">↳ ${_escHtml(it.observations)}</div>`:''}</div>`).join('');
+  const pagamentoTxt=p.forma_pagamento?`${_escHtml(p.forma_pagamento)}${p.bandeira_cartao?` (${_escHtml(p.bandeira_cartao)})`:''}`:'';
+  const patrocinadores=Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?p.cupom_detalhes[0].sponsorshipValues.map(s=>_escHtml(s.name)).join(', '):'';
+  const w=window.open('','_blank','width=420,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda #${_escHtml(p.numero||'')}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Courier New',monospace;background:#fff;padding:16px;width:320px;color:#000}
+    .header{text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px}
+    .header h1{font-size:20px}
+    .modo{font-weight:700;font-size:13px;margin-top:2px}
+    .linha{display:flex;justify-content:space-between;font-size:13px;margin:3px 0;gap:8px}
+    .secao{border-top:1px dashed #000;margin-top:8px;padding-top:8px}
+    .item-linha{display:flex;justify-content:space-between;font-size:13px}
+    .obs{font-size:11px;padding-left:10px;font-style:italic}
+    .total{font-weight:700;font-size:15px;border-top:2px dashed #000;margin-top:8px;padding-top:8px}
+  </style></head><body>
+    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 RETIRADA NA LOJA':'🛵 ENTREGA'}</div></div>
+    <div class="secao">
+      <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
+      ${p.cliente_documento?`<div class="linha"><span>CPF/CNPJ:</span><span>${_escHtml(p.cliente_documento)}</span></div>`:''}
+      ${!p.retirada&&(p.endereco||p.endereco_entrega)?`<div class="linha"><span>${_escHtml(p.endereco_entrega||p.endereco)}</span></div>`:''}
+    </div>
+    <div class="secao">${itensHtml||'<div>—</div>'}</div>
+    <div class="secao">
+      ${pagamentoTxt?`<div class="linha"><span>Pagamento:</span><span>${pagamentoTxt}</span></div>`:''}
+      ${p.troco_para?`<div class="linha"><span>Troco para:</span><span>R$ ${parseFloat(p.troco_para).toFixed(2)}</span></div>`:''}
+      ${p.cupom_valor?`<div class="linha"><span>Cupom:</span><span>R$ ${parseFloat(p.cupom_valor).toFixed(2)}${patrocinadores?` (${patrocinadores})`:''}</span></div>`:''}
+    </div>
+    <div class="total linha"><span>TOTAL</span><span>R$ ${parseFloat(p.total_pedido||p.valor||0).toFixed(2)}</span></div>
+  </body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),400);
 }
 
 function _imprimirFatura(){
