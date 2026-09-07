@@ -2384,6 +2384,18 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
       return;
     }
   }
+  // Item 11 do checklist de homologação iFood: pedido de origem iFood não
+  // pode só virar 'cancelado' local — precisa consultar /cancellationReasons
+  // e mandar o motivo pro iFood antes. _abrirCancelamentoIfood cuida do
+  // fluxo inteiro (modal de motivo -> ifood-cancelamento -> aguarda o
+  // evento CAN assíncrono pra confirmar); não faz o PATCH local aqui.
+  if(novoStatus==='cancelado'){
+    const _pIfood=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+    if(_pIfood?.origem==='ifood'){
+      _abrirCancelamentoIfood(pedidoId);
+      return;
+    }
+  }
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto')update.pronto_em=agora;
@@ -2423,6 +2435,17 @@ async function alterarStatusPedido(pedidoId,novoStatus){
     const _pChk=allPedidos.find(x=>x.id===pedidoId);
     if(_pChk?.motoboy_id||_pChk?.entregador_id){
       showNotif('Pedido já tem entregador','Remova o motoboy alocado antes de marcar como pronto de novo.','var(--yellow)');
+      return;
+    }
+  }
+  // Item 11 do checklist de homologação iFood — mesma trava de
+  // alterarStatusPedidoTabela: pedido de origem iFood passa pelo fluxo de
+  // motivo de cancelamento (_abrirCancelamentoIfood) em vez de virar
+  // 'cancelado' direto.
+  if(novoStatus==='cancelado'){
+    const _pIfood=allPedidos.find(x=>x.id===pedidoId);
+    if(_pIfood?.origem==='ifood'){
+      _abrirCancelamentoIfood(pedidoId);
       return;
     }
   }
@@ -2724,6 +2747,87 @@ function _indicadorPrazoPedido(p){
   return{previsaoMs,cor:'#6b7280',texto:'Aguardando aceite',neutro:true};
 }
 
+// Item 14 do checklist de homologação iFood — banner de troca de endereço
+// pendente (evento DAR, gravado pelo backend em troca_endereco_novo/
+// troca_endereco_solicitada_em). Prazo de 15min confirmado contra a doc
+// pública do iFood (Shipping/"Entrega Fácil"); depois disso o iFood já
+// rejeitou automaticamente do lado dele, então só mostra o aviso — os
+// botões continuam clicáveis mas a function no backend também recusa e
+// limpa o estado (dupla checagem, front e back).
+function _blocoTrocaEndereco(p){
+  if(!p.troca_endereco_novo||!p.troca_endereco_solicitada_em)return'';
+  const solicitadoEm=_parseUtc(p.troca_endereco_solicitada_em).getTime();
+  const prazoMs=solicitadoEm+15*60*1000;
+  const restanteMin=Math.max(0,Math.round((prazoMs-Date.now())/60000));
+  const expirado=Date.now()>prazoMs;
+  const end=p.troca_endereco_novo;
+  const enderecoTxt=[end.streetName&&end.streetNumber?`${end.streetName}, ${end.streetNumber}`:end.streetName,end.complement,end.neighborhood,end.city,end.state].filter(Boolean).join(', ');
+  return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📍 Cliente pediu troca de endereço</div>
+    <div style="font-size:13px;color:#78350f;margin-bottom:8px">${enderecoTxt||'—'}</div>
+    <div style="font-size:11px;color:#92400e;margin-bottom:10px">${expirado?'Prazo de 15min expirado — o iFood já rejeitou automaticamente':`Prazo: ${restanteMin}min restantes`}</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Aceitar novo endereço</button>
+      <button onclick="_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Rejeitar</button>
+    </div>
+  </div>`;
+}
+async function _ifoodResponderTroca(pedidoId,action){
+  try{
+    const r=await fetch(`${SB_URL}/functions/v1/ifood-troca-endereco`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action,pedido_id:pedidoId})});
+    const j=await r.json();
+    if(!r.ok||!j.ok){showNotif('Erro',j.error||'Falha ao responder troca de endereço','var(--red)');return;}
+    showNotif(action==='aceitar'?'✅ Endereço atualizado':'Troca de endereço rejeitada','','var(--green)');
+    await atualizarTudo();
+    abrirInfoPedido(pedidoId);
+  }catch(e){
+    showNotif('Erro','Falha ao responder troca de endereço','var(--red)');
+  }
+}
+
+// Item 11 do checklist de homologação iFood — modal de motivo de
+// cancelamento. Chamado no lugar do PATCH local sempre que o pedido tem
+// origem='ifood' (ver alterarStatusPedido/alterarStatusPedidoTabela).
+async function _abrirCancelamentoIfood(pedidoId){
+  let modal=document.getElementById('modal-ifood-cancelar');
+  if(!modal){modal=document.createElement('div');modal.id='modal-ifood-cancelar';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:420px;width:95%">
+    <div class="modal-header"><span class="modal-title">Cancelar pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="padding:16px">
+      <div id="ifood-cancel-body" style="font-size:13px;color:var(--text2)">⏳ Buscando motivos de cancelamento...</div>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+  const r=await fetch(`${SB_URL}/functions/v1/ifood-cancelamento`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action:'motivos',pedido_id:pedidoId})});
+  const j=await r.json();
+  const corpo=document.getElementById('ifood-cancel-body');
+  if(!corpo)return; // modal fechado enquanto buscava
+  if(!r.ok||!j.ok){corpo.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha ao buscar motivos de cancelamento').replace(/</g,'&lt;')}</span>`;return;}
+  const motivos=j.motivos||[];
+  corpo.innerHTML=`<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Selecione o motivo do cancelamento pro iFood:</div>
+    <select id="ifood-cancel-motivo" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;margin-bottom:16px">
+      ${motivos.length?motivos.map(m=>`<option value="${String(m.code||'').replace(/"/g,'&quot;')}">${String(m.description||m.code||'').replace(/</g,'&lt;')}</option>`).join(''):'<option value="">Nenhum motivo disponível</option>'}
+    </select>
+    <div id="ifood-cancel-fb" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
+    <button onclick="_confirmarCancelamentoIfood('${pedidoId}')" style="width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">Confirmar cancelamento</button>`;
+}
+async function _confirmarCancelamentoIfood(pedidoId){
+  const sel=document.getElementById('ifood-cancel-motivo');
+  const reason=sel?.value;
+  const fb=document.getElementById('ifood-cancel-fb');
+  if(!reason){if(fb)fb.innerHTML='<span style="color:#ef4444">Selecione um motivo</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">⏳ Enviando...</span>';
+  try{
+    const r=await fetch(`${SB_URL}/functions/v1/ifood-cancelamento`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action:'cancelar',pedido_id:pedidoId,reason})});
+    const j=await r.json();
+    if(!r.ok||!j.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha ao cancelar').replace(/</g,'&lt;')}</span>`;return;}
+    document.getElementById('modal-ifood-cancelar')?.classList.remove('open');
+    showNotif('Cancelamento solicitado','Aguardando confirmação do iFood','var(--yellow)');
+  }catch(e){
+    if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão</span>';
+  }
+}
+
 function abrirInfoPedido(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!p)return;
@@ -2761,6 +2865,7 @@ function abrirInfoPedido(pedidoId){
         <div><div style="font-size:11px;color:var(--text3);font-weight:600">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
         <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
+      ${_blocoTrocaEndereco(p)}
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
         ${step(true,'Em Preparo')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
       </div>

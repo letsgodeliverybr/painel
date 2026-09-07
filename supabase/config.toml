@@ -44,3 +44,14 @@ verify_jwt = false
 # quebrando a autenticação. Nunca mais redeployar sem essa entrada.
 [functions.notify-novo-pedido]
 verify_jwt = false
+
+# Chamadas direto do painel (app.js) pro fluxo de cancelamento/troca de
+# endereço do iFood — mesmo padrão de x-webhook-secret dos outros acima.
+# Lembrete do achado 2026-09-03 (ver notify-novo-pedido): sem essa entrada
+# aqui, um redeploy via CLI reseta pro default (exige JWT) e quebra a
+# chamada do painel.
+[functions.ifood-cancelamento]
+verify_jwt = false
+
+[functions.ifood-troca-endereco]
+verify_jwt = false

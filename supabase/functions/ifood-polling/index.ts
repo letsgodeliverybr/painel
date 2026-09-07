@@ -203,20 +203,24 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
 }
 
 // Códigos de evento confirmados contra a doc pública do iFood (Order
-// events, 2026-09-07): PLC=PLACED, CFM=CONFIRMED, SPS=SEPARATION_STARTED,
-// SPE=SEPARATION_ENDED, RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED,
-// CAN=CANCELLED.
+// events / Shipping "Entrega Fácil", 2026-09-07): PLC=PLACED,
+// CFM=CONFIRMED, SPS=SEPARATION_STARTED, SPE=SEPARATION_ENDED,
+// RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
+// DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
+// novo; lojista tem 15min corridos pra aceitar/rejeitar antes do iFood
+// rejeitar automaticamente).
 //
 // Bug real corrigido aqui: o upsert antigo usava `ignoreDuplicates:true`,
 // que faz ON CONFLICT DO NOTHING — pra um ifood_order_id que já existe na
 // tabela, QUALQUER evento subsequente (inclusive cancelamento pelo cliente,
 // ou conclusão por outro app tipo Gestor de Pedidos) era descartado sem
 // nenhum efeito. Agora: pedido novo entra pelo fluxo de sempre; pedido já
-// existente só é tocado se o evento for CAN ou CON (os únicos que mudam o
-// status de forma inequívoca) — qualquer outro evento pra pedido existente
-// é só reconhecido (ACK), sem sobrescrever progresso interno já em
-// andamento (em_rota/chegou_destino etc., escritos pelo app do entregador).
-async function processarEventoPedido(orderId: string, code: string | null, token: string): Promise<boolean> {
+// existente só é tocado se o evento for CAN, CON ou DAR (os únicos que
+// mudam algo de forma inequívoca) — qualquer outro evento pra pedido
+// existente é só reconhecido (ACK), sem sobrescrever progresso interno já
+// em andamento (em_rota/chegou_destino etc., escritos pelo app do
+// entregador).
+async function processarEventoPedido(orderId: string, code: string | null, metadata: any, token: string): Promise<boolean> {
   const { data: existente, error: existeErr } = await supabase
     .from("pedidos")
     .select("id, status")
@@ -236,6 +240,11 @@ async function processarEventoPedido(orderId: string, code: string | null, token
         status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_concluido", { orderId, message: error.message }); return false; }
+    } else if (code === "DAR" && metadata?.address) {
+      const { error } = await supabase.from("pedidos").update({
+        troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) { await logErro("registrar_troca_endereco", { orderId, message: error.message }); return false; }
     }
     return true;
   }
@@ -286,7 +295,7 @@ async function pollOnce(token: string) {
     const code = evento.code ?? evento.fullCode ?? null;
 
     try {
-      const ok = await processarEventoPedido(orderId, code, token);
+      const ok = await processarEventoPedido(orderId, code, evento.metadata, token);
       if (!ok) continue; // erro já logado; sem ACK, tenta de novo
       acks.push(evento.id ?? orderId);
     } catch (e) {

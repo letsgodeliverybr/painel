@@ -236,17 +236,20 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
 }
 
 // Códigos de evento confirmados contra a doc pública do iFood (Order
-// events, 2026-09-07): PLC=PLACED, CFM=CONFIRMED, SPS=SEPARATION_STARTED,
-// SPE=SEPARATION_ENDED, RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED,
-// CAN=CANCELLED. Mesma lógica usada em ifood-polling, duplicada aqui.
+// events / Shipping "Entrega Fácil", 2026-09-07): PLC=PLACED,
+// CFM=CONFIRMED, SPS=SEPARATION_STARTED, SPE=SEPARATION_ENDED,
+// RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
+// DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
+// novo; 15min corridos pra aceitar/rejeitar). Mesma lógica de
+// ifood-polling, duplicada aqui.
 //
 // Bug real corrigido aqui: `ignoreDuplicates:true` fazia ON CONFLICT DO
 // NOTHING — pra um ifood_order_id que já existe na tabela, cancelamento
 // pelo cliente/iFood ou conclusão por outro app (Gestor de Pedidos) era
 // descartado sem efeito nenhum. Um evento de webhook = uma mudança de
 // status (ou pedido novo): pedido novo entra pelo fluxo de sempre; pedido
-// já existente só é tocado se o evento for CAN ou CON — qualquer outro
-// evento é só confirmado (202), sem sobrescrever progresso interno
+// já existente só é tocado se o evento for CAN, CON ou DAR — qualquer
+// outro evento é só confirmado (202), sem sobrescrever progresso interno
 // (em_rota/chegou_destino etc., escrito pelo app do entregador). Lança
 // exceção em qualquer falha real (não em "evento sem orderId", que é
 // esperado pra presence events) — o chamador decide se isso vira 5xx
@@ -258,6 +261,7 @@ async function processarEventoWebhook(evento: any): Promise<void> {
     return;
   }
   const code = evento?.code ?? evento?.fullCode ?? null;
+  const metadata = evento?.metadata;
 
   const { data: existente, error: existeErr } = await supabase
     .from("pedidos")
@@ -278,6 +282,11 @@ async function processarEventoWebhook(evento: any): Promise<void> {
         status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao concluir pedido ${orderId}: ${error.message}`);
+    } else if (code === "DAR" && metadata?.address) {
+      const { error } = await supabase.from("pedidos").update({
+        troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) throw new Error(`falha ao registrar troca de endereço ${orderId}: ${error.message}`);
     }
     return;
   }
