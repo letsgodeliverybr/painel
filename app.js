@@ -3425,7 +3425,18 @@ async function atualizarTudo(){
   _aplicarLockStatus(allPedidos);
   // Sem filtro de loja de propósito — ver comentário na declaração de _pedidosAtivosGlobal.
   _pedidosAtivosGlobal=await db('pedidos','GET',null,'?select=id,motoboy_id,entregador_id,status,status_detalhado&status=in.(aceito,no_local,chegou_no_local,chegou_local,em_rota,chegou_destino,retornando)');
-  allMotoboys=await db('entregadores','GET',null,'?disponivel=eq.true&select=id,nome,telefone,cpf,disponivel,status,lat,lng');
+  // disponivel=true sozinho não basta mais: entregador com entrega ATIVA
+  // continua precisando aparecer no mapa mesmo com disponivel=false (ex:
+  // desligamento suave por bateria baixa durante entrega em andamento, ver
+  // lets_go_entregador TrackingService._forcarOfflinePorBateria 2026-09-08
+  // — mas esse gap já existia antes disso também, via toggle manual de
+  // admin em Cadastros>Entregadores sem checagem de pedido ativo). Junta
+  // disponivel=true COM quem tem pedido ativo agora, via id in.(...).
+  const _idsEntregadoresAtivos=[...new Set(_pedidosAtivosGlobal.map(p=>p.motoboy_id||p.entregador_id).filter(Boolean))];
+  const _qsMotoboys=_idsEntregadoresAtivos.length
+    ?`?or=(disponivel.eq.true,id.in.(${_idsEntregadoresAtivos.join(',')}))&select=id,nome,telefone,cpf,disponivel,status,lat,lng`
+    :'?disponivel=eq.true&select=id,nome,telefone,cpf,disponivel,status,lat,lng';
+  allMotoboys=await db('entregadores','GET',null,_qsMotoboys);
   allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lojaFiltroId()}`);
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
