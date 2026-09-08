@@ -4964,7 +4964,16 @@ async function _toggleStatusEntregador(id, statusAtual){
 }
 
 async function _aprovarEntregador(id){
-  const res=await dbPatch('entregadores',{aprovado:true,status_cadastro:'aprovado',updated_at:_agoraBrasilia()},`?id=eq.${id}`);
+  // Aprova os 5 documentos junto com o cadastro — sem isso, esse botão
+  // (aprovação em bloco) viraria um jeito de burlar a checagem granular
+  // que o gate do app do entregador agora faz (AuthGate só libera com os
+  // 5 documentos aprovados, não com status_cadastro='aprovado' sozinho).
+  const res=await dbPatch('entregadores',{
+    aprovado:true,status_cadastro:'aprovado',
+    foto_perfil_status:'aprovado',foto_cnh_status:'aprovado',foto_crlv_status:'aprovado',
+    foto_comprovante_residencia_status:'aprovado',foto_placa_status:'aprovado',
+    updated_at:_agoraBrasilia(),
+  },`?id=eq.${id}`);
   if(res===null){showNotif('❌ Erro ao aprovar','','var(--red)');return;}
   showNotif('✅ Entregador aprovado!','','var(--green)');
   renderCadastrosPage('entregadores');
@@ -4993,7 +5002,20 @@ async function _confirmarReprovacao(id){
   const fb=document.getElementById('rep-feedback');
   if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
-  const res=await dbPatch('entregadores',{aprovado:false,status_cadastro:'reprovado',motivo_reprovacao:motivo,updated_at:_agoraBrasilia()},`?id=eq.${id}`);
+  // Mesmo motivo do _aprovarEntregador: reprova os 5 documentos junto,
+  // pra ficar consistente com o que o gate do app do entregador vai
+  // checar (e com a tela de status do cadastro, que lista documento por
+  // documento — sem isso, reprovar o cadastro inteiro deixaria os 5
+  // documentos "em análise" pro entregador, mensagem errada).
+  const res=await dbPatch('entregadores',{
+    aprovado:false,status_cadastro:'reprovado',motivo_reprovacao:motivo,
+    foto_perfil_status:'reprovado',foto_perfil_motivo:motivo,
+    foto_cnh_status:'reprovado',foto_cnh_motivo:motivo,
+    foto_crlv_status:'reprovado',foto_crlv_motivo:motivo,
+    foto_comprovante_residencia_status:'reprovado',foto_comprovante_residencia_motivo:motivo,
+    foto_placa_status:'reprovado',foto_placa_motivo:motivo,
+    updated_at:_agoraBrasilia(),
+  },`?id=eq.${id}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
   document.getElementById('modal-reprovar-ent')?.classList.remove('open');
   showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
@@ -5021,8 +5043,21 @@ function _abrirDropdownCadastro(event,entId){
 async function _setCadastroStatus(entId,novoStatus){
   document.getElementById('dd-cadastro')?.remove();
   const patch={status_cadastro:novoStatus,updated_at:_agoraBrasilia()};
-  if(novoStatus==='aprovado'){patch.aprovado=true;patch.status='ativo';}
-  else if(novoStatus==='reprovado'||novoStatus==='em_analise'||novoStatus==='pendente'){patch.aprovado=false;}
+  // Mesmo motivo de _aprovarEntregador/_confirmarReprovacao: mantém os 5
+  // documentos em sincronia com o status geral escolhido aqui, senão esse
+  // dropdown vira outro jeito de burlar o gate granular do app do
+  // entregador. 'em_analise'/'pendente' não mexe nos documentos — não faz
+  // sentido reverter aprovações individuais já dadas só por causa de um
+  // status geral neutro.
+  if(novoStatus==='aprovado'){
+    patch.aprovado=true;patch.status='ativo';
+    patch.foto_perfil_status='aprovado';patch.foto_cnh_status='aprovado';patch.foto_crlv_status='aprovado';
+    patch.foto_comprovante_residencia_status='aprovado';patch.foto_placa_status='aprovado';
+  }else if(novoStatus==='reprovado'){
+    patch.aprovado=false;
+    patch.foto_perfil_status='reprovado';patch.foto_cnh_status='reprovado';patch.foto_crlv_status='reprovado';
+    patch.foto_comprovante_residencia_status='reprovado';patch.foto_placa_status='reprovado';
+  }else if(novoStatus==='em_analise'||novoStatus==='pendente'){patch.aprovado=false;}
   await dbPatch('entregadores',patch,`?id=eq.${entId}`);
   showNotif(`Status atualizado: ${novoStatus}`,'');
   renderCadastrosPage('entregadores');
@@ -5046,6 +5081,97 @@ async function excluirLoja(id,nome){
   await db('lojas','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Loja excluída','','var(--red)');
   renderCadastrosPage('clientes');
+}
+
+// Item 2 da leva de melhorias visuais (status do cadastro): aprovação
+// granular por documento, em vez de só aprovar/reprovar o cadastro
+// inteiro de uma vez. Achado ao construir isto: o bloco antigo de
+// documentos aqui já tinha um bug — "Comp. Residência" checava
+// e.comprovante_residencia/e.foto_comprovante, nenhum dos dois é o nome
+// real da coluna (foto_comprovante_residencia) — sempre mostrava "Não
+// enviado". Corrigido de passagem. foto_placa também nunca aparecia
+// aqui, mesmo já existindo na tabela — adicionado.
+const _DOCUMENTOS_ENTREGADOR=[
+  ['foto_perfil','Foto de Perfil'],
+  ['foto_cnh','CNH'],
+  ['foto_crlv','CRLV'],
+  ['foto_comprovante_residencia','Comprovante de Residência'],
+  ['foto_placa','Foto da Placa'],
+];
+function _blocoDocumentosAdmin(entId,e){
+  const cores={aprovado:'#10b981',reprovado:'#ef4444',em_analise:'#eab308'};
+  const labels={aprovado:'✅ Aprovado',reprovado:'❌ Reprovado',em_analise:'🔍 Em análise'};
+  return _DOCUMENTOS_ENTREGADOR.map(([campo,label])=>{
+    const url=e[campo]||'';
+    const status=e[campo+'_status']||'em_analise';
+    const motivo=e[campo+'_motivo']||'';
+    const cor=cores[status]||cores.em_analise;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${label}</div>
+        <span style="font-size:11px;font-weight:700;color:${cor};background:${cor}1a;border:1px solid ${cor}55;border-radius:20px;padding:2px 10px;white-space:nowrap">${labels[status]||labels.em_analise}</span>
+      </div>
+      ${motivo&&status==='reprovado'?`<div style="font-size:11px;color:var(--text3);margin-top:4px">Motivo: ${motivo.replace(/</g,'&lt;')}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:8px">
+        ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não enviado</span>`}
+        <button type="button" onclick="_aprovarDocumento('${entId}','${campo}')" ${status==='aprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='aprovado'?'var(--border)':'#10b98122'};color:${status==='aprovado'?'var(--text3)':'#10b981'};font-size:12px;font-weight:700;cursor:${status==='aprovado'?'default':'pointer'};font-family:Inter,sans-serif">✓ Aprovar</button>
+        <button type="button" onclick="_reprovarDocumento('${entId}','${campo}','${label.replace(/'/g,"\\'")}')" ${status==='reprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='reprovado'?'var(--border)':'#ef444422'};color:${status==='reprovado'?'var(--text3)':'#ef4444'};font-size:12px;font-weight:700;cursor:${status==='reprovado'?'default':'pointer'};font-family:Inter,sans-serif">✗ Reprovar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function _aprovarDocumento(entId,campo){
+  const res=await dbPatch('entregadores',{[campo+'_status']:'aprovado',[campo+'_motivo']:null,updated_at:_agoraBrasilia()},`?id=eq.${entId}`);
+  if(res===null){showNotif('❌ Erro ao aprovar documento','','var(--red)');return;}
+  await _recalcularStatusCadastro(entId);
+  showNotif('✅ Documento aprovado','','var(--green)');
+  abrirEditarEntregador(entId);
+}
+function _reprovarDocumento(entId,campo,label){
+  let modal=document.getElementById('modal-reprovar-doc');
+  if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-doc';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">❌ Reprovar ${label}</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="fi"><label>Motivo</label><textarea id="repdoc-motivo" placeholder="Ex: Foto ilegível, documento vencido..." style="min-height:80px;resize:vertical"></textarea></div>
+      <div id="repdoc-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">Cancelar</button>
+      <button onclick="_confirmarReprovacaoDocumento('${entId}','${campo}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Confirmar</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+async function _confirmarReprovacaoDocumento(entId,campo){
+  const motivo=document.getElementById('repdoc-motivo')?.value?.trim()||'';
+  const fb=document.getElementById('repdoc-feedback');
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=await dbPatch('entregadores',{[campo+'_status']:'reprovado',[campo+'_motivo']:motivo,updated_at:_agoraBrasilia()},`?id=eq.${entId}`);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  await _recalcularStatusCadastro(entId);
+  document.getElementById('modal-reprovar-doc')?.classList.remove('open');
+  showNotif('❌ Documento reprovado',motivo.substring(0,50),'var(--red)');
+  abrirEditarEntregador(entId);
+}
+// Espelha status_cadastro/aprovado a partir da verdade granular (os 5
+// documentos) — o painel continua usando esses dois campos soltos pra
+// badge/filtro/listagem em ~15 lugares (não vale a pena trocar tudo isso
+// agora), mas eles deixam de ser a fonte de verdade: o gate real do app
+// do entregador (AuthGate) checa os 5 status diretamente, nunca confia só
+// nisto aqui. Reconsulta em vez de confiar em estado local — mesma
+// PATCH pode ter chegado de outra aba/admin simultaneamente.
+async function _recalcularStatusCadastro(entId){
+  const arr=await db('entregadores','GET',null,`?id=eq.${entId}&select=foto_perfil_status,foto_cnh_status,foto_crlv_status,foto_comprovante_residencia_status,foto_placa_status`);
+  const e=Array.isArray(arr)?arr[0]:null;
+  if(!e)return;
+  const statuses=[e.foto_perfil_status,e.foto_cnh_status,e.foto_crlv_status,e.foto_comprovante_residencia_status,e.foto_placa_status];
+  let novoStatusCadastro,novoAprovado;
+  if(statuses.every(s=>s==='aprovado')){novoStatusCadastro='aprovado';novoAprovado=true;}
+  else if(statuses.some(s=>s==='reprovado')){novoStatusCadastro='reprovado';novoAprovado=false;}
+  else{novoStatusCadastro='em_analise';novoAprovado=false;}
+  await dbPatch('entregadores',{status_cadastro:novoStatusCadastro,aprovado:novoAprovado,updated_at:_agoraBrasilia()},`?id=eq.${entId}`);
 }
 
 async function abrirEditarEntregador(entId){
@@ -5076,7 +5202,7 @@ ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
 ${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
 ${sec('📎 Documentos')}
-${(()=>{const _db=(url)=>url?`<button type="button" data-url="${(url||'').replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;width:100%">Ver foto</button>`:'<span style="color:var(--text3);font-size:13px;padding:9px 0;display:block">Não enviado</span>';return row2(fi('Foto de Perfil',_db(e.foto_perfil||e.foto_url||e.avatar||'')),fi('CNH',_db(e.foto_cnh||e.cnh_url||'')))+row2(fi('CRLV',_db(e.foto_crlv||e.crlv_url||'')),fi('Comp. Residência',_db(e.comprovante_residencia||e.foto_comprovante||'')));})()}
+${_blocoDocumentosAdmin(entId,e)}
 ${sec('🛵 Dados do Veículo')}
 ${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa_veiculo,'ABC-1234')))}
 ${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
