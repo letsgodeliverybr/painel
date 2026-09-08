@@ -104,15 +104,22 @@ let _faturaBannerRefreshInterval=null;
 // reseta), nunca é persistido (sessionStorage sobreviveria ao F5, o que
 // contraria o comportamento pedido: reaparecer a cada atualização de página).
 let _faturaBannerFechada=false;
-// Chat interno Loja <-> Admin/Suporte — conversa única e contínua por loja
-// (mensagens_chat.loja_id), ver migrations/add_mensagens_chat.sql.
-let _chatLojaAtual=null; // loja_id da conversa aberta agora (perfil loja: sempre a própria loja; perfil adm/suporte: a selecionada na lista)
+// Chat interno — conversa única e contínua por participante (loja OU
+// entregador), ver migrations/add_mensagens_chat.sql +
+// migrations/add_entregador_chat.sql. Loja continua sendo o caso
+// original; entregador foi adicionado depois (chat "Parceiro Let's Go",
+// 2026-09-08) reaproveitando a mesma tabela — loja_id/entregador_id são
+// mutuamente exclusivos por linha (CHECK constraint), nunca os dois juntos.
+let _chatLojaAtual=null; // loja_id da conversa aberta agora (perfil loja: sempre a própria loja; perfil adm/suporte: a selecionada na lista, se for conversa de loja)
+let _chatEntregadorAtual=null; // idem, mas pra conversa de entregador (perfil adm/suporte só)
 let _chatPollInterval=null; // poll de ~10s só enquanto uma conversa está aberta (painel do admin OU modal da loja)
 let _chatBadgeInterval=null; // poll mais espaçado (~20s) só pro badge de não lidas, independente de ter conversa aberta
 let _chatNaoLidasLojaCount=0;
 let _chatNaoLidasAdminCount=0;
 let _chatConversasCache=[];
 let _chatMensagensCache=[];
+let _chatMsgEntregadorNotificadas=new Set(); // ids já alertados com som — mesmo padrão de idsProntoNotificados, evita tocar de novo a cada poll de 20s enquanto a msg continuar não lida
+const MOTIVO_SAIR_PEDIDO='Preciso sair do pedido'; // motivo de prioridade alta (item 5) — motoboy travado num pedido, precisa de realocação rápida
 
 // Núcleo matemático compartilhado: faixa[retorno] + pd + gorjeta
 function _calcValorFaixa(faixas,km,temRetorno,pd,gorjeta,kmAdicionalValor){
@@ -450,16 +457,29 @@ function _iniciarChatBadgeLoja(){
   _chatBadgeInterval=setInterval(_carregarBadgeChatLoja,20000);
 }
 // Mesma ideia de _carregarBadgeChatLoja, mas pro lado admin/suporte: conta
-// não lidas de TODAS as lojas (sem filtro de loja_id), já que aqui o botão
-// flutuante único cobre a caixa de entrada inteira, não uma conversa só.
+// não lidas de TODAS as lojas E entregadores (sem filtro de loja_id/
+// entregador_id), já que aqui o botão flutuante único cobre a caixa de
+// entrada inteira, não uma conversa só.
 async function _carregarBadgeChatAdmin(){
   if(currentPerfil==='loja')return;
-  const rows=await db('mensagens_chat','GET',null,'?remetente_perfil=eq.loja&lida=eq.false&select=id').catch(()=>[]);
-  _chatNaoLidasAdminCount=Array.isArray(rows)?rows.length:0;
+  const rows=await db('mensagens_chat','GET',null,'?remetente_perfil=in.(loja,entregador)&lida=eq.false&select=id,remetente_perfil').catch(()=>[]);
+  const lista=Array.isArray(rows)?rows:[];
+  _chatNaoLidasAdminCount=lista.length;
   const badge=document.getElementById('chat-badge-admin');
-  if(!badge)return;
-  if(_chatNaoLidasAdminCount>0){badge.textContent=_chatNaoLidasAdminCount>9?'9+':_chatNaoLidasAdminCount;badge.style.display='flex';}
-  else badge.style.display='none';
+  if(badge){
+    if(_chatNaoLidasAdminCount>0){badge.textContent=_chatNaoLidasAdminCount>9?'9+':_chatNaoLidasAdminCount;badge.style.display='flex';}
+    else badge.style.display='none';
+  }
+  // Alerta sonoro pra mensagem nova de ENTREGADOR (item 7 do chat Parceiro
+  // Let's Go) — reaproveita tocarSomPronto(), o mesmo som já usado pra
+  // "pedido pronto". Mesmo padrão de idsProntoNotificados: só toca uma vez
+  // por mensagem, não a cada poll de 20s enquanto ela continuar não lida.
+  lista.filter(m=>m.remetente_perfil==='entregador').forEach(m=>{
+    if(!_chatMsgEntregadorNotificadas.has(m.id)){
+      _chatMsgEntregadorNotificadas.add(m.id);
+      tocarSomPronto();
+    }
+  });
 }
 function _iniciarChatBadgeAdmin(){
   if(currentPerfil==='loja')return;
@@ -469,8 +489,16 @@ function _iniciarChatBadgeAdmin(){
 }
 function _bolhaChatHtml(m){
   const souLoja=currentPerfil==='loja';
-  const minhaMsg=souLoja?m.remetente_perfil==='loja':m.remetente_perfil!=='loja';
-  const nomeExibido=m.remetente_perfil==='loja'?(m.remetente_nome||'Loja'):(m.remetente_nome||(m.remetente_perfil==='suporte'?'Suporte':'Admin'));
+  // Generalizado pra 3 remetente_perfil possíveis agora (loja/entregador/
+  // adm/suporte) — achado real na auditoria: a versão antiga
+  // ('!==loja' = "é minha") tratava mensagem do PRÓPRIO entregador como se
+  // fosse do admin (bolha do lado errado) assim que 'entregador' virou um
+  // valor possível. Só quem vê esse chat é loja (sua própria conversa) ou
+  // adm/suporte (qualquer conversa) — entregador nunca abre essa tela.
+  const minhaMsg=souLoja?m.remetente_perfil==='loja':(m.remetente_perfil==='adm'||m.remetente_perfil==='suporte');
+  const nomeExibido=m.remetente_perfil==='loja'?(m.remetente_nome||'Loja')
+    :m.remetente_perfil==='entregador'?(m.remetente_nome||'Entregador')
+    :(m.remetente_nome||(m.remetente_perfil==='suporte'?'Suporte':'Admin'));
   const textoEscapado=(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return`<div style="align-self:${minhaMsg?'flex-end':'flex-start'};max-width:75%;display:flex;flex-direction:column">
     ${!minhaMsg?`<div style="font-size:10px;color:var(--text3);margin-bottom:2px;padding:0 4px">${nomeExibido}</div>`:''}
@@ -485,18 +513,25 @@ function _renderMensagensChat(){
   el.innerHTML=_chatMensagensCache.map(_bolhaChatHtml).join('');
   el.scrollTop=el.scrollHeight;
 }
-// Busca a conversa inteira de _chatLojaAtual, renderiza, e marca como lida
-// o lado oposto ao perfil de quem está vendo agora (loja lê o que adm/
-// suporte escreveram, e vice-versa — adm e suporte compartilham o mesmo
-// "lado" da conversa, então uma mensagem da loja fica lida assim que
-// QUALQUER um dos dois abrir, não precisa dos dois abrirem separado).
+// Busca a conversa inteira (loja OU entregador — _chatLojaAtual e
+// _chatEntregadorAtual são mutuamente exclusivos), renderiza, e marca como
+// lida o lado oposto ao perfil de quem está vendo agora (o participante lê
+// o que adm/suporte escreveram, e vice-versa — adm e suporte compartilham
+// o mesmo "lado" da conversa, então uma mensagem do participante fica lida
+// assim que QUALQUER um dos dois abrir, não precisa dos dois abrirem
+// separado). Generalizado (achado real na auditoria): a versão antiga
+// comparava só contra 'loja' — pra uma conversa de entregador vista pelo
+// admin, isso nunca batia (remetente_perfil nunca é 'loja' ali), e a
+// mensagem do entregador nunca era marcada como lida.
 async function _carregarMensagensChat(){
-  if(!_chatLojaAtual)return;
-  const rows=await db('mensagens_chat','GET',null,`?loja_id=eq.${_chatLojaAtual}&order=created_at.asc`).catch(()=>[]);
+  const filtro=_chatLojaAtual?`loja_id=eq.${_chatLojaAtual}`:_chatEntregadorAtual?`entregador_id=eq.${_chatEntregadorAtual}`:null;
+  if(!filtro)return;
+  const rows=await db('mensagens_chat','GET',null,`?${filtro}&order=created_at.asc`).catch(()=>[]);
   _chatMensagensCache=Array.isArray(rows)?rows:[];
   _renderMensagensChat();
   const souLoja=currentPerfil==='loja';
-  const idsNaoLidas=_chatMensagensCache.filter(m=>(souLoja?m.remetente_perfil!=='loja':m.remetente_perfil==='loja')&&!m.lida).map(m=>m.id);
+  const perfilContraparte=_chatLojaAtual?'loja':'entregador';
+  const idsNaoLidas=_chatMensagensCache.filter(m=>(souLoja?m.remetente_perfil!==perfilContraparte:m.remetente_perfil===perfilContraparte)&&!m.lida).map(m=>m.id);
   if(idsNaoLidas.length){
     await dbPatch('mensagens_chat',{lida:true},`?id=in.(${idsNaoLidas.join(',')})`);
     if(souLoja)_carregarBadgeChatLoja();
@@ -505,9 +540,10 @@ async function _carregarMensagensChat(){
 async function _enviarMensagemChat(){
   const input=document.getElementById('chat-loja-input')||document.getElementById('chat-admin-input');
   const texto=(input?.value||'').trim();
-  if(!texto||!_chatLojaAtual)return;
+  if(!texto||(!_chatLojaAtual&&!_chatEntregadorAtual))return;
   input.value='';
-  const payload={loja_id:_chatLojaAtual,remetente_perfil:currentPerfil,remetente_usuario_id:currentUser?.id||null,remetente_nome:currentUser?.nome||null,texto,lida:false};
+  const payload={remetente_perfil:currentPerfil,remetente_usuario_id:currentUser?.id||null,remetente_nome:currentUser?.nome||null,texto,lida:false};
+  if(_chatLojaAtual)payload.loja_id=_chatLojaAtual;else payload.entregador_id=_chatEntregadorAtual;
   const res=await db('mensagens_chat','POST',payload);
   if(!res||res.length===0){showNotif('❌ Erro ao enviar','Não foi possível enviar a mensagem','var(--red)');input.value=texto;return;}
   await _carregarMensagensChat();
@@ -529,7 +565,7 @@ function _abrirChatLoja(){
   </div>`;
   modal.classList.add('open');
   modal.onclick=e=>{if(e.target===modal)_fecharChatLoja();};
-  _chatLojaAtual=currentUser.loja_id;
+  _chatLojaAtual=currentUser.loja_id;_chatEntregadorAtual=null;
   _carregarMensagensChat();
   clearInterval(_chatPollInterval);
   _chatPollInterval=setInterval(_carregarMensagensChat,10000);
@@ -551,13 +587,13 @@ async function _abrirChatAdmin(){
     <div class="chat-admin-layout" style="flex:1;display:flex;gap:14px;min-height:0;padding:0 16px 16px">
       <div style="width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:10px" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="chat-painel-conversa">
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione uma loja pra ver a conversa</div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione uma conversa</div>
       </div>
     </div>
   </div>`;
   modal.classList.add('open');
   modal.onclick=e=>{if(e.target===modal)_fecharChatAdmin();};
-  _chatLojaAtual=null;
+  _chatLojaAtual=null;_chatEntregadorAtual=null;
   clearInterval(_chatPollInterval);
   await _carregarListaConversasAdmin();
   _chatPollInterval=setInterval(_carregarListaConversasAdmin,10000);
@@ -566,34 +602,59 @@ function _fecharChatAdmin(){
   document.getElementById('modal-chat-admin')?.classList.remove('open');
   clearInterval(_chatPollInterval);_chatPollInterval=null;
 }
+// Lista única, misturada (loja + entregador), ordenada por mensagem mais
+// recente — mesmo padrão visual/estrutural de antes (só loja), decisão
+// técnica de manter consistência em vez de criar abas (chat Parceiro
+// Let's Go, 2026-09-08). Cada conversa é identificada por
+// "loja:<id>"/"ent:<id>" (nunca colide, tipos diferentes de UUID) —
+// evita juntar por engano uma loja e um entregador com o mesmo id.
 async function _carregarListaConversasAdmin(){
   const el=document.getElementById('chat-lista-conversas');if(!el)return;
-  const rows=await db('mensagens_chat','GET',null,'?select=*,lojas(nome)&order=created_at.desc').catch(()=>[]);
-  const porLoja=new Map();
+  const rows=await db('mensagens_chat','GET',null,'?select=*,lojas(nome),entregadores(nome)&order=created_at.desc').catch(()=>[]);
+  const porConversa=new Map();
   (Array.isArray(rows)?rows:[]).forEach(m=>{
-    if(!porLoja.has(m.loja_id))porLoja.set(m.loja_id,{loja_id:m.loja_id,lojaNome:m.lojas?.nome||'—',ultima:m,naoLidas:0});
-    if(m.remetente_perfil==='loja'&&!m.lida)porLoja.get(m.loja_id).naoLidas++;
+    const tipo=m.loja_id?'loja':'entregador';
+    const idParticipante=m.loja_id||m.entregador_id;
+    const chave=`${tipo}:${idParticipante}`;
+    if(!porConversa.has(chave))porConversa.set(chave,{
+      tipo,id:idParticipante,
+      nome:tipo==='loja'?(m.lojas?.nome||'—'):(m.entregadores?.nome||'—'),
+      ultima:m,naoLidas:0,urgente:false,
+    });
+    const c=porConversa.get(chave);
+    if(m.remetente_perfil===tipo&&!m.lida){
+      c.naoLidas++;
+      // Item 5: "Preciso sair do pedido" precisa de resposta rápida
+      // (motoboy travado, precisa de realocação) — destaca a conversa
+      // inteira enquanto essa mensagem específica continuar não lida.
+      if(tipo==='entregador'&&m.motivo===MOTIVO_SAIR_PEDIDO)c.urgente=true;
+    }
   });
-  _chatConversasCache=[...porLoja.values()].sort((a,b)=>new Date(b.ultima.created_at)-new Date(a.ultima.created_at));
+  _chatConversasCache=[...porConversa.values()].sort((a,b)=>new Date(b.ultima.created_at)-new Date(a.ultima.created_at));
   _chatNaoLidasAdminCount=_chatConversasCache.reduce((s,c)=>s+c.naoLidas,0);
   renderNavSidebar(_navAtivo);
   if(!_chatConversasCache.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma conversa ainda</div>';return;}
-  el.innerHTML=_chatConversasCache.map(c=>`<div onclick="_abrirConversaAdmin('${c.loja_id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:${_chatLojaAtual===c.loja_id?'var(--surface2)':'transparent'}">
+  el.innerHTML=_chatConversasCache.map(c=>{
+    const selecionada=(c.tipo==='loja'?_chatLojaAtual===c.id:_chatEntregadorAtual===c.id);
+    return`<div onclick="_abrirConversaAdmin('${c.tipo}','${c.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:${selecionada?'var(--surface2)':'transparent'};${c.urgente?'border-left:3px solid #ef4444':''}">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-      <span style="font-weight:600;font-size:13px;color:var(--text)">🏪 ${c.lojaNome}</span>
-      ${c.naoLidas>0?`<span style="background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${c.naoLidas}</span>`:''}
+      <span style="font-weight:600;font-size:13px;color:var(--text)">${c.tipo==='loja'?'🏪':'🛵'} ${c.nome}</span>
+      ${c.naoLidas>0?`<span style="background:${c.urgente?'#ef4444':'var(--accent)'};color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${c.naoLidas}</span>`:''}
     </div>
+    ${c.urgente?`<div style="font-size:10px;color:#ef4444;font-weight:700;margin-top:3px">🚨 QUER SAIR DO PEDIDO — responder rápido</div>`:''}
     <div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(c.ultima.texto||'').substring(0,60)}</div>
-  </div>`).join('');
-  if(_chatLojaAtual&&document.getElementById('chat-admin-mensagens'))_carregarMensagensChat();
+  </div>`;
+  }).join('');
+  if((_chatLojaAtual||_chatEntregadorAtual)&&document.getElementById('chat-admin-mensagens'))_carregarMensagensChat();
 }
-function _abrirConversaAdmin(lojaId){
-  _chatLojaAtual=lojaId;
-  const conversa=_chatConversasCache.find(c=>c.loja_id===lojaId);
+function _abrirConversaAdmin(tipo,id){
+  if(tipo==='loja'){_chatLojaAtual=id;_chatEntregadorAtual=null;}
+  else{_chatEntregadorAtual=id;_chatLojaAtual=null;}
+  const conversa=_chatConversasCache.find(c=>c.tipo===tipo&&c.id===id);
   const painel=document.getElementById('chat-painel-conversa');
   if(!painel)return;
   painel.innerHTML=`
-    <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);flex-shrink:0">🏪 ${conversa?.lojaNome||''}</div>
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);flex-shrink:0">${tipo==='loja'?'🏪':'🛵'} ${conversa?.nome||''}</div>
     <div id="chat-admin-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
       <input id="chat-admin-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
