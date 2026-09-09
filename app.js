@@ -4848,7 +4848,6 @@ async function _renderEntregadoresTab(el){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar nome ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
       <div style="display:flex;gap:8px">
-        ${_entFiltro!=='em_analise'?`<button class="btn-sm" onclick="_toggleTodosDisponivel(true)" style="background:#10B98120;color:#10B981;border:1px solid #10B98155;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🟢 Ligar todos</button><button class="btn-sm" onclick="_toggleTodosDisponivel(false)" style="background:#6B728020;color:#6B7280;border:1px solid #6B728055;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">⚫ Desligar todos</button>`:''}
         <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
         <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
       </div>
@@ -4958,54 +4957,6 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
   showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
 }
 
-// Toggle em massa — afeta despacho real (entregador offline não recebe
-// pedido), por isso: (1) confirmação explícita com a contagem de quem
-// realmente muda, (2) PATCH individual por entregador (não um único PATCH
-// em lote) pra poder reportar exatamente quem falhou, e (3) o badge de cada
-// linha só reflete "Online"/"Offline" depois da resposta do banco — nunca
-// otimista. Escopo é a lista filtrada/buscada na tela no momento (mesma
-// função usada pelo tbody), não a base inteira de entregadores.
-async function _toggleTodosDisponivel(ligar){
-  const alvo=_entListaFiltrada().filter(e=>!!e.disponivel!==ligar);
-  if(!alvo.length){showNotif(ligar?'Todos já estão online':'Todos já estão offline','','var(--text3)');return;}
-  const acao=ligar?'ligar':'desligar';
-  const sujeito=ligar?'offline':'disponíveis';
-  if(!confirm(`Tem certeza que quer ${acao} TODOS os ${alvo.length} entregadores ${sujeito} agora?`))return;
-
-  alvo.forEach(e=>{
-    const badge=document.getElementById('badge-disp-'+e.id);
-    if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
-  });
-
-  const resultados=await Promise.allSettled(alvo.map(e=>dbPatch('entregadores',{disponivel:ligar,updated_at:_agoraBrasilia()},`?id=eq.${e.id}`)));
-
-  const falhas=[];
-  resultados.forEach((r,i)=>{
-    const e=alvo[i];
-    const ok=r.status==='fulfilled'&&r.value!==null;
-    const badge=document.getElementById('badge-disp-'+e.id);
-    // Reflete o estado REAL gravado: só marca "ligado" no cache/badge se o
-    // PATCH realmente confirmou — em falha, volta pro valor anterior (não
-    // assume sucesso silencioso).
-    const valorReal=ok?ligar:e.disponivel;
-    if(!ok)falhas.push(e.nome||e.id?.substring(0,8)||'—');
-    const entCache=_entDataCache.find(x=>x.id===e.id);
-    if(entCache)entCache.disponivel=valorReal;
-    if(badge){
-      badge.textContent=valorReal?'Online':'Offline';
-      badge.style.background=valorReal?'#10B981':'#6B7280';
-      badge.style.cursor='pointer';
-      badge.onclick=()=>_toggleDisponivelEntregador(e.id,valorReal);
-    }
-  });
-
-  const sucesso=alvo.length-falhas.length;
-  if(!falhas.length){
-    showNotif(ligar?`🟢 ${sucesso} entregador(es) ligado(s)`:`⚫ ${sucesso} entregador(es) desligado(s)`,'','var(--green)');
-  }else{
-    showNotif(`⚠️ ${sucesso} de ${alvo.length} atualizados`,`Falhou pra: ${falhas.join(', ')}`,'var(--yellow)');
-  }
-}
 
 async function _toggleStatusEntregador(id, statusAtual){
   const bloqueando=statusAtual!=='bloqueado';
