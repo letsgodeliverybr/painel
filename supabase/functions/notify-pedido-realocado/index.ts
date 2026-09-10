@@ -2,14 +2,23 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { create, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
-// Notifica um único entregador quando um pedido é realocado manualmente
-// pra ele (fn_intercept_realocacao_manual, trigger BEFORE UPDATE em
-// pedidos). Achado em auditoria (NOTIFICACOES_MAPA.md, 2026-09-03): esse
-// caminho não passa pelo despacho-engine (é 100% via trigger SQL direto,
-// admin reatribuindo manualmente) — a única fonte de notificação que
-// existia (o trigger tg_despacho_fila_notify, disparando pra notify-
-// novo-pedido) foi removida junto com a correção da triplicação de push,
-// sem perceber que era a fonte exclusiva desse caminho específico.
+// Notifica entregador(es) quando um pedido é realocado manualmente
+// (fn_intercept_realocacao_manual, trigger BEFORE UPDATE em pedidos).
+// Achado em auditoria (NOTIFICACOES_MAPA.md, 2026-09-03): esse caminho não
+// passa pelo despacho-engine (é 100% via trigger SQL direto, admin
+// reatribuindo manualmente) — a única fonte de notificação que existia (o
+// trigger tg_despacho_fila_notify, disparando pra notify-novo-pedido) foi
+// removida junto com a correção da triplicação de push, sem perceber que
+// era a fonte exclusiva desse caminho específico.
+//
+// Campo `papel` (2026-09-10, bug real corrigido): 'novo' (default,
+// compatível com chamadas antigas sem esse campo) = quem GANHOU o pedido,
+// mesmo tipo 'novo_pedido' de sempre. 'antigo' = quem PERDEU — antes
+// ninguém avisava esse lado, o entregador continuava "em rota" na visão
+// dele enquanto o pedido já tinha voltado a 'pronto' no banco (sintoma:
+// pedido com entregador ativo aparecendo em "Disponíveis" pros outros).
+// tipo 'pedido_realocado' dedicado, NÃO reaproveita 'novo_pedido' — não é
+// uma oferta pra aceitar, é um aviso de que ele já não é mais dele.
 //
 // Data-only de propósito, MESMO motivo do despacho-engine: um payload com
 // bloco `notification` é renderizado direto pelo Android em background,
@@ -69,10 +78,12 @@ serve(async (req) => {
   }
 
   try {
-    const { entregador_id, pedido_id, numero } = await req.json();
+    const { entregador_id, pedido_id, numero, papel } = await req.json();
     if (!entregador_id || !pedido_id) {
       return new Response(JSON.stringify({ ok: false, motivo: "entregador_id/pedido_id obrigatórios" }), { status: 400 });
     }
+    // papel omitido = chamada antiga, comportamento igual de sempre (quem ganhou).
+    const tipo = papel === "antigo" ? "pedido_realocado" : "novo_pedido";
 
     const { data: ent, error: entErr } = await supabase
       .from("entregadores").select("fcm_token").eq("id", entregador_id).single();
@@ -88,7 +99,7 @@ serve(async (req) => {
       body: JSON.stringify({
         message: {
           token: ent.fcm_token,
-          data: { tipo: "novo_pedido", pedido_id: String(pedido_id), numero: String(numero ?? "") },
+          data: { tipo, pedido_id: String(pedido_id), numero: String(numero ?? "") },
           android: { priority: "HIGH" },
         },
       }),

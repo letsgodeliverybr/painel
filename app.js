@@ -4030,12 +4030,36 @@ async function abrirAlocarMotoboy(pedidoId){
     :motoboysNoRaio.length===0
     ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📍</div>Nenhum entregador disponível dentro de ${raioKm}km</div>`
     :motoboysNoRaio.map(m=>`<div onclick="alocarMotoboy('${pedidoId}','${m.id}','${(m.nome||'').replace(/'/g,"\\'")}',this)" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="width:36px;height:36px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🛵</div><div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px">${m.nome||'—'}</div><div style="font-size:11px;color:var(--text2)">${m.telefone||'Online'}</div></div>${m._dist!=null?`<div style="font-size:12px;color:var(--text2);font-weight:600;white-space:nowrap">📍 ${m._dist.toFixed(1)} km</div>`:''}<div style="background:#22c55e20;color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">Online</div></div>`).join('');
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">🛵 Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div><div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
+  // Aviso de realocação (2026-09-10, bug real corrigido): pedido já tem um
+  // entregador ATIVO (status != 'pronto') — escolher alguém aqui vai
+  // acionar fn_intercept_realocacao_manual (trigger no banco), que reseta
+  // o pedido pra 'pronto'+sem entregador (some da mão do antigo, some
+  // "disponível" de novo pros dois lados) e notifica só o NOVO entregador.
+  // O antigo continua achando que está com o pedido até tentar avançar e
+  // falhar. Avisa aqui ANTES de escolher — o confirm() real (a trava de
+  // verdade) fica em alocarMotoboy(), esse banner é só contexto visual.
+  const temEntregadorAtivo=(p.motoboy_id||p.entregador_id)&&p.status!=='pronto';
+  const avisoRealocacao=temEntregadorAtivo
+    ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse pedido já tem um entregador em andamento.</b> Escolher outro abaixo vai desalocar o entregador atual (ele será avisado por notificação) e reabrir o pedido como disponível pro novo.</div>`
+    :'';
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">🛵 Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
   modal.classList.add('open');
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
-  el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
   const _p=allPedidos.find(x=>x.id===pedidoId);
+  // Trava real (2026-09-10, bug real corrigido) — o banner em
+  // abrirAlocarMotoboy() é só contexto visual, essa confirmação é o que
+  // de fato impede o clique acidental: pedido já tem entregador ATIVO
+  // (status != 'pronto') e é um entregador DIFERENTE do que já está —
+  // isso dispara fn_intercept_realocacao_manual (trigger no banco), que
+  // desaloca o atual e reabre o pedido como 'pronto'. Sem essa
+  // confirmação, um clique no botão errado da lista silenciosamente tira
+  // o pedido de quem já está em rota.
+  const jaTinha=_p?.motoboy_id||_p?.entregador_id;
+  if(_p&&jaTinha&&jaTinha!==motoboyId&&_p.status!=='pronto'){
+    if(!confirm(`Esse pedido já está com um entregador em andamento (status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} agora vai DESALOCAR o entregador atual e reabrir o pedido como disponível. O entregador atual será avisado por notificação, mas o pedido sai da rota dele imediatamente.\n\nConfirma a realocação?`))return;
+  }
+  el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
   const taxaMotoboy=_p?(_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0)):0;
   const _patchAgora=_agoraBrasilia();
   const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:_patchAgora,updated_at:_patchAgora,taxa_entrega_motoboy:taxaMotoboy};
