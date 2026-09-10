@@ -1967,12 +1967,14 @@ async function abrirModal(id){
     _npRetornoAtivo=false;
     setTimeout(async()=>{
       const modalBody=document.querySelector('#modal-pedido .modal-body');
-      if(!modalBody||document.getElementById('np-loja-id')){
-        const _rb=document.getElementById('np-retorno-btn');const _rl=document.getElementById('np-retorno-lbl');
-        if(_rb)_rb.style.background='#3a3a3a';if(_rl){_rl.textContent='Sem retorno';_rl.style.color='#888888';}
-        if(_npMap)_npMap.invalidateSize();
-        return;
-      }
+      // Bug real corrigido aqui (2026-09-10): antes, se o form já tinha
+      // sido montado uma vez (document.getElementById('np-loja-id') já
+      // existia — fecharModal() nunca limpa o DOM, só esconde via CSS),
+      // essa função retornava cedo sem reconstruir NADA — complemento,
+      // agendamento etc. do pedido anterior ficavam intactos na próxima
+      // abertura. Agora SEMPRE reconstrói o form do zero, toda vez que o
+      // modal abre — cada abertura é um estado novo, sem resíduo.
+      if(!modalBody)return;
       const isAdm=currentPerfil==='adm'||currentPerfil==='suporte';
       const lojas=isAdm?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
       _npLojasData=lojas;
@@ -2045,10 +2047,17 @@ async function abrirModal(id){
       // escondia da loja). isAdm continua controlando só o bloco de busca
       // de loja acima (loja só pode criar pedido pra própria loja), nada
       // a ver com o mapa.
-      if(!_npMap){
-        _npMap=L.map('np-map',{zoomControl:true}).setView([-21.1775,-47.8103],13);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_npMap);
-      }
+      //
+      // SEMPRE recria (2026-09-10, parte da correção do form que vinha
+      // preenchido com resíduo do pedido anterior): o innerHTML acima já
+      // destruiu o <div id="np-map"> antigo e criou um novo — reaproveitar
+      // a instância antiga do Leaflet (if(!_npMap)) deixaria ela presa a
+      // um container morto (mapa em branco/quebrado a partir da 2ª
+      // abertura). _npMap?.remove() limpa a instância antiga direito
+      // antes de criar a nova, no container novo.
+      _npMap?.remove();
+      _npMap=L.map('np-map',{zoomControl:true}).setView([-21.1775,-47.8103],13);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_npMap);
       // Para perfil loja: seta lat/lng no hidden np-loja-id para calcularTaxaAuto funcionar
       if(!isAdm&&currentUser?.loja_id){
         const lojaLocal=allLojas.find(l=>l.id===currentUser.loja_id);
