@@ -327,6 +327,22 @@ const _fimDiaBrasilia=(s)=>new Date(s+'T23:59:59.999-03:00').toISOString();
 // devolver, pra comparação de string continuar válida nos dois formatos.
 const _inicioSemanaAtualBrasilia=()=>{const _h=_dataHojeBrasilia();const [_y,_m,_d]=_h.split('-').map(Number);const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();const _diff=_dow===0?6:_dow-1;return `${new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10)}T00:00:00`;};
 const _normDataLocal=(s)=>String(s||'').replace(' ','T');
+// Epoch (ms) da última segunda-feira 03:30 Brasília que já passou — usado
+// pro logout forçado semanal (força novo login toda segunda de madrugada,
+// ver _checarLogoutSemanal). Diferente de _inicioSemanaAtualBrasilia
+// (que gera string "sem fuso" pra comparar com pedidos.created_at), aqui
+// precisa de um epoch real (-03:00 explícito) porque compara contra
+// Date.now(), não contra coluna de banco.
+const _ultimaSegunda0330BrasiliaMs=()=>{
+  const _h=_dataHojeBrasilia();
+  const [_y,_m,_d]=_h.split('-').map(Number);
+  const _dow=new Date(Date.UTC(_y,_m-1,_d)).getUTCDay();
+  const _diff=_dow===0?6:_dow-1;
+  const _segData=new Date(Date.UTC(_y,_m-1,_d-_diff)).toISOString().slice(0,10);
+  let _corte=new Date(`${_segData}T03:30:00-03:00`).getTime();
+  if(_corte>Date.now())_corte-=7*24*60*60*1000; // segunda desta semana ainda não chegou → usa a da semana passada
+  return _corte;
+};
 
 // ── FATURAS — VENCIMENTO/JUROS/BLOQUEIO ──
 // Vencimento de uma cobrança (fatura) = quarta-feira da semana de geração
@@ -3042,6 +3058,7 @@ async function fazerLogin(){
   currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
   sessionStorage.setItem('lg_session',JSON.stringify({access_token:session.access_token,refresh_token:session.refresh_token,expires_at:session.expires_at}));
+  sessionStorage.setItem('lg_login_em',String(Date.now()));
   await logAcao('login',{email,perfil});
   document.getElementById('login-screen').style.display='none';
   const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
@@ -3062,12 +3079,29 @@ function logout(){
     const s=JSON.parse(sessionStorage.getItem('lg_session')||'null');
     if(s?.access_token)fetch(`${SB_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${s.access_token}`}}).catch(()=>{});
   }catch{}
-  clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
+  clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');sessionStorage.removeItem('lg_login_em');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
   document.getElementById('login-email').value='';document.getElementById('login-senha').value='';
 }
+// Logout forçado semanal (toda segunda 03:30 Brasília) — não existe sessão
+// de verdade no servidor pra invalidar (login de produção nem usa Auth
+// real, ver index.html/fazerLogin override), então a única forma de
+// aplicar isso é no cliente: uma aba aberta continuamente (sem F5) mantém
+// currentUser só em memória, por isso essa checagem roda num interval em
+// vez de só no carregamento da página. lg_login_em ausente (sessão de
+// antes desse recurso existir) conta como "expirado" de propósito — todo
+// mundo desloga uma vez no rollout, esperado.
+function _checarLogoutSemanal(){
+  if(!currentUser)return;
+  const loginEm=Number(sessionStorage.getItem('lg_login_em'))||0;
+  if(loginEm<_ultimaSegunda0330BrasiliaMs()){
+    showNotif('Sessão expirada','Faça login novamente para começar a semana.','var(--yellow)');
+    logout();
+  }
+}
+setInterval(_checarLogoutSemanal,60000);
 
 function renderTabs(){
   const tabs=currentPerfil==='adm'?tabsAdm:currentPerfil==='loja'?tabsLojaAdm:tabsSuporte;
@@ -10679,6 +10713,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const r=await fetch(`${SB_URL}/auth/v1/user`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${access_token}`}});
     if(!r.ok){sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');return;}
     const user=JSON.parse(sessao);currentUser=user;currentPerfil=user.perfil;
+    _checarLogoutSemanal();if(!currentUser)return; // sessão de antes da última segunda 03:30 — não restaura, pede login de novo
     document.getElementById('login-screen').style.display='none';
     const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
     document.getElementById('user-nome').textContent=currentUser.nome;
