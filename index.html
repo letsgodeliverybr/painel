@@ -602,7 +602,6 @@ window.fazerLogin = async function(){
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail ou senha incorretos.';errEl.style.display='block';return;}
   currentUser=usuarios[0];currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
-  sessionStorage.setItem('lg_login_em',String(Date.now()));
   await logAcao('login',{email,perfil:currentPerfil});
   document.getElementById('login-screen').style.display='none';
   const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
