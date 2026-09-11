@@ -2995,7 +2995,7 @@ function abrirInfoPedido(pedidoId){
             ${motoboy.telefone?`<div style="font-size:12px;color:var(--text2)"><a href="https://wa.me/55${motoboy.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600">${motoboy.telefone}</a></div>`:''}
             <div style="display:flex;gap:12px;margin-top:4px;font-size:12px;color:var(--text3)">
               ${currentPerfil!=='suporte'&&p.distancia_km?`<span>📏 ${p.distancia_km}km</span>`:''}
-              ${currentPerfil!=='suporte'&&txMoto!==null?`<span style="color:#10b981;font-weight:700">R$ ${txMoto.toFixed(2)}</span>`:''}
+              ${currentPerfil==='adm'&&txMoto!==null?`<span style="color:#10b981;font-weight:700">R$ ${txMoto.toFixed(2)}</span>`:''}
               ${p.gorjeta>0?`<span style="color:#f59e0b">🎁 R$ ${parseFloat(p.gorjeta).toFixed(2)}</span>`:''}
             </div>
           </div>
@@ -3853,7 +3853,7 @@ function abrirEditarPedido(pedidoId){
   </div>
 </div>
 <div class="form-row">
-  <div class="fi"><label>Taxa Motoboy (R$)</label><input type="number" id="ep-taxa-motoboy" value="${p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy).toFixed(2):''}" placeholder="Auto" step="0.01"/></div>
+  ${currentPerfil==='adm'?`<div class="fi"><label>Taxa Motoboy (R$)</label><input type="number" id="ep-taxa-motoboy" value="${p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy).toFixed(2):''}" placeholder="Auto" step="0.01"/></div>`:''}
   <div class="fi"><label>Preço Dinâmico (R$)</label><input type="number" id="ep-preco-dinamico" value="${parseFloat(p.preco_dinamico)||''}" placeholder="0.00" step="0.01"/></div>
 </div>
 ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R$)</label><input type="number" id="ep-taxa-extra" value="${parseFloat(p.taxa_extra||0).toFixed(2)}" step="0.01"/></div><div class="fi"></div></div>`:''}
@@ -3955,7 +3955,6 @@ async function salvarEdicaoPedido(pedidoId){
     taxa_entrega:parseFloat(document.getElementById('ep-taxa')?.value)||0,
     gorjeta:parseFloat(document.getElementById('ep-gorjeta')?.value)||0,
     com_retorno:_epRetornoAtivo,
-    taxa_motoboy:_epTaxaMotoEl?.value!==''?parseFloat(_epTaxaMotoEl.value):null,
     preco_dinamico:parseFloat(_epPdEl?.value)||0,
     numero:document.getElementById('ep-numero')?.value||'',
     descricao:document.getElementById('ep-descricao')?.value||'',
@@ -3977,6 +3976,13 @@ async function salvarEdicaoPedido(pedidoId){
     updated_at:_agoraBrasilia(),
   };
   if(_epTaxaExtraEl)update.taxa_extra=parseFloat(_epTaxaExtraEl.value)||0;
+  // ep-taxa-motoboy só existe no DOM pro perfil adm (campo oculto pra
+  // loja/suporte — vaza quanto o entregador recebe). Omite a chave do
+  // update inteira quando o campo não existe, em vez de mandar null —
+  // um PATCH sem a chave não toca o valor já salvo; mandar null aqui
+  // apagaria silenciosamente o taxa_motoboy real toda vez que loja
+  // editasse qualquer outro campo do pedido.
+  if(_epTaxaMotoEl)update.taxa_motoboy=_epTaxaMotoEl.value!==''?parseFloat(_epTaxaMotoEl.value):null;
   if(_epGeo?.distKm){update.latitude=_epGeo.lat;update.longitude=_epGeo.lng;update.distancia_km=_epGeo.distKm;}
   if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
