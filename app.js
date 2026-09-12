@@ -2560,6 +2560,7 @@ async function _estornarDebitoEntrega(pedido){
 }
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
   // era possível marcar "pronto" (e o pedido seguir despacho normal,
   // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
@@ -2571,7 +2572,15 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
     showNotif('⏳ Pagamento pendente','Confirme o pagamento em "Aguardando Pagamento" antes de marcar como pronto.','var(--yellow)');
     return;
   }
-  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  // Trava real (2026-09-12, bug real corrigido — pedido #5317): mesmo
+  // problema, pra agendamento — marcar "pronto" manualmente ANTES da hora
+  // pulava o _runScheduler() (único responsável por agendado→pronto, só
+  // quando agendado_para já passou) e disparava notificação de motoboy
+  // cedo demais, via despacho-engine (que não sabe de agendamento nenhum).
+  if(statusAtual==='agendado'&&p?.agendado_para&&_parseUtc(p.agendado_para).getTime()>Date.now()){
+    showNotif('⏰ Agendado',`Esse pedido libera automaticamente às ${formatarAgendado(p.agendado_para)}.`,'var(--yellow)');
+    return;
+  }
   const tinhaMotoboy=!!(p?.motoboy_id||p?.entregador_id);
   if(tinhaMotoboy&&!confirm(`Desalocar o motoboy do pedido #${p?.numero||pedidoId.substring(0,6)} e voltar a ficar disponível para novo aceite?`))return;
   const btn=document.getElementById('btn-pronto-'+pedidoId);
@@ -3614,6 +3623,12 @@ function renderPedidosLista(){
     }).join('');
     const cards=grupo.pedidos.map(p=>{
       const horaC=p.created_at?formatarHora(p.created_at):'—';
+      // Bug real corrigido 2026-09-12: pedido agendado usava created_at
+      // (hora de criação) pra calcular "Saída até", sem relação nenhuma
+      // com o horário real do compromisso — pra agendado, o prazo É o
+      // próprio agendado_para, sem o +15min (esse cálculo só faz sentido
+      // pra pedido normal, onde o "prazo" nasce do momento da criação).
+      const horaSaidaAte=p.agendado_para?formatarHora(p.agendado_para):_saidaAte(p.created_at);
       const sk=getStatusKey(p),isExpanded=selectedPedidoId===p.id,isSel=_pedidosSelecionados.has(p.id),prontoAnim=sk==='pronto'?'class="pronto-pulse"':'';
       const clienteNome=p.cliente_nome||p.nome_cliente||p.cliente||'';
       const telefone=p.telefone||p.telefone_cliente||'';
@@ -3714,13 +3729,21 @@ function renderPedidosLista(){
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
                 ${sk!=='finalizado'&&sk!=='cancelado'?(()=>{
                   const pagtoPendente=sk==='aguardando_pagamento';
+                  // Bug real corrigido 2026-09-12 (pedido #5317): nada
+                  // impedia marcar "pronto" manualmente num agendado ANTES
+                  // da hora, pulando o _runScheduler() (só ele deveria
+                  // fazer agendado→pronto, e só quando agendado_para já
+                  // passou) — o despacho-engine não sabe de agendamento
+                  // nenhum, então notificava o motoboy na hora.
+                  const agendadoFuturo=sk==='agendado'&&p.agendado_para&&_parseUtc(p.agendado_para).getTime()>Date.now();
+                  const bloqueado=pagtoPendente||agendadoFuturo;
                   const destacado=!!(p.motoboy_id||p.entregador_id)||sk==='pronto';
                   const jaProntoSemMotoboy=!(p.motoboy_id||p.entregador_id)&&sk==='pronto';
-                  const desabilitado=pagtoPendente||jaProntoSemMotoboy;
-                  const title=pagtoPendente?'Pagamento pendente — confirme em "Aguardando Pagamento" antes de marcar como pronto':(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto';
-                  const bg=pagtoPendente?'#f59e0b1a':destacado?'#1A56DB1a':'#2a2a2a';
-                  const border=pagtoPendente?'#f59e0b55':destacado?'#1A56DB55':'#3A3A3A';
-                  const stroke=pagtoPendente?'#f59e0b':destacado?'#1A56DB':'#aaa';
+                  const desabilitado=bloqueado||jaProntoSemMotoboy;
+                  const title=pagtoPendente?'Pagamento pendente — confirme em "Aguardando Pagamento" antes de marcar como pronto':agendadoFuturo?`Agendado para ${formatarAgendado(p.agendado_para)} — libera automaticamente na hora`:(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto';
+                  const bg=bloqueado?'#f59e0b1a':destacado?'#1A56DB1a':'#2a2a2a';
+                  const border=bloqueado?'#f59e0b55':destacado?'#1A56DB55':'#3A3A3A';
+                  const stroke=bloqueado?'#f59e0b':destacado?'#1A56DB':'#aaa';
                   return `<button ${desabilitado?'disabled':''} onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${title}" style="background:${bg};border:0.5px solid ${border};border-radius:6px;padding:5px 7px;cursor:${desabilitado?'default':'pointer'};display:inline-flex;align-items:center;opacity:${desabilitado?'0.7':'1'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`;
                 })():''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
@@ -3731,7 +3754,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
-              ${_saidaAte(p.created_at)?`<div style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Saída até ${_saidaAte(p.created_at)} para evitar atraso</div>`:''}
+              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Saída até ${horaSaidaAte} para evitar atraso</div>`:''}
             </div>
           </div>
         </div>
