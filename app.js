@@ -3710,7 +3710,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
-              ${_saidaAte(p.created_at)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0">⚡ Saída até ${_saidaAte(p.created_at)} para evitar atraso</div>`:''}
+              ${_saidaAte(p.created_at)?`<div style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Saída até ${_saidaAte(p.created_at)} para evitar atraso</div>`:''}
             </div>
           </div>
         </div>
