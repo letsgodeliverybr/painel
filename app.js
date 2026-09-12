@@ -247,6 +247,11 @@ function _cidadeSufixo(c){return{'Ribeirão Preto':'RP','São José dos Campos':
 const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'-03:00');};
 const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
 const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
+// Badge "⚡ Saída até HH:MM" (card de pedido, Mapa ao Vivo) — sempre
+// created_at + 15min. _parseUtc já trata created_at (sem fuso, dígitos
+// já em Brasília) corretamente, então dá pra somar minutos direto no
+// timestamp real sem cair no bug de +3h já documentado nesse arquivo.
+const _saidaAte=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(dataStr).getTime()+15*60000).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
 const formatarDataHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
 const formatarData=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});};
 function formatarDataBR(data){if(!data)return'—';if(typeof data==='string'){const m=data.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return`${m[3]}/${m[2]}/${m[1]}`;}const d=data instanceof Date?data:new Date(data);if(isNaN(d))return'—';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -3703,7 +3708,10 @@ function renderPedidosLista(){
               </div>
             </div>
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
-            <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
+              ${_saidaAte(p.created_at)?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0">⚡ Saída até ${_saidaAte(p.created_at)}</div>`:''}
+            </div>
           </div>
         </div>
         ${expandido}
