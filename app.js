@@ -9050,18 +9050,18 @@ function _imprimirComanda(pedidoId){
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda #${_escHtml(p.numero||'')}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',monospace;background:#fff;padding:16px;width:320px;color:#000}
+    body{font-family:'Courier New',monospace;background:#fff;padding:16px;width:320px;color:#000;font-weight:600}
     .header{text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px}
-    .header h1{font-size:20px}
-    .modo{font-weight:700;font-size:13px;margin-top:2px}
-    .linha{display:flex;justify-content:space-between;font-size:13px;margin:3px 0;gap:8px}
+    .header h1{font-size:23px}
+    .modo{font-weight:700;font-size:15px;margin-top:2px}
+    .linha{display:flex;justify-content:space-between;font-size:15px;margin:3px 0;gap:8px}
     .secao{border-top:1px dashed #000;margin-top:8px;padding-top:8px}
-    .item-linha{display:flex;justify-content:space-between;font-size:13px}
-    .obs{font-size:11px;padding-left:10px;font-style:italic}
-    .total{font-weight:700;font-size:15px;border-top:2px dashed #000;margin-top:8px;padding-top:8px}
+    .item-linha{display:flex;justify-content:space-between;font-size:15px}
+    .obs{font-size:12px;padding-left:10px;font-style:italic}
+    .total{font-weight:700;font-size:17px;border-top:2px dashed #000;margin-top:8px;padding-top:8px}
     .codigo{text-align:center;border:2px solid #000;border-radius:6px;padding:8px;margin-top:8px}
-    .codigo .lbl{font-size:10px;letter-spacing:1px}
-    .codigo .num{font-size:22px;font-weight:700;letter-spacing:6px}
+    .codigo .lbl{font-size:11px;letter-spacing:1px}
+    .codigo .num{font-size:25px;font-weight:700;letter-spacing:6px}
   </style></head><body>
     <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 RETIRADA NA LOJA':'🛵 ENTREGA'}</div></div>
     ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">CÓDIGO DE COLETA (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
