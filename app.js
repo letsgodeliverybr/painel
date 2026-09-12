@@ -2560,6 +2560,17 @@ async function _estornarDebitoEntrega(pedido){
 }
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
+  // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
+  // era possível marcar "pronto" (e o pedido seguir despacho normal,
+  // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
+  // pulando por completo a confirmação manual feita em "Aguardando
+  // Pagamento" (_confirmarPagamentoPedido). O botão no card já fica
+  // desabilitado nesse status (ver renderPedidosLista), isso aqui cobre
+  // qualquer outro caminho que chame essa função diretamente.
+  if(statusAtual==='aguardando_pagamento'){
+    showNotif('⏳ Pagamento pendente','Confirme o pagamento em "Aguardando Pagamento" antes de marcar como pronto.','var(--yellow)');
+    return;
+  }
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const tinhaMotoboy=!!(p?.motoboy_id||p?.entregador_id);
   if(tinhaMotoboy&&!confirm(`Desalocar o motoboy do pedido #${p?.numero||pedidoId.substring(0,6)} e voltar a ficar disponível para novo aceite?`))return;
@@ -3701,7 +3712,17 @@ function renderPedidosLista(){
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
-                ${sk!=='finalizado'&&sk!=='cancelado'?`<button ${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'disabled':''} onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto'}" style="background:${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB1a':'#2a2a2a'};border:0.5px solid ${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB55':'#3A3A3A'};border-radius:6px;padding:5px 7px;cursor:${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'default':'pointer'};display:inline-flex;align-items:center;opacity:${(!(p.motoboy_id||p.entregador_id)&&sk==='pronto')?'0.7':'1'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${(p.motoboy_id||p.entregador_id)||sk==='pronto'?'#1A56DB':'#aaa'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
+                ${sk!=='finalizado'&&sk!=='cancelado'?(()=>{
+                  const pagtoPendente=sk==='aguardando_pagamento';
+                  const destacado=!!(p.motoboy_id||p.entregador_id)||sk==='pronto';
+                  const jaProntoSemMotoboy=!(p.motoboy_id||p.entregador_id)&&sk==='pronto';
+                  const desabilitado=pagtoPendente||jaProntoSemMotoboy;
+                  const title=pagtoPendente?'Pagamento pendente — confirme em "Aguardando Pagamento" antes de marcar como pronto':(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto';
+                  const bg=pagtoPendente?'#f59e0b1a':destacado?'#1A56DB1a':'#2a2a2a';
+                  const border=pagtoPendente?'#f59e0b55':destacado?'#1A56DB55':'#3A3A3A';
+                  const stroke=pagtoPendente?'#f59e0b':destacado?'#1A56DB':'#aaa';
+                  return `<button ${desabilitado?'disabled':''} onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${title}" style="background:${bg};border:0.5px solid ${border};border-radius:6px;padding:5px 7px;cursor:${desabilitado?'default':'pointer'};display:inline-flex;align-items:center;opacity:${desabilitado?'0.7':'1'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`;
+                })():''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
                 </span>
@@ -4079,6 +4100,21 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:_patchAgora,updated_at:_patchAgora,taxa_entrega_motoboy:taxaMotoboy};
   await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
+  // Push real pro entregador (bug real corrigido 2026-09-12, pedido #3):
+  // alocação manual só fazia o PATCH + log interno + toast pro OPERADOR —
+  // o entregador nunca era avisado, diferente do despacho automático (que
+  // sempre passa por notify-novo-pedido/despacho-engine). Mesma function
+  // edge já usada pelo despacho-engine pra envio direcionado a um único
+  // entregador (entregador_id obrigatório ali — broadcast irrestrito foi
+  // desativado de propósito), mesmo tipo 'novo_pedido' que o despacho usa
+  // pra toda oferta, aceita ou não.
+  try{
+    await fetch(`${SB_URL}/functions/v1/notify-novo-pedido`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
+      body:JSON.stringify({entregador_id:motoboyId,tipo:'novo_pedido'}),
+    });
+  }catch(e){console.error('[alocarMotoboy] falha ao notificar entregador:',e);}
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');await atualizarTudo();
 }
