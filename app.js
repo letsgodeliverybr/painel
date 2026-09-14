@@ -735,6 +735,15 @@ _atualizarRelogioTopbar();
 setInterval(_atualizarRelogioTopbar,1000);
 const _agendadoInputBrasilia=(dataStr)=>{if(!dataStr)return'';return new Date(dataStr).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);};
 const _defaultAgendadoBrasilia=(minutos=30)=>new Date(Date.now()+minutos*60000).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T').slice(0,16);
+// Bug real corrigido 2026-09-14 (pedidos #7448/#3077, SENSUS BISTRÔ):
+// nada validava que o valor digitado/escolhido no datetime-local de
+// agendamento estivesse no futuro — os dois só checavam "campo
+// preenchido", não "data válida". O scheduler (_runScheduler) libera
+// qualquer agendado com agendado_para<=agora na primeira checagem, então
+// um agendamento "nascido vencido" vira pronto (e despacha motoboy) em
+// segundos, sem ninguém perceber que a data estava errada. Usada nos dois
+// pontos que gravam agendado_para (criarPedido/salvarEdicaoPedido).
+const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendadoParaVal).getTime()>Date.now();
 
 
 // ═══════════════════════════════════════════════
@@ -3997,6 +4006,10 @@ async function salvarEdicaoPedido(pedidoId){
   const coletaOn=document.getElementById('ep-coleta-toggle')?.checked;
   const agendarOn=document.getElementById('ep-agendar-toggle')?.checked;
   const agendadoParaVal=agendarOn?document.getElementById('ep-agendado-para')?.value:null;
+  if(agendarOn&&!_agendamentoNoFuturo(agendadoParaVal)){
+    if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">O horário do agendamento já passou — confira a data e hora.</span>';
+    return;
+  }
   const _epTaxaMotoEl=document.getElementById('ep-taxa-motoboy');
   const _epPdEl=document.getElementById('ep-preco-dinamico');
   const _epTaxaExtraEl=document.getElementById('ep-taxa-extra');
@@ -4336,6 +4349,7 @@ async function _criarPedidoInterno(){
   if(!complemento){showNotif('Erro','Complemento obrigatório','var(--red)');return;}
   if(currentPerfil==='adm'&&!lojaIdSel){showNotif('Erro','Selecione a loja','var(--red)');return;}
   if(agendarOn&&!agendadoParaVal){showNotif('Erro','Informe data/hora do agendamento','var(--red)');return;}
+  if(agendarOn&&!_agendamentoNoFuturo(agendadoParaVal)){showNotif('Erro','O horário do agendamento já passou — confira a data e hora','var(--red)');return;}
   const fb=document.getElementById('np-feedback');
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando endereço...</div>';
   const geo=await geocodificarEndereco(endereco);
