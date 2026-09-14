@@ -58,3 +58,11 @@ verify_jwt = false
 
 [functions.ifood-validar-codigo]
 verify_jwt = false
+
+# Chamada pelo pg_cron (avisos automáticos de vencimento/vencido, ver
+# migrations/add_avisos_cobrancas_lojas.sql) — mesmo padrão de
+# x-webhook-secret dos outros acima, não manda o JWT do Supabase. Sem essa
+# entrada, um redeploy via CLI reseta pro default (exige JWT) e quebra a
+# chamada do cron (achado 2026-09-14, mesma armadilha do notify-novo-pedido).
+[functions.cobranca-avisos]
+verify_jwt = false
