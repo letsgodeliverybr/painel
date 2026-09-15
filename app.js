@@ -798,13 +798,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       --text3: #66707D;
       --accent: #1A56DB;
       --accent2: #1649BA;
-      --sb-bg: #1E1E1E;
-      --sb-card: #2D2D2D;
-      --sb-border: #3A3A3A;
-      --sb-text: #FFFFFF;
-      --sb-text2: #BBBBBB;
-      --sb-text3: #888888;
-      --sb-search-bg: #2D2D2D;
+      --sb-bg: var(--surface);
+      --sb-card: var(--surface2);
+      --sb-border: var(--border);
+      --sb-text: var(--text);
+      --sb-text2: var(--text2);
+      --sb-text3: var(--text3);
+      --sb-search-bg: var(--surface2);
     }
     @media (prefers-color-scheme: dark) {
       :root:not(.light) {
@@ -817,68 +817,68 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
         --text3: #66707D;
         --accent: #1A56DB;
         --accent2: #1649BA;
-        --sb-bg: #1E1E1E;
-        --sb-card: #2D2D2D;
-        --sb-border: #3A3A3A;
-        --sb-text: #FFFFFF;
-        --sb-text2: #BBBBBB;
-        --sb-text3: #888888;
-        --sb-search-bg: #2D2D2D;
+        --sb-bg: var(--surface);
+        --sb-card: var(--surface2);
+        --sb-border: var(--border);
+        --sb-text: var(--text);
+        --sb-text2: var(--text2);
+        --sb-text3: var(--text3);
+        --sb-search-bg: var(--surface2);
       }
     }
     /* ── DARK MODE OVERRIDES ── */
     html.dark .topbar { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: 0 1px 0 var(--border-subtle,rgba(255,255,255,.06)),0 4px 16px rgba(0,0,0,.18) !important; }
-    html.dark .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-    html.dark .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-    html.dark .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-    html.dark .pedido-item:hover { background: #333333 !important; border-color: #6366f1 !important; }
-    html.dark .pedido-item.selected { background: #383838 !important; border-color: #6366f1 !important; }
+    html.dark .sidebar-pedidos { background: var(--surface) !important; border-color: var(--border) !important; }
+    html.dark .sidebar-header { background: var(--surface) !important; border-color: var(--border) !important; }
+    html.dark .pedido-item { background: var(--surface2) !important; border-color: var(--border) !important; }
+    html.dark .pedido-item:hover { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--accent) !important; }
+    html.dark .pedido-item.selected { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--accent) !important; }
     html.dark .card,
-    html.dark .stat-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-    html.dark .modal { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-    html.dark .modal-header { background: #252525 !important; border-color: #3A3A3A !important; }
-    html.dark .modal-footer { background: #252525 !important; border-color: #3A3A3A !important; }
-    html.dark .modal-close { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-    html.dark thead tr { background: #252525 !important; }
-    html.dark th { color: #BBBBBB !important; border-color: #3A3A3A !important; }
-    html.dark td { color: #BBBBBB !important; border-color: #3A3A3A !important; }
-    html.dark tr:hover td { background: #333333 !important; }
-    html.dark tbody tr:nth-child(even) td { background: #2D2D2D !important; }
-    html.dark input, html.dark select, html.dark textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-    html.dark .fi input, html.dark .fi select, html.dark .fi textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-    html.dark .btn-sm { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-    html.dark .btn-modal-cancel { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-    html.dark #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-    html.dark #app-body { background: #1E1E1E !important; }
-    html.dark .alt-page { background: #1E1E1E !important; }
-    html.dark ::-webkit-scrollbar-thumb { background: #4A4A4A !important; }
-    html.dark ::-webkit-scrollbar-thumb:hover { background: #555555 !important; }
+    html.dark .stat-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+    html.dark .modal { background: var(--surface) !important; border-color: var(--border) !important; }
+    html.dark .modal-header { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--border) !important; }
+    html.dark .modal-footer { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--border) !important; }
+    html.dark .modal-close { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark thead tr { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark th { color: var(--text2) !important; border-color: var(--border) !important; }
+    html.dark td { color: var(--text2) !important; border-color: var(--border) !important; }
+    html.dark tr:hover td { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark tbody tr:nth-child(even) td { background: var(--surface2) !important; }
+    html.dark input, html.dark select, html.dark textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .fi input, html.dark .fi select, html.dark .fi textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .btn-sm { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .btn-modal-cancel { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark #nav-sidebar { background: var(--bg) !important; border-color: var(--border) !important; }
+    html.dark #app-body { background: var(--bg) !important; }
+    html.dark .alt-page { background: var(--bg) !important; }
+    html.dark ::-webkit-scrollbar-thumb { background: var(--border) !important; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: var(--text3) !important; }
     /* ── DARK MODE OVERRIDES (prefers-color-scheme) ── */
     @media (prefers-color-scheme: dark) {
       :root:not(.light) .topbar { background: var(--surface) !important; border-color: var(--border) !important; }
-      :root:not(.light) .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .pedido-item:hover { background: #333333 !important; border-color: #6366f1 !important; }
-      :root:not(.light) .pedido-item.selected { background: #383838 !important; border-color: #6366f1 !important; }
+      :root:not(.light) .sidebar-pedidos { background: var(--surface) !important; border-color: var(--border) !important; }
+      :root:not(.light) .sidebar-header { background: var(--surface) !important; border-color: var(--border) !important; }
+      :root:not(.light) .pedido-item { background: var(--surface2) !important; border-color: var(--border) !important; }
+      :root:not(.light) .pedido-item:hover { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--accent) !important; }
+      :root:not(.light) .pedido-item.selected { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--accent) !important; }
       :root:not(.light) .card,
-      :root:not(.light) .stat-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .modal { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .modal-header { background: #252525 !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .modal-footer { background: #252525 !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .modal-close { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-      :root:not(.light) thead tr { background: #252525 !important; }
-      :root:not(.light) th { color: #BBBBBB !important; border-color: #3A3A3A !important; }
-      :root:not(.light) td { color: #BBBBBB !important; border-color: #3A3A3A !important; }
-      :root:not(.light) tr:hover td { background: #333333 !important; }
-      :root:not(.light) tbody tr:nth-child(even) td { background: #2D2D2D !important; }
-      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #2D2D2D !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .btn-sm { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .btn-modal-cancel { background: #3A3A3A !important; color: #FFFFFF !important; border-color: #3A3A3A !important; }
-      :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-      :root:not(.light) #app-body { background: #1E1E1E !important; }
-      :root:not(.light) .alt-page { background: #1E1E1E !important; }
-      :root:not(.light) ::-webkit-scrollbar-thumb { background: #4A4A4A !important; }
+      :root:not(.light) .stat-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+      :root:not(.light) .modal { background: var(--surface) !important; border-color: var(--border) !important; }
+      :root:not(.light) .modal-header { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--border) !important; }
+      :root:not(.light) .modal-footer { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--border) !important; }
+      :root:not(.light) .modal-close { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) thead tr { background: var(--surface-elevated,#1B1F25) !important; }
+      :root:not(.light) th { color: var(--text2) !important; border-color: var(--border) !important; }
+      :root:not(.light) td { color: var(--text2) !important; border-color: var(--border) !important; }
+      :root:not(.light) tr:hover td { background: var(--surface-elevated,#1B1F25) !important; }
+      :root:not(.light) tbody tr:nth-child(even) td { background: var(--surface2) !important; }
+      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) .btn-sm { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) .btn-modal-cancel { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) #nav-sidebar { background: var(--bg) !important; border-color: var(--border) !important; }
+      :root:not(.light) #app-body { background: var(--bg) !important; }
+      :root:not(.light) .alt-page { background: var(--bg) !important; }
+      :root:not(.light) ::-webkit-scrollbar-thumb { background: var(--border) !important; }
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1573,18 +1573,54 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .sb-dark .pedidos-lista { flex: 1 !important; overflow-y: auto !important; }
     .sb-dark .empty-lista { color: #888888 !important; }
     /* ── SIDEBAR + CARD DARK MODE ── */
-    html.dark .sb-dark { background: #1E1E1E !important; border-right-color: #3A3A3A !important; }
-    html.dark .sb-header-dark { background: #1E1E1E !important; border-bottom-color: #3A3A3A !important; }
-    html.dark .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-    html.dark .pd-card:hover { border-color: #6366f1 !important; }
-    html.dark .sb-group-dark { background: #1a3a5c !important; }
+    html.dark .sb-dark { background: var(--surface) !important; border-right-color: var(--border) !important; }
+    html.dark .sb-header-dark { background: var(--surface) !important; border-bottom-color: var(--border) !important; }
+    html.dark .sb-title-dark { color: var(--text) !important; }
+    html.dark .sb-search-dark { background: var(--surface2) !important; border-color: var(--border) !important; color: var(--text) !important; }
+    html.dark .sb-search-dark::placeholder { color: var(--text3) !important; }
+    html.dark .sb-search-dark:focus { border-color: var(--accent) !important; }
+    html.dark .pd-card { background: var(--surface2) !important; border-color: var(--border) !important; box-shadow: 0 1px 2px rgba(0,0,0,.2) !important; }
+    html.dark .pd-card:hover { border-color: var(--accent) !important; }
+    html.dark .pd-card.selected { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(26,86,219,.25) !important; }
+    html.dark .pd-num { color: var(--text) !important; }
+    html.dark .pd-cliente { color: var(--text) !important; }
+    html.dark .pd-end { color: var(--text2) !important; }
+    html.dark .pd-hora { color: var(--text3) !important; }
+    html.dark .pd-loja-tag { color: #5b9bf5 !important; }
+    html.dark .pd-action-btn { background: var(--surface-elevated,#1B1F25) !important; border-color: var(--border) !important; }
+    html.dark .pd-action-btn:hover { border-color: var(--accent) !important; }
+    html.dark .pd-detail { border-top-color: var(--border) !important; }
+    html.dark .sb-group-dark { background: rgba(26,86,219,.14) !important; border-bottom-color: var(--border) !important; }
     @media (prefers-color-scheme: dark) {
-      :root:not(.light) .sb-dark { background: #1E1E1E !important; border-right-color: #3A3A3A !important; }
-      :root:not(.light) .sb-header-dark { background: #1E1E1E !important; border-bottom-color: #3A3A3A !important; }
-      :root:not(.light) .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .pd-card:hover { border-color: #6366f1 !important; }
-      :root:not(.light) .sb-group-dark { background: #1a3a5c !important; }
+      :root:not(.light) .sb-dark { background: var(--surface) !important; border-right-color: var(--border) !important; }
+      :root:not(.light) .sb-header-dark { background: var(--surface) !important; border-bottom-color: var(--border) !important; }
+      :root:not(.light) .sb-title-dark { color: var(--text) !important; }
+      :root:not(.light) .sb-search-dark { background: var(--surface2) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      :root:not(.light) .pd-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+      :root:not(.light) .pd-card:hover { border-color: var(--accent) !important; }
+      :root:not(.light) .pd-num { color: var(--text) !important; }
+      :root:not(.light) .pd-cliente { color: var(--text) !important; }
+      :root:not(.light) .pd-end { color: var(--text2) !important; }
+      :root:not(.light) .pd-hora { color: var(--text3) !important; }
+      :root:not(.light) .sb-group-dark { background: rgba(26,86,219,.14) !important; }
     }
+    /* ── Mapa ao Vivo — controles premium (botões flutuantes, resize handle, filtro "Criar Entrega", linhas da tabela) ── */
+    .mapa-float-btn { background: var(--surface-elevated,#1B1F25) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-md,8px); width: 40px; height: 40px; font-size: 20px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; transition: border-color .15s, background .15s; color: var(--text); }
+    .mapa-float-btn:hover { border-color: var(--accent) !important; background: var(--surface2) !important; }
+    .mapa-resize-handle { height: 6px; background: var(--border); cursor: ns-resize; flex-shrink: 0; user-select: none; transition: background .15s; }
+    .mapa-resize-handle:hover { background: var(--accent); }
+    .mapa-row { cursor: pointer; background: transparent; transition: background .1s; }
+    .mapa-row:hover td { background: var(--surface-elevated,#1B1F25) !important; }
+    .cr-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--surface) !important; flex-shrink: 0; flex-wrap: wrap; }
+    .cr-divider { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+    .cr-input { padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm,6px); font-size: 11px; background: var(--surface2) !important; color: var(--text) !important; outline: none; font-family: Inter,sans-serif; transition: border-color .15s, box-shadow .15s; }
+    .cr-input::placeholder { color: var(--text3); }
+    .cr-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(26,86,219,.18); }
+    .cr-input:disabled { opacity: .6; cursor: default; }
+    select.cr-input { cursor: pointer; }
+    .cr-btn-criar { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--accent) !important; border: none; border-radius: var(--radius-sm,6px); font-size: 11px; font-weight: 700; color: #fff; cursor: pointer; font-family: Inter,sans-serif; white-space: nowrap; transition: background .15s, transform .05s; }
+    .cr-btn-criar:hover { background: var(--accent-hover,#1649ba) !important; }
+    .cr-btn-criar:active { transform: translateY(1px); }
     /* Campo de busca do modal "Adicionar Integração iFood" — !important pra
        vencer .fi input (padding/font-size), mas ainda herda background/
        border/border-radius/foco daquela classe (mesma linguagem visual do
@@ -1644,53 +1680,53 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       .chat-admin-layout #chat-painel-conversa { flex: 1 !important; min-height: 0 !important; }
     }
     /* ── DARK MODE GLOBAL OVERRIDES ── */
-    html.dark body, html.dark #app, html.dark #app-body { background: #1E1E1E !important; color: #ffffff !important; }
-    html.dark .sidebar, html.dark #sidebar, html.dark .sidebar-pedidos, html.dark .sb-dark { background: #2D2D2D !important; }
-    html.dark .card, html.dark .stat-card, html.dark .pedido-card, html.dark .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-    html.dark table { background: #1E1E1E !important; }
-    html.dark thead, html.dark thead tr { background: #252525 !important; }
-    html.dark tbody tr { background: #1E1E1E !important; }
-    html.dark td, html.dark th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-    html.dark tr:nth-child(even) td { background: #252525 !important; }
-    html.dark tr:hover td { background: #333333 !important; }
-    html.dark input, html.dark select, html.dark textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-    html.dark .modal-content, html.dark .modal { background: #2D2D2D !important; color: #ffffff !important; }
-    html.dark .modal-header { background: #252525 !important; }
-    html.dark .modal-footer { background: #252525 !important; }
-    html.dark .alt-page, html.dark .page-header { background: #1E1E1E !important; }
+    html.dark body, html.dark #app, html.dark #app-body { background: var(--bg) !important; color: var(--text) !important; }
+    html.dark .sidebar, html.dark #sidebar, html.dark .sidebar-pedidos, html.dark .sb-dark { background: var(--surface) !important; }
+    html.dark .card, html.dark .stat-card, html.dark .pedido-card, html.dark .pd-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+    html.dark table { background: var(--bg) !important; }
+    html.dark thead, html.dark thead tr { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark tbody tr { background: var(--bg) !important; }
+    html.dark td, html.dark th { background: transparent !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark tr:nth-child(even) td { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark tr:hover td { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark input, html.dark select, html.dark textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .modal-content, html.dark .modal { background: var(--surface) !important; color: var(--text) !important; }
+    html.dark .modal-header { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark .modal-footer { background: var(--surface-elevated,#1B1F25) !important; }
+    html.dark .alt-page, html.dark .page-header { background: var(--bg) !important; }
     html.dark .topbar { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: 0 1px 0 var(--border-subtle,rgba(255,255,255,.06)),0 4px 16px rgba(0,0,0,.18) !important; }
-    html.dark #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-    html.dark .nav-item { color: #BBBBBB !important; }
-    html.dark .nav-item:hover { background: #2D2D2D !important; color: #ffffff !important; }
-    html.dark .nav-item.active { background: #2D2D2D !important; color: #818cf8 !important; }
-    html.dark .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-    html.dark .btn-modal-cancel { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-    html.dark .fi label { color: #888888 !important; }
-    html.dark .page-title { color: #818cf8 !important; -webkit-text-fill-color: #818cf8 !important; }
+    html.dark #nav-sidebar { background: var(--bg) !important; border-color: var(--border) !important; }
+    html.dark .nav-item { color: var(--text2) !important; }
+    html.dark .nav-item:hover { background: var(--surface) !important; color: var(--text) !important; }
+    html.dark .nav-item.active { background: var(--surface) !important; color: var(--accent) !important; }
+    html.dark .btn-sm { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .btn-modal-cancel { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    html.dark .fi label { color: var(--text3) !important; }
+    html.dark .page-title { color: var(--accent) !important; -webkit-text-fill-color: var(--accent) !important; }
     @media (prefers-color-scheme: dark) {
-      :root:not(.light) body, :root:not(.light) #app, :root:not(.light) #app-body { background: #1E1E1E !important; color: #ffffff !important; }
-      :root:not(.light) .sidebar, :root:not(.light) #sidebar, :root:not(.light) .sidebar-pedidos, :root:not(.light) .sb-dark { background: #2D2D2D !important; }
-      :root:not(.light) .card, :root:not(.light) .stat-card, :root:not(.light) .pedido-card, :root:not(.light) .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      :root:not(.light) table { background: #1E1E1E !important; }
-      :root:not(.light) thead, :root:not(.light) thead tr { background: #252525 !important; }
-      :root:not(.light) td, :root:not(.light) th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-      :root:not(.light) tr:nth-child(even) td { background: #252525 !important; }
-      :root:not(.light) tr:hover td { background: #333333 !important; }
-      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .modal-content, :root:not(.light) .modal { background: #2D2D2D !important; color: #ffffff !important; }
+      :root:not(.light) body, :root:not(.light) #app, :root:not(.light) #app-body { background: var(--bg) !important; color: var(--text) !important; }
+      :root:not(.light) .sidebar, :root:not(.light) #sidebar, :root:not(.light) .sidebar-pedidos, :root:not(.light) .sb-dark { background: var(--surface) !important; }
+      :root:not(.light) .card, :root:not(.light) .stat-card, :root:not(.light) .pedido-card, :root:not(.light) .pd-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+      :root:not(.light) table { background: var(--bg) !important; }
+      :root:not(.light) thead, :root:not(.light) thead tr { background: var(--surface-elevated,#1B1F25) !important; }
+      :root:not(.light) td, :root:not(.light) th { background: transparent !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) tr:nth-child(even) td { background: var(--surface-elevated,#1B1F25) !important; }
+      :root:not(.light) tr:hover td { background: var(--surface-elevated,#1B1F25) !important; }
+      :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) .modal-content, :root:not(.light) .modal { background: var(--surface) !important; color: var(--text) !important; }
       :root:not(.light) .topbar { background: var(--surface) !important; border-color: var(--border) !important; }
-      :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-      :root:not(.light) .alt-page { background: #1E1E1E !important; }
+      :root:not(.light) #nav-sidebar { background: var(--bg) !important; border-color: var(--border) !important; }
+      :root:not(.light) .btn-sm { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      :root:not(.light) .alt-page { background: var(--bg) !important; }
       /* ── sem dependência de classe: sobrescrevem inline !important ── */
-      body { background: #1E1E1E !important; color: #fff !important; }
-      #app, #app-body, .alt-page { background: #1E1E1E !important; }
-      .card, .stat-card, .pd-card { background: #2D2D2D !important; border-color: #3A3A3A !important; }
-      table, thead, tbody { background: #1E1E1E !important; }
+      body { background: var(--bg) !important; color: var(--text) !important; }
+      #app, #app-body, .alt-page { background: var(--bg) !important; }
+      .card, .stat-card, .pd-card { background: var(--surface2) !important; border-color: var(--border) !important; }
+      table, thead, tbody { background: var(--bg) !important; }
       tr { background: transparent !important; }
-      td, th { background: transparent !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-      input, select, textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
-      [class*="modal"] { background: #2D2D2D !important; color: #ffffff !important; }
+      td, th { background: transparent !important; color: var(--text) !important; border-color: var(--border) !important; }
+      input, select, textarea { background: var(--surface2) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      [class*="modal"] { background: var(--surface) !important; color: var(--text) !important; }
     }
     /* Google Places Autocomplete — corrige texto cortado no dropdown */
     .pac-container {
@@ -3393,17 +3429,17 @@ function renderMapaPage(){
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important">
-          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#111 !important;display:flex;align-items:center;justify-content:center">☰</button>
-          <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Finalizados hoje</div></div></div>
-          <div style="width:1px;height:22px;background:#ddd;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:#ffffff !important;border:1px solid #ddd !important;color:#111 !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#111 !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#111 !important">Cancelados hoje</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:var(--surface-elevated,#1B1F25) !important;border:1px solid var(--border) !important;color:var(--text) !important">
+          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:var(--text) !important;display:flex;align-items:center;justify-content:center">☰</button>
+          <div style="width:1px;height:22px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:transparent !important;border:none !important;color:var(--text) !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:var(--text) !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:var(--text3) !important">Finalizados hoje</div></div></div>
+          <div style="width:1px;height:22px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:transparent !important;border:none !important;color:var(--text) !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:var(--text) !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:var(--text3) !important">Cancelados hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
-          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" style="position:relative;background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
-          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🪖</button>
-          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" style="background:transparent;border:2px solid #E5E7EB;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;transition:background .2s,border .2s">🏪</button>
+          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
+          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" class="mapa-float-btn">🪖</button>
+          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" class="mapa-float-btn">🏪</button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -3425,33 +3461,33 @@ function renderMapaPage(){
         </div>`:''}
         <div id="map" style="width:100%;height:100%;position:absolute;top:0;left:0"></div>
       </div>
-      <div id="mapa-resize-handle" style="height:6px;background:#3A3A3A;cursor:ns-resize;flex-shrink:0;user-select:none;transition:background .15s" onmouseenter="this.style.background='#555'" onmouseleave="this.style.background='#3A3A3A'"></div>
+      <div id="mapa-resize-handle" class="mapa-resize-handle"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #3A3A3A;background:#2D2D2D !important;flex-shrink:0;flex-wrap:wrap">
-          <select id="cr-loja-id" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;max-width:150px;font-family:Inter,sans-serif"><option value="">Selecione a loja...</option></select>
-          <input id="cr-numero-pedido" placeholder="Nº pedido" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:70px;font-family:Inter,sans-serif"/>
-          <div style="width:1px;height:18px;background:#3A3A3A;flex-shrink:0"></div>
-          <input id="cr-cliente" placeholder="Nome do cliente" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:140px;font-family:Inter,sans-serif"/>
-          <input id="cr-telefone" placeholder="Telefone" type="tel" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:120px;font-family:Inter,sans-serif"/>
-          <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:210px;font-family:Inter,sans-serif"/>
-          <input id="cr-complemento" placeholder="Complemento" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:100px;font-family:Inter,sans-serif"/>
-          <input id="cr-valor" placeholder="Valor R$" type="number" step="0.01" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
-          <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" style="padding:4px 6px;border:1px solid #3A3A3A;border-radius:6px;font-size:11px;background:#1E1E1E !important;color:#DDD !important;outline:none;width:80px;font-family:Inter,sans-serif"/>
-          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:#3a3a3a;border-radius:11px;position:relative;transition:background .2s;border:1px solid #555;flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:#666;border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:#888;font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
+        <div class="cr-toolbar">
+          <select id="cr-loja-id" class="cr-input" style="max-width:150px"><option value="">Selecione a loja...</option></select>
+          <input id="cr-numero-pedido" placeholder="Nº pedido" class="cr-input" style="width:70px"/>
+          <div class="cr-divider"></div>
+          <input id="cr-cliente" placeholder="Nome do cliente" class="cr-input" style="width:140px"/>
+          <input id="cr-telefone" placeholder="Telefone" type="tel" class="cr-input" style="width:120px"/>
+          <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" class="cr-input" style="width:210px"/>
+          <input id="cr-complemento" placeholder="Complemento" class="cr-input" style="width:100px"/>
+          <input id="cr-valor" placeholder="Valor R$" type="number" step="0.01" min="0" value="" class="cr-input" style="width:80px"/>
+          <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" class="cr-input" style="width:80px"/>
+          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:var(--surface2);border-radius:11px;position:relative;transition:background .2s;border:1px solid var(--border);flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:var(--text3);border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:var(--text3);font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
           <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
-          <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1A56DB !important;border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Criar Entrega</button>
+          <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" class="cr-btn-criar">➕ Criar Entrega</button>
         </div>
-        <div style="flex:1;overflow:auto;background:#1E1E1E !important;min-height:300px;min-width:0">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:#1E1E1E !important;border:1px solid #3A3A3A">
-            <thead style="position:sticky;top:0;z-index:2;background:#3A3A3A !important">
-              <tr style="background:#3A3A3A !important">
-                ${_thMapa.map(h=>`<th style="padding:6px 7px;text-align:left;border-bottom:1px solid #444;border-right:1px solid #444;color:#BBB !important;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${h}</th>`).join('')}
+        <div style="flex:1;overflow:auto;background:var(--bg) !important;min-height:300px;min-width:0">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:var(--bg) !important;border:1px solid var(--border)">
+            <thead style="position:sticky;top:0;z-index:2;background:var(--surface-elevated,#1B1F25) !important">
+              <tr style="background:var(--surface-elevated,#1B1F25) !important">
+                ${_thMapa.map(h=>`<th style="padding:8px 7px;text-align:left;border-bottom:1px solid var(--border);border-right:1px solid var(--border-subtle,rgba(255,255,255,.06));color:var(--text2) !important;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;white-space:nowrap">${h}</th>`).join('')}
               </tr>
             </thead>
-            <tbody id="tabela-mapa-body">
-              <tr><td colspan="${_thMapa.length}" style="text-align:center;padding:20px;color:#999 !important">Carregando...</td></tr>
+            <tbody id="tabela-mapa-body" class="mapa-tbody">
+              <tr><td colspan="${_thMapa.length}" style="text-align:center;padding:20px;color:var(--text3) !important">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -3557,9 +3593,8 @@ function _iconsLogistica(p){
 function _buildTabelaRows(filtered,from){
   const to=Math.min(from+_TABELA_PAGE,filtered.length);
   const fmtR$=v=>`R$ ${(parseFloat(v)||0).toFixed(2)}`;
-  const TD=(s,extra='',bg)=>`<td style="padding:6px 7px;border-bottom:1px solid #3A3A3A;border-right:1px solid #3A3A3A;color:#DDD !important;font-size:11px;${bg?'background:'+bg+' !important;':''}${extra}">${s}</td>`;
+  const TD=(s,extra='')=>`<td style="padding:9px 10px;border-bottom:1px solid var(--border-subtle,rgba(255,255,255,.06));color:var(--text) !important;font-size:12px;${extra}">${s}</td>`;
   return filtered.slice(from,to).map((p,i)=>{
-    const rowBg=(from+i)%2===0?'#2D2D2D':'#333333';
     const sk=getStatusKey(p);const badgeCor=corStatus(sk);
     const loja=allLojas.find(l=>l.id===p.loja_id);
     const entId=p.motoboy_id||p.entregador_id;
@@ -3569,20 +3604,20 @@ function _buildTabelaRows(filtered,from){
     const taxaMotoboy=p.taxa_motoboy!=null?parseFloat(p.taxa_motoboy):_calcTaxaMotoboy(p,_tabelaFaixasPagPorLoja[p.loja_id]);const taxaCobrada=_calcTaxaLoja(p,_tabelaFaixasPorLoja[p.loja_id]);
     const kmStr=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';
     const lucroMapa=taxaCobrada-(taxaMotoboy??0);const lucroMapaStr=taxaCobrada>0?`<span style="font-weight:700;color:${lucroMapa>=0?'#4ade80':'#ef4444'}">${fmtR$(lucroMapa)}</span>`:'—';
-    return `<tr style="cursor:pointer;background:${rowBg}" onclick="_irParaPedido('${p.id}')">
-      ${TD(`<span style="font-weight:700;color:#60a5fa">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap',rowBg)}
-      ${TD(`<span style="font-weight:500;color:#BBB;white-space:nowrap">${hora}</span>`,'',rowBg)}
-      ${TD(`<span style="color:#DDD">${p.nome_cliente||p.cliente||'—'}</span>`,'',rowBg)}
-      ${TD(`<span style="color:#BBB;font-size:12px">${loja?.nome||'—'}</span>`,'',rowBg)}
-      ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;color:#DDD">${endereco}</span>`,'',rowBg)}
-      ${TD(`<span style="color:#DDD">${ent?.nome||'<span style="color:#555">—</span>'}</span>`,'',rowBg)}
-      ${TD(`<span style="color:#BBB;font-size:11px">${kmStr}</span>`,'',rowBg)}
-      ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:#555;font-size:11px">—</span>`,'',rowBg):''}
-      ${currentPerfil!=='suporte'?TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`,'',rowBg):''}
-      ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(lucroMapaStr,'text-align:right',rowBg):''}
-      ${TD(_iconsLogistica(p),'text-align:center;padding:3px 5px',rowBg)}
-      ${currentPerfil!=='suporte'?TD(`<span style="color:#BBB">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`,'',rowBg):''}
-      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`,'',rowBg)}
+    return `<tr class="mapa-row" onclick="_irParaPedido('${p.id}')">
+      ${TD(`<span style="font-weight:700;color:#5b9bf5">#${p.numero||p.id?.substring(0,6)}</span>`,'white-space:nowrap')}
+      ${TD(`<span style="font-weight:500;color:var(--text2);white-space:nowrap">${hora}</span>`)}
+      ${TD(`<span style="color:var(--text)">${p.nome_cliente||p.cliente||'—'}</span>`)}
+      ${TD(`<span style="color:var(--text2);font-size:12px">${loja?.nome||'—'}</span>`)}
+      ${TD(`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;color:var(--text)">${endereco}</span>`)}
+      ${TD(`<span style="color:var(--text)">${ent?.nome||'<span style="color:var(--text3)">—</span>'}</span>`)}
+      ${TD(`<span style="color:var(--text2);font-size:11px">${kmStr}</span>`)}
+      ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(taxaMotoboy!==null?`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaMotoboy)}</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`):''}
+      ${currentPerfil!=='suporte'?TD(`<span style="font-weight:700;color:#4ade80">${fmtR$(taxaCobrada)}</span>`):''}
+      ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(lucroMapaStr,'text-align:right'):''}
+      ${TD(_iconsLogistica(p),'text-align:center;padding:9px 5px')}
+      ${currentPerfil!=='suporte'?TD(`<span style="color:var(--text2)">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`):''}
+      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`)}
     </tr>`;
   }).join('');
 }
@@ -3590,10 +3625,10 @@ function _buildTabelaRows(filtered,from){
 function _tabelaAnexarSentinela(){
   const el=document.getElementById('tabela-mapa-body');if(!el)return;
   if(_tabelaScrollOffset>=_tabelaScrollFiltered.length){
-    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:#555;font-size:12px;background:#2D2D2D">✓ Todos os pedidos carregados</td></tr>`);
+    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:var(--text3);font-size:12px;background:var(--bg)">✓ Todos os pedidos carregados</td></tr>`);
     return;
   }
-  el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="padding:10px;text-align:center;background:#2D2D2D"><div style="width:20px;height:20px;border:2px solid #3A3A3A;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
+  el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="padding:10px;text-align:center;background:var(--bg)"><div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
   const sentinel=document.getElementById('tabela-sentinel');if(!sentinel)return;
   const root=el.parentElement?.parentElement;
   _tabelaScrollObserver=new IntersectionObserver(entries=>{
@@ -3618,7 +3653,7 @@ async function renderTabelaMapa(){
   });
   _tabelaScrollFiltered=filtered;_tabelaScrollOffset=0;
   const _cols=currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13;
-  if(!filtered.length){el.innerHTML=`<tr><td colspan="${_cols}" style="text-align:center;padding:20px;color:#555">Nenhum pedido encontrado</td></tr>`;return;}
+  if(!filtered.length){el.innerHTML=`<tr><td colspan="${_cols}" style="text-align:center;padding:32px 20px;color:var(--text3)"><div style="font-size:22px;margin-bottom:6px;opacity:.5">📭</div>Nenhum pedido encontrado</td></tr>`;return;}
   await _preCarregarFaixasLojas(filtered);
   el.innerHTML=_buildTabelaRows(filtered,0);
   _tabelaScrollOffset=Math.min(_TABELA_PAGE,filtered.length);
