@@ -6429,7 +6429,8 @@ function _ceoInjectStyles(){
     .ceo-header-right{display:flex;align-items:center;gap:18px;}
     .ceo-meta-loc{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px;color:var(--text2);white-space:nowrap;}
     .ceo-avatar-wrap{position:relative;}
-    .ceo-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;cursor:pointer;user-select:none;}
+    .ceo-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;cursor:pointer;user-select:none;overflow:hidden;}
+    .ceo-avatar img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(2.3);transform-origin:50% 30%;}
     .ceo-dropdown{position:absolute;right:0;top:46px;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.4);overflow:hidden;z-index:80;display:none;}
     .ceo-dropdown.open{display:block;}
     .ceo-dropdown button{display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text);font-size:12.5px;cursor:pointer;font-family:Inter,sans-serif;}
@@ -6681,7 +6682,7 @@ function renderCeoPage(){
           <span>📅 <span id="ceo-data-atual">${hojeFmt}</span> · 🕐 <span id="ceo-hora-atual">${horaFmt}</span></span>
         </div>
         <div class="ceo-avatar-wrap">
-          <div class="ceo-avatar" onclick="_ceoToggleDropdown()">${iniciais}</div>
+          <div class="ceo-avatar" onclick="_ceoToggleDropdown()"><img src="https://letsgodeliverybr.github.io/painel/img/gabriel-avatar.png" alt="${nomeUsuario}" onerror="this.parentElement.textContent='${iniciais}'"/></div>
           <div class="ceo-dropdown" id="ceo-dropdown">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:12.5px;font-weight:700;color:var(--text)">${nomeUsuario}</div><div style="font-size:11px;color:var(--text3)">CEO</div></div>
             <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">👤 Meu perfil</button>
