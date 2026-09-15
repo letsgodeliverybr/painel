@@ -611,6 +611,7 @@ window.fazerLogin = async function(){
   document.getElementById('user-nome').textContent=currentUser.nome;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
   const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
+  _lojaLoginRecente=true;
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'ceo':'mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
   const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';

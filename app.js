@@ -3092,6 +3092,7 @@ async function fazerLogin(){
   document.getElementById('user-nome').textContent=currentUser.nome;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
   const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+badgeMap[currentPerfil];badge.textContent=labelMap[currentPerfil];
+  _lojaLoginRecente=true;
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'ceo':'mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
   const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';
@@ -3129,28 +3130,20 @@ function goTab(id){
   if(pages[id])pages[id]();
 }
 
-// Tela cheia de boas-vindas da loja — passe 2: versão premium/minimalista
-// (referência Apple/Stripe/Linear, não "propaganda"). Reaproveita
-// _ceoSaudacao()/_ceoFraseDoDia() sem duplicar lógica de saudação/frase.
-// "Primeiro login do dia" = primeiro render do Mapa ao Vivo (home da
-// loja) no dia, guardado em localStorage por loja_id — regra de exibição
-// intocada entre os passes. Fica ~8s (entrada escalonada inclusa) e some
-// sozinha com fade-out elegante (setTimeout agendado em renderMapaPage
-// logo após o innerHTML, guardado por _lojaBannerRenderizadoAgora) — o
-// mapa já carrega por trás, então a transição não tem espera adicional.
+// Tela cheia de boas-vindas da loja — passe 3: ligada ao EVENTO REAL de
+// login, não a "uma vez por dia". _lojaLoginRecente só vira true dentro
+// dos 2 pontos que fazem autenticação de verdade (fazerLogin() aqui e o
+// override de produção em index.html, ambos logo antes do redirect pós-
+// login) — nunca no restore de sessão do DOMContentLoaded (F5/reabrir
+// aba com sessionStorage intacto), que é justamente o caso que NÃO pode
+// mostrar a tela de novo. _renderLojaBannerBoasVindas() consome (reseta)
+// a flag no primeiro render do Mapa ao Vivo que rodar depois do login —
+// então só dispara 1x por login real, navegar entre abas depois não
+// dispara de novo (a flag já foi consumida e volta a ficar false até o
+// próximo login). Fica ~10s (entrada escalonada inclusa) e some sozinha
+// com fade-out elegante — o mapa já carrega por trás, sem espera extra.
 let _lojaBannerRenderizadoAgora=false;
-function _lojaBannerJaVistoHoje(){
-  try{
-    const chave='lg_loja_banner_visto_'+(currentUser?.loja_id||currentUser?.id||'x');
-    return localStorage.getItem(chave)===_dataHojeBrasilia();
-  }catch(_){return true;}
-}
-function _lojaBannerMarcarVisto(){
-  try{
-    const chave='lg_loja_banner_visto_'+(currentUser?.loja_id||currentUser?.id||'x');
-    localStorage.setItem(chave,_dataHojeBrasilia());
-  }catch(_){}
-}
+let _lojaLoginRecente=false;
 function _lojaBannerInjectStyles(){
   if(document.getElementById('loja-banner-styles'))return;
   const style=document.createElement('style');
@@ -3163,8 +3156,9 @@ function _lojaBannerInjectStyles(){
 }
 function _renderLojaBannerBoasVindas(){
   _lojaBannerRenderizadoAgora=false;
-  if(currentPerfil!=='loja'||_lojaBannerJaVistoHoje())return'';
-  _lojaBannerMarcarVisto();
+  const deveMostrar=currentPerfil==='loja'&&_lojaLoginRecente;
+  _lojaLoginRecente=false;
+  if(!deveMostrar)return'';
   _lojaBannerRenderizadoAgora=true;
   _lojaBannerInjectStyles();
   const saud=_ceoSaudacao();
@@ -3178,7 +3172,7 @@ function _renderLojaBannerBoasVindas(){
     <div style="width:40px;height:1px;background:rgba(255,255,255,.18);margin-bottom:26px;animation:lojaFadeInUp .9s ease .45s both"></div>
     <div style="font-size:clamp(15px,1.6vw,19px);font-weight:400;color:rgba(255,255,255,.82);line-height:1.65;max-width:560px;margin-bottom:22px;animation:lojaFadeInUp .9s ease .6s both">"${_ceoFraseDoDia()}"</div>
     <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1.5px;opacity:.8;animation:lojaFadeInUp .9s ease .75s both">#CadaKmUmSonho</div>
-    <div style="position:absolute;bottom:0;left:0;height:2px;background:rgba(26,86,219,.5);width:100%;transform:scaleX(0);transform-origin:left;animation:lojaProgresso 8s linear forwards"></div>
+    <div style="position:absolute;bottom:0;left:0;height:2px;background:rgba(26,86,219,.5);width:100%;transform:scaleX(0);transform-origin:left;animation:lojaProgresso 10s linear forwards"></div>
   </div>`;
 }
 function _fecharBannerLojaBoasVindas(){
@@ -3276,7 +3270,7 @@ function renderMapaPage(){
         </div>
       </div>
     </div>`;
-  if(_lojaBannerRenderizadoAgora)setTimeout(_fecharBannerLojaBoasVindas,8000);
+  if(_lojaBannerRenderizadoAgora)setTimeout(_fecharBannerLojaBoasVindas,10000);
   iniciarDragSidebar();
   _iniciarResizeMapa();
   // Fallback essencial (não só um "tick" a mais): em produção,
