@@ -45,7 +45,7 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'ceo',icon:'🧭',label:'Visão Executiva'},{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -3082,9 +3082,10 @@ async function fazerLogin(){
   document.getElementById('user-nome').textContent=currentUser.nome;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
   const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+badgeMap[currentPerfil];badge.textContent=labelMap[currentPerfil];
-  renderTabs();setTimeout(()=>goTab('mapa'),100);
+  renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'ceo':'mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
   const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';
+  const btnIrMapa=document.getElementById('btn-ir-mapa');if(btnIrMapa)btnIrMapa.style.display=currentPerfil==='adm'?'flex':'none';
   _carregarSaldoTopbar();
   if(currentPerfil==='adm'){_carregarBadgeSaques();_carregarBadgeSaqueRapido();}
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
@@ -3114,7 +3115,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'mapa':renderMapaPage,'aguardando-pagamento':renderAguardandoPagamentoPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'aguardando-pagamento':renderAguardandoPagamentoPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -6387,6 +6388,187 @@ function _verLinhaTempoPedido(pedidoId){
   </div>`;
   modal.classList.add('open');
   modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
+}
+// ═══════════════════════════════════════════════
+// VISÃO EXECUTIVA (CEO) — passe 1 (2026-09-14)
+// ═══════════════════════════════════════════════
+// Só métricas (a) — dado real, sem lógica nova — por decisão explícita do
+// usuário: layout completo já com a estrutura final dos 6 blocos, mas
+// crescimento %/margem %/tempo médio de entrega/entregador inativo/queda
+// de margem/metas de escala ficam "Em breve" pra uma segunda passada, DEPOIS
+// de validar esse esqueleto. Não mexe em nenhuma tela existente — página
+// nova, admin-only.
+function _ceoStat(label,id,cor){
+  return `<div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${label}</div><div id="${id}" style="font-size:22px;font-weight:800;color:${cor||'var(--text)'}">—</div></div>`;
+}
+function _ceoStatEmBreve(label){
+  return `<div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${label}</div><div style="font-size:22px;font-weight:800;color:var(--text3)">Em breve</div></div>`;
+}
+async function renderCeoPage(){
+  const hoje=_dataHojeBrasilia();
+  const [ano,mes]=hoje.split('-');
+  const dataIniMes=`${ano}-${mes}-01`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">🧭 Visão Executiva</div><button class="btn-sm btn-primary-sm" onclick="renderCeoPage()">↻ Atualizar</button></div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
+      <div class="stat-card"><div class="stat-label">FATURAMENTO (MÊS)</div><div class="stat-value" id="ceo-fat" style="font-size:24px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">PEDIDOS (MÊS)</div><div class="stat-value" id="ceo-pedidos-mes" style="font-size:24px">—</div></div>
+      <div class="stat-card"><div class="stat-label">CRESCIMENTO</div><div class="stat-value" style="font-size:20px;color:var(--text3)">Em breve</div></div>
+      <div class="stat-card"><div class="stat-label">LUCRO (MÊS)</div><div class="stat-value" id="ceo-lucro" style="font-size:24px">—</div></div>
+      <div class="stat-card"><div class="stat-label">MARGEM</div><div class="stat-value" style="font-size:20px;color:var(--text3)">Em breve</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">📈 Pedidos Finalizados — Últimos 6 Meses</span></div>
+      <div style="padding:20px 20px 16px" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">⚙️ Operação</span></div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        ${_ceoStat('Pedidos Hoje','ceo-pedidos-hoje')}
+        ${_ceoStat('Entregadores Online','ceo-ent-online')}
+        ${_ceoStatEmBreve('Tempo Médio de Entrega')}
+        ${_ceoStat('Taxa de Conclusão','ceo-conclusao')}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">🏪 Comercial</span></div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        ${_ceoStat('Lojas Ativas','ceo-lojas-ativas')}
+        ${_ceoStat('Novas Lojas (30d)','ceo-lojas-novas')}
+        ${_ceoStat('Pedidos/Loja (Mês)','ceo-pedidos-loja')}
+        ${_ceoStat('Pipeline (Cadastro)','ceo-pipeline')}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">💵 Financeiro</span></div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        ${_ceoStat('Caixa Disponível','ceo-caixa')}
+        ${_ceoStat('A Receber','ceo-a-receber')}
+        ${_ceoStat('A Pagar','ceo-a-pagar')}
+        ${_ceoStat('Lucro Operacional (Mês)','ceo-lucro-op')}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-title">🚨 Atenção</span></div>
+      <div style="padding:16px 20px" id="ceo-alertas"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">🚀 Escala Let's Go</span></div>
+      <div style="padding:12px 20px 0;font-size:12px;color:var(--text3)">Metas configuráveis chegam na próxima etapa — por enquanto, só "onde estamos" hoje:</div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        ${_ceoStat('Pedidos/Dia (hoje)','ceo-escala-pedidos-dia')}
+        ${_ceoStat('Lojas Ativas','ceo-escala-lojas')}
+        ${_ceoStat('Entregadores Ativos','ceo-escala-entregadores')}
+        ${_ceoStat('Pedidos/Mês','ceo-escala-pedidos-mes')}
+      </div>
+    </div>
+  </div>`;
+  _carregarDadosCeo(dataIniMes,hoje);
+}
+async function _carregarDadosCeo(dataIniMes,hoje){
+  const [ano,mes]=hoje.split('-');
+  const competenciaMes=`${ano}-${mes}-01`;
+  const trintaDiasAtras=new Date(Date.now()-30*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  // Range do gráfico: últimos 6 meses incluindo o atual.
+  const _mAtual=Number(mes),_aAtual=Number(ano);
+  let _mIniChart=_mAtual-5,_aIniChart=_aAtual;
+  while(_mIniChart<1){_mIniChart+=12;_aIniChart--;}
+  const dataIniChart=`${_aIniChart}-${String(_mIniChart).padStart(2,'0')}-01`;
+
+  const [
+    pedidosMes,pedidosHoje,entOnline,entAtivos,lojasAtivas,lojasNovas,lojasPipeline,
+    cobrancasPendentes,contasPagarTotal,contasPagarMes,configCaixa,mesesChart,
+  ]=await Promise.all([
+    _dbTodasLinhas('pedidos',`?created_at=gte.${dataIniMes}T00:00:00&select=status,taxa_entrega,gorjeta,taxa_motoboy`,1000),
+    _dbTodasLinhas('pedidos',`?created_at=gte.${hoje}T00:00:00&select=id`,1000),
+    db('entregadores','GET',null,'?disponivel=eq.true&select=id'),
+    db('entregadores','GET',null,'?status=neq.bloqueado&or=(aprovado.eq.true,status_cadastro.eq.aprovado)&select=id'),
+    db('lojas','GET',null,'?ativo=eq.true&select=id'),
+    db('lojas','GET',null,`?ativo=eq.true&created_at=gte.${trintaDiasAtras}&select=id`),
+    db('lojas','GET',null,'?status_cadastro=in.(em_analise,pendente)&select=id'),
+    db('cobrancas_lojas','GET',null,'?status=eq.pendente&select=id,loja_id,valor_total,created_at,lojas(nome)'),
+    db('contas_pagar','GET',null,'?status=eq.pendente&select=valor'),
+    db('contas_pagar','GET',null,`?status=eq.pendente&competencia=eq.${competenciaMes}&select=valor`),
+    db('configuracoes','GET',null,'?chave=eq.meta_caixa_valor_atual'),
+    dbRpc('pedidos_finalizados_por_mes',{data_ini_local:`${dataIniChart}T00:00:00`,data_fim_local:`${hoje}T23:59:59.999`}),
+  ]);
+
+  const _finalizadosMes=(Array.isArray(pedidosMes)?pedidosMes:[]).filter(p=>p.status==='finalizado');
+  const faturamentoMes=_finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
+  const despesaMes=_finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
+  const contasPagarMesTotal=(Array.isArray(contasPagarMes)?contasPagarMes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  const lucroMes=faturamentoMes-despesaMes-contasPagarMesTotal;
+  const totalPedidosMes=(Array.isArray(pedidosMes)?pedidosMes:[]).length;
+  const taxaConclusao=totalPedidosMes>0?(_finalizadosMes.length/totalPedidosMes*100):0;
+
+  const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  _set('ceo-fat',_fmtMoedaCaixa(faturamentoMes));
+  _set('ceo-pedidos-mes',String(totalPedidosMes));
+  _set('ceo-lucro',_fmtMoedaCaixa(lucroMes));
+  document.getElementById('ceo-lucro').style.color=lucroMes>=0?'var(--green)':'var(--red)';
+
+  _set('ceo-pedidos-hoje',String((Array.isArray(pedidosHoje)?pedidosHoje:[]).length));
+  _set('ceo-ent-online',String((Array.isArray(entOnline)?entOnline:[]).length));
+  _set('ceo-conclusao',totalPedidosMes>0?`${taxaConclusao.toFixed(1)}%`:'—');
+
+  const _nLojasAtivas=(Array.isArray(lojasAtivas)?lojasAtivas:[]).length;
+  _set('ceo-lojas-ativas',String(_nLojasAtivas));
+  _set('ceo-lojas-novas',String((Array.isArray(lojasNovas)?lojasNovas:[]).length));
+  _set('ceo-pedidos-loja',_nLojasAtivas>0?(totalPedidosMes/_nLojasAtivas).toFixed(1):'—');
+  _set('ceo-pipeline',String((Array.isArray(lojasPipeline)?lojasPipeline:[]).length));
+
+  const caixaValor=parseFloat(configCaixa?.[0]?.valor)||0;
+  _set('ceo-caixa',_fmtMoedaCaixa(caixaValor));
+  const aReceberTotal=(Array.isArray(cobrancasPendentes)?cobrancasPendentes:[]).reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
+  _set('ceo-a-receber',_fmtMoedaCaixa(aReceberTotal));
+  const aPagarTotal=(Array.isArray(contasPagarTotal)?contasPagarTotal:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
+  _set('ceo-a-pagar',_fmtMoedaCaixa(aPagarTotal));
+  _set('ceo-lucro-op',_fmtMoedaCaixa(lucroMes));
+  document.getElementById('ceo-lucro-op').style.color=lucroMes>=0?'var(--green)':'var(--red)';
+
+  // Escala — mesmos números de cima, framing diferente (entregadores
+  // ATIVOS no total, não só quem está online agora).
+  _set('ceo-escala-pedidos-dia',String((Array.isArray(pedidosHoje)?pedidosHoje:[]).length));
+  _set('ceo-escala-lojas',String(_nLojasAtivas));
+  _set('ceo-escala-entregadores',String((Array.isArray(entAtivos)?entAtivos:[]).length));
+  _set('ceo-escala-pedidos-mes',String(totalPedidosMes));
+
+  // Alertas — só inadimplência (a) nessa passada; entregador inativo e
+  // queda de margem ficam pra próxima, precisam de regra/lógica nova.
+  const _cobs=(Array.isArray(cobrancasPendentes)?cobrancasPendentes:[]).map(c=>{
+    const vencYMD=_faturaVencimentoYMD(c);
+    return{...c,_diasAtraso:_diasAtrasoFatura(vencYMD)};
+  }).filter(c=>c._diasAtraso>=1).sort((a,b)=>b._diasAtraso-a._diasAtraso);
+  const _alertasEl=document.getElementById('ceo-alertas');
+  if(_alertasEl){
+    if(!_cobs.length){
+      _alertasEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:12px;font-size:13px">✅ Nenhuma loja inadimplente no momento.</div>';
+    }else{
+      _alertasEl.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:10px">🔴 ${_cobs.length} loja(s) com fatura vencida</div>`+
+        _cobs.slice(0,8).map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${c.lojas?.nome||'—'}</span><span style="color:var(--red);font-weight:700">${c._diasAtraso}d em atraso · ${_fmtMoedaCaixa(c.valor_total)}</span></div>`).join('');
+    }
+  }
+
+  const chartEl=document.getElementById('ceo-chart');
+  if(chartEl){
+    const _rows=Array.isArray(mesesChart)?mesesChart:[];
+    const _porMes=new Map(_rows.map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
+    const _meses=[];
+    let _y=_aIniChart,_m=_mIniChart;
+    for(let i=0;i<6;i++){
+      const _chave=`${_y}-${String(_m).padStart(2,'0')}`;
+      _meses.push({chave:_chave,label:`${String(_m).padStart(2,'0')}/${_y}`,quantidade:_porMes.get(_chave)||0});
+      _m++;if(_m>12){_m=1;_y++;}
+    }
+    chartEl.innerHTML=_renderMetricasChart(_meses);
+  }
 }
 async function renderMetricasPage(){
   const anoAtual=Number(_dataHojeBrasilia().slice(0,4));
@@ -10767,7 +10949,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
     const btnCriarTop2=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop2)btnCriarTop2.style.display=currentPerfil==='suporte'?'flex':'none';
-    renderTabs();setTimeout(()=>{goTab('mapa');_carregarSaldoTopbar();},150);
+    const btnIrMapa2=document.getElementById('btn-ir-mapa');if(btnIrMapa2)btnIrMapa2.style.display=currentPerfil==='adm'?'flex':'none';
+    renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'ceo':'mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
     if(currentPerfil==='loja')_iniciarFaturaBannerLoja();
     _inicializarPrecoDinamico();
