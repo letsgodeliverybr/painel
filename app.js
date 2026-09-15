@@ -3130,20 +3130,22 @@ function goTab(id){
   if(pages[id])pages[id]();
 }
 
-// Tela cheia de boas-vindas da loja — passe 3: ligada ao EVENTO REAL de
-// login, não a "uma vez por dia". _lojaLoginRecente só vira true dentro
-// dos 2 pontos que fazem autenticação de verdade (fazerLogin() aqui e o
-// override de produção em index.html, ambos logo antes do redirect pós-
-// login) — nunca no restore de sessão do DOMContentLoaded (F5/reabrir
-// aba com sessionStorage intacto), que é justamente o caso que NÃO pode
-// mostrar a tela de novo. _renderLojaBannerBoasVindas() consome (reseta)
-// a flag no primeiro render do Mapa ao Vivo que rodar depois do login —
-// então só dispara 1x por login real, navegar entre abas depois não
-// dispara de novo (a flag já foi consumida e volta a ficar false até o
-// próximo login). Fica ~10s (entrada escalonada inclusa) e some sozinha
-// com fade-out elegante — o mapa já carrega por trás, sem espera extra.
+// Tela cheia de boas-vindas da loja — passe 4: layout em 2 colunas
+// (esquerda = boas-vindas, direita = card "Crescimento da loja" com
+// dado real). Ligada ao EVENTO REAL de login, não a "uma vez por dia".
+// _lojaLoginRecente só vira true dentro dos 2 pontos que fazem
+// autenticação de verdade (fazerLogin() aqui e o override de produção
+// em index.html, ambos logo antes do redirect pós-login) — nunca no
+// restore de sessão do DOMContentLoaded (F5/reabrir aba com
+// sessionStorage intacto), que é justamente o caso que NÃO pode mostrar
+// a tela de novo. _renderLojaBannerBoasVindas() consome (reseta) a flag
+// no primeiro render do Mapa ao Vivo que rodar depois do login — então
+// só dispara 1x por login real. Fica ~10s (entrada escalonada inclusa)
+// e some sozinha com fade-out elegante — o mapa já carrega por trás,
+// sem espera extra.
 let _lojaBannerRenderizadoAgora=false;
 let _lojaLoginRecente=false;
+let _lojaPedidosCacheCrescimento=[];
 function _lojaBannerInjectStyles(){
   if(document.getElementById('loja-banner-styles'))return;
   const style=document.createElement('style');
@@ -3151,8 +3153,92 @@ function _lojaBannerInjectStyles(){
   style.innerHTML=`
     @keyframes lojaFadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @keyframes lojaProgresso{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    .loja-cresc-periodo-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:Inter,sans-serif;}
+    .loja-cresc-periodo-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
   `;
   document.head.appendChild(style);
+}
+// Totais do período atual vs período anterior de igual duração, pra
+// calcular o "+X% vs. período anterior" — comparação puramente por
+// string de data (mesma convenção usada em todo o resto do app pra
+// created_at, que já vem em horário local de Brasília sem fuso
+// embutido). Reaproveita o mesmo array cru usado nos buckets do
+// gráfico, sem nova consulta ao banco.
+function _lojaTotaisPeriodo(cache,dias){
+  const chaveDia=off=>new Date(Date.now()-off*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const iniAtual=chaveDia(dias-1),iniAnterior=chaveDia(dias*2-1);
+  let pedidosAtual=0,fatAtual=0,pedidosAnterior=0,fatAnterior=0;
+  cache.forEach(p=>{
+    const d=p.created_at.slice(0,10);
+    const finalizado=p.status==='finalizado'||p.status==='entregue';
+    if(!finalizado)return;
+    const valor=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
+    if(d>=iniAtual){pedidosAtual++;fatAtual+=valor;}
+    else if(d>=iniAnterior&&d<iniAtual){pedidosAnterior++;fatAnterior+=valor;}
+  });
+  return{pedidosAtual,fatAtual,pedidosAnterior,fatAnterior};
+}
+// Linha + área sutil, SVG desenhado à mão (mesmo padrão sem lib externa
+// do resto do painel) — bem mais compacto que o gráfico da CEO
+// (_renderCeoLineChart), sem eixo numérico, pensado pra caber num card
+// pequeno dentro da tela de boas-vindas.
+function _renderLojaChartCrescimento(buckets){
+  if(!buckets.length||!buckets.some(b=>b.faturamento>0))return'<div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:26px 0">Sem dados suficientes no período</div>';
+  const W=340,H=84,padX=3,padY=8;
+  const max=Math.max(1,...buckets.map(b=>b.faturamento));
+  const n=buckets.length;
+  const xAt=i=>n===1?W/2:padX+(i/(n-1))*(W-padX*2);
+  const yAt=v=>padY+(H-padY*2)-((v/max)*(H-padY*2));
+  const pts=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yAt(b.faturamento).toFixed(1)}`).join(' ');
+  const areaPts=`${xAt(0).toFixed(1)},${(H-padY).toFixed(1)} ${pts} ${xAt(n-1).toFixed(1)},${(H-padY).toFixed(1)}`;
+  const grid=[.33,.66].map(f=>`<line x1="${padX}" y1="${(padY+(H-padY*2)*f).toFixed(1)}" x2="${W-padX}" y2="${(padY+(H-padY*2)*f).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`).join('');
+  const dots=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.faturamento).toFixed(1)}" r="2" fill="var(--accent)"><title>${b.label}: ${_fmtMoedaCaixa(b.faturamento)}</title></circle>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
+    <defs><linearGradient id="lojaAreaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:var(--accent);stop-opacity:.3"/>
+      <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0"/>
+    </linearGradient></defs>
+    ${grid}
+    <polygon points="${areaPts}" fill="url(#lojaAreaGrad)"/>
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+  </svg>`;
+}
+function _lojaSetPeriodoCrescimento(periodo){
+  document.querySelectorAll('.loja-cresc-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===periodo));
+  const cache=_lojaPedidosCacheCrescimento;
+  const dias=periodo==='7d'?7:periodo==='30d'?30:182;
+  const buckets=periodo==='6m'?_ceoBucketPorMes(cache,6):_ceoBucketPorDia(cache,dias);
+  const totalPedidos=buckets.reduce((s,b)=>s+b.pedidos,0);
+  const totalFat=buckets.reduce((s,b)=>s+b.faturamento,0);
+  const{fatAnterior}=_lojaTotaisPeriodo(cache,dias);
+  const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  _set('loja-cresc-pedidos',String(totalPedidos));
+  _set('loja-cresc-faturamento',_fmtMoedaCaixa(totalFat));
+  const deltaEl=document.getElementById('loja-cresc-delta');
+  if(deltaEl){
+    if(fatAnterior>0){
+      const pct=((totalFat-fatAnterior)/fatAnterior*100);
+      const sinal=pct>=0?'↑':'↓';
+      const cor=pct>=0?'#22c55e':'#ef4444';
+      deltaEl.innerHTML=`<span style="color:${cor};font-weight:700">${sinal} ${Math.abs(pct).toFixed(1)}%</span> <span style="color:rgba(255,255,255,.45)">vs. período anterior</span>`;
+    }else{
+      deltaEl.innerHTML=`<span style="color:rgba(255,255,255,.35)">Sem período anterior pra comparar</span>`;
+    }
+  }
+  _set('loja-cresc-chart',_renderLojaChartCrescimento(buckets));
+}
+// Busca real (mesma tabela/campos que a CEO usa pra faturamento/pedidos,
+// só que filtrada por loja_id) — chamada 1x depois do render, cacheada
+// pra trocar o seletor 7d/30d/6m sem refazer request.
+async function _lojaCarregarCrescimento(){
+  if(!currentUser?.loja_id)return;
+  const hojeDate=new Date();
+  const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const pedidos=await _dbTodasLinhas('pedidos',`?loja_id=eq.${currentUser.loja_id}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,created_at&order=created_at.asc`,1000);
+  _lojaPedidosCacheCrescimento=Array.isArray(pedidos)?pedidos:[];
+  if(!document.getElementById('loja-banner-boas-vindas'))return;
+  _lojaSetPeriodoCrescimento('7d');
 }
 function _renderLojaBannerBoasVindas(){
   _lojaBannerRenderizadoAgora=false;
@@ -3163,13 +3249,34 @@ function _renderLojaBannerBoasVindas(){
   _lojaBannerInjectStyles();
   const saud=_ceoSaudacao();
   const nomeLoja=(currentUser?.nome||'').trim()||'Loja';
-  return`<div id="loja-banner-boas-vindas" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 32%,#0A1224 0%,#050B16 55%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;overflow:hidden;transition:opacity .8s ease">
-    <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Let's Go — @pedeletsgo" style="width:clamp(130px,15vw,190px);height:auto;object-fit:contain;margin-bottom:clamp(24px,5vh,40px);animation:lojaFadeInUp .9s ease both" onerror="this.style.display='none'"/>
-    <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;animation:lojaFadeInUp .9s ease .15s both">${saud.texto}</div>
-    <div style="font-size:clamp(24px,4vw,40px);font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.2;max-width:92vw;margin-bottom:26px;animation:lojaFadeInUp .9s ease .3s both">${nomeLoja}</div>
-    <div style="width:40px;height:1px;background:rgba(255,255,255,.18);margin-bottom:26px;animation:lojaFadeInUp .9s ease .45s both"></div>
-    <div style="font-size:clamp(15px,1.6vw,19px);font-weight:400;color:rgba(255,255,255,.82);line-height:1.65;max-width:560px;margin-bottom:22px;animation:lojaFadeInUp .9s ease .6s both">"${_ceoFraseDoDia()}"</div>
-    <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1.5px;opacity:.8;animation:lojaFadeInUp .9s ease .75s both">#CadaKmUmSonho</div>
+  const dataFmt=new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'numeric',month:'long',year:'numeric'});
+  return`<div id="loja-banner-boas-vindas" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 32%,#0A1224 0%,#050B16 55%,#000 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;padding:32px;transition:opacity .8s ease">
+    <div style="display:flex;align-items:center;gap:clamp(40px,6vw,96px);flex-wrap:wrap;max-width:1100px">
+      <div style="text-align:left;max-width:480px">
+        <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Let's Go — @pedeletsgo" style="width:clamp(84px,9vw,116px);height:auto;object-fit:contain;margin-bottom:clamp(20px,4vh,32px);animation:lojaFadeInUp .9s ease both" onerror="this.style.display='none'"/>
+        <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:4px;text-transform:uppercase;margin-bottom:12px;animation:lojaFadeInUp .9s ease .15s both">${saud.texto}</div>
+        <div style="font-size:clamp(22px,3.4vw,36px);font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.2;margin-bottom:20px;animation:lojaFadeInUp .9s ease .3s both">${nomeLoja}</div>
+        <div style="width:40px;height:1px;background:rgba(255,255,255,.18);margin-bottom:18px;animation:lojaFadeInUp .9s ease .45s both"></div>
+        <div style="font-size:clamp(14px,1.4vw,17px);font-weight:400;color:rgba(255,255,255,.78);line-height:1.6;margin-bottom:16px;animation:lojaFadeInUp .9s ease .6s both">"${_ceoFraseDoDia()}"</div>
+        <div style="font-size:12.5px;color:rgba(255,255,255,.4);font-weight:500;animation:lojaFadeInUp .9s ease .75s both">📅 ${dataFmt}</div>
+      </div>
+      <div style="width:min(380px,90vw);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px 22px;animation:lojaFadeInUp .9s ease .5s both">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <span style="font-size:13px;font-weight:700;color:#fff">↗ Crescimento da loja</span>
+          <div style="display:flex;gap:5px">
+            <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 meses</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:28px;margin-bottom:6px">
+          <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Pedidos</div><div id="loja-cresc-pedidos" style="font-size:22px;font-weight:800;color:#fff">—</div></div>
+          <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Faturamento</div><div id="loja-cresc-faturamento" style="font-size:22px;font-weight:800;color:#fff">—</div></div>
+        </div>
+        <div id="loja-cresc-delta" style="font-size:11.5px;margin-bottom:14px;min-height:15px">&nbsp;</div>
+        <div id="loja-cresc-chart"><div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:26px 0">Carregando...</div></div>
+      </div>
+    </div>
     <div style="position:absolute;bottom:0;left:0;height:2px;background:rgba(26,86,219,.5);width:100%;transform:scaleX(0);transform-origin:left;animation:lojaProgresso 10s linear forwards"></div>
   </div>`;
 }
@@ -3268,7 +3375,7 @@ function renderMapaPage(){
         </div>
       </div>
     </div>`;
-  if(_lojaBannerRenderizadoAgora)setTimeout(_fecharBannerLojaBoasVindas,10000);
+  if(_lojaBannerRenderizadoAgora){setTimeout(_fecharBannerLojaBoasVindas,10000);_lojaCarregarCrescimento();}
   iniciarDragSidebar();
   _iniciarResizeMapa();
   // Fallback essencial (não só um "tick" a mais): em produção,
