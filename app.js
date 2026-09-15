@@ -3129,13 +3129,17 @@ function goTab(id){
   if(pages[id])pages[id]();
 }
 
-// Banner de boas-vindas da loja — mesmo padrão da CEO (saudação por
-// horário + frase do banco de 360, reaproveitados via _ceoSaudacao()/
-// _ceoFraseDoDia(), sem duplicar lógica), só que faixa discreta e fixa no
-// topo em vez de tela cheia — a loja precisa continuar vendo os pedidos
-// chegando por trás. "Primeiro login do dia" = primeiro render do Mapa ao
-// Vivo (home da loja) no dia, guardado em localStorage por loja_id pra
-// sobreviver a reload/nova aba sem reaparecer até o dia seguinte.
+// Tela cheia de boas-vindas da loja — mesmo padrão visual da CEO (fundo
+// escuro premium, saudação por horário + frase do banco de 360,
+// reaproveitados via _ceoSaudacao()/_ceoFraseDoDia(), sem duplicar
+// lógica). "Primeiro login do dia" = primeiro render do Mapa ao Vivo
+// (home da loja) no dia, guardado em localStorage por loja_id pra
+// sobreviver a reload/nova aba sem reaparecer até o dia seguinte. Some
+// sozinha depois de 5s (setTimeout agendado em renderMapaPage logo após
+// o innerHTML, guardado por _lojaBannerRenderizadoAgora) — o mapa já
+// carrega por trás enquanto a tela cheia mostra, então a transição não
+// tem espera adicional nenhuma.
+let _lojaBannerRenderizadoAgora=false;
 function _lojaBannerJaVistoHoje(){
   try{
     const chave='lg_loja_banner_visto_'+(currentUser?.loja_id||currentUser?.id||'x');
@@ -3149,22 +3153,23 @@ function _lojaBannerMarcarVisto(){
   }catch(_){}
 }
 function _renderLojaBannerBoasVindas(){
+  _lojaBannerRenderizadoAgora=false;
   if(currentPerfil!=='loja'||_lojaBannerJaVistoHoje())return'';
   _lojaBannerMarcarVisto();
+  _lojaBannerRenderizadoAgora=true;
   const saud=_ceoSaudacao();
   const nomeLoja=(currentUser?.nome||'').trim()||'Loja';
-  return`<div id="loja-banner-boas-vindas" style="position:fixed;top:52px;left:0;right:0;z-index:5000;background:linear-gradient(135deg,#0f1117,#151822);border-bottom:2px solid var(--accent);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-    <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#000">
-      <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Pede Let's Go" style="width:100%;height:100%;object-fit:cover;transform:scale(2);transform-origin:50% 20%;display:block" onerror="this.parentElement.style.display='none'"/>
-    </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-size:14px;font-weight:800;color:#fff">${saud.icone} ${saud.texto}, ${nomeLoja}</div>
-      <div style="font-size:12px;color:#cbd5e1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"${_ceoFraseDoDia()}"</div>
-    </div>
-    <button onclick="document.getElementById('loja-banner-boas-vindas').remove()" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;line-height:1" title="Fechar">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+  return`<div id="loja-banner-boas-vindas" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f1117,#151822);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity .5s ease;animation:ceoFadeUp .4s ease both">
+    <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Pede Let's Go" style="width:170px;height:170px;object-fit:contain;margin-bottom:28px" onerror="this.style.display='none'"/>
+    <h1 style="font-size:34px;font-weight:800;color:#fff;margin:0 0 16px;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">${saud.icone} ${saud.texto}, ${nomeLoja}</h1>
+    <div style="font-size:17px;color:#fff;font-weight:600;max-width:600px;line-height:1.5;padding-left:16px;border-left:3px solid var(--accent);text-align:left">"${_ceoFraseDoDia()}"</div>
   </div>`;
+}
+function _fecharBannerLojaBoasVindas(){
+  const el=document.getElementById('loja-banner-boas-vindas');
+  if(!el)return;
+  el.style.opacity='0';
+  setTimeout(()=>el.remove(),500);
 }
 function renderMapaPage(){
   _sidebarBusca='';filterStatus='todos';_pedidosSelecionados=new Set();
@@ -3255,6 +3260,7 @@ function renderMapaPage(){
         </div>
       </div>
     </div>`;
+  if(_lojaBannerRenderizadoAgora)setTimeout(_fecharBannerLojaBoasVindas,5000);
   iniciarDragSidebar();
   _iniciarResizeMapa();
   // Fallback essencial (não só um "tick" a mais): em produção,
