@@ -730,6 +730,16 @@ function _atualizarRelogioTopbar(){
   const data=agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
   const hora=agora.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   el.textContent=`${data} ${hora}`;
+  // Hooks da Visão Executiva (CEO) — reaproveita este mesmo tick de 1s em vez
+  // de criar um segundo interval; vira no-op (getElementById null) em
+  // qualquer outra página.
+  const ceoData=document.getElementById('ceo-data-atual');if(ceoData)ceoData.textContent=data;
+  const ceoHora=document.getElementById('ceo-hora-atual');if(ceoHora)ceoHora.textContent=hora.slice(0,5);
+  const ceoAt=document.getElementById('ceo-atualizado-ha');
+  if(ceoAt&&_ceoUltimaAtualizacao){
+    const min=Math.floor((Date.now()-_ceoUltimaAtualizacao)/60000);
+    ceoAt.textContent=min<1?'Atualizado agora mesmo':`Atualizado há ${min} min`;
+  }
 }
 _atualizarRelogioTopbar();
 setInterval(_atualizarRelogioTopbar,1000);
@@ -6390,104 +6400,321 @@ function _verLinhaTempoPedido(pedidoId){
   modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
 }
 // ═══════════════════════════════════════════════
-// VISÃO EXECUTIVA (CEO) — passe 1 (2026-09-14)
+// VISÃO EXECUTIVA (CEO) — redesign passe 1 (2026-09-15)
 // ═══════════════════════════════════════════════
-// Só métricas (a) — dado real, sem lógica nova — por decisão explícita do
-// usuário: layout completo já com a estrutura final dos 6 blocos, mas
-// crescimento %/margem %/tempo médio de entrega/entregador inativo/queda
-// de margem/metas de escala ficam "Em breve" pra uma segunda passada, DEPOIS
-// de validar esse esqueleto. Não mexe em nenhuma tela existente — página
-// nova, admin-only.
-function _ceoStat(label,id,cor){
-  return `<div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${label}</div><div id="${id}" style="font-size:22px;font-weight:800;color:${cor||'var(--text)'}">—</div></div>`;
+// Substitui o esqueleto simples do passe 1 anterior pelo layout completo do
+// documento de especificação do usuário (40 seções). Continua só com
+// métricas (a) — dado real, sem lógica nova de comparação de período — por
+// decisão explícita: crescimento %/tempo médio de entrega/entregador
+// inativo/drill-down real/metas configuráveis ficam pra próxima passada.
+// Margem % entrou como real nessa passada por ser aritmética direta sobre
+// dois números já buscados (lucroMes/faturamentoMes), não "cálculo novo".
+// Sem sidebar: a navegação do painel já é um drawer off-screen por padrão
+// (abrirNavSidebar()/#nav-sidebar.open) — não existe um rail fixo pra
+// "esconder" aqui; só garantimos que não fique aberto ao entrar na página.
+let _ceoPedidosCache=[];
+let _ceoPeriodoAtual='30d';
+let _ceoUltimaAtualizacao=null;
+function _ceoInjectStyles(){
+  if(document.getElementById('ceo-styles'))return;
+  const style=document.createElement('style');
+  style.id='ceo-styles';
+  style.innerHTML=`
+    .ceo-page{flex:1;min-height:0;overflow-y:auto;padding:22px 28px 40px;max-width:1800px;margin:0 auto;}
+    .ceo-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;}
+    .ceo-greeting-block h1{font-size:25px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--text);}
+    .ceo-badge-ceo{background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+    .ceo-subtitle{font-size:13px;color:var(--text2);margin:2px 0 8px;}
+    .ceo-frase{font-size:11.5px;color:var(--text3);font-style:italic;max-width:440px;line-height:1.4;}
+    .ceo-header-right{display:flex;align-items:center;gap:18px;}
+    .ceo-meta-loc{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px;color:var(--text2);white-space:nowrap;}
+    .ceo-avatar-wrap{position:relative;}
+    .ceo-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;cursor:pointer;user-select:none;}
+    .ceo-dropdown{position:absolute;right:0;top:46px;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.4);overflow:hidden;z-index:80;display:none;}
+    .ceo-dropdown.open{display:block;}
+    .ceo-dropdown button{display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text);font-size:12.5px;cursor:pointer;font-family:Inter,sans-serif;}
+    .ceo-dropdown button:hover{background:var(--surface2);}
+    .ceo-periodo-toggle{display:flex;gap:6px;}
+    .ceo-periodo-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;transition:.15s;}
+    .ceo-periodo-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .ceo-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px;}
+    .ceo-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;animation:ceoFadeUp .35s ease both;}
+    .ceo-icon-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:10px;}
+    .ceo-card-label{font-size:10.5px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;}
+    .ceo-card-value{font-size:23px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:5px;}
+    .ceo-card-comp{font-size:11px;color:var(--text3);margin-bottom:12px;min-height:14px;}
+    .ceo-meta-row{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text3);margin-bottom:5px;}
+    .ceo-progress-track{height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+    .ceo-progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .5s ease;}
+    .ceo-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;animation:ceoFadeUp .4s ease both;}
+    .ceo-block-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+    .ceo-block-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+    .ceo-block-body{padding:18px 20px;}
+    .ceo-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .ceo-mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+    .ceo-mini-stat-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px;}
+    .ceo-mini-stat-value{font-size:19px;font-weight:800;color:var(--text);}
+    .ceo-escala-meta{font-size:11.5px;color:var(--text3);}
+    .ceo-btn-refresh{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;font-family:Inter,sans-serif;}
+    .ceo-alert{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;background:var(--surface2);margin-bottom:8px;cursor:pointer;transition:filter .15s;}
+    .ceo-alert:hover{filter:brightness(1.2);}
+    .ceo-alert-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+    .ceo-alert-text{font-size:12.5px;color:var(--text);flex:1;}
+    @keyframes ceoFadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    @media(max-width:1500px){.ceo-kpi-grid{grid-template-columns:repeat(3,1fr);}.ceo-mini-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:1000px){.ceo-kpi-grid{grid-template-columns:repeat(2,1fr);}.ceo-grid-2{grid-template-columns:1fr;}.ceo-header{flex-direction:column;}.ceo-header-right{width:100%;justify-content:space-between;}}
+    @media(max-width:600px){.ceo-kpi-grid{grid-template-columns:1fr;}.ceo-mini-grid{grid-template-columns:1fr;}}
+  `;
+  document.head.appendChild(style);
 }
-function _ceoStatEmBreve(label){
-  return `<div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${label}</div><div style="font-size:22px;font-weight:800;color:var(--text3)">Em breve</div></div>`;
+function _ceoIniciais(nome){
+  if(!nome)return'?';
+  const p=nome.trim().split(/\s+/);
+  return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();
 }
-async function renderCeoPage(){
-  const hoje=_dataHojeBrasilia();
-  const [ano,mes]=hoje.split('-');
-  const dataIniMes=`${ano}-${mes}-01`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🧭 Visão Executiva</div><button class="btn-sm btn-primary-sm" onclick="renderCeoPage()">↻ Atualizar</button></div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
-      <div class="stat-card"><div class="stat-label">FATURAMENTO (MÊS)</div><div class="stat-value" id="ceo-fat" style="font-size:24px;color:var(--accent)">—</div></div>
-      <div class="stat-card"><div class="stat-label">PEDIDOS (MÊS)</div><div class="stat-value" id="ceo-pedidos-mes" style="font-size:24px">—</div></div>
-      <div class="stat-card"><div class="stat-label">CRESCIMENTO</div><div class="stat-value" style="font-size:20px;color:var(--text3)">Em breve</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO (MÊS)</div><div class="stat-value" id="ceo-lucro" style="font-size:24px">—</div></div>
-      <div class="stat-card"><div class="stat-label">MARGEM</div><div class="stat-value" style="font-size:20px;color:var(--text3)">Em breve</div></div>
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">📈 Pedidos Finalizados — Últimos 6 Meses</span></div>
-      <div style="padding:20px 20px 16px" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">⚙️ Operação</span></div>
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
-        ${_ceoStat('Pedidos Hoje','ceo-pedidos-hoje')}
-        ${_ceoStat('Entregadores Online','ceo-ent-online')}
-        ${_ceoStatEmBreve('Tempo Médio de Entrega')}
-        ${_ceoStat('Taxa de Conclusão','ceo-conclusao')}
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">🏪 Comercial</span></div>
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
-        ${_ceoStat('Lojas Ativas','ceo-lojas-ativas')}
-        ${_ceoStat('Novas Lojas (30d)','ceo-lojas-novas')}
-        ${_ceoStat('Pedidos/Loja (Mês)','ceo-pedidos-loja')}
-        ${_ceoStat('Pipeline (Cadastro)','ceo-pipeline')}
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">💵 Financeiro</span></div>
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
-        ${_ceoStat('Caixa Disponível','ceo-caixa')}
-        ${_ceoStat('A Receber','ceo-a-receber')}
-        ${_ceoStat('A Pagar','ceo-a-pagar')}
-        ${_ceoStat('Lucro Operacional (Mês)','ceo-lucro-op')}
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header"><span class="card-title">🚨 Atenção</span></div>
-      <div style="padding:16px 20px" id="ceo-alertas"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span class="card-title">🚀 Escala Let's Go</span></div>
-      <div style="padding:12px 20px 0;font-size:12px;color:var(--text3)">Metas configuráveis chegam na próxima etapa — por enquanto, só "onde estamos" hoje:</div>
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
-        ${_ceoStat('Pedidos/Dia (hoje)','ceo-escala-pedidos-dia')}
-        ${_ceoStat('Lojas Ativas','ceo-escala-lojas')}
-        ${_ceoStat('Entregadores Ativos','ceo-escala-entregadores')}
-        ${_ceoStat('Pedidos/Mês','ceo-escala-pedidos-mes')}
-      </div>
-    </div>
+function _ceoToggleDropdown(){document.getElementById('ceo-dropdown')?.classList.toggle('open');}
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('ceo-dropdown');
+  if(dd&&dd.classList.contains('open')&&!e.target.closest('.ceo-avatar-wrap'))dd.classList.remove('open');
+});
+function _ceoKpiCard(o){
+  return`<div class="ceo-card">
+    <div class="ceo-icon-circle" style="background:${o.cor}22;color:${o.cor}">${o.icone}</div>
+    <div class="ceo-card-label">${o.label}</div>
+    <div class="ceo-card-value" id="${o.id}">${o.valor||'—'}</div>
+    <div class="ceo-card-comp" id="${o.id}-comp">${o.comp||'Comparativo — em breve'}</div>
+    <div class="ceo-meta-row"><span>Meta</span><span id="${o.id}-meta">${o.meta||'A definir'}</span></div>
+    <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${o.id}-bar" style="width:${o.metaPct||0}%"></div></div>
   </div>`;
-  _carregarDadosCeo(dataIniMes,hoje);
 }
-async function _carregarDadosCeo(dataIniMes,hoje){
-  const [ano,mes]=hoje.split('-');
-  const competenciaMes=`${ano}-${mes}-01`;
+function _ceoMiniStat(label,id){
+  return`<div><div class="ceo-mini-stat-label">${label}</div><div class="ceo-mini-stat-value" id="${id}">—</div></div>`;
+}
+function _ceoEscalaItem(label,id){
+  return`<div>
+    <div class="ceo-mini-stat-label">${label}</div>
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">meta a definir</span></span></div>
+    <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${id}-bar" style="width:0%"></div></div>
+  </div>`;
+}
+// Bucket de status → 4 categorias do documento (Entregues/Em andamento/
+// Aguardando/Cancelados), a partir dos valores reais de STATUS_LABEL.
+const _CORES_STATUS_MACRO={'Entregues':'#22c55e','Em andamento':'#1A56DB','Aguardando':'#eab308','Cancelados':'#ef4444'};
+const _STATUS_MACRO_MAP={finalizado:'Entregues',entregue:'Entregues',cancelado:'Cancelados',aceito:'Em andamento',chegou_local:'Em andamento',em_rota:'Em andamento',chegou_destino:'Em andamento',retornando:'Em andamento',recebido:'Em andamento',pronto:'Em andamento',aguardando_pagamento:'Aguardando',aguardando:'Aguardando',fila:'Aguardando',agendado:'Aguardando'};
+function _corStatusMacro(nome){return _CORES_STATUS_MACRO[nome]||'#64748b';}
+function _ceoBucketStatus(pedidos){
+  const acc={};
+  pedidos.forEach(p=>{const macro=_STATUS_MACRO_MAP[p.status]||'Em andamento';acc[macro]=(acc[macro]||0)+1;});
+  return Object.keys(_CORES_STATUS_MACRO).filter(k=>acc[k]).map(k=>({categoria:k,quantidade:acc[k]}));
+}
+// Agregação real por dia/mês pro gráfico "Crescimento da empresa" — sempre
+// a partir do mesmo fetch de 12 meses em cache (_ceoPedidosCache), sem
+// refazer request ao trocar o período (item 20/30 do documento: atualização
+// inteligente, evita N+1).
+function _ceoBucketPorDia(pedidos,dias){
+  const buckets=[];
+  for(let i=dias-1;i>=0;i--){
+    const chave=new Date(Date.now()-i*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+    buckets.push({chave,label:chave.slice(8,10)+'/'+chave.slice(5,7),faturamento:0,pedidos:0});
+  }
+  const idx=new Map(buckets.map((b,i)=>[b.chave,i]));
+  pedidos.forEach(p=>{
+    const i=idx.get(p.created_at.slice(0,10));
+    if(i===undefined)return;
+    if(p.status==='finalizado'||p.status==='entregue'){buckets[i].faturamento+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);buckets[i].pedidos+=1;}
+  });
+  return buckets;
+}
+function _ceoBucketPorMes(pedidos,meses){
+  const hoje=new Date();
+  const y0=hoje.getFullYear(),m0=hoje.getMonth()+1;
+  const seq=[];
+  for(let i=meses-1;i>=0;i--){
+    let mm=m0-i,yy=y0;
+    while(mm<1){mm+=12;yy--;}
+    seq.push({chave:`${yy}-${String(mm).padStart(2,'0')}`,label:`${String(mm).padStart(2,'0')}/${yy}`,faturamento:0,pedidos:0});
+  }
+  const idx=new Map(seq.map((b,i)=>[b.chave,i]));
+  pedidos.forEach(p=>{
+    const i=idx.get(p.created_at.slice(0,7));
+    if(i===undefined)return;
+    if(p.status==='finalizado'||p.status==='entregue'){seq[i].faturamento+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);seq[i].pedidos+=1;}
+  });
+  return seq;
+}
+// Linha dupla (Faturamento + Pedidos finalizados) em escala normalizada por
+// série (0–100% do próprio pico no período) — SVG desenhado à mão, sem lib
+// externa, mesmo padrão de _renderDonutCategoria. Escala normalizada porque
+// as duas métricas têm ordens de grandeza muito diferentes (R$ vs unidades);
+// o valor real exato de cada ponto aparece no tooltip nativo (<title>).
+function _renderCeoLineChart(buckets){
+  if(!buckets.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Sem dados no período</div>';
+  const W=900,H=230,padL=14,padR=14,padT=16,padB=32;
+  const plotW=W-padL-padR,plotH=H-padT-padB;
+  const maxFat=Math.max(1,...buckets.map(b=>b.faturamento));
+  const maxPed=Math.max(1,...buckets.map(b=>b.pedidos));
+  const n=buckets.length;
+  const xAt=i=>n===1?padL+plotW/2:padL+(i/(n-1))*plotW;
+  const yFat=v=>padT+plotH-(v/maxFat)*plotH;
+  const yPed=v=>padT+plotH-(v/maxPed)*plotH;
+  const lineFat=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yFat(b.faturamento).toFixed(1)}`).join(' ');
+  const linePed=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yPed(b.pedidos).toFixed(1)}`).join(' ');
+  const dotsFat=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yFat(b.faturamento).toFixed(1)}" r="3" fill="var(--accent)"><title>${b.label}: ${_fmtMoedaCaixa(b.faturamento)}</title></circle>`).join('');
+  const dotsPed=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yPed(b.pedidos).toFixed(1)}" r="3" fill="#22c55e"><title>${b.label}: ${b.pedidos} pedido${b.pedidos===1?'':'s'} finalizado${b.pedidos===1?'':'s'}</title></circle>`).join('');
+  const step=Math.max(1,Math.ceil(n/10));
+  const labels=buckets.map((b,i)=>(i%step===0||i===n-1)?`<text x="${xAt(i).toFixed(1)}" y="${H-10}" font-size="10" fill="var(--text3)" text-anchor="middle">${b.label}</text>`:'').join('');
+  const grid=[0,.25,.5,.75,1].map(f=>`<line x1="${padL}" y1="${(padT+plotH*(1-f)).toFixed(1)}" x2="${W-padR}" y2="${(padT+plotH*(1-f)).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="240" style="overflow:visible">
+    ${grid}
+    <polyline points="${lineFat}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${linePed}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dotsFat}${dotsPed}
+    ${labels}
+  </svg>
+  <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos finalizados</span>
+    <span style="color:var(--text3)">· escalas normalizadas por série · passe o mouse no ponto pra ver o valor exato</span>
+  </div>`;
+}
+function _ceoSetPeriodo(p){
+  _ceoPeriodoAtual=p;
+  document.querySelectorAll('.ceo-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+  const buckets=p==='7d'?_ceoBucketPorDia(_ceoPedidosCache,7)
+    :p==='30d'?_ceoBucketPorDia(_ceoPedidosCache,30)
+    :p==='6m'?_ceoBucketPorMes(_ceoPedidosCache,6)
+    :_ceoBucketPorMes(_ceoPedidosCache,12);
+  const el=document.getElementById('ceo-chart');
+  if(el)el.innerHTML=_renderCeoLineChart(buckets);
+}
+function renderCeoPage(){
+  _ceoInjectStyles();
+  fecharNavSidebar();
+  const nomeUsuario=currentUser?.nome||'Administrador';
+  const iniciais=_ceoIniciais(nomeUsuario);
+  const agora=new Date();
+  const hojeFmt=agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  const horaFmt=agora.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('app-body').innerHTML=`<div class="ceo-page">
+    <div class="ceo-header">
+      <div class="ceo-greeting-block">
+        <h1>☀️ Bom dia, ${nomeUsuario} <span class="ceo-badge-ceo">CEO</span></h1>
+        <div class="ceo-subtitle">Aqui está o resumo da performance da Let's Go Delivery hoje.</div>
+        <div class="ceo-frase">"Grandes resultados não acontecem por acaso. Eles são construídos com foco, dados e ação."</div>
+      </div>
+      <div class="ceo-header-right">
+        <div class="ceo-meta-loc">
+          <span>📍 Ribeirão Preto - SP</span>
+          <span>📅 <span id="ceo-data-atual">${hojeFmt}</span> · 🕐 <span id="ceo-hora-atual">${horaFmt}</span></span>
+        </div>
+        <div class="ceo-avatar-wrap">
+          <div class="ceo-avatar" onclick="_ceoToggleDropdown()">${iniciais}</div>
+          <div class="ceo-dropdown" id="ceo-dropdown">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:12.5px;font-weight:700;color:var(--text)">${nomeUsuario}</div><div style="font-size:11px;color:var(--text3)">CEO</div></div>
+            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">👤 Meu perfil</button>
+            <button onclick="_ceoToggleDropdown();goTab('configuracao')">⚙️ Configurações</button>
+            <button onclick="logout()" style="color:#ef4444">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ceo-kpi-grid">
+      ${_ceoKpiCard({id:'ceo-fat',icone:'💰',cor:'#1A56DB',label:'Faturamento (mês)'})}
+      ${_ceoKpiCard({id:'ceo-pedidos',icone:'📦',cor:'#1A56DB',label:'Pedidos (mês)'})}
+      ${_ceoKpiCard({id:'ceo-crescimento',icone:'📈',cor:'#22c55e',label:'Crescimento',valor:'Em breve',comp:'Comparativo com período anterior — em desenvolvimento',meta:'—'})}
+      ${_ceoKpiCard({id:'ceo-lucro',icone:'💵',cor:'#22c55e',label:'Lucro (mês)'})}
+      ${_ceoKpiCard({id:'ceo-margem',icone:'📊',cor:'#eab308',label:'Margem operacional'})}
+    </div>
+
+    <div class="ceo-block">
+      <div class="ceo-block-header">
+        <span class="ceo-block-title">📈 Crescimento da empresa</span>
+        <div class="ceo-periodo-toggle">
+          <button class="ceo-periodo-btn" data-p="7d" onclick="_ceoSetPeriodo('7d')">7 dias</button>
+          <button class="ceo-periodo-btn" data-p="30d" onclick="_ceoSetPeriodo('30d')">30 dias</button>
+          <button class="ceo-periodo-btn" data-p="6m" onclick="_ceoSetPeriodo('6m')">6 meses</button>
+          <button class="ceo-periodo-btn" data-p="12m" onclick="_ceoSetPeriodo('12m')">12 meses</button>
+        </div>
+      </div>
+      <div class="ceo-block-body" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
+
+    <div class="ceo-grid-2">
+      <div class="ceo-block">
+        <div class="ceo-block-header"><span class="ceo-block-title">⚙️ Operação hoje</span></div>
+        <div class="ceo-block-body ceo-mini-grid">
+          ${_ceoMiniStat('Pedidos hoje','ceo-pedidos-hoje')}
+          ${_ceoMiniStat('Entregadores online','ceo-ent-online')}
+          ${_ceoMiniStat('Tempo médio de entrega','ceo-tempo-medio')}
+          ${_ceoMiniStat('Taxa de conclusão','ceo-taxa-conclusao')}
+        </div>
+      </div>
+      <div class="ceo-block">
+        <div class="ceo-block-header"><span class="ceo-block-title">🍩 Status dos pedidos hoje</span></div>
+        <div class="ceo-block-body" id="ceo-donut-status"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+      </div>
+    </div>
+
+    <div class="ceo-grid-2">
+      <div class="ceo-block">
+        <div class="ceo-block-header"><span class="ceo-block-title">💵 Financeiro</span></div>
+        <div class="ceo-block-body ceo-mini-grid">
+          ${_ceoMiniStat('Caixa disponível','ceo-caixa')}
+          ${_ceoMiniStat('A receber','ceo-a-receber')}
+          ${_ceoMiniStat('A pagar','ceo-a-pagar')}
+          ${_ceoMiniStat('Lucro operacional','ceo-lucro-op')}
+        </div>
+      </div>
+      <div class="ceo-block">
+        <div class="ceo-block-header"><span class="ceo-block-title">🏪 Comercial</span></div>
+        <div class="ceo-block-body ceo-mini-grid">
+          ${_ceoMiniStat('Lojas ativas','ceo-lojas-ativas')}
+          ${_ceoMiniStat('Novas lojas (30d)','ceo-lojas-novas')}
+          ${_ceoMiniStat('Pedidos/loja (mês)','ceo-pedidos-loja')}
+          ${_ceoMiniStat('Pipeline (cadastro)','ceo-pipeline')}
+        </div>
+      </div>
+    </div>
+
+    <div class="ceo-block">
+      <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas configuráveis chegam na próxima etapa</span></div>
+      <div class="ceo-block-body ceo-mini-grid">
+        ${_ceoEscalaItem('Pedidos/dia (hoje)','ceo-escala-pedidos-dia')}
+        ${_ceoEscalaItem('Lojas ativas','ceo-escala-lojas')}
+        ${_ceoEscalaItem('Entregadores ativos','ceo-escala-entregadores')}
+        ${_ceoEscalaItem('Pedidos/mês','ceo-escala-pedidos-mes')}
+      </div>
+    </div>
+
+    <div class="ceo-block">
+      <div class="ceo-block-header">
+        <span class="ceo-block-title">🎯 Hoje, o que merece sua atenção</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:var(--text3)" id="ceo-atualizado-ha">—</span>
+          <button class="ceo-btn-refresh" onclick="_carregarDadosCeo()">↻ Atualizar</button>
+        </div>
+      </div>
+      <div class="ceo-block-body" id="ceo-alertas"><div style="color:var(--text3);text-align:center;padding:16px">Carregando...</div></div>
+    </div>
+
+    <div style="text-align:center;padding:16px 0 4px;font-size:11px;color:var(--text3)">Juntos, vamos mais longe. · #CadaKmUmSonho</div>
+  </div>`;
+  document.querySelector(`.ceo-periodo-btn[data-p="${_ceoPeriodoAtual}"]`)?.classList.add('active');
+  _carregarDadosCeo();
+}
+async function _carregarDadosCeo(){
+  const hoje=_dataHojeBrasilia();
+  const mesAtualChave=hoje.slice(0,7);
+  const hojeDate=new Date();
+  const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
   const trintaDiasAtras=new Date(Date.now()-30*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  // Range do gráfico: últimos 6 meses incluindo o atual.
-  const _mAtual=Number(mes),_aAtual=Number(ano);
-  let _mIniChart=_mAtual-5,_aIniChart=_aAtual;
-  while(_mIniChart<1){_mIniChart+=12;_aIniChart--;}
-  const dataIniChart=`${_aIniChart}-${String(_mIniChart).padStart(2,'0')}-01`;
 
   const [
-    pedidosMes,pedidosHoje,entOnline,entAtivos,lojasAtivas,lojasNovas,lojasPipeline,
-    cobrancasPendentes,contasPagarTotal,contasPagarMes,configCaixa,mesesChart,
+    pedidos12m,entOnline,entAtivos,lojasAtivas,lojasNovas,lojasPipeline,
+    cobrancasPendentes,contasPagarTotal,contasPagarMes,configCaixa,
   ]=await Promise.all([
-    _dbTodasLinhas('pedidos',`?created_at=gte.${dataIniMes}T00:00:00&select=status,taxa_entrega,gorjeta,taxa_motoboy`,1000),
-    _dbTodasLinhas('pedidos',`?created_at=gte.${hoje}T00:00:00&select=id`,1000),
+    _dbTodasLinhas('pedidos',`?created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,taxa_motoboy,created_at&order=created_at.asc`,1000),
     db('entregadores','GET',null,'?disponivel=eq.true&select=id'),
     db('entregadores','GET',null,'?status=neq.bloqueado&or=(aprovado.eq.true,status_cadastro.eq.aprovado)&select=id'),
     db('lojas','GET',null,'?ativo=eq.true&select=id'),
@@ -6495,80 +6722,81 @@ async function _carregarDadosCeo(dataIniMes,hoje){
     db('lojas','GET',null,'?status_cadastro=in.(em_analise,pendente)&select=id'),
     db('cobrancas_lojas','GET',null,'?status=eq.pendente&select=id,loja_id,valor_total,created_at,lojas(nome)'),
     db('contas_pagar','GET',null,'?status=eq.pendente&select=valor'),
-    db('contas_pagar','GET',null,`?status=eq.pendente&competencia=eq.${competenciaMes}&select=valor`),
+    db('contas_pagar','GET',null,`?status=eq.pendente&competencia=eq.${mesAtualChave}-01&select=valor`),
     db('configuracoes','GET',null,'?chave=eq.meta_caixa_valor_atual'),
-    dbRpc('pedidos_finalizados_por_mes',{data_ini_local:`${dataIniChart}T00:00:00`,data_fim_local:`${hoje}T23:59:59.999`}),
   ]);
 
-  const _finalizadosMes=(Array.isArray(pedidosMes)?pedidosMes:[]).filter(p=>p.status==='finalizado');
-  const faturamentoMes=_finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
-  const despesaMes=_finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
+  _ceoPedidosCache=Array.isArray(pedidos12m)?pedidos12m:[];
+  const pedidosHoje=_ceoPedidosCache.filter(p=>p.created_at.slice(0,10)===hoje);
+  const pedidosMes=_ceoPedidosCache.filter(p=>p.created_at.slice(0,7)===mesAtualChave);
+  const finalizadosMes=pedidosMes.filter(p=>p.status==='finalizado'||p.status==='entregue');
+  const faturamentoMes=finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
+  const despesaMotoboyMes=finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
   const contasPagarMesTotal=(Array.isArray(contasPagarMes)?contasPagarMes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
-  const lucroMes=faturamentoMes-despesaMes-contasPagarMesTotal;
-  const totalPedidosMes=(Array.isArray(pedidosMes)?pedidosMes:[]).length;
-  const taxaConclusao=totalPedidosMes>0?(_finalizadosMes.length/totalPedidosMes*100):0;
+  const lucroMes=faturamentoMes-despesaMotoboyMes-contasPagarMesTotal;
+  const margemMes=faturamentoMes>0?(lucroMes/faturamentoMes*100):null;
+  const totalPedidosMes=pedidosMes.length;
+  const taxaConclusao=totalPedidosMes>0?(finalizadosMes.length/totalPedidosMes*100):null;
 
   const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
   _set('ceo-fat',_fmtMoedaCaixa(faturamentoMes));
-  _set('ceo-pedidos-mes',String(totalPedidosMes));
+  _set('ceo-pedidos',String(totalPedidosMes));
   _set('ceo-lucro',_fmtMoedaCaixa(lucroMes));
-  document.getElementById('ceo-lucro').style.color=lucroMes>=0?'var(--green)':'var(--red)';
+  const lucroEl=document.getElementById('ceo-lucro');if(lucroEl)lucroEl.style.color=lucroMes>=0?'#22c55e':'#ef4444';
+  _set('ceo-margem',margemMes!==null?`${margemMes.toFixed(1)}%`:'Sem dados no período');
 
-  _set('ceo-pedidos-hoje',String((Array.isArray(pedidosHoje)?pedidosHoje:[]).length));
+  _set('ceo-pedidos-hoje',String(pedidosHoje.length));
   _set('ceo-ent-online',String((Array.isArray(entOnline)?entOnline:[]).length));
-  _set('ceo-conclusao',totalPedidosMes>0?`${taxaConclusao.toFixed(1)}%`:'—');
+  _set('ceo-taxa-conclusao',taxaConclusao!==null?`${taxaConclusao.toFixed(1)}%`:'Sem dados no período');
 
-  const _nLojasAtivas=(Array.isArray(lojasAtivas)?lojasAtivas:[]).length;
-  _set('ceo-lojas-ativas',String(_nLojasAtivas));
+  const nLojasAtivas=(Array.isArray(lojasAtivas)?lojasAtivas:[]).length;
+  _set('ceo-lojas-ativas',String(nLojasAtivas));
   _set('ceo-lojas-novas',String((Array.isArray(lojasNovas)?lojasNovas:[]).length));
-  _set('ceo-pedidos-loja',_nLojasAtivas>0?(totalPedidosMes/_nLojasAtivas).toFixed(1):'—');
-  _set('ceo-pipeline',String((Array.isArray(lojasPipeline)?lojasPipeline:[]).length));
+  _set('ceo-pedidos-loja',nLojasAtivas>0?(totalPedidosMes/nLojasAtivas).toFixed(1):'Sem dados no período');
+  const pipeline=Array.isArray(lojasPipeline)?lojasPipeline:[];
+  _set('ceo-pipeline',String(pipeline.length));
 
   const caixaValor=parseFloat(configCaixa?.[0]?.valor)||0;
   _set('ceo-caixa',_fmtMoedaCaixa(caixaValor));
-  const aReceberTotal=(Array.isArray(cobrancasPendentes)?cobrancasPendentes:[]).reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
+  const cobs=Array.isArray(cobrancasPendentes)?cobrancasPendentes:[];
+  const aReceberTotal=cobs.reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
   _set('ceo-a-receber',_fmtMoedaCaixa(aReceberTotal));
   const aPagarTotal=(Array.isArray(contasPagarTotal)?contasPagarTotal:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
   _set('ceo-a-pagar',_fmtMoedaCaixa(aPagarTotal));
   _set('ceo-lucro-op',_fmtMoedaCaixa(lucroMes));
-  document.getElementById('ceo-lucro-op').style.color=lucroMes>=0?'var(--green)':'var(--red)';
+  const lucroOpEl=document.getElementById('ceo-lucro-op');if(lucroOpEl)lucroOpEl.style.color=lucroMes>=0?'#22c55e':'#ef4444';
 
-  // Escala — mesmos números de cima, framing diferente (entregadores
-  // ATIVOS no total, não só quem está online agora).
-  _set('ceo-escala-pedidos-dia',String((Array.isArray(pedidosHoje)?pedidosHoje:[]).length));
-  _set('ceo-escala-lojas',String(_nLojasAtivas));
+  _set('ceo-escala-pedidos-dia',String(pedidosHoje.length));
+  _set('ceo-escala-lojas',String(nLojasAtivas));
   _set('ceo-escala-entregadores',String((Array.isArray(entAtivos)?entAtivos:[]).length));
   _set('ceo-escala-pedidos-mes',String(totalPedidosMes));
 
-  // Alertas — só inadimplência (a) nessa passada; entregador inativo e
-  // queda de margem ficam pra próxima, precisam de regra/lógica nova.
-  const _cobs=(Array.isArray(cobrancasPendentes)?cobrancasPendentes:[]).map(c=>{
+  const donutEl=document.getElementById('ceo-donut-status');
+  if(donutEl){
+    const dados=_ceoBucketStatus(pedidosHoje);
+    donutEl.innerHTML=_renderDonutCategoria(dados,{rotuloCentro:'pedido',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido hoje ainda',corFn:_corStatusMacro});
+  }
+
+  // Alertas / "o que merece atenção" — só sinais (a) nessa passada:
+  // inadimplência (cobrancas_lojas vencidas) e pipeline de cadastro
+  // aguardando aprovação. Entregador inativo e queda de margem exigem
+  // regra/comparação nova, ficam pra próxima.
+  const cobsVencidas=cobs.map(c=>{
     const vencYMD=_faturaVencimentoYMD(c);
     return{...c,_diasAtraso:_diasAtrasoFatura(vencYMD)};
   }).filter(c=>c._diasAtraso>=1).sort((a,b)=>b._diasAtraso-a._diasAtraso);
-  const _alertasEl=document.getElementById('ceo-alertas');
-  if(_alertasEl){
-    if(!_cobs.length){
-      _alertasEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:12px;font-size:13px">✅ Nenhuma loja inadimplente no momento.</div>';
-    }else{
-      _alertasEl.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:10px">🔴 ${_cobs.length} loja(s) com fatura vencida</div>`+
-        _cobs.slice(0,8).map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${c.lojas?.nome||'—'}</span><span style="color:var(--red);font-weight:700">${c._diasAtraso}d em atraso · ${_fmtMoedaCaixa(c.valor_total)}</span></div>`).join('');
-    }
+  const alertas=[];
+  if(cobsVencidas.length){
+    const valorTotal=cobsVencidas.reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
+    alertas.push(`<div class="ceo-alert" onclick="goTab('cobranca-pagamento')"><span class="ceo-alert-dot" style="background:#ef4444"></span><span class="ceo-alert-text">🔴 <b>${cobsVencidas.length} loja${cobsVencidas.length===1?'':'s'}</b> com fatura vencida — ${_fmtMoedaCaixa(valorTotal)} em aberto</span></div>`);
   }
+  if(pipeline.length){
+    alertas.push(`<div class="ceo-alert" onclick="goTab('cadastros')"><span class="ceo-alert-dot" style="background:#eab308"></span><span class="ceo-alert-text">🟡 <b>${pipeline.length} loja${pipeline.length===1?'':'s'}</b> aguardando aprovação de cadastro</span></div>`);
+  }
+  _set('ceo-alertas',alertas.length?alertas.join(''):'<div style="text-align:center;padding:16px;color:#22c55e;font-size:13px;font-weight:600">✓ Tudo sob controle</div>');
 
-  const chartEl=document.getElementById('ceo-chart');
-  if(chartEl){
-    const _rows=Array.isArray(mesesChart)?mesesChart:[];
-    const _porMes=new Map(_rows.map(r=>[String(r.mes).slice(0,7),Number(r.quantidade)||0]));
-    const _meses=[];
-    let _y=_aIniChart,_m=_mIniChart;
-    for(let i=0;i<6;i++){
-      const _chave=`${_y}-${String(_m).padStart(2,'0')}`;
-      _meses.push({chave:_chave,label:`${String(_m).padStart(2,'0')}/${_y}`,quantidade:_porMes.get(_chave)||0});
-      _m++;if(_m>12){_m=1;_y++;}
-    }
-    chartEl.innerHTML=_renderMetricasChart(_meses);
-  }
+  _ceoUltimaAtualizacao=Date.now();
+  _ceoSetPeriodo(_ceoPeriodoAtual);
 }
 async function renderMetricasPage(){
   const anoAtual=Number(_dataHojeBrasilia().slice(0,4));
