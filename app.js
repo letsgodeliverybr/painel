@@ -6563,8 +6563,11 @@ function _ceoFmtEixoReal(v){
 // unidades), não mais normalizada. SVG desenhado à mão, sem lib externa,
 // mesmo padrão de _renderDonutCategoria. O valor exato de cada ponto
 // também aparece no tooltip nativo (<title>) ao passar o mouse.
+// Geometria do último gráfico desenhado — guardada pra _ceoAttachChartTooltip
+// converter posição do mouse em índice de bucket sem reparsear o SVG.
+let _ceoChartGeom=null;
 function _renderCeoLineChart(buckets){
-  if(!buckets.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Sem dados no período</div>';
+  if(!buckets.length){_ceoChartGeom=null;return'<div style="color:var(--text3);text-align:center;padding:40px">Sem dados no período</div>';}
   const W=960,H=240,padL=50,padR=44,padT=16,padB=32;
   const plotW=W-padL-padR,plotH=H-padT-padB;
   const maxFat=_ceoNiceMax(Math.max(0,...buckets.map(b=>b.faturamento)));
@@ -6573,17 +6576,25 @@ function _renderCeoLineChart(buckets){
   const xAt=i=>n===1?padL+plotW/2:padL+(i/(n-1))*plotW;
   const yFat=v=>padT+plotH-(v/maxFat)*plotH;
   const yPed=v=>padT+plotH-(v/maxPed)*plotH;
+  _ceoChartGeom={buckets,padL,padR,padT,padB,plotW,plotH,xAt,yFat,yPed};
   const lineFat=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yFat(b.faturamento).toFixed(1)}`).join(' ');
   const linePed=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yPed(b.pedidos).toFixed(1)}`).join(' ');
-  const dotsFat=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yFat(b.faturamento).toFixed(1)}" r="3" fill="var(--accent)"><title>${b.label}: ${_fmtMoedaCaixa(b.faturamento)}</title></circle>`).join('');
-  const dotsPed=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yPed(b.pedidos).toFixed(1)}" r="3" fill="#22c55e"><title>${b.label}: ${b.pedidos} pedido${b.pedidos===1?'':'s'} finalizado${b.pedidos===1?'':'s'}</title></circle>`).join('');
+  const dotsFat=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yFat(b.faturamento).toFixed(1)}" r="3" fill="var(--accent)"/>`).join('');
+  const dotsPed=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yPed(b.pedidos).toFixed(1)}" r="3" fill="#22c55e"/>`).join('');
   const step=Math.max(1,Math.ceil(n/10));
   const labels=buckets.map((b,i)=>(i%step===0||i===n-1)?`<text x="${xAt(i).toFixed(1)}" y="${H-8}" font-size="10" fill="var(--text3)" text-anchor="middle">${b.label}</text>`:'').join('');
   const niveis=[0,.25,.5,.75,1];
   const grid=niveis.map(f=>`<line x1="${padL}" y1="${(padT+plotH*(1-f)).toFixed(1)}" x2="${W-padR}" y2="${(padT+plotH*(1-f)).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
   const eixoEsq=niveis.map(f=>`<text x="${padL-8}" y="${(padT+plotH*(1-f)+3.5).toFixed(1)}" font-size="10" fill="var(--accent)" text-anchor="end">${_ceoFmtEixoReal(maxFat*f)}</text>`).join('');
   const eixoDir=niveis.map(f=>`<text x="${W-padR+8}" y="${(padT+plotH*(1-f)+3.5).toFixed(1)}" font-size="10" fill="#22c55e" text-anchor="start">${Math.round(maxPed*f)}</text>`).join('');
-  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="240" style="overflow:visible">
+  // Hover: retângulo transparente cobrindo a área do plot captura o
+  // mousemove (linhas/pontos finos demais pra confiar só neles); guia
+  // vertical + 2 pontos-destaque + tooltip flutuante (fora do SVG, div
+  // HTML normal) são atualizados via _ceoAttachChartTooltip — tooltip
+  // nativo <title> foi trocado por isso porque o alvo de 3px era difícil
+  // de acertar e o delay do SO tornava o hover pouco confiável na prática.
+  return`<div id="ceo-chart-wrap" style="position:relative">
+  <svg id="ceo-chart-svg" viewBox="0 0 ${W} ${H}" width="100%" height="240" style="overflow:visible;cursor:crosshair">
     ${grid}
     <polyline points="${lineFat}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     <polyline points="${linePed}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -6591,12 +6602,52 @@ function _renderCeoLineChart(buckets){
     ${labels}
     ${eixoEsq}
     ${eixoDir}
+    <line id="ceo-chart-guide" x1="0" y1="${padT}" x2="0" y2="${padT+plotH}" stroke="var(--text3)" stroke-width="1" stroke-dasharray="3 3" style="opacity:0"/>
+    <circle id="ceo-chart-dot-fat" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" style="opacity:0"/>
+    <circle id="ceo-chart-dot-ped" r="5" fill="#22c55e" stroke="var(--surface)" stroke-width="2" style="opacity:0"/>
+    <rect id="ceo-chart-hover-area" x="${padL}" y="0" width="${plotW}" height="${H}" fill="transparent"/>
   </svg>
+  <div id="ceo-chart-tip" style="display:none;position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--text);line-height:1.6;pointer-events:none;white-space:nowrap;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.45)"></div>
+  </div>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
     <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (eixo esquerdo)</span>
     <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos finalizados (eixo direito)</span>
-    <span style="color:var(--text3)">· passe o mouse no ponto pra ver o valor exato</span>
+    <span style="color:var(--text3)">· passe o mouse no gráfico pra ver o valor exato</span>
   </div>`;
+}
+function _ceoAttachChartTooltip(){
+  const svg=document.getElementById('ceo-chart-svg');
+  const wrap=document.getElementById('ceo-chart-wrap');
+  const hoverArea=document.getElementById('ceo-chart-hover-area');
+  const tip=document.getElementById('ceo-chart-tip');
+  const guide=document.getElementById('ceo-chart-guide');
+  const dotFat=document.getElementById('ceo-chart-dot-fat');
+  const dotPed=document.getElementById('ceo-chart-dot-ped');
+  if(!svg||!wrap||!hoverArea||!tip||!guide||!dotFat||!dotPed||!_ceoChartGeom)return;
+  const g=_ceoChartGeom;
+  const n=g.buckets.length;
+  const mover=e=>{
+    const pt=svg.createSVGPoint();
+    pt.x=e.clientX;pt.y=e.clientY;
+    const svgP=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const relX=n===1?0:(svgP.x-g.padL)/g.plotW;
+    const idx=Math.max(0,Math.min(n-1,Math.round(relX*(n-1))));
+    const b=g.buckets[idx];
+    const cx=g.xAt(idx),cyFat=g.yFat(b.faturamento),cyPed=g.yPed(b.pedidos);
+    guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.style.opacity='1';
+    dotFat.setAttribute('cx',cx);dotFat.setAttribute('cy',cyFat);dotFat.style.opacity='1';
+    dotPed.setAttribute('cx',cx);dotPed.setAttribute('cy',cyPed);dotPed.style.opacity='1';
+    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${b.label}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} finalizado${b.pedidos===1?'':'s'}</div>`;
+    const wrapRect=wrap.getBoundingClientRect();
+    let left=e.clientX-wrapRect.left+14;
+    const top=Math.max(0,e.clientY-wrapRect.top-52);
+    if(left+170>wrapRect.width)left=e.clientX-wrapRect.left-184;
+    tip.style.left=left+'px';tip.style.top=top+'px';
+    tip.style.display='block';
+  };
+  const leave=()=>{tip.style.display='none';guide.style.opacity='0';dotFat.style.opacity='0';dotPed.style.opacity='0';};
+  hoverArea.onmousemove=mover;
+  hoverArea.onmouseleave=leave;
 }
 function _ceoSetPeriodo(p){
   _ceoPeriodoAtual=p;
@@ -6607,6 +6658,7 @@ function _ceoSetPeriodo(p){
     :_ceoBucketPorMes(_ceoPedidosCache,12);
   const el=document.getElementById('ceo-chart');
   if(el)el.innerHTML=_renderCeoLineChart(buckets);
+  _ceoAttachChartTooltip();
 }
 function renderCeoPage(){
   _ceoInjectStyles();
