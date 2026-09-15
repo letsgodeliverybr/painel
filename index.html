@@ -9,7 +9,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{--bg:#0f1117;--surface:#16181f;--surface2:#1e2029;--border:#2a2d3a;--accent:#1A56DB;--orange:#f97316;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--pink:#ec4899;--text:#f8fafc;--text2:#94a3b8;--text3:#475569;}
+:root{--bg:#0D0F12;--surface:#15181D;--surface2:#1e2029;--surface-elevated:#1B1F25;--border:#292E36;--border-subtle:rgba(255,255,255,.06);--accent:#1A56DB;--accent-hover:#1649ba;--orange:#f97316;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--pink:#ec4899;--text:#F5F7FA;--text2:#8F98A6;--text3:#66707D;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;}
 @media(prefers-color-scheme:light){:root{--bg:#f8f9fa;--surface:#ffffff;--surface2:#f1f3f5;--border:#e5e7eb;--text:#111111;--text2:#374151;--text3:#6b7280;}}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
 
@@ -78,25 +78,75 @@ body #login-screen{background:#ffffff!important;font-family:"Helvetica Neue",Hel
 
 /* APP */
 #app{display:none;height:100vh;flex-direction:column;}
-.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:100;}
+.topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 1px 0 var(--border-subtle),0 4px 16px rgba(0,0,0,.18);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;z-index:100;}
 .topbar-logo{display:flex;align-items:center;gap:9px;margin-right:8px;}
-.topbar-logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
-.topbar-logo-text{font-size:14px;font-weight:800;}
+.topbar-logo-icon{width:30px;height:30px;background:var(--accent);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.topbar-logo-text{font-size:14px;font-weight:700;letter-spacing:-.1px;}
 .topbar-logo-sub{font-size:9px;color:var(--orange);letter-spacing:2px;display:block;font-weight:600;}
 .topbar-divider{width:1px;height:28px;background:var(--border);margin:0 4px;}
-.tab-btn{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;font-family:'Inter',sans-serif;transition:background .15s,color .15s;white-space:nowrap;}
 .tab-btn:hover{background:var(--surface2);color:var(--text);}
 .tab-btn.active{background:#1A56DB18;color:var(--accent);font-weight:600;}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;}
 .topbar-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text2);}
-.user-info{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;}
-.user-perfil-badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.user-info{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--border-subtle);}
+.user-perfil-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px;}
 .badge-adm{background:#1A56DB20;color:#60a5fa;}
 .badge-loja{background:#f9731620;color:#fb923c;}
 .badge-suporte{background:#22c55e20;color:#22c55e;}
-.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text2);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all .2s;}
-.logout-btn:hover{border-color:var(--red);color:var(--red);}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text2);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:border-color .15s,color .15s,background .15s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08);}
+.hamburger-btn{transition:background .15s;}
+.hamburger-btn:hover{background:var(--surface2);}
+.lg-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:var(--radius-md);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s,transform .1s;white-space:nowrap;}
+.lg-btn:active{transform:translateY(1px);}
+.lg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.lg-btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.28);}
+.lg-btn-primary:hover{background:var(--accent-hover);}
+.lg-btn-secondary{background:var(--surface2);color:var(--text);border-color:var(--border);}
+.lg-btn-secondary:hover{background:var(--surface-elevated);border-color:var(--text3);}
 .app-body{flex:1;display:flex;overflow:hidden;}
+
+/* ════════════════════════════════════════════════════════════
+   BREAKPOINTS DO REDESIGN — convenção usada em todas as etapas
+   (fundação, header, e as que vêm depois: sidebar/pedidos/mapa/
+   formulário). Limite mobile alinhado ao max-width:768px que já
+   existe pro resto do app (mapa/sidebar de pedidos/chat — ver
+   bloco "MOBILE" mais abaixo no app.js), pra não ter 2 pontos de
+   corte diferentes brigando por 1px de diferença.
+   desktop: >=1200px | tablet: 769px–1199px | mobile: <=768px
+   ════════════════════════════════════════════════════════════ */
+
+/* ── TABLET (769–1199px): header perde só o que é decorativo
+   (rótulo "DELIVERY" e o relógio, que o próprio código já
+   documenta como "conferência visual", não informação essencial)
+   — nenhum controle/ação some. ── */
+@media (max-width:1199px){
+  .topbar{padding:0 12px;gap:8px;}
+  .topbar-logo-sub{display:none;}
+  #topbar-relogio{display:none;}
+}
+
+/* ── MOBILE (<=768px): header vira ícone-primeiro — cada botão de
+   ação mantém o ícone (mesmo id/onclick, clicável do mesmo jeito)
+   e só esconde o rótulo de texto via CSS, sem remover nada do DOM
+   nem da lógica. Área de toque de todo controle >=40px. Nome do
+   usuário já é escondido aqui por regra pré-existente (app.js,
+   "#topbar-relogio, #user-nome{display:none!important}") — não
+   mexo nela, só libero espaço extra com os botões virando ícone. ── */
+@media (max-width:768px){
+  .topbar{height:auto;min-height:56px;padding:8px 10px;gap:6px;flex-wrap:wrap;row-gap:6px;}
+  .hamburger-btn{padding:10px;}
+  .topbar-logo{margin-right:2px;}
+  .topbar-logo-text,.topbar-logo-sub{display:none;}
+  .topbar-logo img{height:26px!important;}
+  .lg-btn{padding:0 10px;min-width:38px;justify-content:center;}
+  .lg-btn-label{display:none;}
+  #topbar-saldo{padding:5px 9px;}
+  #topbar-saldo .lg-wallet-label{display:none;}
+  .user-info{padding-left:8px;gap:6px;}
+  .topbar-right{gap:8px;}
+}
 
 /* SIDEBAR PEDIDOS */
 .sidebar-pedidos{width:300px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
@@ -348,19 +398,19 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
       <div><div class="topbar-logo-text">Lets Go</div><span class="topbar-logo-sub">DELIVERY</span></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-left:14px;">
-      <button id="btn-novo-pedido" onclick="abrirModal('modal-pedido')" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
-        ➕ Novo Pedido
+      <button id="btn-novo-pedido" class="lg-btn lg-btn-primary" onclick="abrirModal('modal-pedido')" style="display:none;" title="Novo Pedido">
+        ➕ <span class="lg-btn-label">Novo Pedido</span>
       </button>
-      <button id="btn-criar-entrega-topbar" onclick="_abrirCriarEntregaTopbar()" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;align-items:center;gap:6px;">
-        ➕ Criar Entrega
+      <button id="btn-criar-entrega-topbar" class="lg-btn lg-btn-primary" onclick="_abrirCriarEntregaTopbar()" style="display:none;" title="Criar Entrega">
+        ➕ <span class="lg-btn-label">Criar Entrega</span>
       </button>
-      <button id="btn-ir-mapa" onclick="goTab('mapa')" style="display:none;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:7px 14px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;align-items:center;gap:6px;">
-        🗺️ Mapa ao Vivo
+      <button id="btn-ir-mapa" class="lg-btn lg-btn-secondary" onclick="goTab('mapa')" style="display:none;" title="Mapa ao Vivo">
+        🗺️ <span class="lg-btn-label">Mapa ao Vivo</span>
       </button>
-      <div id="topbar-saldo" onclick="_abrirModalRecargaPix()" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:5px 12px;cursor:default;">
+      <div id="topbar-saldo" onclick="_abrirModalRecargaPix()" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:5px 12px;cursor:default;transition:border-color .15s;" title="Saldo da carteira">
         <div style="display:flex;align-items:center;gap:6px;line-height:1">
           <span style="font-size:13px;font-weight:700;color:#fff">R$ <span id="saldo-valor">0,00</span></span>
-          <span style="font-size:9px;font-weight:600;color:#aaa;letter-spacing:.5px">WALLET</span>
+          <span class="lg-wallet-label" style="font-size:9px;font-weight:600;color:#aaa;letter-spacing:.5px">WALLET</span>
         </div>
       </div>
     </div>

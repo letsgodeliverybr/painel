@@ -765,15 +765,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
     :root {
-      --bg: #f0f4ff;
-      --surface: #ffffff;
+      --bg: #0D0F12;
+      --surface: #15181D;
       --surface2: #f8faff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text2: #475569;
-      --text3: #94a3b8;
-      --accent: #6366f1;
-      --accent2: #818cf8;
+      --border: #292E36;
+      --text: #F5F7FA;
+      --text2: #8F98A6;
+      --text3: #66707D;
+      --accent: #1A56DB;
+      --accent2: #1649BA;
       --green: #10b981;
       --red: #ef4444;
       --orange: #f97316;
@@ -789,15 +789,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     }
 
     html.dark {
-      --bg: #1E1E1E;
-      --surface: #2D2D2D;
+      --bg: #0D0F12;
+      --surface: #15181D;
       --surface2: #2D2D2D;
-      --border: #3A3A3A;
-      --text: #FFFFFF;
-      --text2: #BBBBBB;
-      --text3: #888888;
-      --accent: #818cf8;
-      --accent2: #6366f1;
+      --border: #292E36;
+      --text: #F5F7FA;
+      --text2: #8F98A6;
+      --text3: #66707D;
+      --accent: #1A56DB;
+      --accent2: #1649BA;
       --sb-bg: #1E1E1E;
       --sb-card: #2D2D2D;
       --sb-border: #3A3A3A;
@@ -808,15 +808,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     }
     @media (prefers-color-scheme: dark) {
       :root:not(.light) {
-        --bg: #1E1E1E;
-        --surface: #2D2D2D;
+        --bg: #0D0F12;
+        --surface: #15181D;
         --surface2: #2D2D2D;
-        --border: #3A3A3A;
-        --text: #FFFFFF;
-        --text2: #BBBBBB;
-        --text3: #888888;
-        --accent: #818cf8;
-        --accent2: #6366f1;
+        --border: #292E36;
+        --text: #F5F7FA;
+        --text2: #8F98A6;
+        --text3: #66707D;
+        --accent: #1A56DB;
+        --accent2: #1649BA;
         --sb-bg: #1E1E1E;
         --sb-card: #2D2D2D;
         --sb-border: #3A3A3A;
@@ -827,7 +827,7 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       }
     }
     /* ── DARK MODE OVERRIDES ── */
-    html.dark .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .topbar { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: 0 1px 0 var(--border-subtle,rgba(255,255,255,.06)),0 4px 16px rgba(0,0,0,.18) !important; }
     html.dark .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
     html.dark .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
     html.dark .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
@@ -855,7 +855,7 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     html.dark ::-webkit-scrollbar-thumb:hover { background: #555555 !important; }
     /* ── DARK MODE OVERRIDES (prefers-color-scheme) ── */
     @media (prefers-color-scheme: dark) {
-      :root:not(.light) .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .topbar { background: var(--surface) !important; border-color: var(--border) !important; }
       :root:not(.light) .sidebar-pedidos { background: #1E1E1E !important; border-color: #3A3A3A !important; }
       :root:not(.light) .sidebar-header { background: #1E1E1E !important; border-color: #3A3A3A !important; }
       :root:not(.light) .pedido-item { background: #2D2D2D !important; border-color: #3A3A3A !important; }
@@ -891,30 +891,36 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
 
     /* ── TOPBAR ── */
     .topbar {
-      background: #ffffff !important;
+      background: var(--surface) !important;
       border-bottom: 1px solid var(--border) !important;
-      box-shadow: 0 1px 20px rgba(99,102,241,.08) !important;
-      backdrop-filter: blur(12px) !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,.16) !important;
     }
-    .topbar-logo-text { color: #1A56DB !important; }
-    .topbar-logo-sub  { color: #1A56DB !important; }
-    .topbar-logo-icon { background: #1A56DB !important; }
+    .topbar-logo-text { color: var(--accent) !important; }
+    .topbar-logo-sub  { color: var(--accent) !important; }
+    .topbar-logo-icon { background: var(--accent) !important; }
     .user-nome        { color: var(--text2) !important; }
 
     /* ── BOTÃO NOVO PEDIDO ── */
     #btn-novo-pedido, .btn-novo-pedido {
-      background: #1A56DB !important;
+      background: var(--accent) !important;
       border: none !important;
-      box-shadow: 0 4px 14px rgba(26,86,219,.35) !important;
-      border-radius: 10px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,.3) !important;
+      border-radius: var(--radius-md,8px) !important;
       font-weight: 600 !important;
       color: #fff !important;
+      transition: background .15s !important;
+    }
+    #btn-novo-pedido:hover, .btn-novo-pedido:hover {
+      background: var(--accent-hover,#1649ba) !important;
+    }
+    #btn-novo-pedido:active, .btn-novo-pedido:active {
+      transform: translateY(1px);
     }
 
     /* ── SALDO TOPBAR ── */
     #topbar-saldo {
       background: rgba(255,255,255,.08) !important;
-      border-radius: 10px !important;
+      border-radius: var(--radius-md,8px) !important;
       color: #fff !important;
       font-weight: 700 !important;
       padding: 5px 12px !important;
@@ -1251,9 +1257,9 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     #nav-overlay { background: rgba(15,23,42,.4) !important; backdrop-filter: blur(4px) !important; }
 
     /* ── PERFIL BADGES ── */
-    .badge-adm    { background: linear-gradient(135deg,#6366f1,#8b5cf6) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
-    .badge-loja   { background: linear-gradient(135deg,#10b981,#059669) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
-    .badge-suporte{ background: linear-gradient(135deg,#f59e0b,#d97706) !important; color: #fff !important; border-radius: 6px !important; padding: 2px 8px !important; font-size: 11px !important; font-weight: 700 !important; }
+    .badge-adm    { background: rgba(26,86,219,.18) !important; color: #5b9bf5 !important; border-radius: var(--radius-sm,6px) !important; padding: 3px 9px !important; font-size: 10px !important; font-weight: 700 !important; }
+    .badge-loja   { background: rgba(249,115,22,.18) !important; color: #fb923c !important; border-radius: var(--radius-sm,6px) !important; padding: 3px 9px !important; font-size: 10px !important; font-weight: 700 !important; }
+    .badge-suporte{ background: rgba(34,197,94,.18) !important; color: #4ade80 !important; border-radius: var(--radius-sm,6px) !important; padding: 3px 9px !important; font-size: 10px !important; font-weight: 700 !important; }
 
     /* ── LOGIN ── */
     #login-screen {
@@ -1652,7 +1658,7 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     html.dark .modal-header { background: #252525 !important; }
     html.dark .modal-footer { background: #252525 !important; }
     html.dark .alt-page, html.dark .page-header { background: #1E1E1E !important; }
-    html.dark .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+    html.dark .topbar { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: 0 1px 0 var(--border-subtle,rgba(255,255,255,.06)),0 4px 16px rgba(0,0,0,.18) !important; }
     html.dark #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
     html.dark .nav-item { color: #BBBBBB !important; }
     html.dark .nav-item:hover { background: #2D2D2D !important; color: #ffffff !important; }
@@ -1672,7 +1678,7 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       :root:not(.light) tr:hover td { background: #333333 !important; }
       :root:not(.light) input, :root:not(.light) select, :root:not(.light) textarea { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
       :root:not(.light) .modal-content, :root:not(.light) .modal { background: #2D2D2D !important; color: #ffffff !important; }
-      :root:not(.light) .topbar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
+      :root:not(.light) .topbar { background: var(--surface) !important; border-color: var(--border) !important; }
       :root:not(.light) #nav-sidebar { background: #1E1E1E !important; border-color: #3A3A3A !important; }
       :root:not(.light) .btn-sm { background: #2D2D2D !important; color: #ffffff !important; border-color: #3A3A3A !important; }
       :root:not(.light) .alt-page { background: #1E1E1E !important; }
