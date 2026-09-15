@@ -3159,8 +3159,10 @@ function _lojaBannerInjectStyles(){
   style.innerHTML=`
     @keyframes lojaFadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @keyframes lojaProgresso{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-    .loja-cresc-periodo-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:Inter,sans-serif;}
-    .loja-cresc-periodo-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .loja-cresc-periodo-group{display:inline-flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:2px;gap:1px;}
+    .loja-cresc-periodo-btn{background:transparent;border:none;color:rgba(255,255,255,.5);font-size:10.5px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:Inter,sans-serif;transition:background .15s,color .15s;}
+    .loja-cresc-periodo-btn.active{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+    .loja-cresc-periodo-btn:not(.active):hover{color:rgba(255,255,255,.85);}
   `;
   document.head.appendChild(style);
 }
@@ -3184,31 +3186,96 @@ function _lojaTotaisPeriodo(cache,dias){
   });
   return{pedidosAtual,fatAtual,pedidosAnterior,fatAnterior};
 }
-// Linha + área sutil, SVG desenhado à mão (mesmo padrão sem lib externa
-// do resto do painel) — bem mais compacto que o gráfico da CEO
-// (_renderCeoLineChart), sem eixo numérico, pensado pra caber num card
-// pequeno dentro da tela de boas-vindas.
+// Catmull-Rom → Bézier (tangente 1/6, técnica padrão de curva suave) —
+// mesmo princípio de "SVG à mão, sem lib externa" do resto do painel, só
+// que com curva em vez de segmento reto. Usado só nesse gráfico compacto
+// (o da CEO — _renderCeoLineChart — continua reto, com eixo numérico
+// duplo, por ser um componente diferente/maior).
+function _lojaCurvaSuave(pts){
+  if(pts.length<2)return'';
+  if(pts.length===2)return`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+  let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    const c1x=p1[0]+(p2[0]-p0[0])/6,c1y=p1[1]+(p2[1]-p0[1])/6;
+    const c2x=p2[0]-(p3[0]-p1[0])/6,c2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+// Geometria do último gráfico desenhado — permite ao hover achar o bucket
+// mais próximo sem reparsear o SVG (mesmo padrão de _ceoChartGeom/
+// _ceoAttachChartTooltip, só que num componente bem menor).
+let _lojaChartGeom=null;
 function _renderLojaChartCrescimento(buckets){
-  if(!buckets.length||!buckets.some(b=>b.faturamento>0))return'<div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:26px 0">Sem dados suficientes no período</div>';
-  const W=340,H=84,padX=3,padY=8;
+  if(!buckets.length||!buckets.some(b=>b.faturamento>0)){_lojaChartGeom=null;return'<div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Sem dados suficientes no período</div>';}
+  const W=380,H=112,padX=4,padY=10;
   const max=Math.max(1,...buckets.map(b=>b.faturamento));
   const n=buckets.length;
   const xAt=i=>n===1?W/2:padX+(i/(n-1))*(W-padX*2);
   const yAt=v=>padY+(H-padY*2)-((v/max)*(H-padY*2));
-  const pts=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yAt(b.faturamento).toFixed(1)}`).join(' ');
-  const areaPts=`${xAt(0).toFixed(1)},${(H-padY).toFixed(1)} ${pts} ${xAt(n-1).toFixed(1)},${(H-padY).toFixed(1)}`;
-  const grid=[.33,.66].map(f=>`<line x1="${padX}" y1="${(padY+(H-padY*2)*f).toFixed(1)}" x2="${W-padX}" y2="${(padY+(H-padY*2)*f).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`).join('');
-  const dots=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.faturamento).toFixed(1)}" r="2" fill="var(--accent)"><title>${b.label}: ${_fmtMoedaCaixa(b.faturamento)}</title></circle>`).join('');
-  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
-    <defs><linearGradient id="lojaAreaGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" style="stop-color:var(--accent);stop-opacity:.3"/>
-      <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0"/>
-    </linearGradient></defs>
-    ${grid}
-    <polygon points="${areaPts}" fill="url(#lojaAreaGrad)"/>
-    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${dots}
-  </svg>`;
+  const pts=buckets.map((b,i)=>[xAt(i),yAt(b.faturamento)]);
+  _lojaChartGeom={buckets,xAt,yAt,padX,W,H};
+  const linePath=_lojaCurvaSuave(pts);
+  const areaPath=`${linePath} L${pts[n-1][0].toFixed(1)},${(H-padY).toFixed(1)} L${pts[0][0].toFixed(1)},${(H-padY).toFixed(1)} Z`;
+  const grid=[.25,.5,.75].map(f=>`<line x1="${padX}" y1="${(padY+(H-padY*2)*f).toFixed(1)}" x2="${W-padX}" y2="${(padY+(H-padY*2)*f).toFixed(1)}" stroke="rgba(255,255,255,.05)" stroke-width="1"/>`).join('');
+  return`<div id="loja-cresc-chart-wrap" style="position:relative">
+    <svg id="loja-cresc-chart-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
+      <defs><linearGradient id="lojaAreaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" style="stop-color:var(--accent);stop-opacity:.26"/>
+        <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0"/>
+      </linearGradient></defs>
+      ${grid}
+      <path d="${areaPath}" fill="url(#lojaAreaGrad)" stroke="none"/>
+      <path d="${linePath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <line id="loja-cresc-guide" x1="0" y1="${padY}" x2="0" y2="${H-padY}" stroke="rgba(255,255,255,.14)" stroke-width="1" stroke-dasharray="2 3" style="opacity:0"/>
+      <circle id="loja-cresc-dot" r="3.5" fill="var(--accent)" stroke="#0D0F12" stroke-width="1.5" style="opacity:0"/>
+      <rect id="loja-cresc-hover-area" x="${padX}" y="0" width="${W-padX*2}" height="${H}" fill="transparent"/>
+    </svg>
+    <div id="loja-cresc-tip" style="display:none;position:absolute;background:#1B1F25;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 10px;font-size:11px;color:#fff;line-height:1.5;pointer-events:none;white-space:nowrap;z-index:20;box-shadow:0 8px 20px rgba(0,0,0,.4)"></div>
+  </div>`;
+}
+// Hover: retângulo transparente cobre o gráfico inteiro (mais fácil de
+// acertar que a linha/pontos finos), acha o bucket mais próximo via
+// getScreenCTM().inverse() e atualiza guia+ponto+tooltip — mesmo padrão
+// já usado no gráfico da CEO, só que auto-contido (id's próprios, não
+// reaproveita os da CEO porque são componentes diferentes na mesma
+// página, cada um com seu SVG).
+function _lojaAttachChartTooltip(){
+  const svg=document.getElementById('loja-cresc-chart-svg');
+  const wrap=document.getElementById('loja-cresc-chart-wrap');
+  const hoverArea=document.getElementById('loja-cresc-hover-area');
+  const tip=document.getElementById('loja-cresc-tip');
+  const guide=document.getElementById('loja-cresc-guide');
+  const dot=document.getElementById('loja-cresc-dot');
+  if(!svg||!wrap||!hoverArea||!tip||!guide||!dot||!_lojaChartGeom)return;
+  const g=_lojaChartGeom;
+  const n=g.buckets.length;
+  const mover=e=>{
+    const pt=svg.createSVGPoint();
+    pt.x=e.clientX;pt.y=e.clientY;
+    const svgP=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const relX=n===1?0:(svgP.x-g.padX)/(g.W-g.padX*2);
+    const idx=Math.max(0,Math.min(n-1,Math.round(relX*(n-1))));
+    const b=g.buckets[idx];
+    const cx=g.xAt(idx),cy=g.yAt(b.faturamento);
+    guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.style.opacity='1';
+    dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.style.opacity='1';
+    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:rgba(255,255,255,.9)">${b.label}</div><div style="color:var(--accent);font-weight:600">${_fmtMoedaCaixa(b.faturamento)}</div>`;
+    const wrapRect=wrap.getBoundingClientRect();
+    const svgRect=svg.getBoundingClientRect();
+    const cxPx=svgRect.left+(cx/g.W)*svgRect.width-wrapRect.left;
+    const tipWidthEstimate=100;
+    let left=cxPx+10;
+    if(left+tipWidthEstimate>wrapRect.width)left=cxPx-tipWidthEstimate-6;
+    if(left<0)left=2;
+    tip.style.left=left+'px';
+    tip.style.top='0px';
+    tip.style.display='block';
+  };
+  const leave=()=>{tip.style.display='none';guide.style.opacity='0';dot.style.opacity='0';};
+  hoverArea.onmousemove=mover;
+  hoverArea.onmouseleave=leave;
 }
 function _lojaSetPeriodoCrescimento(periodo){
   document.querySelectorAll('.loja-cresc-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===periodo));
@@ -3232,7 +3299,16 @@ function _lojaSetPeriodoCrescimento(periodo){
       deltaEl.innerHTML=`<span style="color:rgba(255,255,255,.35)">Sem período anterior pra comparar</span>`;
     }
   }
-  _set('loja-cresc-chart',_renderLojaChartCrescimento(buckets));
+  const chartEl=document.getElementById('loja-cresc-chart');
+  if(chartEl){
+    chartEl.style.transition='opacity .18s ease';
+    chartEl.style.opacity='0';
+    setTimeout(()=>{
+      chartEl.innerHTML=_renderLojaChartCrescimento(buckets);
+      _lojaAttachChartTooltip();
+      requestAnimationFrame(()=>{chartEl.style.opacity='1';});
+    },160);
+  }
 }
 // Busca real (mesma tabela/campos que a CEO usa pra faturamento/pedidos,
 // só que filtrada por loja_id) — chamada 1x depois do render, cacheada
@@ -3266,21 +3342,21 @@ function _renderLojaBannerBoasVindas(){
         <div style="font-size:clamp(14px,1.4vw,17px);font-weight:400;color:rgba(255,255,255,.78);line-height:1.6;margin-bottom:16px;animation:lojaFadeInUp .9s ease .6s both">"${_ceoFraseDoDia()}"</div>
         <div style="font-size:12.5px;color:rgba(255,255,255,.4);font-weight:500;animation:lojaFadeInUp .9s ease .75s both">📅 ${dataFmt}</div>
       </div>
-      <div style="width:min(380px,90vw);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px 22px;animation:lojaFadeInUp .9s ease .5s both">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <span style="font-size:13px;font-weight:700;color:#fff">↗ Crescimento da loja</span>
-          <div style="display:flex;gap:5px">
+      <div style="width:min(420px,90vw);background:#12151A;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px 24px;box-shadow:0 10px 28px rgba(0,0,0,.3);animation:lojaFadeInUp .9s ease .5s both">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+          <span style="font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px">↗ Crescimento da loja</span>
+          <div class="loja-cresc-periodo-group">
             <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 dias</button>
             <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 dias</button>
             <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 meses</button>
           </div>
         </div>
-        <div style="display:flex;gap:28px;margin-bottom:6px">
-          <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Pedidos</div><div id="loja-cresc-pedidos" style="font-size:22px;font-weight:800;color:#fff">—</div></div>
-          <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Faturamento</div><div id="loja-cresc-faturamento" style="font-size:22px;font-weight:800;color:#fff">—</div></div>
+        <div style="display:flex;gap:32px;margin-bottom:8px">
+          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Pedidos</div><div id="loja-cresc-pedidos" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
+          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Faturamento</div><div id="loja-cresc-faturamento" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
         </div>
-        <div id="loja-cresc-delta" style="font-size:11.5px;margin-bottom:14px;min-height:15px">&nbsp;</div>
-        <div id="loja-cresc-chart"><div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:26px 0">Carregando...</div></div>
+        <div id="loja-cresc-delta" style="font-size:11.5px;margin-bottom:16px;min-height:15px">&nbsp;</div>
+        <div id="loja-cresc-chart"><div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Carregando...</div></div>
       </div>
     </div>
     <div style="position:absolute;bottom:0;left:0;height:2px;background:rgba(26,86,219,.5);width:100%;transform:scaleX(0);transform-origin:left;animation:lojaProgresso 10s linear forwards"></div>
