@@ -6478,23 +6478,6 @@ document.addEventListener('click',e=>{
   const dd=document.getElementById('ceo-dropdown');
   if(dd&&dd.classList.contains('open')&&!e.target.closest('.ceo-avatar-wrap'))dd.classList.remove('open');
 });
-function _ceoKpiCard(o){
-  return`<div class="ceo-card">
-    <div class="ceo-icon-circle" style="background:${o.cor}22;color:${o.cor}">${o.icone}</div>
-    <div class="ceo-card-label">${o.label}</div>
-    <div class="ceo-card-value" id="${o.id}">${o.valor||'—'}</div>
-    <div class="ceo-card-comp" id="${o.id}-comp">${o.comp||'Comparativo — em breve'}</div>
-    <div class="ceo-meta-row"><span>Meta</span><span id="${o.id}-meta">${o.meta||'A definir'}</span></div>
-    <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${o.id}-bar" style="width:${o.metaPct||0}%"></div></div>
-  </div>`;
-}
-function _ceoEscalaItem(label,id){
-  return`<div>
-    <div class="ceo-mini-stat-label">${label}</div>
-    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">meta a definir</span></span></div>
-    <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${id}-bar" style="width:0%"></div></div>
-  </div>`;
-}
 // Agregação real por dia/mês pro gráfico "Crescimento da empresa" — sempre
 // a partir do mesmo fetch de 12 meses em cache (_ceoPedidosCache), sem
 // refazer request ao trocar o período (item 20/30 do documento: atualização
@@ -6716,24 +6699,6 @@ function renderCeoPage(){
       </div>
     </div>
 
-    <div class="ceo-kpi-grid">
-      ${_ceoKpiCard({id:'ceo-fat',icone:'💰',cor:'#1A56DB',label:'Faturamento (mês)'})}
-      ${_ceoKpiCard({id:'ceo-pedidos',icone:'📦',cor:'#1A56DB',label:'Pedidos (mês)'})}
-      ${_ceoKpiCard({id:'ceo-crescimento',icone:'📈',cor:'#22c55e',label:'Crescimento',valor:'Em breve',comp:'Comparativo com período anterior — em desenvolvimento',meta:'—'})}
-      ${_ceoKpiCard({id:'ceo-lucro',icone:'💵',cor:'#22c55e',label:'Lucro (mês)'})}
-      ${_ceoKpiCard({id:'ceo-margem',icone:'📊',cor:'#eab308',label:'Margem operacional'})}
-    </div>
-
-    <div class="ceo-block">
-      <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas configuráveis chegam na próxima etapa</span></div>
-      <div class="ceo-block-body ceo-mini-grid">
-        ${_ceoEscalaItem('Pedidos/dia (hoje)','ceo-escala-pedidos-dia')}
-        ${_ceoEscalaItem('Lojas ativas','ceo-escala-lojas')}
-        ${_ceoEscalaItem('Entregadores ativos','ceo-escala-entregadores')}
-        ${_ceoEscalaItem('Pedidos/mês','ceo-escala-pedidos-mes')}
-      </div>
-    </div>
-
     <div class="ceo-block">
       <div class="ceo-block-header">
         <span class="ceo-block-title">🎯 Hoje, o que merece sua atenção</span>
@@ -6756,49 +6721,22 @@ function renderCeoPage(){
 }
 async function _carregarDadosCeo(){
   const hoje=_dataHojeBrasilia();
-  const mesAtualChave=hoje.slice(0,7);
   const hojeDate=new Date();
   const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  const trintaDiasAtras=new Date(Date.now()-30*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 
   const [
-    pedidos12m,entAtivos,lojasAtivas,lojasPipeline,
-    cobrancasPendentes,contasPagarMes,
+    pedidos12m,lojasPipeline,cobrancasPendentes,
   ]=await Promise.all([
     _dbTodasLinhas('pedidos',`?created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,taxa_motoboy,created_at&order=created_at.asc`,1000),
-    db('entregadores','GET',null,'?status=neq.bloqueado&or=(aprovado.eq.true,status_cadastro.eq.aprovado)&select=id'),
-    db('lojas','GET',null,'?ativo=eq.true&select=id'),
     db('lojas','GET',null,'?status_cadastro=in.(em_analise,pendente)&select=id'),
     db('cobrancas_lojas','GET',null,'?status=eq.pendente&select=id,loja_id,valor_total,created_at,lojas(nome)'),
-    db('contas_pagar','GET',null,`?status=eq.pendente&competencia=eq.${mesAtualChave}-01&select=valor`),
   ]);
 
   _ceoPedidosCache=Array.isArray(pedidos12m)?pedidos12m:[];
-  const pedidosHoje=_ceoPedidosCache.filter(p=>p.created_at.slice(0,10)===hoje);
-  const pedidosMes=_ceoPedidosCache.filter(p=>p.created_at.slice(0,7)===mesAtualChave);
-  const finalizadosMes=pedidosMes.filter(p=>p.status==='finalizado'||p.status==='entregue');
-  const faturamentoMes=finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0),0);
-  const despesaMotoboyMes=finalizadosMes.reduce((s,p)=>s+(parseFloat(p.taxa_motoboy)||0),0);
-  const contasPagarMesTotal=(Array.isArray(contasPagarMes)?contasPagarMes:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
-  const lucroMes=faturamentoMes-despesaMotoboyMes-contasPagarMesTotal;
-  const margemMes=faturamentoMes>0?(lucroMes/faturamentoMes*100):null;
-  const totalPedidosMes=pedidosMes.length;
-
-  const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
-  _set('ceo-fat',_fmtMoedaCaixa(faturamentoMes));
-  _set('ceo-pedidos',String(totalPedidosMes));
-  _set('ceo-lucro',_fmtMoedaCaixa(lucroMes));
-  const lucroEl=document.getElementById('ceo-lucro');if(lucroEl)lucroEl.style.color=lucroMes>=0?'#22c55e':'#ef4444';
-  _set('ceo-margem',margemMes!==null?`${margemMes.toFixed(1)}%`:'Sem dados no período');
-
-  const nLojasAtivas=(Array.isArray(lojasAtivas)?lojasAtivas:[]).length;
   const pipeline=Array.isArray(lojasPipeline)?lojasPipeline:[];
   const cobs=Array.isArray(cobrancasPendentes)?cobrancasPendentes:[];
 
-  _set('ceo-escala-pedidos-dia',String(pedidosHoje.length));
-  _set('ceo-escala-lojas',String(nLojasAtivas));
-  _set('ceo-escala-entregadores',String((Array.isArray(entAtivos)?entAtivos:[]).length));
-  _set('ceo-escala-pedidos-mes',String(totalPedidosMes));
+  const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
 
   // Alertas / "o que merece atenção" — só sinais (a) nessa passada:
   // inadimplência (cobrancas_lojas vencidas) e pipeline de cadastro
