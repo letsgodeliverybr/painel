@@ -3164,9 +3164,7 @@ function _renderLojaBannerBoasVindas(){
   const saud=_ceoSaudacao();
   const nomeLoja=(currentUser?.nome||'').trim()||'Loja';
   return`<div id="loja-banner-boas-vindas" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 32%,#0A1224 0%,#050B16 55%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;overflow:hidden;transition:opacity .8s ease">
-    <div style="width:clamp(56px,7vw,76px);height:clamp(56px,7vw,76px);border-radius:16px;overflow:hidden;background:#000;margin-bottom:clamp(24px,5vh,40px);animation:lojaFadeInUp .9s ease both">
-      <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Let's Go" style="width:100%;height:100%;object-fit:cover;transform:scale(2);transform-origin:50% 20%;display:block" onerror="this.parentElement.style.display='none'"/>
-    </div>
+    <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Let's Go — @pedeletsgo" style="width:clamp(130px,15vw,190px);height:auto;object-fit:contain;margin-bottom:clamp(24px,5vh,40px);animation:lojaFadeInUp .9s ease both" onerror="this.style.display='none'"/>
     <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;animation:lojaFadeInUp .9s ease .15s both">${saud.texto}</div>
     <div style="font-size:clamp(24px,4vw,40px);font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.2;max-width:92vw;margin-bottom:26px;animation:lojaFadeInUp .9s ease .3s both">${nomeLoja}</div>
     <div style="width:40px;height:1px;background:rgba(255,255,255,.18);margin-bottom:26px;animation:lojaFadeInUp .9s ease .45s both"></div>
