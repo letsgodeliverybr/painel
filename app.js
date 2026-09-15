@@ -6692,14 +6692,6 @@ function renderCeoPage(){
       </div>
     </div>
 
-    <div class="ceo-kpi-grid">
-      ${_ceoKpiCard({id:'ceo-fat',icone:'💰',cor:'#1A56DB',label:'Faturamento (mês)'})}
-      ${_ceoKpiCard({id:'ceo-pedidos',icone:'📦',cor:'#1A56DB',label:'Pedidos (mês)'})}
-      ${_ceoKpiCard({id:'ceo-crescimento',icone:'📈',cor:'#22c55e',label:'Crescimento',valor:'Em breve',comp:'Comparativo com período anterior — em desenvolvimento',meta:'—'})}
-      ${_ceoKpiCard({id:'ceo-lucro',icone:'💵',cor:'#22c55e',label:'Lucro (mês)'})}
-      ${_ceoKpiCard({id:'ceo-margem',icone:'📊',cor:'#eab308',label:'Margem operacional'})}
-    </div>
-
     <div class="ceo-block">
       <div class="ceo-block-header">
         <span class="ceo-block-title">📈 Crescimento da empresa</span>
@@ -6721,6 +6713,14 @@ function renderCeoPage(){
           <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
         </div>
       </div>
+    </div>
+
+    <div class="ceo-kpi-grid">
+      ${_ceoKpiCard({id:'ceo-fat',icone:'💰',cor:'#1A56DB',label:'Faturamento (mês)'})}
+      ${_ceoKpiCard({id:'ceo-pedidos',icone:'📦',cor:'#1A56DB',label:'Pedidos (mês)'})}
+      ${_ceoKpiCard({id:'ceo-crescimento',icone:'📈',cor:'#22c55e',label:'Crescimento',valor:'Em breve',comp:'Comparativo com período anterior — em desenvolvimento',meta:'—'})}
+      ${_ceoKpiCard({id:'ceo-lucro',icone:'💵',cor:'#22c55e',label:'Lucro (mês)'})}
+      ${_ceoKpiCard({id:'ceo-margem',icone:'📊',cor:'#eab308',label:'Margem operacional'})}
     </div>
 
     <div class="ceo-block">
