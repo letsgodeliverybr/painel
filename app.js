@@ -6542,17 +6542,33 @@ function _ceoBucketPorMes(pedidos,meses){
   });
   return seq;
 }
-// Linha dupla (Faturamento + Pedidos finalizados) em escala normalizada por
-// série (0–100% do próprio pico no período) — SVG desenhado à mão, sem lib
-// externa, mesmo padrão de _renderDonutCategoria. Escala normalizada porque
-// as duas métricas têm ordens de grandeza muito diferentes (R$ vs unidades);
-// o valor real exato de cada ponto aparece no tooltip nativo (<title>).
+// Arredonda pra um "teto bonito" de eixo (1/2/2.5/5/10 × potência de 10) —
+// técnica padrão de biblioteca de gráfico, garante que as gridlines caiam
+// em valores redondos em vez do pico exato da série.
+function _ceoNiceMax(v){
+  if(v<=0)return 1;
+  const exp=Math.floor(Math.log10(v));
+  const base=Math.pow(10,exp);
+  const norm=v/base;
+  const nice=norm<=1?1:norm<=2?2:norm<=2.5?2.5:norm<=5?5:10;
+  return nice*base;
+}
+function _ceoFmtEixoReal(v){
+  if(v<=0)return'R$0';
+  if(v>=1000)return`R$${Number((v/1000).toFixed(1))}k`;
+  return`R$${Math.round(v)}`;
+}
+// Linha dupla (Faturamento + Pedidos finalizados) com eixo Y duplo de
+// verdade — cada série na sua própria escala real (esquerda R$, direita
+// unidades), não mais normalizada. SVG desenhado à mão, sem lib externa,
+// mesmo padrão de _renderDonutCategoria. O valor exato de cada ponto
+// também aparece no tooltip nativo (<title>) ao passar o mouse.
 function _renderCeoLineChart(buckets){
   if(!buckets.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Sem dados no período</div>';
-  const W=900,H=230,padL=14,padR=14,padT=16,padB=32;
+  const W=960,H=240,padL=50,padR=44,padT=16,padB=32;
   const plotW=W-padL-padR,plotH=H-padT-padB;
-  const maxFat=Math.max(1,...buckets.map(b=>b.faturamento));
-  const maxPed=Math.max(1,...buckets.map(b=>b.pedidos));
+  const maxFat=_ceoNiceMax(Math.max(0,...buckets.map(b=>b.faturamento)));
+  const maxPed=_ceoNiceMax(Math.max(0,...buckets.map(b=>b.pedidos)));
   const n=buckets.length;
   const xAt=i=>n===1?padL+plotW/2:padL+(i/(n-1))*plotW;
   const yFat=v=>padT+plotH-(v/maxFat)*plotH;
@@ -6562,19 +6578,24 @@ function _renderCeoLineChart(buckets){
   const dotsFat=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yFat(b.faturamento).toFixed(1)}" r="3" fill="var(--accent)"><title>${b.label}: ${_fmtMoedaCaixa(b.faturamento)}</title></circle>`).join('');
   const dotsPed=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yPed(b.pedidos).toFixed(1)}" r="3" fill="#22c55e"><title>${b.label}: ${b.pedidos} pedido${b.pedidos===1?'':'s'} finalizado${b.pedidos===1?'':'s'}</title></circle>`).join('');
   const step=Math.max(1,Math.ceil(n/10));
-  const labels=buckets.map((b,i)=>(i%step===0||i===n-1)?`<text x="${xAt(i).toFixed(1)}" y="${H-10}" font-size="10" fill="var(--text3)" text-anchor="middle">${b.label}</text>`:'').join('');
-  const grid=[0,.25,.5,.75,1].map(f=>`<line x1="${padL}" y1="${(padT+plotH*(1-f)).toFixed(1)}" x2="${W-padR}" y2="${(padT+plotH*(1-f)).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const labels=buckets.map((b,i)=>(i%step===0||i===n-1)?`<text x="${xAt(i).toFixed(1)}" y="${H-8}" font-size="10" fill="var(--text3)" text-anchor="middle">${b.label}</text>`:'').join('');
+  const niveis=[0,.25,.5,.75,1];
+  const grid=niveis.map(f=>`<line x1="${padL}" y1="${(padT+plotH*(1-f)).toFixed(1)}" x2="${W-padR}" y2="${(padT+plotH*(1-f)).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const eixoEsq=niveis.map(f=>`<text x="${padL-8}" y="${(padT+plotH*(1-f)+3.5).toFixed(1)}" font-size="10" fill="var(--accent)" text-anchor="end">${_ceoFmtEixoReal(maxFat*f)}</text>`).join('');
+  const eixoDir=niveis.map(f=>`<text x="${W-padR+8}" y="${(padT+plotH*(1-f)+3.5).toFixed(1)}" font-size="10" fill="#22c55e" text-anchor="start">${Math.round(maxPed*f)}</text>`).join('');
   return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="240" style="overflow:visible">
     ${grid}
     <polyline points="${lineFat}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     <polyline points="${linePed}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     ${dotsFat}${dotsPed}
     ${labels}
+    ${eixoEsq}
+    ${eixoDir}
   </svg>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento</span>
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos finalizados</span>
-    <span style="color:var(--text3)">· escalas normalizadas por série · passe o mouse no ponto pra ver o valor exato</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (eixo esquerdo)</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos finalizados (eixo direito)</span>
+    <span style="color:var(--text3)">· passe o mouse no ponto pra ver o valor exato</span>
   </div>`;
 }
 function _ceoSetPeriodo(p){
@@ -6678,6 +6699,16 @@ function renderCeoPage(){
     </div>
 
     <div class="ceo-block">
+      <div class="ceo-block-header"><span class="ceo-block-title">🎯 Metas Patrimoniais</span></div>
+      <div class="ceo-block-body">
+        <div class="metas-grid">
+          <div class="metas-col"><div class="metas-col-titulo">🏢 Empresa</div>${_METAS_CONFIG.filter(m=>m.col==='empresa').map(_renderMetaCard).join('')}</div>
+          <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ceo-block">
       <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas configuráveis chegam na próxima etapa</span></div>
       <div class="ceo-block-body ceo-mini-grid">
         ${_ceoEscalaItem('Pedidos/dia (hoje)','ceo-escala-pedidos-dia')}
@@ -6702,6 +6733,10 @@ function renderCeoPage(){
   </div>`;
   document.querySelector(`.ceo-periodo-btn[data-p="${_ceoPeriodoAtual}"]`)?.classList.add('active');
   _carregarDadosCeo();
+  // Cards de Metas Patrimoniais — mesma fonte/lógica da página Métricas
+  // (_METAS_CONFIG/_buscarMeta/configuracoes), sem duplicar nada, só
+  // reexibidos aqui também.
+  _buscarTodasMetas();
 }
 async function _carregarDadosCeo(){
   const hoje=_dataHojeBrasilia();
