@@ -3129,6 +3129,41 @@ function goTab(id){
   if(pages[id])pages[id]();
 }
 
+// Banner de boas-vindas da loja — mesmo padrão da CEO (saudação por
+// horário + frase do banco de 360, reaproveitados via _ceoSaudacao()/
+// _ceoFraseDoDia(), sem duplicar lógica), só que faixa discreta e fixa no
+// topo em vez de tela cheia — a loja precisa continuar vendo os pedidos
+// chegando por trás. "Primeiro login do dia" = primeiro render do Mapa ao
+// Vivo (home da loja) no dia, guardado em localStorage por loja_id pra
+// sobreviver a reload/nova aba sem reaparecer até o dia seguinte.
+function _lojaBannerJaVistoHoje(){
+  try{
+    const chave='lg_loja_banner_visto_'+(currentUser?.loja_id||currentUser?.id||'x');
+    return localStorage.getItem(chave)===_dataHojeBrasilia();
+  }catch(_){return true;}
+}
+function _lojaBannerMarcarVisto(){
+  try{
+    const chave='lg_loja_banner_visto_'+(currentUser?.loja_id||currentUser?.id||'x');
+    localStorage.setItem(chave,_dataHojeBrasilia());
+  }catch(_){}
+}
+function _renderLojaBannerBoasVindas(){
+  if(currentPerfil!=='loja'||_lojaBannerJaVistoHoje())return'';
+  _lojaBannerMarcarVisto();
+  const saud=_ceoSaudacao();
+  const nomeLoja=(currentUser?.nome||'').trim()||'Loja';
+  return`<div id="loja-banner-boas-vindas" style="position:fixed;top:52px;left:0;right:0;z-index:5000;background:linear-gradient(135deg,#0f1117,#151822);border-bottom:2px solid var(--accent);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.35)">
+    <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Pede Let's Go" style="height:36px;width:auto;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'"/>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:800;color:#fff">${saud.icone} ${saud.texto}, ${nomeLoja}</div>
+      <div style="font-size:12px;color:#cbd5e1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"${_ceoFraseDoDia()}"</div>
+    </div>
+    <button onclick="document.getElementById('loja-banner-boas-vindas').remove()" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;line-height:1" title="Fechar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>`;
+}
 function renderMapaPage(){
   _sidebarBusca='';filterStatus='todos';_pedidosSelecionados=new Set();
   const _thMapa=currentPerfil==='loja'
@@ -3137,6 +3172,7 @@ function renderMapaPage(){
     ?['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Logística','Status']
     :['Nº','Hora','Cliente','Coleta','Entrega','Entregador','KM','Taxa Motoboy','Taxa Cobrada','Lucro','Logística','Onde Cobrar','Status'];
   document.getElementById('app-body').innerHTML=`
+    ${_renderLojaBannerBoasVindas()}
     <div class="sidebar-pedidos sb-dark" id="sidebar-mapa">
       <div class="sb-header-dark">
         <div class="sb-header-top-dark">
