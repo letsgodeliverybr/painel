@@ -6487,25 +6487,12 @@ function _ceoKpiCard(o){
     <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${o.id}-bar" style="width:${o.metaPct||0}%"></div></div>
   </div>`;
 }
-function _ceoMiniStat(label,id){
-  return`<div><div class="ceo-mini-stat-label">${label}</div><div class="ceo-mini-stat-value" id="${id}">—</div></div>`;
-}
 function _ceoEscalaItem(label,id){
   return`<div>
     <div class="ceo-mini-stat-label">${label}</div>
     <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">meta a definir</span></span></div>
     <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${id}-bar" style="width:0%"></div></div>
   </div>`;
-}
-// Bucket de status → 4 categorias do documento (Entregues/Em andamento/
-// Aguardando/Cancelados), a partir dos valores reais de STATUS_LABEL.
-const _CORES_STATUS_MACRO={'Entregues':'#22c55e','Em andamento':'#1A56DB','Aguardando':'#eab308','Cancelados':'#ef4444'};
-const _STATUS_MACRO_MAP={finalizado:'Entregues',entregue:'Entregues',cancelado:'Cancelados',aceito:'Em andamento',chegou_local:'Em andamento',em_rota:'Em andamento',chegou_destino:'Em andamento',retornando:'Em andamento',recebido:'Em andamento',pronto:'Em andamento',aguardando_pagamento:'Aguardando',aguardando:'Aguardando',fila:'Aguardando',agendado:'Aguardando'};
-function _corStatusMacro(nome){return _CORES_STATUS_MACRO[nome]||'#64748b';}
-function _ceoBucketStatus(pedidos){
-  const acc={};
-  pedidos.forEach(p=>{const macro=_STATUS_MACRO_MAP[p.status]||'Em andamento';acc[macro]=(acc[macro]||0)+1;});
-  return Object.keys(_CORES_STATUS_MACRO).filter(k=>acc[k]).map(k=>({categoria:k,quantidade:acc[k]}));
 }
 // Agregação real por dia/mês pro gráfico "Crescimento da empresa" — sempre
 // a partir do mesmo fetch de 12 meses em cache (_ceoPedidosCache), sem
@@ -6615,6 +6602,19 @@ function _renderCeoLineChart(buckets){
     <span style="color:var(--text3)">· passe o mouse no gráfico pra ver o valor exato</span>
   </div>`;
 }
+const _CEO_DIAS_SEMANA_EXTENSO=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+// Título do tooltip: buckets diários (chave YYYY-MM-DD, 10 chars, dos
+// períodos 7d/30d) ganham o dia da semana por extenso na frente — dia
+// calculado em meio-dia local pra não virar de dia por fuso. Buckets
+// mensais (chave YYYY-MM, dos períodos 6m/12m) não têm um único dia da
+// semana pra mostrar — mantém só "MM/AAAA".
+function _ceoFmtTooltipTitulo(b){
+  if(b.chave.length===10){
+    const d=new Date(b.chave+'T12:00:00');
+    return`${_CEO_DIAS_SEMANA_EXTENSO[d.getDay()]}, ${b.label}`;
+  }
+  return b.label;
+}
 function _ceoAttachChartTooltip(){
   const svg=document.getElementById('ceo-chart-svg');
   const wrap=document.getElementById('ceo-chart-wrap');
@@ -6637,7 +6637,7 @@ function _ceoAttachChartTooltip(){
     guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.style.opacity='1';
     dotFat.setAttribute('cx',cx);dotFat.setAttribute('cy',cyFat);dotFat.style.opacity='1';
     dotPed.setAttribute('cx',cx);dotPed.setAttribute('cy',cyPed);dotPed.style.opacity='1';
-    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${b.label}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} finalizado${b.pedidos===1?'':'s'}</div>`;
+    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${_ceoFmtTooltipTitulo(b)}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} finalizado${b.pedidos===1?'':'s'}</div>`;
     const wrapRect=wrap.getBoundingClientRect();
     let left=e.clientX-wrapRect.left+14;
     const top=Math.max(0,e.clientY-wrapRect.top-52);
@@ -6713,43 +6713,6 @@ function renderCeoPage(){
       <div class="ceo-block-body" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
 
-    <div class="ceo-grid-2">
-      <div class="ceo-block">
-        <div class="ceo-block-header"><span class="ceo-block-title">⚙️ Operação hoje</span></div>
-        <div class="ceo-block-body ceo-mini-grid">
-          ${_ceoMiniStat('Pedidos hoje','ceo-pedidos-hoje')}
-          ${_ceoMiniStat('Entregadores online','ceo-ent-online')}
-          ${_ceoMiniStat('Tempo médio de entrega','ceo-tempo-medio')}
-          ${_ceoMiniStat('Taxa de conclusão','ceo-taxa-conclusao')}
-        </div>
-      </div>
-      <div class="ceo-block">
-        <div class="ceo-block-header"><span class="ceo-block-title">🍩 Status dos pedidos hoje</span></div>
-        <div class="ceo-block-body" id="ceo-donut-status"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
-      </div>
-    </div>
-
-    <div class="ceo-grid-2">
-      <div class="ceo-block">
-        <div class="ceo-block-header"><span class="ceo-block-title">💵 Financeiro</span></div>
-        <div class="ceo-block-body ceo-mini-grid">
-          ${_ceoMiniStat('Caixa disponível','ceo-caixa')}
-          ${_ceoMiniStat('A receber','ceo-a-receber')}
-          ${_ceoMiniStat('A pagar','ceo-a-pagar')}
-          ${_ceoMiniStat('Lucro operacional','ceo-lucro-op')}
-        </div>
-      </div>
-      <div class="ceo-block">
-        <div class="ceo-block-header"><span class="ceo-block-title">🏪 Comercial</span></div>
-        <div class="ceo-block-body ceo-mini-grid">
-          ${_ceoMiniStat('Lojas ativas','ceo-lojas-ativas')}
-          ${_ceoMiniStat('Novas lojas (30d)','ceo-lojas-novas')}
-          ${_ceoMiniStat('Pedidos/loja (mês)','ceo-pedidos-loja')}
-          ${_ceoMiniStat('Pipeline (cadastro)','ceo-pipeline')}
-        </div>
-      </div>
-    </div>
-
     <div class="ceo-block">
       <div class="ceo-block-header"><span class="ceo-block-title">🎯 Metas Patrimoniais</span></div>
       <div class="ceo-block-body">
@@ -6798,19 +6761,15 @@ async function _carregarDadosCeo(){
   const trintaDiasAtras=new Date(Date.now()-30*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 
   const [
-    pedidos12m,entOnline,entAtivos,lojasAtivas,lojasNovas,lojasPipeline,
-    cobrancasPendentes,contasPagarTotal,contasPagarMes,configCaixa,
+    pedidos12m,entAtivos,lojasAtivas,lojasPipeline,
+    cobrancasPendentes,contasPagarMes,
   ]=await Promise.all([
     _dbTodasLinhas('pedidos',`?created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,taxa_motoboy,created_at&order=created_at.asc`,1000),
-    db('entregadores','GET',null,'?disponivel=eq.true&select=id'),
     db('entregadores','GET',null,'?status=neq.bloqueado&or=(aprovado.eq.true,status_cadastro.eq.aprovado)&select=id'),
     db('lojas','GET',null,'?ativo=eq.true&select=id'),
-    db('lojas','GET',null,`?ativo=eq.true&created_at=gte.${trintaDiasAtras}&select=id`),
     db('lojas','GET',null,'?status_cadastro=in.(em_analise,pendente)&select=id'),
     db('cobrancas_lojas','GET',null,'?status=eq.pendente&select=id,loja_id,valor_total,created_at,lojas(nome)'),
-    db('contas_pagar','GET',null,'?status=eq.pendente&select=valor'),
     db('contas_pagar','GET',null,`?status=eq.pendente&competencia=eq.${mesAtualChave}-01&select=valor`),
-    db('configuracoes','GET',null,'?chave=eq.meta_caixa_valor_atual'),
   ]);
 
   _ceoPedidosCache=Array.isArray(pedidos12m)?pedidos12m:[];
@@ -6823,7 +6782,6 @@ async function _carregarDadosCeo(){
   const lucroMes=faturamentoMes-despesaMotoboyMes-contasPagarMesTotal;
   const margemMes=faturamentoMes>0?(lucroMes/faturamentoMes*100):null;
   const totalPedidosMes=pedidosMes.length;
-  const taxaConclusao=totalPedidosMes>0?(finalizadosMes.length/totalPedidosMes*100):null;
 
   const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
   _set('ceo-fat',_fmtMoedaCaixa(faturamentoMes));
@@ -6832,37 +6790,14 @@ async function _carregarDadosCeo(){
   const lucroEl=document.getElementById('ceo-lucro');if(lucroEl)lucroEl.style.color=lucroMes>=0?'#22c55e':'#ef4444';
   _set('ceo-margem',margemMes!==null?`${margemMes.toFixed(1)}%`:'Sem dados no período');
 
-  _set('ceo-pedidos-hoje',String(pedidosHoje.length));
-  _set('ceo-ent-online',String((Array.isArray(entOnline)?entOnline:[]).length));
-  _set('ceo-taxa-conclusao',taxaConclusao!==null?`${taxaConclusao.toFixed(1)}%`:'Sem dados no período');
-
   const nLojasAtivas=(Array.isArray(lojasAtivas)?lojasAtivas:[]).length;
-  _set('ceo-lojas-ativas',String(nLojasAtivas));
-  _set('ceo-lojas-novas',String((Array.isArray(lojasNovas)?lojasNovas:[]).length));
-  _set('ceo-pedidos-loja',nLojasAtivas>0?(totalPedidosMes/nLojasAtivas).toFixed(1):'Sem dados no período');
   const pipeline=Array.isArray(lojasPipeline)?lojasPipeline:[];
-  _set('ceo-pipeline',String(pipeline.length));
-
-  const caixaValor=parseFloat(configCaixa?.[0]?.valor)||0;
-  _set('ceo-caixa',_fmtMoedaCaixa(caixaValor));
   const cobs=Array.isArray(cobrancasPendentes)?cobrancasPendentes:[];
-  const aReceberTotal=cobs.reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
-  _set('ceo-a-receber',_fmtMoedaCaixa(aReceberTotal));
-  const aPagarTotal=(Array.isArray(contasPagarTotal)?contasPagarTotal:[]).reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
-  _set('ceo-a-pagar',_fmtMoedaCaixa(aPagarTotal));
-  _set('ceo-lucro-op',_fmtMoedaCaixa(lucroMes));
-  const lucroOpEl=document.getElementById('ceo-lucro-op');if(lucroOpEl)lucroOpEl.style.color=lucroMes>=0?'#22c55e':'#ef4444';
 
   _set('ceo-escala-pedidos-dia',String(pedidosHoje.length));
   _set('ceo-escala-lojas',String(nLojasAtivas));
   _set('ceo-escala-entregadores',String((Array.isArray(entAtivos)?entAtivos:[]).length));
   _set('ceo-escala-pedidos-mes',String(totalPedidosMes));
-
-  const donutEl=document.getElementById('ceo-donut-status');
-  if(donutEl){
-    const dados=_ceoBucketStatus(pedidosHoje);
-    donutEl.innerHTML=_renderDonutCategoria(dados,{rotuloCentro:'pedido',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido hoje ainda',corFn:_corStatusMacro});
-  }
 
   // Alertas / "o que merece atenção" — só sinais (a) nessa passada:
   // inadimplência (cobrancas_lojas vencidas) e pipeline de cadastro
