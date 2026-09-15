@@ -7183,7 +7183,33 @@ async function _carregarDadosCeo(){
   _ceoUltimaAtualizacao=Date.now();
   _ceoSetPeriodo(_ceoPeriodoAtual);
 }
+// Reaproveitado pelo bloco "Escala da Let's Go" — mesmo shape do antigo
+// _ceoEscalaItem (removido da CEO), renomeado sem prefixo porque agora
+// vive na página Métricas, não mais na CEO.
+function _escalaItem(label,id){
+  return`<div>
+    <div class="ceo-mini-stat-label">${label}</div>
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">meta a definir</span></span></div>
+    <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${id}-bar" style="width:0%"></div></div>
+  </div>`;
+}
+async function _buscarEscalaLetsGo(){
+  const hoje=_dataHojeBrasilia();
+  const mesAtualChave=hoje.slice(0,7);
+  const[pedidosHoje,pedidosMes,entAtivos,lojasAtivas]=await Promise.all([
+    _dbTodasLinhas('pedidos',`?created_at=gte.${hoje}T00:00:00&select=id`,1000),
+    _dbTodasLinhas('pedidos',`?created_at=gte.${mesAtualChave}-01T00:00:00&select=id`,1000),
+    db('entregadores','GET',null,'?status=neq.bloqueado&or=(aprovado.eq.true,status_cadastro.eq.aprovado)&select=id'),
+    db('lojas','GET',null,'?ativo=eq.true&select=id'),
+  ]);
+  const _set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  _set('esc-pedidos-dia',String((Array.isArray(pedidosHoje)?pedidosHoje:[]).length));
+  _set('esc-pedidos-mes',String((Array.isArray(pedidosMes)?pedidosMes:[]).length));
+  _set('esc-entregadores',String((Array.isArray(entAtivos)?entAtivos:[]).length));
+  _set('esc-lojas',String((Array.isArray(lojasAtivas)?lojasAtivas:[]).length));
+}
 async function renderMetricasPage(){
+  _ceoInjectStyles();
   const anoAtual=Number(_dataHojeBrasilia().slice(0,4));
   const dataIniPadrao=`${anoAtual}-01-01`;
   const dataFimPadrao=`${anoAtual}-12-31`;
@@ -7221,13 +7247,22 @@ async function renderMetricasPage(){
     <div class="metas-grid">
       <div class="metas-col"><div class="metas-col-titulo">🏢 Empresa</div>${_METAS_CONFIG.filter(m=>m.col==='empresa').map(_renderMetaCard).join('')}</div>
       <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
+    </div>
+    <div class="ceo-block" style="margin-top:14px">
+      <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas configuráveis chegam na próxima etapa</span></div>
+      <div class="ceo-block-body ceo-mini-grid">
+        ${_escalaItem('Pedidos/dia (hoje)','esc-pedidos-dia')}
+        ${_escalaItem('Lojas ativas','esc-lojas')}
+        ${_escalaItem('Entregadores ativos','esc-entregadores')}
+        ${_escalaItem('Pedidos/mês','esc-pedidos-mes')}
+      </div>
     </div>`:''}
   </div>`;
   _buscarMetricas();
   // Distribuição por categoria é foto do total atual, sem relação com o
   // filtro DE/ATÉ da tela — busca uma vez só, não refaz quando o usuário
   // clica "Aplicar" no período.
-  if(currentPerfil==='adm'){_buscarLojasPorCategoria();_buscarTodasMetas();}
+  if(currentPerfil==='adm'){_buscarLojasPorCategoria();_buscarTodasMetas();_buscarEscalaLetsGo();}
 }
 async function _buscarMetricas(){
   const chartEl=document.getElementById('mm-chart');if(!chartEl)return;
