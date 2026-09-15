@@ -3154,7 +3154,9 @@ function _renderLojaBannerBoasVindas(){
   const saud=_ceoSaudacao();
   const nomeLoja=(currentUser?.nome||'').trim()||'Loja';
   return`<div id="loja-banner-boas-vindas" style="position:fixed;top:52px;left:0;right:0;z-index:5000;background:linear-gradient(135deg,#0f1117,#151822);border-bottom:2px solid var(--accent);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-    <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Pede Let's Go" style="height:36px;width:auto;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'"/>
+    <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#000">
+      <img src="https://letsgodeliverybr.github.io/painel/img/pedeletsgo-banner.png" alt="Pede Let's Go" style="width:100%;height:100%;object-fit:cover;transform:scale(2);transform-origin:50% 20%;display:block" onerror="this.parentElement.style.display='none'"/>
+    </div>
     <div style="flex:1;min-width:0">
       <div style="font-size:14px;font-weight:800;color:#fff">${saud.icone} ${saud.texto}, ${nomeLoja}</div>
       <div style="font-size:12px;color:#cbd5e1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"${_ceoFraseDoDia()}"</div>
