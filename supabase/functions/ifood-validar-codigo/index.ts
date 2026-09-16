@@ -13,8 +13,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 //     automaticamente depois de validar (chega de volta como evento CON,
 //     já tratado desde a Fase 1).
 // Ação disparada manualmente pelo painel (admin/loja digita o código que
-// o motoboy reportou) — não existe UI no app do entregador pra isso ainda,
-// fora do escopo desta mudança (ver relatório).
+// o motoboy reportou) OU pelo próprio app do entregador na tela de entrega
+// (2026-09-16, ver entrega_screen.dart) — nesse segundo caso só a action
+// "entrega" é aceita, autenticada pelo JWT do entregador (não pelo
+// x-webhook-secret, que ficaria exposto num app compilado).
 //
 // Mesmo padrão de auth do resto do projeto (x-webhook-secret) — ver
 // update-entregador-email/index.ts.
@@ -95,8 +97,26 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    // Duas formas de chamar essa function: painel web (x-webhook-secret,
+    // segredo fixo — admin/loja digitando o código que o motoboy reportou)
+    // ou app do entregador (JWT do próprio Supabase Auth — 2026-09-16,
+    // validação de código de entrega direto no app). Não dá pra pedir o
+    // app embutir o x-webhook-secret: é um valor fixo dentro do .apk
+    // compilado, extraível por qualquer um que descompile o app. Com JWT,
+    // cada chamada fica presa a um entregador real (revogável, expira) e
+    // ainda checamos abaixo que ele só valida o PRÓPRIO pedido.
     const secret = req.headers.get("x-webhook-secret");
-    if (secret !== WEBHOOK_SECRET) return json({ error: "Unauthorized" }, 401);
+    const authHeader = req.headers.get("Authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+    const autorizadoPainel = secret === WEBHOOK_SECRET;
+    let entregadorId: string | null = null;
+    if (!autorizadoPainel) {
+      if (!bearerToken) return json({ error: "Unauthorized" }, 401);
+      const { data: userData, error: userErr } = await supabase.auth.getUser(bearerToken);
+      if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+      entregadorId = userData.user.id;
+    }
 
     let body: { action?: string; pedido_id?: string; code?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
@@ -104,12 +124,24 @@ serve(async (req) => {
     const { action, pedido_id, code } = body;
     if (!action || !pedido_id || !code) return json({ error: "action, pedido_id e code são obrigatórios" }, 400);
     if (action !== "coleta" && action !== "entrega") return json({ error: `action desconhecida: ${action}` }, 400);
+    // App do entregador só valida código de ENTREGA (o que o cliente informa
+    // na porta) — código de COLETA continua exclusivo do painel/admin, fora
+    // do escopo desta mudança.
+    if (!autorizadoPainel && action !== "entrega") {
+      return json({ error: "Este tipo de validação só pode ser feita pelo painel" }, 403);
+    }
 
     const { data: pedido, error: pedidoErr } = await supabase
-      .from("pedidos").select("id, ifood_order_id, origem").eq("id", pedido_id).limit(1).maybeSingle();
+      .from("pedidos").select("id, ifood_order_id, origem, motoboy_id, entregador_id").eq("id", pedido_id).limit(1).maybeSingle();
     if (pedidoErr) return json({ error: "Falha ao buscar pedido", detail: pedidoErr.message }, 500);
     if (!pedido || pedido.origem !== "ifood" || !pedido.ifood_order_id) {
       return json({ error: "Pedido não é um pedido do iFood (ou não tem ifood_order_id)" }, 400);
+    }
+    // Chamada via JWT só pode validar o código do pedido que é realmente
+    // dele — sem isso, qualquer entregador autenticado poderia validar (e
+    // queimar a tentativa) do código de entrega de um pedido de outro.
+    if (!autorizadoPainel && pedido.motoboy_id !== entregadorId && pedido.entregador_id !== entregadorId) {
+      return json({ error: "Este pedido não está atribuído a você" }, 403);
     }
 
     const token = await getAccessToken();
