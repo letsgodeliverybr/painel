@@ -120,6 +120,37 @@ function endpointParaEvento(ifoodOrderId: string, evento: string): string {
   return `/logistics/v1.0/orders/${ifoodOrderId}/${evento}`;
 }
 
+// Bug real corrigido aqui (2026-09-16): assignDriver, diferente dos outros
+// 4 eventos de logística, EXIGE corpo — sem isso o iFood recusa com 400
+// "No request body", travando a cadeia inteira de confirmação (o pedido
+// nunca sai de "sem confirmação do merchant" e verifyDeliveryCode nunca é
+// aceito). Payload confirmado contra a doc pública do iFood (Logistics
+// API, 2026-09-16): workerName, workerPhone, workerVehicleType (enum
+// BICYCLE|ONFOOT|PATINETE|EBIKE|SUPERBIKE|CAR|MOTORCYCLE|MOTORBIKE).
+function mapearVeiculoIfood(modal: string | null | undefined): string {
+  switch (modal) {
+    case "bicicleta": return "BICYCLE";
+    case "carro": return "CAR";
+    default: return "MOTORCYCLE";
+  }
+}
+
+async function montarCorpoAssignDriver(pedidoId: string): Promise<string | undefined> {
+  const { data: pedido, error: pedidoErr } = await supabase
+    .from("pedidos").select("motoboy_id, entregador_id").eq("id", pedidoId).maybeSingle();
+  if (pedidoErr) { await logErro("assign_driver_buscar_pedido", { pedidoId, message: pedidoErr.message }); return undefined; }
+  const entregadorId = pedido?.motoboy_id ?? pedido?.entregador_id ?? null;
+  if (!entregadorId) return undefined;
+  const { data: entregador, error: entErr } = await supabase
+    .from("entregadores").select("nome, telefone, modal_veiculo").eq("id", entregadorId).maybeSingle();
+  if (entErr) { await logErro("assign_driver_buscar_entregador", { pedidoId, entregadorId, message: entErr.message }); return undefined; }
+  return JSON.stringify({
+    workerName: entregador?.nome || "Entregador",
+    workerPhone: (entregador?.telefone || "").replace(/\D/g, ""),
+    workerVehicleType: mapearVeiculoIfood(entregador?.modal_veiculo),
+  });
+}
+
 // ═══════════════════════════════════════════════
 // WEBHOOK INBOUND — eventos que o iFood empurra (push), alternativa ao
 // polling de ifood-polling pra receber pedidos/mudanças de status.
@@ -180,10 +211,26 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
 // resposta de /order/v1.0/orders/{id} e eram descartados até aqui. Mesma
 // extração usada em ifood-polling, duplicada aqui pelo mesmo motivo do
 // resto do arquivo (nenhuma function compartilha módulo).
+// iFood manda o método em inglês (Order API pública, 2026-09-16: CREDIT,
+// DEBIT, MEAL_VOUCHER, FOOD_VOUCHER, CASH, PIX, OTHER) — traduzido pro
+// vocabulário da constraint pedidos_forma_pagamento_check
+// (dinheiro/cartao/pix/outro). Mesmo helper de ifood-polling, duplicado
+// aqui pelo mesmo motivo do resto do arquivo.
+function mapearFormaPagamento(metodo: string | null): string {
+  switch (metodo) {
+    case "CASH": return "dinheiro";
+    case "PIX": return "pix";
+    case "CREDIT":
+    case "DEBIT":
+    case "MEAL_VOUCHER":
+    case "FOOD_VOUCHER": return "cartao";
+    default: return "outro";
+  }
+}
 function extrairPagamento(d: any) {
   const metodo = d.payments?.methods?.[0] ?? null;
   return {
-    forma_pagamento: metodo?.method ?? metodo?.type ?? null,
+    forma_pagamento: mapearFormaPagamento(metodo?.method ?? metodo?.type ?? null),
     bandeira_cartao: metodo?.card?.brand ?? null,
     troco_para: metodo?.cash?.changeFor ?? null,
   };
@@ -195,20 +242,56 @@ function extrairCupom(d: any) {
   return { cupom_valor: total, cupom_detalhes: benefits };
 }
 
+// Mesmo padrão de formatarBrasiliaNaive() do despacho-engine — timestamp
+// SEM fuso, mas representando hora de Brasília (não UTC). Bug real
+// corrigido aqui (2026-09-16): antes usava new Date().toISOString(), que
+// grava UTC puro numa coluna timestamp SEM fuso — o valor ficava lido como
+// se já fosse Brasília, adiantando o pedido em 3h (created_at/pronto_em no
+// futuro em relação ao relógio real), o que também distorcia o cálculo de
+// timeout/escalada de onda do despacho-engine pra pedidos do iFood. Sem
+// horário de verão em Brasília desde 2019 — offset fixo de -3h.
+function agoraBrasiliaNaive(): string {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().replace("Z", "");
+}
+
+// Bug real corrigido aqui (2026-09-16): pedido do iFood entrava direto
+// como 'pronto', pulando o fluxo que todo pedido próprio segue (recebido
+// -> loja marca pronto) — despacho automático saía cedo demais e a loja
+// nunca via o pedido "chegando". Replica a mesma decisão de criarPedido()
+// no painel (app.js): sem agendamento -> 'recebido' (o evento RTP,
+// tratado em processarEventoWebhook, promove pra 'pronto' depois — mesmo
+// papel de "loja clica em pronto"); orderTiming SCHEDULED -> 'agendado' +
+// agendado_para (timestamptz REAL — o iFood já manda em UTC de verdade,
+// não passa por agoraBrasiliaNaive, mesmo tratamento que criarPedido/
+// salvarEdicaoPedido já dão a essa coluna no painel). _runScheduler()
+// (app.js) já promove qualquer agendado->pronto na hora certa, de
+// qualquer origem — nenhuma mudança necessária ali. Mesma lógica de
+// ifood-polling, duplicada aqui.
+function statusInicialIfood(d: any): { status: string; agendadoPara: string | null } {
+  const schedule = d.schedule ?? d.scheduled ?? null;
+  const agendado = d.orderTiming === "SCHEDULED" && !!schedule?.deliveryDateTimeStart;
+  return {
+    status: agendado ? "agendado" : "recebido",
+    agendadoPara: agendado ? schedule.deliveryDateTimeStart : null,
+  };
+}
+
 async function mapearPedidoIfood(d: any) {
-  const agora = new Date().toISOString();
+  const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
   const loja = await buscarLojaPorMerchantId(merchantId);
   if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
   const pagamento = extrairPagamento(d);
   const cupom = extrairCupom(d);
+  const { status: statusInicial, agendadoPara } = statusInicialIfood(d);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
     numero_loja: String(d.displayId ?? d.id),
     origem: "ifood",
-    status: "pronto",
-    status_detalhado: "pronto",
+    status: statusInicial,
+    status_detalhado: statusInicial,
+    agendado_para: agendadoPara,
     pagamento_confirmado: true,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
@@ -229,8 +312,8 @@ async function mapearPedidoIfood(d: any) {
     taxa_entrega: d.total?.deliveryFee ?? 0,
     ...pagamento,
     ...cupom,
-    recebido_em: agora,
-    pronto_em: agora,
+    recebido_em: statusInicial === "recebido" ? agora : null,
+    pronto_em: null,
     created_at: agora,
     updated_at: agora,
   };
@@ -270,7 +353,7 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
 // pelo cliente/iFood ou conclusão por outro app (Gestor de Pedidos) era
 // descartado sem efeito nenhum. Um evento de webhook = uma mudança de
 // status (ou pedido novo): pedido novo entra pelo fluxo de sempre; pedido
-// já existente só é tocado se o evento for CAN, CON, DAR ou DDCR —
+// já existente só é tocado se o evento for CAN, CON, RTP, DAR ou DDCR —
 // qualquer outro evento é só confirmado (202), sem sobrescrever progresso
 // interno (em_rota/chegou_destino etc., escrito pelo app do entregador).
 // Lança exceção em qualquer falha real (não em "evento sem orderId", que é
@@ -296,14 +379,23 @@ async function processarEventoWebhook(evento: any): Promise<void> {
     const atual = existente[0] as { id: string; status: string | null };
     if (code === "CAN" && atual.status !== "cancelado") {
       const { error } = await supabase.from("pedidos").update({
-        status: "cancelado", status_detalhado: "cancelado", updated_at: new Date().toISOString(),
+        status: "cancelado", status_detalhado: "cancelado", updated_at: agoraBrasiliaNaive(),
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao cancelar pedido ${orderId}: ${error.message}`);
     } else if (code === "CON" && atual.status !== "cancelado" && atual.status !== "finalizado") {
       const { error } = await supabase.from("pedidos").update({
-        status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
+        status: "finalizado", status_detalhado: "finalizado", updated_at: agoraBrasiliaNaive(),
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao concluir pedido ${orderId}: ${error.message}`);
+    } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
+      // pronto" nos pedidos próprios. Só isso libera o pedido pro
+      // despacho-engine (que só olha status='pronto').
+      const agora = agoraBrasiliaNaive();
+      const { error } = await supabase.from("pedidos").update({
+        status: "pronto", status_detalhado: "pronto", pronto_em: agora, updated_at: agora,
+      }).eq("id", atual.id);
+      if (error) throw new Error(`falha ao marcar pedido pronto ${orderId}: ${error.message}`);
     } else if (code === "DAR" && metadata?.address) {
       const { error } = await supabase.from("pedidos").update({
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
@@ -417,9 +509,11 @@ serve(async (req) => {
 
     try {
       const path = endpointParaEvento(ifoodOrderId, item.evento);
+      const corpo = item.evento === "assignDriver" ? await montarCorpoAssignDriver(item.pedido_id) : undefined;
       const res = await fetch(`${IFOOD_BASE_URL}${path}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        ...(corpo ? { body: corpo } : {}),
       });
 
       // Item 16 do checklist de homologação: 429 aqui é limite global do

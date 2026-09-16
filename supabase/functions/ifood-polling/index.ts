@@ -150,10 +150,26 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
 // payments.methods[] pode ter mais de um método (split payment); pegamos o
 // primeiro pra exibição — suficiente pro requisito de homologação (mostrar
 // bandeira/troco em tela), não é uma reconciliação financeira completa.
+// iFood manda o método em inglês (Order API pública, 2026-09-16: CREDIT,
+// DEBIT, MEAL_VOUCHER, FOOD_VOUCHER, CASH, PIX, OTHER) — traduzido pro
+// vocabulário da constraint pedidos_forma_pagamento_check
+// (dinheiro/cartao/pix/outro). Sem isso, valor não reconhecido derrubava
+// o upsert inteiro do pedido.
+function mapearFormaPagamento(metodo: string | null): string {
+  switch (metodo) {
+    case "CASH": return "dinheiro";
+    case "PIX": return "pix";
+    case "CREDIT":
+    case "DEBIT":
+    case "MEAL_VOUCHER":
+    case "FOOD_VOUCHER": return "cartao";
+    default: return "outro";
+  }
+}
 function extrairPagamento(d: any) {
   const metodo = d.payments?.methods?.[0] ?? null;
   return {
-    forma_pagamento: metodo?.method ?? metodo?.type ?? null,
+    forma_pagamento: mapearFormaPagamento(metodo?.method ?? metodo?.type ?? null),
     bandeira_cartao: metodo?.card?.brand ?? null,
     troco_para: metodo?.cash?.changeFor ?? null,
   };
@@ -165,20 +181,55 @@ function extrairCupom(d: any) {
   return { cupom_valor: total, cupom_detalhes: benefits };
 }
 
+// Mesmo padrão de formatarBrasiliaNaive() do despacho-engine — timestamp
+// SEM fuso, mas representando hora de Brasília (não UTC). Bug real
+// corrigido aqui (2026-09-16): antes usava new Date().toISOString(), que
+// grava UTC puro numa coluna timestamp SEM fuso — o valor ficava lido como
+// se já fosse Brasília, adiantando o pedido em 3h (created_at/pronto_em no
+// futuro em relação ao relógio real), o que também distorcia o cálculo de
+// timeout/escalada de onda do despacho-engine pra pedidos do iFood. Sem
+// horário de verão em Brasília desde 2019 — offset fixo de -3h.
+function agoraBrasiliaNaive(): string {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().replace("Z", "");
+}
+
+// Bug real corrigido aqui (2026-09-16): pedido do iFood entrava direto
+// como 'pronto', pulando o fluxo que todo pedido próprio segue (recebido
+// -> loja marca pronto) — despacho automático saía cedo demais e a loja
+// nunca via o pedido "chegando". Replica a mesma decisão de criarPedido()
+// no painel (app.js): sem agendamento -> 'recebido' (o evento RTP,
+// tratado em processarEventoPedido, promove pra 'pronto' depois — mesmo
+// papel de "loja clica em pronto"); orderTiming SCHEDULED -> 'agendado' +
+// agendado_para (timestamptz REAL — o iFood já manda em UTC de verdade,
+// não passa por agoraBrasiliaNaive, mesmo tratamento que criarPedido/
+// salvarEdicaoPedido já dão a essa coluna no painel). _runScheduler()
+// (app.js) já promove qualquer agendado->pronto na hora certa, de
+// qualquer origem — nenhuma mudança necessária ali.
+function statusInicialIfood(d: any): { status: string; agendadoPara: string | null } {
+  const schedule = d.schedule ?? d.scheduled ?? null;
+  const agendado = d.orderTiming === "SCHEDULED" && !!schedule?.deliveryDateTimeStart;
+  return {
+    status: agendado ? "agendado" : "recebido",
+    agendadoPara: agendado ? schedule.deliveryDateTimeStart : null,
+  };
+}
+
 async function mapearPedidoIfood(d: any) {
-  const agora = new Date().toISOString();
+  const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
   const loja = await buscarLojaPorMerchantId(merchantId);
   if (!loja) await logErro("merchant_id_sem_loja_correspondente", { merchantId, merchantName: d.merchant?.name ?? null });
   const pagamento = extrairPagamento(d);
   const cupom = extrairCupom(d);
+  const { status: statusInicial, agendadoPara } = statusInicialIfood(d);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
     numero_loja: String(d.displayId ?? d.id),
     origem: "ifood",
-    status: "pronto",
-    status_detalhado: "pronto",
+    status: statusInicial,
+    status_detalhado: statusInicial,
+    agendado_para: agendadoPara,
     pagamento_confirmado: true,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
@@ -199,8 +250,8 @@ async function mapearPedidoIfood(d: any) {
     taxa_entrega: d.total?.deliveryFee ?? 0,
     ...pagamento,
     ...cupom,
-    recebido_em: agora,
-    pronto_em: agora,
+    recebido_em: statusInicial === "recebido" ? agora : null,
+    pronto_em: null,
     created_at: agora,
     updated_at: agora,
   };
@@ -240,8 +291,8 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
 // tabela, QUALQUER evento subsequente (inclusive cancelamento pelo cliente,
 // ou conclusão por outro app tipo Gestor de Pedidos) era descartado sem
 // nenhum efeito. Agora: pedido novo entra pelo fluxo de sempre; pedido já
-// existente só é tocado se o evento for CAN, CON, DAR ou DDCR (os únicos
-// que mudam algo de forma inequívoca) — qualquer outro evento pra pedido
+// existente só é tocado se o evento for CAN, CON, RTP, DAR ou DDCR (os
+// únicos que mudam algo de forma inequívoca) — qualquer outro evento pra pedido
 // existente é só reconhecido (ACK), sem sobrescrever progresso interno já
 // em andamento (em_rota/chegou_destino etc., escritos pelo app do
 // entregador).
@@ -257,14 +308,23 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
     const atual = existente[0] as { id: string; status: string | null };
     if (code === "CAN" && atual.status !== "cancelado") {
       const { error } = await supabase.from("pedidos").update({
-        status: "cancelado", status_detalhado: "cancelado", updated_at: new Date().toISOString(),
+        status: "cancelado", status_detalhado: "cancelado", updated_at: agoraBrasiliaNaive(),
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_cancelado", { orderId, message: error.message }); return false; }
     } else if (code === "CON" && atual.status !== "cancelado" && atual.status !== "finalizado") {
       const { error } = await supabase.from("pedidos").update({
-        status: "finalizado", status_detalhado: "finalizado", updated_at: new Date().toISOString(),
+        status: "finalizado", status_detalhado: "finalizado", updated_at: agoraBrasiliaNaive(),
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_concluido", { orderId, message: error.message }); return false; }
+    } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
+      // pronto" nos pedidos próprios. Só isso libera o pedido pro
+      // despacho-engine (que só olha status='pronto').
+      const agora = agoraBrasiliaNaive();
+      const { error } = await supabase.from("pedidos").update({
+        status: "pronto", status_detalhado: "pronto", pronto_em: agora, updated_at: agora,
+      }).eq("id", atual.id);
+      if (error) { await logErro("atualizar_status_pronto", { orderId, message: error.message }); return false; }
     } else if (code === "DAR" && metadata?.address) {
       const { error } = await supabase.from("pedidos").update({
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
