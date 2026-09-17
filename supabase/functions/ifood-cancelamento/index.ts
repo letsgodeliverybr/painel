@@ -109,11 +109,15 @@ serve(async (req) => {
     if (!token) return json({ error: "Sem token de acesso ao iFood" }, 502);
 
     if (action === "motivos") {
-      // Nome exato dos campos da resposta (code/description vs
-      // cancellationCode) não pôde ser confirmado contra uma chamada real
-      // ainda (app de produção travado em 403 no momento desta
-      // implementação) — aceita as duas variantes até confirmar contra um
-      // pedido de teste real.
+      // Bug real corrigido aqui (2026-09-16): o nome do campo nunca tinha
+      // sido confirmado contra uma resposta real (app de produção travado
+      // em 403 na implementação original). Confirmado contra a doc pública
+      // do iFood: pra "Orders outside iFood platform" (entrega própria —
+      // nosso caso, não é o iFood quem entrega), o campo é `cancelCodeId`
+      // (array direto, sem wrapper), não `cancellationCode`/`code` (esses
+      // são do módulo de pedido normal do iFood, "reasons":[{code,...}]).
+      // Sem `cancelCodeId` no fallback, code saía undefined -> value=""
+      // na option -> "Selecione um motivo" mesmo com opção escolhida.
       const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${pedido.ifood_order_id}/cancellationReasons`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
@@ -127,8 +131,8 @@ serve(async (req) => {
       try { parsed = JSON.parse(bodyText); } catch { return json({ error: "Resposta inválida do iFood" }, 502); }
       const lista = Array.isArray(parsed) ? parsed : parsed?.reasons ?? [];
       const motivos = lista.map((r: any) => ({
-        code: r.cancellationCode ?? r.code ?? r.reason,
-        description: r.description ?? r.reason ?? String(r.cancellationCode ?? r.code ?? ""),
+        code: r.cancelCodeId ?? r.cancellationCode ?? r.code ?? r.reason,
+        description: r.description ?? r.reason ?? String(r.cancelCodeId ?? r.cancellationCode ?? r.code ?? ""),
       }));
       return json({ ok: true, motivos });
     }
