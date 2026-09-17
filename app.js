@@ -2564,15 +2564,15 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
 
 async function alterarStatusPedido(pedidoId,novoStatus){
   fecharDropdownStatus();
-  // Mesma trava do botão "Marcar Pronto" (marcarPedidoPronto) e de
-  // alterarStatusPedidoTabela — impede reabrir "pronto" por esse dropdown
-  // quando o pedido já tem motoboy alocado.
+  // Delega pra marcarPedidoPronto (2026-09-17, pedido explícito do
+  // usuário) — antes esse caminho só BLOQUEAVA quando já tinha motoboy
+  // alocado ("Remova o motoboy..."), diferente do botão "Marcar Pronto"
+  // que pergunta e desaloca. Agora as duas vias fazem exatamente a mesma
+  // coisa: mesmo confirm(), mesma desalocação, mesmas travas internas
+  // (pagamento pendente etc.).
   if(novoStatus==='pronto'){
     const _pChk=allPedidos.find(x=>x.id===pedidoId);
-    if(_pChk?.motoboy_id||_pChk?.entregador_id){
-      showNotif('Pedido já tem entregador','Remova o motoboy alocado antes de marcar como pronto de novo.','var(--yellow)');
-      return;
-    }
+    return marcarPedidoPronto(pedidoId,_pChk?.status);
   }
   // Item 11 do checklist de homologação iFood — mesma trava de
   // alterarStatusPedidoTabela: pedido de origem iFood passa pelo fluxo de
@@ -2587,22 +2587,12 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   }
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
-  if(novoStatus==='pronto')update.pronto_em=agora;if(novoStatus==='aceito')update.aceito_em=agora;
+  if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
   if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
-  // Backend: só aplica o PATCH pra 'pronto' se ainda não tiver motoboy —
-  // cobre a corrida entre abas que a checagem acima (dado em memória) não
-  // pega sozinha.
-  const filtro=novoStatus==='pronto'?`?id=eq.${pedidoId}&motoboy_id=is.null&entregador_id=is.null`:`?id=eq.${pedidoId}`;
-  const resultPatch=await db('pedidos','PATCH',update,filtro);
-  if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
-    showNotif('Pedido já tem entregador','Outra pessoa já alocou/alterou esse pedido.','var(--yellow)');
-    await atualizarTudo();
-    return;
-  }
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  const resultPatch=await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const _pl=allPedidos.find(x=>x.id===pedidoId);
@@ -2619,6 +2609,15 @@ async function _estornarDebitoEntrega(pedido){
   await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
   _carregarSaldoTopbar();
 }
+// STUB (2026-09-17) — tela de solicitação de Uber sob demanda ainda não
+// existe em lugar nenhum do sistema (checado: nenhuma menção a "uber" ou
+// "sob demanda" em app.js, nas edge functions, nem no app do entregador).
+// Integrar de verdade com a API da Uber é um projeto à parte (OAuth,
+// endpoints de cotação/despacho, webhooks de status) — fora do escopo de
+// um ajuste de layout de card. Placeholder até isso ser desenhado.
+function _abrirSobDemanda(pedidoId){
+  showNotif('🚧 Em construção','Solicitação de entregador sob demanda (Uber) ainda não foi implementada.','var(--yellow)');
+}
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
@@ -2633,15 +2632,13 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
     showNotif('⏳ Pagamento pendente','Confirme o pagamento em "Aguardando Pagamento" antes de marcar como pronto.','var(--yellow)');
     return;
   }
-  // Trava real (2026-09-12, bug real corrigido — pedido #5317): mesmo
-  // problema, pra agendamento — marcar "pronto" manualmente ANTES da hora
-  // pulava o _runScheduler() (único responsável por agendado→pronto, só
-  // quando agendado_para já passou) e disparava notificação de motoboy
-  // cedo demais, via despacho-engine (que não sabe de agendamento nenhum).
-  if(statusAtual==='agendado'&&p?.agendado_para&&_parseUtc(p.agendado_para).getTime()>Date.now()){
-    showNotif('⏰ Agendado',`Esse pedido libera automaticamente às ${formatarAgendado(p.agendado_para)}.`,'var(--yellow)');
-    return;
-  }
+  // Trava de agendamento REMOVIDA por pedido explícito do usuário
+  // (2026-09-17) — antes bloqueava marcar "pronto" manualmente num
+  // agendado antes da hora (bug #5317, 2026-09-12: pulava o
+  // _runScheduler() e disparava notificação de motoboy cedo demais via
+  // despacho-engine, que não sabe de agendamento nenhum). Removendo essa
+  // trava, esse risco volta a existir — marcar pronto manualmente num
+  // agendado futuro agora dispara despacho na hora, não na hora agendada.
   const tinhaMotoboy=!!(p?.motoboy_id||p?.entregador_id);
   if(tinhaMotoboy&&!confirm(`Desalocar o motoboy do pedido #${p?.numero||pedidoId.substring(0,6)} e voltar a ficar disponível para novo aceite?`))return;
   const btn=document.getElementById('btn-pronto-'+pedidoId);
@@ -4021,43 +4018,37 @@ function renderPedidosLista(){
           </div>
         </div>`:'';
       // ── CARD FECHADO ──────────────────────────────────────────────
+      // Redesign 2026-09-17 (pedido do usuário): numero sai de dentro do
+      // quadrado e vira label acima dele; quadrado 58px (era 64px);
+      // checkmark solto de "marcar pronto" vira badge branco "Pedido
+      // Pronto" ao lado do horário (mesma ação de sempre); novo badge
+      // branco "Sobre Demanda" ao lado; badge de status colorido e os
+      // botões editar/alocar continuam intocados no canto direito.
+      const horaU=formatarHora(p.updated_at||p.created_at);
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;gap:10px;align-items:flex-start">
-          <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
-            style="width:64px;height:64px;min-width:64px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;user-select:none;color:#fff;padding:0;gap:3px;overflow:hidden">
-            ${isSel?'<span style="font-size:22px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
-              p.origem==='ifood'?`<div title="Pedido da integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:14px 8px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
-              `<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;display:block;">`
-            }
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+            <span style="font-size:13px;font-weight:800;color:var(--sb-text)">#${p.numero||p.id?.substring(0,6)}</span>
+            <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
+              style="width:58px;height:58px;min-width:58px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;user-select:none;color:#fff;overflow:hidden">
+              ${isSel?'<span style="font-size:20px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
+                p.origem==='ifood'?`<div title="Pedido da integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:12px 7px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
+                `<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;display:block;">`
+              }
+            </div>
           </div>
           <div style="flex:1;min-width:0;overflow:hidden">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
-              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-                <span style="font-size:15px;font-weight:800;color:var(--sb-text)">#${p.numero||p.id?.substring(0,6)}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;row-gap:4px">
                 <span style="font-size:11px;color:var(--sb-text3)">${horaC}</span>
+                <span style="font-size:11px;color:var(--sb-text3)">·</span>
+                <span style="font-size:11px;color:var(--sb-text3)">${horaU}</span>
+                ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto (desaloca o entregador, se houver)" style="display:inline-flex;align-items:center;gap:4px;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
+                <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap"><svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
-                ${sk!=='finalizado'&&sk!=='cancelado'?(()=>{
-                  const pagtoPendente=sk==='aguardando_pagamento';
-                  // Bug real corrigido 2026-09-12 (pedido #5317): nada
-                  // impedia marcar "pronto" manualmente num agendado ANTES
-                  // da hora, pulando o _runScheduler() (só ele deveria
-                  // fazer agendado→pronto, e só quando agendado_para já
-                  // passou) — o despacho-engine não sabe de agendamento
-                  // nenhum, então notificava o motoboy na hora.
-                  const agendadoFuturo=sk==='agendado'&&p.agendado_para&&_parseUtc(p.agendado_para).getTime()>Date.now();
-                  const bloqueado=pagtoPendente||agendadoFuturo;
-                  const destacado=!!(p.motoboy_id||p.entregador_id)||sk==='pronto';
-                  const jaProntoSemMotoboy=!(p.motoboy_id||p.entregador_id)&&sk==='pronto';
-                  const desabilitado=bloqueado||jaProntoSemMotoboy;
-                  const title=pagtoPendente?'Pagamento pendente — confirme em "Aguardando Pagamento" antes de marcar como pronto':agendadoFuturo?`Agendado para ${formatarAgendado(p.agendado_para)} — libera automaticamente na hora`:(p.motoboy_id||p.entregador_id)?'Aguardando entregador — clique pra desalocar e reabrir a vaga':sk==='pronto'?'Pedido já classificado como pronto':'Marcar como pronto';
-                  const bg=bloqueado?'#f59e0b1a':destacado?'#1A56DB1a':'#2a2a2a';
-                  const border=bloqueado?'#f59e0b55':destacado?'#1A56DB55':'#3A3A3A';
-                  const stroke=bloqueado?'#f59e0b':destacado?'#1A56DB':'#aaa';
-                  return `<button ${desabilitado?'disabled':''} onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="${title}" style="background:${bg};border:0.5px solid ${border};border-radius:6px;padding:5px 7px;cursor:${desabilitado?'default':'pointer'};display:inline-flex;align-items:center;opacity:${desabilitado?'0.7':'1'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`;
-                })():''}
                 <span id="badge-wrapper-${p.id}" style="position:relative">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:10px">▾</span></span>
                 </span>
@@ -4066,7 +4057,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
-              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Saída até ${horaSaidaAte} para evitar atraso</div>`:''}
+              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} Para Evitar Atraso</div>`:''}
             </div>
           </div>
         </div>
