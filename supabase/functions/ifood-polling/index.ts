@@ -244,6 +244,12 @@ async function mapearPedidoIfood(d: any) {
     telefone: d.customer?.phone?.number ?? null,
     cliente_documento: d.customer?.documentNumber ?? null,
     ifood_pickup_code: d.pickupCode ?? null,
+    // Código de 8 dígitos do portal confirmacao-entrega-propria.ifood.com.br
+    // — confirmado (2026-09-17) que existe independente do telefone ser
+    // real ou o 0800 genérico do sandbox (campos separados dentro de
+    // customer.phone). Ver entrega_screen.dart/IfoodConfirmacaoWebviewScreen.
+    ifood_phone_localizer: d.customer?.phone?.localizer ?? null,
+    ifood_phone_localizer_expiration: d.customer?.phone?.localizerExpiration ?? null,
     itens: d.items ?? [],
     valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
     total_pedido: d.total?.orderAmount ?? 0,
