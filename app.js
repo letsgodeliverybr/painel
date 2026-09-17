@@ -4187,7 +4187,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
   <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
 </div>
-<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div></div></div>
+<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div></div></div>
 <div class="form-row">
   <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
   <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
@@ -4262,6 +4262,13 @@ function _epToggleAgendar(){
   const c=document.getElementById('ep-agendar-campos');if(c)c.style.display=on?'block':'none';
   if(on){const inp=document.getElementById('ep-agendado-para');if(inp&&!inp.value){inp.value=_defaultAgendadoBrasilia(30);}}
 }
+let _epTaxaTimer=null;
+// Dispara sozinho ao digitar OU ao selecionar uma sugestão do autocomplete
+// (iniciarAutocompleteEndereco dispara um evento 'input' sintético depois
+// de preencher o endereço formatado — cai aqui também). Mesmo padrão de
+// onChangeEnderecoDebounce() do Novo Pedido, só que chamando
+// _epRecalcularTaxas() em vez de calcularTaxaAuto().
+function _epOnChangeEnderecoDebounce(){clearTimeout(_epTaxaTimer);_epTaxaTimer=setTimeout(()=>_epRecalcularTaxas(),800);}
 async function _epRecalcularTaxas(){
   const endereco=document.getElementById('ep-endereco')?.value||'';
   if(!endereco)return;
