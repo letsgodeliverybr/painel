@@ -2614,14 +2614,23 @@ async function _estornarDebitoEntrega(pedido){
   await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
   _carregarSaldoTopbar();
 }
-// STUB (2026-09-17) — tela de solicitação de Uber sob demanda ainda não
-// existe em lugar nenhum do sistema (checado: nenhuma menção a "uber" ou
-// "sob demanda" em app.js, nas edge functions, nem no app do entregador).
-// Integrar de verdade com a API da Uber é um projeto à parte (OAuth,
-// endpoints de cotação/despacho, webhooks de status) — fora do escopo de
-// um ajuste de layout de card. Placeholder até isso ser desenhado.
-function _abrirSobDemanda(pedidoId){
-  showNotif('🚧 Em construção','Solicitação de entregador sob demanda (Uber) ainda não foi implementada.','var(--yellow)');
+// Cota e cria a entrega na Uber Direct pro pedido, sem tela de
+// confirmação (pedido explícito do usuário, 2026-09-17) — chama
+// uber-solicitar-entrega, que faz auth+cotação+criação e grava
+// uber_delivery_id/uber_tracking_url no pedido.
+async function _abrirSobDemanda(pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  if(!confirm(`Solicitar um entregador sob demanda (Uber) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
+  showNotif('⏳ Solicitando na Uber…','','var(--text3)');
+  try{
+    const r=await fetch(`${SB_URL}/functions/v1/uber-solicitar-entrega`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({pedido_id:pedidoId})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok){showNotif('❌ Falha ao solicitar Uber',j.error||`Erro ${r.status}`,'var(--red)');return;}
+    showNotif('✅ Uber solicitada!','Entregador sob demanda acionado — acompanhe pelo link de rastreio.','var(--green)');
+    await atualizarTudo();
+  }catch(e){
+    showNotif('❌ Erro de conexão','Falha ao solicitar Uber.','var(--red)');
+  }
 }
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
