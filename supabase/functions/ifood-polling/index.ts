@@ -355,12 +355,40 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
   return true;
 }
 
+// Item do checklist de homologação (confirmado com o suporte do iFood,
+// 2026-09-16): filtra o polling só pelos merchants que essa integração
+// realmente atende — sem isso a API devolve eventos de TODO merchant que
+// o token acessa. Fonte da lista: lojas.ifood_merchant_id (não a API de
+// merchants do iFood — é o que a gente já sabe que quer atender). Limite
+// documentado: 100 IDs por header; acima de 500 merchants no token vira
+// obrigatório. Só suporta 1 lote (≤100) por enquanto — ver aviso em
+// buscarMerchantIdsPolling() pra quando isso crescer.
+async function buscarMerchantIdsPolling(): Promise<string[] | null> {
+  const { data, error } = await supabase
+    .from("lojas").select("ifood_merchant_id").not("ifood_merchant_id", "is", null);
+  if (error) { await logErro("buscar_merchant_ids_polling", { message: error.message }); return null; }
+  const ids = [...new Set((data || []).map((l: any) => l.ifood_merchant_id).filter(Boolean))];
+  if (ids.length > 100) {
+    // Rate limit do polling é 1 request/30s POR TOKEN — não dá pra simplesmente
+    // disparar mais requests em lote dentro do mesmo minuto de cron pra cobrir
+    // >100 merchants sem estourar 429. Precisa de redesenho (múltiplos tokens,
+    // ou espalhar lotes por múltiplas invocações) quando chegar nesse volume.
+    // Por ora: loga e cai pro polling sem filtro (pega todo merchant do token,
+    // pior que filtrado mas não perde pedido nenhum).
+    await logErro("merchant_ids_acima_de_100_sem_suporte", { total: ids.length });
+    return null;
+  }
+  return ids;
+}
+
 // Retorna true quando o polling levou 429 (rate limit) — sinal pro serve()
 // não insistir na segunda iteração da mesma invocação.
-async function pollOnce(token: string): Promise<boolean> {
+async function pollOnce(token: string, merchantIds: string[] | null): Promise<boolean> {
   // excludeHeartbeat=true é obrigatório para integradores de Logistics
   // (senão conta como "abrir a loja" e trava cancelamento no lado iFood).
-  const res = await ifoodFetch("/events/v1.0/events:polling?excludeHeartbeat=true", token, { method: "GET" });
+  const headers: Record<string, string> = {};
+  if (merchantIds && merchantIds.length > 0) headers["x-polling-merchants"] = merchantIds.join(",");
+  const res = await ifoodFetch("/events/v1.0/events:polling?excludeHeartbeat=true", token, { method: "GET", headers });
 
   if (await logSeRateLimited("polling", res)) return true;
   if (res.status === 204) return false;
@@ -426,6 +454,7 @@ serve(async () => {
   // verdade em produção (as duas chamadas usam o mesmo token cacheado).
   // Subido pra 31000ms (folga de 1s) e, se mesmo assim vier 429, a segunda
   // iteração é pulada em vez de insistir.
+  const merchantIds = await buscarMerchantIdsPolling();
   for (let i = 0; i < 2; i++) {
     const token = await getAccessToken();
     if (!token) {
@@ -433,7 +462,7 @@ serve(async () => {
       break;
     }
     try {
-      const rateLimited = await pollOnce(token);
+      const rateLimited = await pollOnce(token, merchantIds);
       if (rateLimited) {
         problemas.push("rate limit (429) — ver logs_acoes (ifood_erro_rate_limit_*)");
         break;
