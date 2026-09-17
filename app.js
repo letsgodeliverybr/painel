@@ -1024,23 +1024,28 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .b-aguardando  { background:#fef3c7 !important; color:#d97706 !important; }
     .b-entregue    { background:#f1f5f9 !important; color:#64748b !important; }
 
-    /* ── MAPA STATS — sempre tema claro, ignora dark mode ── */
+    /* ── MAPA STATS — único elemento que fica sempre em superfície clara
+       por pedido explícito do usuário, mesmo com o resto do mapa em dark
+       premium (ver conversa de 2026-09-15). Não generalizar essa regra
+       pra outros componentes. ── */
     .mapa-stats, .mapa-stat,
     html.dark .mapa-stats, html.dark .mapa-stat,
     :root:not(.light) .mapa-stats, :root:not(.light) .mapa-stat {
       background: #ffffff !important;
-      color: #111 !important;
-      border: 1px solid #ddd !important;
+      color: #1f2937 !important;
+      border: none !important;
     }
     .mapa-stats, html.dark .mapa-stats, :root:not(.light) .mapa-stats {
-      border-radius: 8px !important;
+      border: 1px solid rgba(0,0,0,.08) !important;
+      border-radius: 10px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
     }
     .mapa-stat-val,
     html.dark .mapa-stat-val,
-    :root:not(.light) .mapa-stat-val { color: #111 !important; font-weight: 700 !important; }
+    :root:not(.light) .mapa-stat-val { color: #1f2937 !important; font-weight: 700 !important; }
     .mapa-stat-label,
     html.dark .mapa-stat-label,
-    :root:not(.light) .mapa-stat-label { color: #111 !important; font-size: 10px !important; }
+    :root:not(.light) .mapa-stat-label { color: #64748b !important; font-size: 10px !important; }
     .leaflet-popup-content-wrapper, html.dark .leaflet-popup-content-wrapper { background: #ffffff !important; color: #111827 !important; box-shadow: 0 4px 16px rgba(0,0,0,.18) !important; border-radius: 10px !important; }
     .leaflet-popup-tip, html.dark .leaflet-popup-tip { background: #ffffff !important; }
     .leaflet-popup-content, html.dark .leaflet-popup-content { color: #111827 !important; margin: 10px 14px !important; }
@@ -3426,12 +3431,12 @@ function renderMapaPage(){
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
-        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center;background:var(--surface-elevated,#1B1F25) !important;border:1px solid var(--border) !important;color:var(--text) !important">
-          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:var(--text) !important;display:flex;align-items:center;justify-content:center">☰</button>
-          <div style="width:1px;height:22px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:transparent !important;border:none !important;color:var(--text) !important"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:var(--text) !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:var(--text3) !important">Finalizados hoje</div></div></div>
-          <div style="width:1px;height:22px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:transparent !important;border:none !important;color:var(--text) !important"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:var(--text) !important;font-weight:700 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:var(--text3) !important">Cancelados hoje</div></div></div>
+        <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center">
+          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#1f2937 !important;display:flex;align-items:center;justify-content:center">☰</button>
+          <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:13px;color:#16a34a !important;font-weight:800 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#64748b !important">Finalizados hoje</div></div></div>
+          <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:13px;color:#dc2626 !important;font-weight:800 !important">0</div><div class="mapa-stat-label" style="font-size:9px;color:#64748b !important">Cancelados hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
           <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
