@@ -655,6 +655,26 @@ window.fazerLogin = async function(){
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail ou senha incorretos.';errEl.style.display='block';return;}
   currentUser=usuarios[0];currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
+  // Bug real corrigido aqui (2026-09-17): esse override nunca chamava a
+  // Auth de verdade do Supabase, só comparava a senha em texto puro
+  // contra usuarios_painel — sessionStorage.lg_session (access_token)
+  // nunca era gravado. Qualquer feature que dependa de um token real
+  // (admin-reset-senha/_redefinirSenhaAuth, entre outras) sempre falhava
+  // com "Sessão expirada", mesmo logo após logar de novo — não era
+  // expiração de verdade, era ausência total do token, porque o login de
+  // produção nunca passa pelo fazerLogin() original do app.js (que faz
+  // essa chamada), só por este override. Best-effort: tenta pegar uma
+  // sessão real (mesmo email/senha, endpoint oficial de Auth) e guarda se
+  // conseguir; se falhar (ex: essa conta não tem usuário correspondente
+  // no Auth), o login continua funcionando normal — só as features que
+  // dependem de token real ficam indisponíveis pra essa conta específica.
+  try{
+    const rAuth=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
+    if(rAuth.ok){
+      const sessAuth=await rAuth.json();
+      if(sessAuth?.access_token)sessionStorage.setItem('lg_session',JSON.stringify({access_token:sessAuth.access_token,refresh_token:sessAuth.refresh_token,expires_at:sessAuth.expires_at}));
+    }
+  }catch{}
   await logAcao('login',{email,perfil:currentPerfil});
   document.getElementById('login-screen').style.display='none';
   const appEl=document.getElementById('app');appEl.style.display='flex';appEl.getBoundingClientRect();
