@@ -3775,10 +3775,25 @@ const _LOJAS_TITLES=['Mostrar todas as lojas','Escondendo lojas sem pedido','Loj
 // amarelo precisa acompanhar "saiu do padrão", não mais o índice fixo.
 // Índice 2 (ocultas) não muda, continua vermelho.
 const _LOJAS_CORES=['#eab308','transparent','#ef4444'];
+// Bug real corrigido aqui (2026-09-17): .mapa-float-btn ganhou
+// background/border com !important no redesign dark premium do mapa —
+// isso sobrepunha silenciosamente o btn.style.background/.border daqui
+// (inline sem !important sempre perde pra regra de classe com
+// !important), então o clique continuava funcionando (título mudava) mas
+// a cor nunca aparecia. setProperty(...,'important') faz o inline também
+// !important, que aí sim vence a regra de classe. 'transparent' usa
+// removeProperty em vez de forçar transparent-important — senão o botão
+// ficaria vazado mostrando o mapa atrás, em vez de cair no escuro padrão
+// da classe (que é o efeito visual correto pro estado neutro).
+function _aplicarCorToggle(btn,cor,borderCor){
+  if(cor==='transparent')btn.style.removeProperty('background');
+  else btn.style.setProperty('background',cor,'important');
+  btn.style.setProperty('border','2px solid '+borderCor,'important');
+}
 function toggleFiltroLojas(){
   _estadoLojas=_estadoLojas===1?0:_estadoLojas===0?2:1;
   const btn=document.getElementById('btn-filtro-lojas');
-  if(btn){btn.style.background=_LOJAS_CORES[_estadoLojas];btn.style.border='2px solid '+(_estadoLojas===1?'#E5E7EB':_LOJAS_CORES[_estadoLojas]);btn.title=_LOJAS_TITLES[_estadoLojas];}
+  if(btn){_aplicarCorToggle(btn,_LOJAS_CORES[_estadoLojas],_estadoLojas===1?'#E5E7EB':_LOJAS_CORES[_estadoLojas]);btn.title=_LOJAS_TITLES[_estadoLojas];}
   atualizarMarcadores();
 }
 let _estadoMotoboys=0;
@@ -3789,7 +3804,7 @@ const _MOTO_CORES=['transparent','#eab308','#3b82f6','#ef4444'];
 function toggleFiltroMotoboys(){
   _estadoMotoboys=(_estadoMotoboys+1)%4;
   const btn=document.getElementById('btn-filtro-motoboys');
-  if(btn){btn.style.background=_MOTO_CORES[_estadoMotoboys];btn.style.border='2px solid '+(_estadoMotoboys===0?'#E5E7EB':_MOTO_CORES[_estadoMotoboys]);btn.title=_MOTO_TITLES[_estadoMotoboys];}
+  if(btn){_aplicarCorToggle(btn,_MOTO_CORES[_estadoMotoboys],_estadoMotoboys===0?'#E5E7EB':_MOTO_CORES[_estadoMotoboys]);btn.title=_MOTO_TITLES[_estadoMotoboys];}
   atualizarMarcadores();
 }
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
