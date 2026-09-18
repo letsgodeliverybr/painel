@@ -139,10 +139,17 @@ serve(async (req) => {
 
     if (action === "cancelar") {
       if (!reason) return json({ error: "reason é obrigatório" }, 400);
+      // Bug real corrigido aqui (2026-09-18): confirmado via log real
+      // (logs_acoes, ifood_erro_request_cancellation_http) que o iFood
+      // retornava 400 InvalidParameter "Field 'cancellationCode' is
+      // required" — o endpoint requestCancellation usa um nome de campo
+      // diferente de cancellationReasons pro mesmo código de motivo
+      // (aquele usa cancelCodeId, ver comentário na action "motivos").
+      // `reason` aqui já é o código (ex: cancelCodeId), não texto livre.
       const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${pedido.ifood_order_id}/requestCancellation`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ cancellationCode: reason }),
       });
       if (!res.ok) {
         const bodyText = await res.text().catch(() => "");
