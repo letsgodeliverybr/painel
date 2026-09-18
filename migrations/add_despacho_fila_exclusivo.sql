@@ -1,0 +1,11 @@
+-- Bug real corrigido (2026-09-18): a tela "Disponíveis" do app do
+-- entregador escondia pedidos do catch-up (modo Todos) de qualquer
+-- entregador que tivesse perdido a onda original (ex: estava offline no
+-- momento em que despacho-engine rodou entregadores_no_raio), porque a
+-- exclusão de "já ofertado individualmente" (criada em 2026-07-09 pra
+-- realocação manual exclusiva, fn_intercept_realocacao_manual) não
+-- distinguia isso de uma onda normal do Todos que só chegou a quem
+-- estava online na hora — as duas usam onda=1, indistinguíveis sem essa
+-- coluna. false = onda normal (visível pra qualquer elegível via
+-- catch-up); true = realocação manual exclusiva (só quem foi escolhido).
+ALTER TABLE public.despacho_fila ADD COLUMN IF NOT EXISTS exclusivo boolean NOT NULL DEFAULT false;
