@@ -90,10 +90,14 @@ serve(async (req) => {
 
     if (!UBER_CUSTOMER_ID) return json({ error: "UBER_CUSTOMER_ID não configurado" }, 500);
 
-    let body: { pedido_id?: string };
+    let body: { pedido_id?: string; action?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    const { pedido_id } = body;
+    const { pedido_id, action } = body;
     if (!pedido_id) return json({ error: "pedido_id é obrigatório" }, 400);
+    // action:"cotar" faz só a cotação (sem criar entrega, sem cobrar nada) —
+    // usado pra checar se a conta Uber ainda está bloqueada (ex:
+    // tax_form_required) antes de rodar o fluxo completo de verdade.
+    const somenteCotar = action === "cotar";
 
     const { data: pedido, error: pedidoErr } = await supabase
       .from("pedidos")
@@ -146,6 +150,8 @@ serve(async (req) => {
 
     await supabase.from("pedidos").update({ uber_quote_id: quoteId, uber_status: "cotado" }).eq("id", pedido_id);
 
+    if (somenteCotar) return json({ ok: true, quote });
+
     // 2. Criar entrega
     const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
     const manifestItems = itens.length
@@ -179,6 +185,8 @@ serve(async (req) => {
       uber_delivery_id: delivery.id ?? null,
       uber_tracking_url: delivery.tracking_url ?? null,
       uber_status: "criado",
+      uber_delivery_status: delivery.status ?? null,
+      uber_atualizado_em: new Date().toISOString(),
       uber_solicitado_em: new Date().toISOString(),
     }).eq("id", pedido_id);
     if (updateErr) return json({ error: "Entrega criada na Uber mas falhou ao gravar localmente", detail: updateErr.message }, 500);

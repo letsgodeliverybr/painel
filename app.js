@@ -2619,6 +2619,13 @@ async function _estornarDebitoEntrega(pedido){
 // uber-solicitar-entrega, que faz auth+cotação+criação e grava
 // uber_delivery_id/uber_tracking_url no pedido.
 async function _abrirSobDemanda(pedidoId){
+  // Pausado a pedido do usuário (2026-09-18) — backend (uber-solicitar-
+  // entrega, uber-webhook, colunas uber_* em pedidos) já implementado e
+  // testado (cotação real ok, bloqueio fiscal liberado), só falta o painel
+  // visual de acompanhamento no card antes de reativar o botão de verdade.
+  // Pra retomar: remover as duas linhas abaixo.
+  showNotif('🚧 Em construção','A solicitação sob demanda (Uber) ainda está sendo finalizada.','var(--yellow)');
+  return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!confirm(`Solicitar um entregador sob demanda (Uber) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
   showNotif('⏳ Solicitando na Uber…','','var(--text3)');

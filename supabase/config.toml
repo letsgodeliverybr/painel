@@ -69,3 +69,10 @@ verify_jwt = false
 # chamada do cron (achado 2026-09-14, mesma armadilha do notify-novo-pedido).
 [functions.cobranca-avisos]
 verify_jwt = false
+
+# Webhook público da Uber Direct (event.delivery_status/event.courier_update)
+# — mesmo motivo do ifood-status-sync acima: quem chama é a Uber, não manda
+# o JWT do Supabase, autenticação real é a assinatura HMAC (x-uber-signature)
+# verificada no próprio código.
+[functions.uber-webhook]
+verify_jwt = false
