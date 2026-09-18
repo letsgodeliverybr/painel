@@ -7342,6 +7342,14 @@ function _ceoDiaDoAno(){
 function _ceoFraseDoDia(){
   return _CEO_FRASES[(_ceoDiaDoAno()-1)%_CEO_FRASES.length];
 }
+// "Hoje é dia de..." (pedido do usuário, 2026-09-18) — data comemorativa
+// curada em datas_comemorativas.js (DATAS_COMEMORATIVAS, script separado
+// carregado antes do app.js). Retorna null pros ~8 dias sem evento
+// cadastrado na fonte original — o caller simplesmente não mostra a linha.
+function _dataComemorativaHoje(){
+  const[,m,d]=_dataHojeBrasilia().split('-').map(Number);
+  return (typeof DATAS_COMEMORATIVAS!=='undefined'&&DATAS_COMEMORATIVAS[`${m}-${d}`])||null;
+}
 function renderCeoPage(){
   _ceoInjectStyles();
   fecharNavSidebar();
@@ -7362,6 +7370,7 @@ function renderCeoPage(){
         <div class="ceo-meta-loc">
           <span>📍 Ribeirão Preto - SP</span>
           <span>📅 <span id="ceo-data-atual">${hojeFmt}</span> · 🕐 <span id="ceo-hora-atual">${horaFmt}</span></span>
+          ${_dataComemorativaHoje()?`<span style="font-size:11px;color:var(--text3);opacity:.85">Hoje é dia de ${_dataComemorativaHoje()}</span>`:''}
         </div>
         <div class="ceo-avatar-wrap">
           <div class="ceo-avatar" onclick="_ceoToggleDropdown()"><img src="https://letsgodeliverybr.github.io/painel/img/gabriel-avatar.png" alt="${nomeUsuario}" onerror="this.parentElement.textContent='${iniciais}'"/></div>
