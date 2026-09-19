@@ -2624,16 +2624,42 @@ async function _estornarDebitoEntrega(pedido){
 // oficial: "request iFood delivery drivers for orders that already exist
 // on the platform").
 const _NOMES_PARCEIRO={uber:'Uber',ifood:'iFood'};
+// Mapa dos códigos de erro documentados do módulo Shipping do iFood
+// (developer.ifood.com.br/docs/food/guides/modules/shipping/inside) pra
+// texto explicativo em português no aviso de indisponibilidade.
+const _MOTIVOS_INDISPONIVEL={
+  HighDemand:'Logística saturada no momento',
+  OffOpeningHours:'Fora do horário de funcionamento',
+  DeliveryDistanceTooHigh:'Endereço fora do raio de entrega',
+  OriginNotFound:'Loja não encontrada no iFood',
+  ServiceAreaMismatch:'Fora da área de cobertura',
+  BadRequestMerchant:'Loja temporariamente indisponível',
+  MerchantStatusAvailability:'Conta com pendências no iFood',
+  InvalidPaymentMethods:'Forma de pagamento não suportada',
+  SaturatedOfflinePayment:'Indisponível para pagamento em dinheiro',
+  NRELimitExceeded:'Limite de entregadores simultâneos atingido',
+};
+// Ícone de cada parceiro — mesmo padrão visual já usado no card pro
+// logo do iFood (quadrado colorido + imagem invertida pra branco).
+// Uber não tem um asset de logo no projeto ainda, então usa um chip
+// preto com "U" — mesma linguagem visual, sem depender de um arquivo
+// de marca que não temos.
+function _htmlIconeParceiro(parceiro){
+  if(parceiro==='uber'){
+    return `<div style="width:24px;height:24px;border-radius:6px;background:#000;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="color:#fff;font-size:12px;font-weight:900;font-family:Inter,sans-serif">U</span></div>`;
+  }
+  return `<div style="width:24px;height:24px;border-radius:6px;background:#EA1D2C;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:4px;box-sizing:border-box"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)"></div>`;
+}
 function _abrirSobDemanda(event,pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const mostrarIfood=p?.origem==='ifood'&&!!p?.ifood_order_id;
-  const html=`<div style="padding:10px 14px;border-bottom:1px solid #3A3A3A;font-size:12px;font-weight:700;color:#ddd;max-width:230px;line-height:1.4;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
-    <div style="padding:4px 0">
+  const html=`<div style="padding:10px 14px;border-bottom:1px solid #3A3A3A;font-size:12px;font-weight:700;color:#ddd;max-width:250px;line-height:1.4;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
+    <div style="padding:6px">
       ${_htmlLinhaParceiro('uber',pedidoId,{tipo:'cotando'})}
       ${mostrarIfood?_htmlLinhaParceiro('ifood',pedidoId,{tipo:'cotando'}):''}
     </div>`;
   const dd=_criarDropdown(pedidoId,html);
-  dd.style.minWidth='260px';
+  dd.style.minWidth='280px';
   _posicionarDropdown(dd,event.currentTarget);
   _cotarParceiro('uber',pedidoId);
   if(mostrarIfood)_cotarParceiro('ifood',pedidoId);
@@ -2641,9 +2667,16 @@ function _abrirSobDemanda(event,pedidoId){
 function _htmlLinhaParceiro(parceiro,pedidoId,estado){
   const nome=_NOMES_PARCEIRO[parceiro];
   const id=`sp-${parceiro}-${pedidoId}`;
-  if(estado.tipo==='cotando')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;color:#888;font-size:13px;font-family:Inter,sans-serif">${nome}<span>Cotando…</span></div>`;
-  if(estado.tipo==='indisponivel')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;color:#666;font-size:13px;font-family:Inter,sans-serif;opacity:.6">${nome}<span>Indisponível</span></div>`;
-  return `<button id="${id}" onclick="event.stopPropagation();_confirmarEntregaParceira('${parceiro}','${pedidoId}')" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;color:#DDD;font-size:13px;font-family:Inter,sans-serif;text-align:left"><span>${nome}</span><span style="font-weight:700;color:#4a9eff">R$ ${estado.preco.toFixed(2)}</span></button>`;
+  const icone=_htmlIconeParceiro(parceiro);
+  if(estado.tipo==='cotando')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 8px;border-radius:8px"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div><span style="color:#888;font-size:12px;font-family:Inter,sans-serif">Cotando…</span></div>`;
+  if(estado.tipo==='indisponivel'){
+    const motivo=_MOTIVOS_INDISPONIVEL[estado.motivo]||'Indisponível no momento';
+    return `<div id="${id}" style="padding:8px 8px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);margin-bottom:2px">
+      <div style="display:flex;align-items:center;gap:8px;opacity:.7">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div>
+      <div style="font-size:11px;color:#f59e0b;padding-left:32px;margin-top:2px;font-family:Inter,sans-serif">${motivo}</div>
+    </div>`;
+  }
+  return `<button id="${id}" onclick="event.stopPropagation();_confirmarEntregaParceira('${parceiro}','${pedidoId}')" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 8px;background:none;border:none;border-radius:8px;cursor:pointer;color:#DDD;font-family:Inter,sans-serif;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='none'"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="font-size:13px;font-weight:600">${nome}</span></div><span style="font-weight:700;color:#4a9eff;font-size:13px">R$ ${estado.preco.toFixed(2)}</span></button>`;
 }
 function _atualizarLinhaParceiro(parceiro,pedidoId,estado){
   const el=document.getElementById(`sp-${parceiro}-${pedidoId}`);
@@ -2657,7 +2690,7 @@ async function _cotarParceiro(parceiro,pedidoId){
     const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({pedido_id:pedidoId,action:'cotar'})});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.ok||j.disponivel===false){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});return;}
+    if(!r.ok||!j.ok||j.disponivel===false){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel',motivo:j.motivo});return;}
     const preco=parceiro==='uber'?(j.quote?.fee!=null?j.quote.fee/100:null):j.preco;
     if(preco==null){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});return;}
     _atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'ok',preco});
