@@ -342,6 +342,20 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
         const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
         if (error) { await logErro("registrar_codigo_entrega", { orderId, message: error.message }); return false; }
       }
+    } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
+      // Confirmação assíncrona do módulo Shipping (seletor "Sobre Demanda",
+      // ifood-shipping/index.ts action:"solicitar") — chega pelo mesmo
+      // polling de eventos do módulo Order, não um endpoint separado (doc
+      // oficial confirmada em 2026-09-19). Nunca visto contra um evento
+      // real ainda — nome exato do code não confirmado contra payload
+      // real, só contra a doc; se vier diferente, ifood_shipping_status
+      // simplesmente não atualiza e fica em "solicitado" (visível no log
+      // de erro abaixo pra ajustar).
+      const novoStatus = code === "REQUEST_DRIVER_SUCCESS" ? "sucesso" : "falha";
+      const { error } = await supabase.from("pedidos").update({
+        ifood_shipping_status: novoStatus, ifood_shipping_atualizado_em: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) { await logErro("atualizar_shipping_status", { orderId, code, message: error.message }); return false; }
     }
     return true;
   }

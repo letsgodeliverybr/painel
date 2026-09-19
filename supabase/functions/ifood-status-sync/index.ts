@@ -413,6 +413,15 @@ async function processarEventoWebhook(evento: any): Promise<void> {
         const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
         if (error) throw new Error(`falha ao registrar código de entrega ${orderId}: ${error.message}`);
       }
+    } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
+      // Mesmo tratamento de ifood-polling/index.ts (ver comentário lá) —
+      // confirmação assíncrona do módulo Shipping, chega pelo webhook aqui
+      // ou pelo polling, o que vier primeiro.
+      const novoStatus = code === "REQUEST_DRIVER_SUCCESS" ? "sucesso" : "falha";
+      const { error } = await supabase.from("pedidos").update({
+        ifood_shipping_status: novoStatus, ifood_shipping_atualizado_em: new Date().toISOString(),
+      }).eq("id", atual.id);
+      if (error) throw new Error(`falha ao atualizar ifood_shipping_status ${orderId}: ${error.message}`);
     }
     return;
   }

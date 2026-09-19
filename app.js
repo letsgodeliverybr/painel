@@ -2614,29 +2614,73 @@ async function _estornarDebitoEntrega(pedido){
   await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
   _carregarSaldoTopbar();
 }
-// Cota e cria a entrega na Uber Direct pro pedido, sem tela de
-// confirmação (pedido explícito do usuário, 2026-09-17) — chama
-// uber-solicitar-entrega, que faz auth+cotação+criação e grava
-// uber_delivery_id/uber_tracking_url no pedido.
-async function _abrirSobDemanda(pedidoId){
-  // Pausado a pedido do usuário (2026-09-18) — backend (uber-solicitar-
-  // entrega, uber-webhook, colunas uber_* em pedidos) já implementado e
-  // testado (cotação real ok, bloqueio fiscal liberado), só falta o painel
-  // visual de acompanhamento no card antes de reativar o botão de verdade.
-  // Pra retomar: remover as duas linhas abaixo.
-  showNotif('🚧 Em construção','A solicitação sob demanda (Uber) ainda está sendo finalizada.','var(--yellow)');
-  return;
+// Seletor de entrega parceira "Sobre Demanda" (pedido do usuário,
+// 2026-09-19) — abre um painel ancorado no próprio botão do card (reusa
+// _criarDropdown/_posicionarDropdown, o mesmo mecanismo do dropdown de
+// status), cota Uber e iFood em paralelo e mostra o preço de cada um
+// assim que a respectiva cotação volta. iFood só aparece quando o pedido
+// já existe na plataforma iFood (tem ifood_order_id) — módulo Shipping do
+// iFood não serve pra pedido de loja própria (confirmado contra a doc
+// oficial: "request iFood delivery drivers for orders that already exist
+// on the platform").
+const _NOMES_PARCEIRO={uber:'Uber',ifood:'iFood'};
+function _abrirSobDemanda(event,pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
-  if(!confirm(`Solicitar um entregador sob demanda (Uber) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
-  showNotif('⏳ Solicitando na Uber…','','var(--text3)');
+  const mostrarIfood=p?.origem==='ifood'&&!!p?.ifood_order_id;
+  const html=`<div style="padding:10px 14px;border-bottom:1px solid #3A3A3A;font-size:12px;font-weight:700;color:#ddd;max-width:230px;line-height:1.4;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
+    <div style="padding:4px 0">
+      ${_htmlLinhaParceiro('uber',pedidoId,{tipo:'cotando'})}
+      ${mostrarIfood?_htmlLinhaParceiro('ifood',pedidoId,{tipo:'cotando'}):''}
+    </div>`;
+  const dd=_criarDropdown(pedidoId,html);
+  dd.style.minWidth='260px';
+  _posicionarDropdown(dd,event.currentTarget);
+  _cotarParceiro('uber',pedidoId);
+  if(mostrarIfood)_cotarParceiro('ifood',pedidoId);
+}
+function _htmlLinhaParceiro(parceiro,pedidoId,estado){
+  const nome=_NOMES_PARCEIRO[parceiro];
+  const id=`sp-${parceiro}-${pedidoId}`;
+  if(estado.tipo==='cotando')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;color:#888;font-size:13px;font-family:Inter,sans-serif">${nome}<span>Cotando…</span></div>`;
+  if(estado.tipo==='indisponivel')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;color:#666;font-size:13px;font-family:Inter,sans-serif;opacity:.6">${nome}<span>Indisponível</span></div>`;
+  return `<button id="${id}" onclick="event.stopPropagation();_confirmarEntregaParceira('${parceiro}','${pedidoId}')" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;color:#DDD;font-size:13px;font-family:Inter,sans-serif;text-align:left"><span>${nome}</span><span style="font-weight:700;color:#4a9eff">R$ ${estado.preco.toFixed(2)}</span></button>`;
+}
+function _atualizarLinhaParceiro(parceiro,pedidoId,estado){
+  const el=document.getElementById(`sp-${parceiro}-${pedidoId}`);
+  if(!el)return; // painel já foi fechado (clique fora, etc.) — nada a fazer
+  const tmp=document.createElement('div');
+  tmp.innerHTML=_htmlLinhaParceiro(parceiro,pedidoId,estado);
+  el.replaceWith(tmp.firstElementChild);
+}
+async function _cotarParceiro(parceiro,pedidoId){
   try{
-    const r=await fetch(`${SB_URL}/functions/v1/uber-solicitar-entrega`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({pedido_id:pedidoId})});
+    const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({pedido_id:pedidoId,action:'cotar'})});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.ok){showNotif('❌ Falha ao solicitar Uber',j.error||`Erro ${r.status}`,'var(--red)');return;}
-    showNotif('✅ Uber solicitada!','Entregador sob demanda acionado — acompanhe pelo link de rastreio.','var(--green)');
+    if(!r.ok||!j.ok||j.disponivel===false){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});return;}
+    const preco=parceiro==='uber'?(j.quote?.fee!=null?j.quote.fee/100:null):j.preco;
+    if(preco==null){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});return;}
+    _atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'ok',preco});
+  }catch(e){
+    _atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});
+  }
+}
+async function _confirmarEntregaParceira(parceiro,pedidoId){
+  const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  const nome=_NOMES_PARCEIRO[parceiro];
+  if(!confirm(`Solicitar um entregador sob demanda (${nome}) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
+  fecharDropdownStatus();
+  showNotif(`⏳ Solicitando na ${nome}…`,'','var(--text3)');
+  try{
+    const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
+    const body=parceiro==='uber'?{pedido_id:pedidoId}:{pedido_id:pedidoId,action:'solicitar'};
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok){showNotif(`❌ Falha ao solicitar ${nome}`,j.error||`Erro ${r.status}`,'var(--red)');return;}
+    showNotif(`✅ ${nome} solicitada!`,'Entregador sob demanda acionado.','var(--green)');
     await atualizarTudo();
   }catch(e){
-    showNotif('❌ Erro de conexão','Falha ao solicitar Uber.','var(--red)');
+    showNotif('❌ Erro de conexão',`Falha ao solicitar ${nome}.`,'var(--red)');
   }
 }
 async function marcarPedidoPronto(pedidoId, statusAtual){
@@ -4065,7 +4109,7 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">·</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaU}</span>
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto (desaloca o entregador, se houver)" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #4a9eff) drop-shadow(0 0 3px #4a9eff)"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
-                <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
+                <span onclick="event.stopPropagation();_abrirSobDemanda(event,'${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>

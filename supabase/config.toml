@@ -76,3 +76,8 @@ verify_jwt = false
 # verificada no próprio código.
 [functions.uber-webhook]
 verify_jwt = false
+
+# Chamada direto do painel (app.js) pro seletor "Sobre Demanda" — mesmo
+# padrão de x-webhook-secret das outras functions de ação de pedido acima.
+[functions.ifood-shipping]
+verify_jwt = false
