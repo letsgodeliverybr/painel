@@ -2525,6 +2525,15 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
       return;
     }
   }
+  // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
+  // ver comentário lá. Pedido com_retorno não pode finalizar por aqui sem
+  // passar por confirmarPagamento.
+  if(novoStatus==='finalizado'){
+    const _pFin=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+    if(_pFin?.com_retorno&&!_pFin?.pagamento_confirmado){
+      return confirmarPagamento(pedidoId);
+    }
+  }
   // Item 11 do checklist de homologação iFood: pedido de origem iFood não
   // pode só virar 'cancelado' local — precisa consultar /cancellationReasons
   // e mandar o motivo pro iFood antes. _abrirCancelamentoIfood cuida do
@@ -2578,6 +2587,21 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='pronto'){
     const _pChk=allPedidos.find(x=>x.id===pedidoId);
     return marcarPedidoPronto(pedidoId,_pChk?.status);
+  }
+  // Bug real corrigido (2026-09-19): esse dropdown genérico deixava
+  // finalizar um pedido com_retorno direto (virava 'finalizado' sem nunca
+  // passar por confirmarPagamento — pagamento_confirmado ficava false pra
+  // sempre), pulando a confirmação da loja. Confirmado contra dados reais
+  // de produção: vários pedidos com_retorno finalizados via
+  // alterar_status_manual, nenhum com log de pagamento_confirmado.
+  // Delega pra confirmarPagamento (mesmo padrão do redirect de 'pronto'
+  // acima) — ela já cuida de tudo (pagamento_confirmado, finalizado_em,
+  // débito em creditos_lojas).
+  if(novoStatus==='finalizado'){
+    const _pFin=allPedidos.find(x=>x.id===pedidoId);
+    if(_pFin?.com_retorno&&!_pFin?.pagamento_confirmado){
+      return confirmarPagamento(pedidoId);
+    }
   }
   // Item 11 do checklist de homologação iFood — mesma trava de
   // alterarStatusPedidoTabela: pedido de origem iFood passa pelo fluxo de
@@ -8015,6 +8039,11 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p)return;
   if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
+  // ver comentário lá.
+  if(novoStatus==='finalizado'&&p.com_retorno&&!p.pagamento_confirmado){
+    return confirmarPagamento(pedidoId);
+  }
   if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
