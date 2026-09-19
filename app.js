@@ -3727,7 +3727,7 @@ function _buildTabelaRows(filtered,from){
       ${currentPerfil!=='loja'&&currentPerfil!=='suporte'?TD(lucroMapaStr,'text-align:right'):''}
       ${TD(_iconsLogistica(p),'text-align:center;padding:9px 5px')}
       ${currentPerfil!=='suporte'?TD(`<span style="color:var(--text2)">${loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—'}</span>`):''}
-      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`)}
+      ${TD(`<span id="tabela-badge-${p.id}" onclick="event.stopPropagation();abrirDropdownStatusTabela(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;background:${badgeCor}22;color:${badgeCor};border:1px solid ${badgeCor}55;max-width:130px;overflow:hidden;box-sizing:border-box"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span style="font-size:8px;flex-shrink:0">▾</span></span>`)}
     </tr>`;
   }).join('');
 }
