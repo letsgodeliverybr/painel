@@ -284,6 +284,10 @@ async function mapearPedidoIfood(d: any) {
   const pagamento = extrairPagamento(d);
   const cupom = extrairCupom(d);
   const { status: statusInicial, agendadoPara } = statusInicialIfood(d);
+  // Mesmo fix de ifood-polling/index.ts (ver comentário lá, 2026-09-19) —
+  // pagamento_confirmado/valor/com_retorno lidos de payments.pending, não
+  // presumidos sempre pago online.
+  const pendente = d.payments?.pending ?? 0;
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -292,7 +296,8 @@ async function mapearPedidoIfood(d: any) {
     status: statusInicial,
     status_detalhado: statusInicial,
     agendado_para: agendadoPara,
-    pagamento_confirmado: true,
+    pagamento_confirmado: pendente <= 0,
+    com_retorno: pendente > 0,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
     endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
@@ -313,7 +318,7 @@ async function mapearPedidoIfood(d: any) {
     ifood_phone_localizer: d.customer?.phone?.localizer ?? null,
     ifood_phone_localizer_expiration: d.customer?.phone?.localizerExpiration ?? null,
     itens: d.items ?? [],
-    valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
+    valor: pendente,
     total_pedido: d.total?.orderAmount ?? 0,
     taxa_entrega: d.total?.deliveryFee ?? 0,
     ...pagamento,

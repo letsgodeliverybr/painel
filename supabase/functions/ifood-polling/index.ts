@@ -222,6 +222,18 @@ async function mapearPedidoIfood(d: any) {
   const pagamento = extrairPagamento(d);
   const cupom = extrairCupom(d);
   const { status: statusInicial, agendadoPara } = statusInicialIfood(d);
+  // Bug real corrigido (2026-09-19): pagamento_confirmado era sempre true
+  // pra QUALQUER pedido iFood, presumindo que todo pedido do iFood é pago
+  // dentro do app — errado pra "pagamento na entrega" (dinheiro OU
+  // cartão/maquininha física, que também aparece como forma_pagamento
+  // 'cartao' — a bandeira do cartão não diz nada sobre isso). Campo certo
+  // confirmado contra um pedido real e a doc oficial: payments.pending
+  // (R$ que ainda falta cobrar) e payments.methods[].prepaid/type. Só
+  // 43 pedidos reais existiam no banco até agora, todos com pending=0
+  // (sandbox do iFood só gera pedido de teste 100% pago online) — sem
+  // exemplo real de pending>0 pra validar visualmente, implementado com
+  // base na doc + estrutura real confirmada.
+  const pendente = d.payments?.pending ?? 0;
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -230,7 +242,12 @@ async function mapearPedidoIfood(d: any) {
     status: statusInicial,
     status_detalhado: statusInicial,
     agendado_para: agendadoPara,
-    pagamento_confirmado: true,
+    pagamento_confirmado: pendente <= 0,
+    // Pedido pago na entrega (pending>0): nosso entregador (entrega
+    // própria, não é o iFood quem entrega) coleta o valor e precisa
+    // devolver pra loja — mesmo fluxo de retorno/confirmação manual já
+    // usado pra pedido de loja própria com com_retorno=true.
+    com_retorno: pendente > 0,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
     endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
@@ -251,7 +268,11 @@ async function mapearPedidoIfood(d: any) {
     ifood_phone_localizer: d.customer?.phone?.localizer ?? null,
     ifood_phone_localizer_expiration: d.customer?.phone?.localizerExpiration ?? null,
     itens: d.items ?? [],
-    valor: d.total?.subTotal ?? d.total?.orderAmount ?? 0,
+    // "valor" = quanto falta cobrar do cliente (pending), não o total do
+    // pedido (isso já existe em total_pedido, abaixo) — era essa confusão
+    // que fazia o app do entregador achar que tinha algo a cobrar mesmo em
+    // pedido 100% pago online.
+    valor: pendente,
     total_pedido: d.total?.orderAmount ?? 0,
     taxa_entrega: d.total?.deliveryFee ?? 0,
     ...pagamento,
