@@ -2615,15 +2615,18 @@ async function _estornarDebitoEntrega(pedido){
   _carregarSaldoTopbar();
 }
 // Seletor de entrega parceira "Sobre Demanda" (pedido do usuário,
-// 2026-09-19) — abre um painel ancorado no próprio botão do card (reusa
-// _criarDropdown/_posicionarDropdown, o mesmo mecanismo do dropdown de
-// status), cota Uber e iFood em paralelo e mostra o preço de cada um
-// assim que a respectiva cotação volta. iFood só aparece quando o pedido
-// já existe na plataforma iFood (tem ifood_order_id) — módulo Shipping do
-// iFood não serve pra pedido de loja própria (confirmado contra a doc
-// oficial: "request iFood delivery drivers for orders that already exist
-// on the platform").
-const _NOMES_PARCEIRO={uber:'Uber',ifood:'iFood'};
+// 2026-09-19; trocado de painel flutuante pra expansão inline no mesmo
+// dia, a pedido do usuário — o flutuante sobrepunha a tela, o pedido era
+// o próprio card "abrir" como um accordion, empurrando o conteúdo abaixo,
+// mesmo padrão já usado por selectedPedidoId/expandido). Cota Uber e
+// iFood em paralelo, mostra o preço assim que cada cotação volta. iFood
+// só aparece quando o pedido já existe na plataforma iFood (tem
+// ifood_order_id) — módulo Shipping do iFood não serve pra pedido de loja
+// própria (confirmado contra a doc oficial: "request iFood delivery
+// drivers for orders that already exist on the platform").
+let _sobDemandaExpandidoId=null; // id do pedido com a lista inline aberta, ou null
+let _sobDemandaCotacoes={}; // {[pedidoId]: {uber:{tipo,preco|motivo}, ifood:{...}}}
+const _NOMES_PARCEIRO={uber:'Uber Direct',ifood:'iFood Sobre Demanda'};
 // Mapa dos códigos de erro documentados do módulo Shipping do iFood
 // (developer.ifood.com.br/docs/food/guides/modules/shipping/inside) pra
 // texto explicativo em português no aviso de indisponibilidade.
@@ -2650,59 +2653,69 @@ function _htmlIconeParceiro(parceiro){
   }
   return `<div style="width:24px;height:24px;border-radius:6px;background:#EA1D2C;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:4px;box-sizing:border-box"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)"></div>`;
 }
-function _abrirSobDemanda(event,pedidoId){
+function _abrirSobDemanda(pedidoId){
+  if(_sobDemandaExpandidoId===pedidoId){_sobDemandaExpandidoId=null;renderPedidosLista();return;}
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const mostrarIfood=p?.origem==='ifood'&&!!p?.ifood_order_id;
-  const html=`<div style="padding:10px 14px;border-bottom:1px solid #3A3A3A;font-size:12px;font-weight:700;color:#ddd;max-width:250px;line-height:1.4;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
-    <div style="padding:6px">
-      ${_htmlLinhaParceiro('uber',pedidoId,{tipo:'cotando'})}
-      ${mostrarIfood?_htmlLinhaParceiro('ifood',pedidoId,{tipo:'cotando'}):''}
-    </div>`;
-  const dd=_criarDropdown(pedidoId,html);
-  dd.style.minWidth='280px';
-  _posicionarDropdown(dd,event.currentTarget);
+  _sobDemandaExpandidoId=pedidoId;
+  _sobDemandaCotacoes[pedidoId]={uber:{tipo:'cotando'}};
+  if(mostrarIfood)_sobDemandaCotacoes[pedidoId].ifood={tipo:'cotando'};
+  renderPedidosLista();
   _cotarParceiro('uber',pedidoId);
   if(mostrarIfood)_cotarParceiro('ifood',pedidoId);
 }
+// Bloco inline mostrado dentro do próprio card (abaixo do endereço,
+// empurrando o conteúdo normalmente — não é overlay) enquanto
+// _sobDemandaExpandidoId===p.id. Ordem pedida pelo usuário: iFood
+// primeiro, Uber depois.
+function _htmlSobDemandaInline(p){
+  const pedidoId=p.id;
+  const estado=_sobDemandaCotacoes[pedidoId]||{};
+  const mostrarIfood=p.origem==='ifood'&&!!p.ifood_order_id;
+  return `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #3A3A3A" onclick="event.stopPropagation()">
+    <div style="font-size:11px;font-weight:700;color:#ddd;margin-bottom:6px;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${mostrarIfood?_htmlLinhaParceiro('ifood',pedidoId,estado.ifood||{tipo:'cotando'}):''}
+      ${_htmlLinhaParceiro('uber',pedidoId,estado.uber||{tipo:'cotando'})}
+    </div>
+  </div>`;
+}
 function _htmlLinhaParceiro(parceiro,pedidoId,estado){
   const nome=_NOMES_PARCEIRO[parceiro];
-  const id=`sp-${parceiro}-${pedidoId}`;
   const icone=_htmlIconeParceiro(parceiro);
-  if(estado.tipo==='cotando')return `<div id="${id}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 8px;border-radius:8px"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div><span style="color:#888;font-size:12px;font-family:Inter,sans-serif">Cotando…</span></div>`;
+  if(estado.tipo==='cotando')return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,.03)"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div><span style="color:#888;font-size:12px;font-family:Inter,sans-serif">Cotando…</span></div>`;
   if(estado.tipo==='indisponivel'){
     const motivo=_MOTIVOS_INDISPONIVEL[estado.motivo]||'Indisponível no momento';
-    return `<div id="${id}" style="padding:8px 8px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);margin-bottom:2px">
+    return `<div style="padding:8px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25)">
       <div style="display:flex;align-items:center;gap:8px;opacity:.7">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div>
       <div style="font-size:11px;color:#f59e0b;padding-left:32px;margin-top:2px;font-family:Inter,sans-serif">${motivo}</div>
     </div>`;
   }
-  return `<button id="${id}" onclick="event.stopPropagation();_confirmarEntregaParceira('${parceiro}','${pedidoId}')" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 8px;background:none;border:none;border-radius:8px;cursor:pointer;color:#DDD;font-family:Inter,sans-serif;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='none'"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="font-size:13px;font-weight:600">${nome}</span></div><span style="font-weight:700;color:#4a9eff;font-size:13px">R$ ${estado.preco.toFixed(2)}</span></button>`;
-}
-function _atualizarLinhaParceiro(parceiro,pedidoId,estado){
-  const el=document.getElementById(`sp-${parceiro}-${pedidoId}`);
-  if(!el)return; // painel já foi fechado (clique fora, etc.) — nada a fazer
-  const tmp=document.createElement('div');
-  tmp.innerHTML=_htmlLinhaParceiro(parceiro,pedidoId,estado);
-  el.replaceWith(tmp.firstElementChild);
+  return `<button onclick="event.stopPropagation();_confirmarEntregaParceira('${parceiro}','${pedidoId}')" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px;background:rgba(255,255,255,.03);border:1px solid transparent;border-radius:8px;cursor:pointer;color:#DDD;font-family:Inter,sans-serif;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='rgba(255,255,255,.03)'"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="font-size:13px;font-weight:600">${nome}</span></div><span style="font-weight:700;color:#4a9eff;font-size:13px">R$ ${estado.preco.toFixed(2)}</span></button>`;
 }
 async function _cotarParceiro(parceiro,pedidoId){
+  let novoEstado;
   try{
     const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({pedido_id:pedidoId,action:'cotar'})});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.ok||j.disponivel===false){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel',motivo:j.motivo});return;}
-    const preco=parceiro==='uber'?(j.quote?.fee!=null?j.quote.fee/100:null):j.preco;
-    if(preco==null){_atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});return;}
-    _atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'ok',preco});
+    if(!r.ok||!j.ok||j.disponivel===false){
+      novoEstado={tipo:'indisponivel',motivo:j.motivo};
+    }else{
+      const preco=parceiro==='uber'?(j.quote?.fee!=null?j.quote.fee/100:null):j.preco;
+      novoEstado=preco==null?{tipo:'indisponivel'}:{tipo:'ok',preco};
+    }
   }catch(e){
-    _atualizarLinhaParceiro(parceiro,pedidoId,{tipo:'indisponivel'});
+    novoEstado={tipo:'indisponivel'};
   }
+  if(!_sobDemandaCotacoes[pedidoId])return; // painel foi fechado enquanto cotava
+  _sobDemandaCotacoes[pedidoId][parceiro]=novoEstado;
+  if(_sobDemandaExpandidoId===pedidoId)renderPedidosLista();
 }
 async function _confirmarEntregaParceira(parceiro,pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const nome=_NOMES_PARCEIRO[parceiro];
   if(!confirm(`Solicitar um entregador sob demanda (${nome}) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
-  fecharDropdownStatus();
   showNotif(`⏳ Solicitando na ${nome}…`,'','var(--text3)');
   try{
     const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
@@ -2711,6 +2724,8 @@ async function _confirmarEntregaParceira(parceiro,pedidoId){
     const j=await r.json().catch(()=>({}));
     if(!r.ok||!j.ok){showNotif(`❌ Falha ao solicitar ${nome}`,j.error||`Erro ${r.status}`,'var(--red)');return;}
     showNotif(`✅ ${nome} solicitada!`,'Entregador sob demanda acionado.','var(--green)');
+    _sobDemandaExpandidoId=null;
+    delete _sobDemandaCotacoes[pedidoId];
     await atualizarTudo();
   }catch(e){
     showNotif('❌ Erro de conexão',`Falha ao solicitar ${nome}.`,'var(--red)');
@@ -4142,7 +4157,7 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">·</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaU}</span>
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto (desaloca o entregador, se houver)" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #4a9eff) drop-shadow(0 0 3px #4a9eff)"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
-                <span onclick="event.stopPropagation();_abrirSobDemanda(event,'${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
+                <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -4157,6 +4172,7 @@ function renderPedidosLista(){
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
               ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} Para Evitar Atraso</div>`:''}
             </div>
+            ${_sobDemandaExpandidoId===p.id?_htmlSobDemandaInline(p):''}
           </div>
         </div>
         ${expandido}
