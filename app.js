@@ -64,6 +64,13 @@ let _estabelecimentosBusca='',_estabelecimentosDataCache=[];
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
 const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
+// Mesma lista usada em atualizarMarcadores()/temEntregaAtiva() (app
+// entregador) — "pedido ativo" pra um entregador: entre aceito e
+// finalizado, excluindo cancelado/finalizado/pronto (ainda sem
+// entregador). Usado pelo limite de simultaneidade (2026-09-24):
+// alocação manual pelo admin.
+const STATUS_ATIVOS_ENTREGA=['aceito','no_local','chegou_no_local','chegou_local','em_rota','chegou_destino','retornando'];
+const LIMITE_PEDIDOS_ALOCACAO_MANUAL=4;
 // Pedidos atrasados/cancelados de teste anteriores a essa data saem da
 // contagem VISUAL do SLA e de Cancelados (usada só em _buscarPedidosAdmin)
 // — não apaga nada do banco. Pedidos "no prazo" continuam contando desde
@@ -4561,11 +4568,17 @@ async function abrirAlocarMotoboy(pedidoId){
   // coordenada (_dist null, loja/pedido sem geocodificação) continua
   // aparecendo, senão falta de dado vira "ninguém disponível" errado.
   const motoboysNoRaio=motoboysComDist.filter(m=>m._dist==null||m._dist<=raioKm);
+  // Limite de simultaneidade na alocação manual (2026-09-24, LIMITE_PEDIDOS_ALOCACAO_MANUAL=4):
+  // conta pedidos ativos por motoboy via _pedidosAtivosGlobal (já carregado,
+  // cobre todas as lojas). Mostra a contagem e desabilita quem já está no
+  // teto — a trava de verdade (não confia só nessa lista, que pode estar
+  // um pouco desatualizada) fica em alocarMotoboy(), com dado fresco do banco.
+  const _contarAtivos=id=>_pedidosAtivosGlobal.filter(p=>(p.motoboy_id===id||p.entregador_id===id)&&STATUS_ATIVOS_ENTREGA.includes(p.status_detalhado||p.status)).length;
   const listaMotoboys=motoboys.length===0
     ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🛵</div>Nenhum motoboy online</div>`
     :motoboysNoRaio.length===0
     ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📍</div>Nenhum entregador disponível dentro de ${raioKm}km</div>`
-    :motoboysNoRaio.map(m=>`<div onclick="alocarMotoboy('${pedidoId}','${m.id}','${(m.nome||'').replace(/'/g,"\\'")}',this)" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="width:36px;height:36px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🛵</div><div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px">${m.nome||'—'}</div><div style="font-size:11px;color:var(--text2)">${m.telefone||'Online'}</div></div>${m._dist!=null?`<div style="font-size:12px;color:var(--text2);font-weight:600;white-space:nowrap">📍 ${m._dist.toFixed(1)} km</div>`:''}<div style="background:#22c55e20;color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">Online</div></div>`).join('');
+    :motoboysNoRaio.map(m=>{const _ativos=_contarAtivos(m.id);const _lotado=_ativos>=LIMITE_PEDIDOS_ALOCACAO_MANUAL;return`<div ${_lotado?'':`onclick="alocarMotoboy('${pedidoId}','${m.id}','${(m.nome||'').replace(/'/g,"\\'")}',this)"`} style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:${_lotado?'not-allowed':'pointer'};border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);opacity:${_lotado?0.5:1}" ${_lotado?'':`onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"`}><div style="width:36px;height:36px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🛵</div><div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px">${m.nome||'—'}</div><div style="font-size:11px;color:var(--text2)">${m.telefone||'Online'}</div></div>${m._dist!=null?`<div style="font-size:12px;color:var(--text2);font-weight:600;white-space:nowrap">📍 ${m._dist.toFixed(1)} km</div>`:''}<div style="background:${_lotado?'#ef444420':'#22c55e20'};color:${_lotado?'#ef4444':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">${_lotado?`🔴 Lotado (${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL})`:`${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL} ativos`}</div></div>`;}).join('');
   // Aviso de realocação (2026-09-10, bug real corrigido): pedido já tem um
   // entregador ATIVO (status != 'pronto') — escolher alguém aqui vai
   // acionar fn_intercept_realocacao_manual (trigger no banco), que reseta
@@ -4594,6 +4607,18 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const jaTinha=_p?.motoboy_id||_p?.entregador_id;
   if(_p&&jaTinha&&jaTinha!==motoboyId&&_p.status!=='pronto'){
     if(!confirm(`Esse pedido já está com um entregador em andamento (status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} agora vai DESALOCAR o entregador atual e reabrir o pedido como disponível. O entregador atual será avisado por notificação, mas o pedido sai da rota dele imediatamente.\n\nConfirma a realocação?`))return;
+  }
+  // Limite de simultaneidade na alocação manual (2026-09-24): trava real,
+  // com dado fresco do banco — o "lotado" em abrirAlocarMotoboy() é só
+  // visual, baseado em _pedidosAtivosGlobal que pode estar até 5s
+  // desatualizado (intervalo de atualizarTudo). Reconta na hora do clique,
+  // igual ao reforço já feito pro app entregador (temEntregaAtiva).
+  if(!(jaTinha===motoboyId&&_p.status!=='pronto')){
+    const _ativosAgora=await db('pedidos','GET',null,`?or=(motoboy_id.eq.${motoboyId},entregador_id.eq.${motoboyId})&status=in.(${STATUS_ATIVOS_ENTREGA.join(',')})&select=id`);
+    if(Array.isArray(_ativosAgora)&&_ativosAgora.length>=LIMITE_PEDIDOS_ALOCACAO_MANUAL){
+      showNotif('❌ Limite de entregas simultâneas',`${motoboyNome} já está com ${_ativosAgora.length} entregas ativas (limite: ${LIMITE_PEDIDOS_ALOCACAO_MANUAL}).`,'var(--red)');
+      return;
+    }
   }
   el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
   // Mesma classe de bug de _aplicarPrecoDinamico (2026-09-22): sem passar a
@@ -8162,6 +8187,7 @@ ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
+${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('',''))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
@@ -8218,6 +8244,7 @@ async function salvarEdicaoLoja(lojaId){
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
     pontos_padrao:g('el-pontos-padrao')!==''?parseInt(g('el-pontos-padrao'))||4:4,
+    limite_pedidos_simultaneos:g('el-limite-pedidos-simultaneos')!==''?parseInt(g('el-limite-pedidos-simultaneos'))||2:2,
     // Roterizador removido deste modal (duplicava Configuração → Cliente,
     // que já cobre isso por loja — ver _renderConfigCliente/_rcSalvar) —
     // não inclui mais esses campos no PATCH, pra não sobrescrever com
@@ -8274,6 +8301,7 @@ async function criarLoja(){
     tabela_pagamento_id:g('loja-tabela-pagamento')||null,
     tipo_cobranca:g('loja-tipo-cobranca')||'faturamento',
     pontos_padrao:g('loja-pontos-padrao')!==''?parseInt(g('loja-pontos-padrao'))||4:4,
+    limite_pedidos_simultaneos:g('loja-limite-pedidos-simultaneos')!==''?parseInt(g('loja-limite-pedidos-simultaneos'))||2:2,
     roterizador_ativo:document.getElementById('loja-rot-ativo')?.checked||false,
     roterizador_raio_km:g('loja-rot-raio')!==''?parseFloat(g('loja-rot-raio'))||null:null,
     roterizador_max_pedidos:g('loja-rot-max')!==''?parseInt(g('loja-rot-max'))||null:null,
