@@ -5551,7 +5551,22 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
     badge.style.cursor='pointer';
     badge.onclick=()=>_toggleDisponivelEntregador(id,novoValor);
   }
-  showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+  // Aviso real (2026-09-24, achado no caso do Fábio Sousa): esse toggle só
+  // muda a coluna disponivel — não reinicia o GPS/status do app do
+  // entregador (isso só o próprio app faz, TrackingService.ficarOnline(),
+  // ao ser reaberto). Ligar disponivel=true de um entregador que ficou com
+  // status='offline'/sem lat-lng (ex: derrubado por bateria baixa em
+  // background) faz ele voltar a aparecer "disponível" nas listas, mas
+  // continua invisível no Mapa ao Vivo (sem coordenada) até ele abrir o
+  // app de novo — nada do lado do servidor consegue forçar isso. Avisa
+  // explicitamente em vez de deixar o admin achar que já resolveu.
+  const _entTog=allMotoboys.find(e=>e.id===id);
+  const _semGpsAoLigar=novoValor&&_entTog&&(_entTog.status==='offline'||!_entTog.lat||!_entTog.lng);
+  if(_semGpsAoLigar){
+    showNotif('⚠️ Ligado, mas sem GPS','Esse entregador só volta a aparecer no mapa depois que ele mesmo abrir o app — esse botão não reinicia o GPS pelo celular dele.','#f59e0b');
+  }else{
+    showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+  }
 }
 
 
