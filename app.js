@@ -1933,10 +1933,23 @@ async function _aplicarPrecoDinamico(p){
   const pdC=_getPdCliente(p.loja_id);
   const pdE=_getPdEntregador(p.loja_id);
   if(pdC<=0&&pdE<=0)return;
+  // Bug real corrigido (2026-09-22, achado real via Auditoria): as duas
+  // linhas abaixo chamavam _calcTaxaLoja/_calcTaxaMotoboy sem 2º argumento,
+  // então caíam sempre na tabela GLOBAL padrão (_faixasCobranca/_faixasPagamento),
+  // ignorando a tabela de preço PRÓPRIA da loja (tabela_cobranca_id/
+  // tabela_pagamento_id) quando ela tem contrato customizado. Como essa
+  // função roda toda vez que um pedido vira "pronto" (praticamente todo
+  // pedido, via processarAutoPronto ou o botão rápido), isso sobrescrevia
+  // silenciosamente o taxa_entrega correto pelo valor da tabela padrão
+  // sempre que o Preço Dinâmico estava ativo — confirmado em produção,
+  // 18 pedidos reais nos últimos 30 dias cobrados a mais de lojas com
+  // tabela própria (ex: NOVIGO CARNES, COMAMOR VEGETAL — "CONTRATO FIXO
+  // 100% DEMANDA"). Busca a tabela real da loja antes de recalcular.
+  const [faixasCob,faixasPag]=await Promise.all([_getFaixasCobranca(p.loja_id),_getFaixasPagamento(p.loja_id)]);
   const merged={...p,preco_dinamico:pdC};
-  const taxa_entrega=_calcTaxaLoja(merged);
+  const taxa_entrega=_calcTaxaLoja(merged,faixasCob.length?faixasCob:undefined);
   const mergedE={...p,preco_dinamico:pdE};
-  const taxa_entrega_motoboy=_calcTaxaMotoboy(mergedE);
+  const taxa_entrega_motoboy=_calcTaxaMotoboy(mergedE,faixasPag.length?faixasPag:undefined);
   const patch={preco_dinamico:pdC,taxa_entrega,updated_at:_agoraBrasilia()};
   if(pdE>0)patch.taxa_entrega_motoboy=taxa_entrega_motoboy;
   await db('pedidos','PATCH',patch,`?id=eq.${p.id}`);
@@ -2347,7 +2360,7 @@ async function _criarEntregaRapida(){
   // já está carregado em memória, não precisa de fetch extra. Mesmo motivo/
   // comentário de _criarPedidoInterno().
   const _pontosPadraoCr=allLojas.find(l=>l.id===lojaId)?.pontos_padrao??4;
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,taxa_entrega_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
@@ -2980,7 +2993,12 @@ async function confirmarPagamento(pedidoId){
   const _p=allPedidos.find(x=>x.id===pedidoId);
   const _agoraPg=_agoraBrasilia();
   const patch={pagamento_confirmado:true,pagamento_confirmado_em:_agoraPg,status:'finalizado',status_detalhado:'finalizado',finalizado_em:_agoraPg,updated_at:_agoraPg};
-  if(_p&&(_p.motoboy_id||_p.entregador_id)&&_p.taxa_entrega_motoboy==null)patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0);
+  // Mesma classe de bug de _aplicarPrecoDinamico (2026-09-22): sem passar a
+  // tabela própria da loja, cai na tabela padrão global por engano.
+  if(_p&&(_p.motoboy_id||_p.entregador_id)&&_p.taxa_entrega_motoboy==null){
+    const _faixasPagCp=await _getFaixasPagamento(_p.loja_id);
+    patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p,_faixasPagCp.length?_faixasPagCp:undefined)??parseFloat(_p.taxa_entrega||0);
+  }
   await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
   if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)){
     const agora=new Date().toISOString();
@@ -4495,7 +4513,15 @@ async function salvarEdicaoPedido(pedidoId){
   // Recalcular taxa_entrega localmente usando _calcTaxaLoja
   const pedidoAtual=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const pedidoMerge={...(pedidoAtual||{}), ...update};
-  const novaTaxa=_calcTaxaLoja(pedidoMerge);
+  // Bug real corrigido (2026-09-22, achado real via Auditoria, pedido #16
+  // NOVIGO CARNES cobrado R$2,03 a mais): faltava passar a tabela de
+  // cobrança PRÓPRIA da loja — sem isso, _calcTaxaLoja cai na tabela
+  // padrão global, que é mais cara que a tabela contratada de várias
+  // lojas. Toda edição de pedido dessas lojas sobrescrevia o taxa_entrega
+  // correto pelo valor errado (mais caro). Ver _aplicarPrecoDinamico, que
+  // tinha o mesmo bug e é o principal responsável pelo padrão real.
+  const _faixasCobEp=await _getFaixasCobranca(pedidoMerge.loja_id);
+  const novaTaxa=_calcTaxaLoja(pedidoMerge,_faixasCobEp.length?_faixasCobEp:undefined);
   if(novaTaxa>0){
     await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:_agoraBrasilia()},`?id=eq.${pedidoId}`);
     update.taxa_entrega=novaTaxa;
@@ -4570,7 +4596,10 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
     if(!confirm(`Esse pedido já está com um entregador em andamento (status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} agora vai DESALOCAR o entregador atual e reabrir o pedido como disponível. O entregador atual será avisado por notificação, mas o pedido sai da rota dele imediatamente.\n\nConfirma a realocação?`))return;
   }
   el.style.background='#1A56DB20';el.style.borderColor='var(--accent)';
-  const taxaMotoboy=_p?(_calcTaxaMotoboy(_p)??parseFloat(_p.taxa_entrega||0)):0;
+  // Mesma classe de bug de _aplicarPrecoDinamico (2026-09-22): sem passar a
+  // tabela de pagamento própria da loja, cai na tabela padrão global.
+  const _faixasPagAloc=_p?await _getFaixasPagamento(_p.loja_id):[];
+  const taxaMotoboy=_p?(_calcTaxaMotoboy(_p,_faixasPagAloc.length?_faixasPagAloc:undefined)??parseFloat(_p.taxa_entrega||0)):0;
   const _patchAgora=_agoraBrasilia();
   const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:_patchAgora,updated_at:_patchAgora,taxa_entrega_motoboy:taxaMotoboy};
   await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
@@ -4825,7 +4854,16 @@ async function _criarPedidoInterno(){
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const enderecoFinal=complemento?`${endereco} - ${complemento}`:endereco;
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',plataforma_origem:plataformaOrigemSel||null,loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,gorjeta,pontos:pontosPadrao,pontos_base:pontosPadrao,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
+  // taxa_entrega_motoboy: grava o mesmo valor de taxaMotoboy aqui na criação
+  // (bug real corrigido 2026-09-22) — antes esse campo só era preenchido em
+  // pontos tardios do ciclo de vida (alocar/pagar/pronto), nunca na criação.
+  // Como taxaMotoboy já foi calculado com o PD do ENTREGADOR (_pdE, pode ser
+  // diferente do PD do cliente _pdC salvo em preco_dinamico), deixar esse
+  // campo null significava que a Auditoria não tinha como saber depois qual
+  // PD foi realmente usado — ela recalculava usando o PD do CLIENTE por
+  // engano, gerando falso-positivo de "motoboy pago a menos" sempre que os
+  // dois PDs divergiam (achado real, pedidos #7395/#15/#001/#002 de hoje).
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',plataforma_origem:plataformaOrigemSel||null,loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,taxa_entrega_motoboy:taxaMotoboy,gorjeta,pontos:pontosPadrao,pontos_base:pontosPadrao,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
