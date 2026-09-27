@@ -45,7 +45,7 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'ceo',icon:'🧭',label:'Visão Executiva'},{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'aguardando-pagamento',icon:'⏳',label:'Aguardando Pagamento'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'ceo',icon:'🧭',label:'Visão Executiva'},{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'cac',icon:'🎯',label:'C.A.C.'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
@@ -2183,6 +2183,7 @@ async function abrirModal(id){
       const sp=document.getElementById('loja-tabela-pagamento');
       if(sp)sp.innerHTML=tabsPagamento.map(t=>`<option value="${t.id}"${t.id===TABELA_PAGAMENTO_ID?' selected':''}>${t.nome||t.id}</option>`).join('');
     });
+    _opcoesVendedorLoja(null).then(h=>{const sv=document.getElementById('loja-vendedor');if(sv)sv.innerHTML=h;});
     // limpa lat/lng anteriores e inicia autocomplete
     const latEl=document.getElementById('loja-lat'),lngEl=document.getElementById('loja-lng');
     if(latEl)latEl.value='';if(lngEl)lngEl.value='';
@@ -2781,12 +2782,14 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
   // era possível marcar "pronto" (e o pedido seguir despacho normal,
   // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
-  // pulando por completo a confirmação manual feita em "Aguardando
-  // Pagamento" (_confirmarPagamentoPedido). O botão no card já fica
+  // pulando a confirmação manual de pagamento. A página "Aguardando
+  // Pagamento" foi removida em 2026-09-27 (virou C.A.C.) — o app do
+  // cliente não grava mais esse status. A trava fica pra eventual
+  // pedido antigo remanescente nesse status. O botão no card já fica
   // desabilitado nesse status (ver renderPedidosLista), isso aqui cobre
   // qualquer outro caminho que chame essa função diretamente.
   if(statusAtual==='aguardando_pagamento'){
-    showNotif('⏳ Pagamento pendente','Confirme o pagamento em "Aguardando Pagamento" antes de marcar como pronto.','var(--yellow)');
+    showNotif('⏳ Pagamento pendente','Esse pedido ainda está aguardando pagamento — não pode ser marcado como pronto.','var(--yellow)');
     return;
   }
   // Trava de agendamento REMOVIDA por pedido explícito do usuário
@@ -3327,7 +3330,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'aguardando-pagamento':renderAguardandoPagamentoPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -4924,6 +4927,7 @@ function renderCadastrosPage(aba){
     {id:'clientes',         icon:'👤', label:'Clientes'},
     {id:'entregadores',     icon:'🛵', label:'Entregadores'},
     {id:'usuarios',         icon:'👥', label:'Usuários'},
+    {id:'vendedores',       icon:'🎯', label:'Vendedores'},
   ];
   const abas=currentPerfil==='suporte'?todasAbas.filter(a=>a.id==='entregadores'):todasAbas;
   const defaultAba=currentPerfil==='suporte'?'entregadores':'estabelecimentos';
@@ -4944,7 +4948,7 @@ function renderCadastrosPage(aba){
 async function _renderCadastrosConteudo(aba){
   _cadastrosAba=aba;
   // Atualiza estilo das abas
-  ['estabelecimentos','clientes','entregadores','usuarios'].forEach(id=>{
+  ['estabelecimentos','clientes','entregadores','usuarios','vendedores'].forEach(id=>{
     const el=document.getElementById('cad-aba-'+id);
     if(!el)return;
     el.style.borderBottom=id===aba?'2px solid var(--accent)':'2px solid transparent';
@@ -4961,6 +4965,8 @@ async function _renderCadastrosConteudo(aba){
     await _renderEntregadoresTab(el);
   } else if(aba==='usuarios'){
     await _renderUsuariosTab(el);
+  } else if(aba==='vendedores'){
+    await _renderVendedoresTab(el);
   }
 }
 
@@ -6555,61 +6561,171 @@ async function renderNovoPedidoPage(){
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
-// ── Aguardando Pagamento — fila de pedidos do app do cliente
-// (lets_go_food) esperando a loja confirmar manualmente (via WhatsApp)
-// que o pagamento foi feito, antes de entrar no fluxo normal. Sem
-// gateway de pagamento automático por decisão explícita (lançar mais
-// rápido) — ver PedidoService.criarPedido no app do cliente, que grava
-// status='aguardando_pagamento' em vez de 'recebido'. Nenhum cron/trigger
-// de despacho pega esse status (auto-pronto-pedidos e
-// processarAutoPronto só olham status='recebido'), então o pedido fica
-// parado aqui até alguém clicar em "Confirmar Pagamento".
-async function renderAguardandoPagamentoPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">⏳ Aguardando Pagamento</div><button class="btn-sm btn-primary-sm" onclick="renderAguardandoPagamentoPage()">↻ Atualizar</button></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:820px">Pedidos feitos pelo app do cliente, esperando confirmação manual de pagamento (combinado por WhatsApp com a loja) antes de entrar em preparo/despacho.</div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Horário</th><th>Ação</th></tr></thead><tbody id="tbody-aguardando-pagamento"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
-  </div>`;
-  await _carregarAguardandoPagamento();
+// ── C.A.C. — Custo de Aquisição de Cliente ─────────────────────────────
+// Substituiu a página "Aguardando Pagamento" (2026-09-27). Rastreia, por
+// vendedor/expansão, as lojas que ele trouxe (lojas.vendedor_id) e calcula
+// o bônus: cargos_comerciais.bonus_por_pedido × pedidos FINALIZADOS da
+// loja nos primeiros janela_bonus_dias (90) contados de
+// lojas.vendedor_atribuido_em (quando o vendedor foi ligado à loja — loja
+// antiga que ganha vendedor hoje começa a contar hoje; trocar o vendedor
+// reinicia a contagem). Fallback lojas.created_at se vier vazio.
+// Meta mensal (só cargo Vendedor, 880): pedidos finalizados no mês de
+// TODAS as lojas dele, inclusive as que já passaram dos 90 dias.
+// Cadastro de vendedores: Cadastros → Vendedores. Atribuição: Editar Loja.
+// Ver migrations/add_cac_vendedores.sql.
+//
+// Datas: lojas.vendedor_atribuido_em/created_at e pedidos.created_at são
+// timestamp SEM fuso, já
+// em hora de Brasília (ver REGRA DE FUSO no topo) — por isso a conta é
+// feita em dia de calendário direto nos dígitos (YYYY-MM-DD), sem passar
+// por Date/fuso nenhum. Dia 0 = dia da atribuição; "dentro do prazo" =
+// dias < janela (dias 0..89 geram bônus).
+function _cacDiaNum(s){
+  const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m?Date.UTC(+m[1],+m[2]-1,+m[3])/86400000:null;
 }
-async function _carregarAguardandoPagamento(){
-  const tbody=document.getElementById('tbody-aguardando-pagamento');if(!tbody)return;
-  const qs=`?status=eq.aguardando_pagamento&select=id,numero,cliente,telefone,valor,total_pedido,forma_pagamento,created_at,loja_id,lojas(nome,telefone,celular)&order=created_at.asc${_lojaFiltro()}`;
-  const data=await db('pedidos','GET',null,qs);
-  if(!tbody)return;
-  const lista=Array.isArray(data)?data:[];
-  if(!lista.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">✅ Nenhum pedido esperando confirmação de pagamento.</td></tr>';
-    return;
-  }
-  tbody.innerHTML=lista.map(p=>{
-    const loja=p.lojas||{};
-    const whatsLoja=loja.celular||loja.telefone||'—';
-    const valor=parseFloat(p.total_pedido??p.valor)||0;
-    return `<tr>
-      <td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td>
-      <td>${loja.nome||'—'}<div style="font-size:11px;color:var(--text3)">📲 ${whatsLoja}</div></td>
-      <td>${p.cliente||'—'}<div style="font-size:11px;color:var(--text3)">${p.telefone||''}</div></td>
-      <td style="font-weight:700">R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td>${(p.forma_pagamento||'—')}</td>
-      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td>
-      <td><button onclick="_confirmarPagamentoPedido('${p.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">✅ Confirmar Pagamento</button></td>
-    </tr>`;
+// Função pura (sem banco/DOM) — recebe as linhas já carregadas e devolve
+// {linhas, resumo}. hoje='YYYY-MM-DD', mesRef='YYYY-MM'.
+function _cacCalcular({vendedores,cargos,lojas,pedidos,hoje,mesRef}){
+  const cargoPor=Object.fromEntries(cargos.map(c=>[c.id,c]));
+  const vendPor=Object.fromEntries(vendedores.map(v=>[v.id,v]));
+  const hojeN=_cacDiaNum(hoje);
+  const porLoja={};
+  pedidos.forEach(p=>{(porLoja[p.loja_id]=porLoja[p.loja_id]||[]).push(p);});
+  const linhas=[],resumo={};
+  vendedores.forEach(v=>{
+    const c=cargoPor[v.cargo_id]||{};
+    resumo[v.id]={vendedor:v,cargo:c,lojas:0,pedidosJanela:0,bonusTotal:0,pedidosJanelaMes:0,bonusMes:0,entregasMes:0,
+      meta:c.meta_entregas_mes??null,bateuMeta:null,custoMes:parseFloat(c.salario_fixo)||0};
+  });
+  lojas.forEach(l=>{
+    const v=vendPor[l.vendedor_id];if(!v)return;
+    const c=cargoPor[v.cargo_id]||{};
+    const janela=c.janela_bonus_dias||90,bonusUnit=parseFloat(c.bonus_por_pedido)||0;
+    const inicio=l.vendedor_atribuido_em||l.created_at;
+    const cadN=_cacDiaNum(inicio);
+    const dias=cadN==null?null:hojeN-cadN;
+    const peds=porLoja[l.id]||[];
+    let janelaN=0,janelaMesN=0,mesN=0;
+    peds.forEach(p=>{
+      const d=_cacDiaNum(p.created_at)-cadN;
+      const noMes=String(p.created_at).slice(0,7)===mesRef;
+      const naJanela=cadN!=null&&d>=0&&d<janela;
+      if(naJanela)janelaN++;
+      if(noMes)mesN++;
+      if(naJanela&&noMes)janelaMesN++;
+    });
+    const bonus=+(janelaN*bonusUnit).toFixed(2);
+    linhas.push({vendedor:v,cargo:c,loja:l,dataCadastro:l.created_at,inicioJanela:inicio,dias,pedidosTotal:peds.length,pedidosJanela:janelaN,
+      bonus,dentroPrazo:dias!=null&&dias<janela});
+    const r=resumo[v.id];
+    r.lojas++;r.pedidosJanela+=janelaN;r.bonusTotal+=bonus;
+    r.pedidosJanelaMes+=janelaMesN;r.bonusMes+=janelaMesN*bonusUnit;r.entregasMes+=mesN;
+  });
+  Object.values(resumo).forEach(r=>{
+    r.bonusTotal=+r.bonusTotal.toFixed(2);r.bonusMes=+r.bonusMes.toFixed(2);
+    r.custoMes=+(r.custoMes+r.bonusMes).toFixed(2);
+    if(r.meta!=null)r.bateuMeta=r.entregasMes>=r.meta;
+  });
+  return {linhas,resumo:Object.values(resumo)};
+}
+let _cacMes=null;
+async function renderCacPage(){
+  const hoje=_dataHojeBrasilia();
+  _cacMes=_cacMes||hoje.slice(0,7);
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">🎯 C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta do Vendedor: 880 entregas finalizadas no mês somando todas as lojas que ele trouxe. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
+    <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
+  </div>`;
+  const [vendedores,cargos,lojas]=await Promise.all([
+    db('vendedores','GET',null,'?order=nome.asc'),
+    db('cargos_comerciais','GET',null,'?order=salario_fixo.asc'),
+    db('lojas','GET',null,'?vendedor_id=not.is.null&select=id,nome,created_at,vendedor_id,vendedor_atribuido_em&order=created_at.desc'),
+  ]);
+  const ids=lojas.map(l=>l.id);
+  const pedidos=ids.length?await _dbTodasLinhas('pedidos',`?loja_id=in.(${ids.join(',')})&status=eq.finalizado&select=id,loja_id,created_at&order=id.asc`):[];
+  const el=document.getElementById('cac-conteudo');if(!el)return;
+  if(!cargos.length){el.innerHTML='<div class="card" style="padding:32px;text-align:center;color:var(--red)">Tabela cargos_comerciais vazia ou inexistente — aplicar migrations/add_cac_vendedores.sql.</div>';return;}
+  const {linhas,resumo}=_cacCalcular({vendedores,cargos,lojas,pedidos,hoje,mesRef:_cacMes});
+  const R=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const N=n=>(n||0).toLocaleString('pt-BR');
+  const [ano,mes]=_cacMes.split('-');
+  const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
+  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)}/${N(r.meta)})</span>`;
+  const resumoRows=resumo.filter(r=>r.lojas>0||r.vendedor.ativo).map(r=>`<tr>
+      <td style="font-weight:600;color:var(--text)">${_escHtml(r.vendedor.nome)}${r.vendedor.ativo?'':' <span style="font-size:10px;color:var(--text3)">(inativo)</span>'}</td>
+      <td>${_escHtml(r.cargo.nome||r.vendedor.cargo_id)}</td>
+      <td style="text-align:right">${N(r.lojas)}</td>
+      <td style="text-align:right">${N(r.pedidosJanela)}</td>
+      <td style="text-align:right">${R(r.bonusTotal)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--green)">${R(r.bonusMes)}</td>
+      <td>${metaBadge(r)}</td>
+      <td style="text-align:right">${R(r.custoMes)}</td>
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum vendedor cadastrado — cadastre em Cadastros → Vendedores.</td></tr>';
+  const lojasRows=linhas.map(x=>`<tr>
+      <td style="font-weight:600;color:var(--text)">${_escHtml(x.vendedor.nome)}</td>
+      <td>${_escHtml(x.cargo.nome||x.vendedor.cargo_id)}</td>
+      <td>${_escHtml(x.loja.nome)}</td>
+      <td style="font-size:12px">${formatarData(x.dataCadastro)}</td>
+      <td style="font-size:12px">${formatarData(x.inicioJanela)}</td>
+      <td style="text-align:right">${x.dias??'—'}</td>
+      <td style="text-align:right">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
+      <td style="text-align:right;font-weight:700">${R(x.bonus)}</td>
+      <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do prazo':'Prazo encerrado'}</span></td>
+    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em Cadastros → Estabelecimentos → Editar Loja.</td></tr>';
+  el.innerHTML=`
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por vendedor — ${mes}/${ano}</div>
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:right">Lojas trazidas</th><th style="text-align:right">Pedidos na janela</th><th style="text-align:right">Bônus acumulado</th><th style="text-align:right">Bônus no mês</th><th>Meta 880/mês</th><th style="text-align:right">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas novas por vendedor</div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início contagem</th><th style="text-align:right">Dias</th><th style="text-align:right">Pedidos (total / janela 90d)</th><th style="text-align:right">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
+}
+
+// ── Cadastros → Vendedores (equipe comercial do C.A.C.) ────────────────
+async function _renderVendedoresTab(el){
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalVendedor()">➕ Novo Vendedor</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('vendedores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Lojas</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-vendedores"></tbody></table></div></div>`;
+  const [data,cargos,lojas]=await Promise.all([
+    db('vendedores','GET',null,'?order=nome.asc'),
+    db('cargos_comerciais','GET',null,''),
+    db('lojas','GET',null,'?vendedor_id=not.is.null&select=id,vendedor_id'),
+  ]);
+  const tbody=document.getElementById('tbody-cad-vendedores');if(!tbody)return;
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum vendedor cadastrado</td></tr>':data.map(v=>{
+    const c=cargos.find(x=>x.id===v.cargo_id);
+    return`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(v.nome)}</td><td>${_escHtml(c?c.nome:v.cargo_id)}</td><td style="font-size:12px">${_escHtml(v.telefone||'—')}</td><td>${lojas.filter(l=>l.vendedor_id===v.id).length}</td><td><span class="p-badge b-${v.ativo?'em_rota':'fila'}">${v.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(v.criado_em)}</td><td><button onclick="abrirModalVendedor('${v.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;
   }).join('');
 }
-// Único ponto que faz um pedido do app do cliente sair de
-// 'aguardando_pagamento' e entrar no fluxo normal — mesmos campos que a
-// criação de pedido normal (Novo Pedido/Entrega Rápida) já grava na hora
-// de criar (status/status_detalhado='recebido' + recebido_em=agora), pra
-// entrar exatamente no mesmo pipeline já testado (cron auto-pronto-pedidos
-// pega daqui a 1 minuto, vira 'pronto', despacho-engine despacha).
-async function _confirmarPagamentoPedido(id){
-  if(!confirm('Confirma que o pagamento desse pedido foi combinado/recebido? Ele vai entrar no preparo normal.'))return;
-  const agora=_agoraBrasilia();
-  const res=await db('pedidos','PATCH',{status:'recebido',status_detalhado:'recebido',recebido_em:agora,updated_at:agora},`?id=eq.${id}`);
-  if(!res||(Array.isArray(res)&&res.length===0)){showNotif('❌ Erro ao confirmar pagamento','','var(--red)');return;}
-  showNotif('✅ Pagamento confirmado!','Pedido entrou no fluxo normal');
-  _carregarAguardandoPagamento();
+async function abrirModalVendedor(id){
+  const [cargos,arr]=await Promise.all([db('cargos_comerciais','GET',null,'?order=salario_fixo.asc'),id?db('vendedores','GET',null,`?id=eq.${id}`):Promise.resolve([])]);
+  const v=arr[0]||{ativo:true,cargo_id:'vendedor'};
+  const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
+  const q=x=>(x||'').toString().replace(/"/g,'&quot;');
+  let modal=document.getElementById('modal-vendedor');
+  if(!modal){modal=document.createElement('div');modal.id='modal-vendedor';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${id?'✏️ Editar':'➕ Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">✕</button></div><div class="modal-body">
+    <div class="form-row"><div class="fi"><label>Nome</label><input id="vd-nome" value="${q(v.nome)}"/></div><div class="fi"><label>Telefone</label><input id="vd-telefone" value="${q(v.telefone)}" placeholder="(16) 99999-9999"/></div></div>
+    <div class="form-row"><div class="fi"><label>Cargo</label><select id="vd-cargo" style="${ss}">${cargos.map(c=>`<option value="${c.id}"${c.id===v.cargo_id?' selected':''}>${_escHtml(c.nome)} — fixo R$ ${parseFloat(c.salario_fixo).toFixed(2)}</option>`).join('')}</select></div><div class="fi"><label>Status</label><select id="vd-ativo" style="${ss}"><option value="true"${v.ativo?' selected':''}>Ativo</option><option value="false"${!v.ativo?' selected':''}>Inativo</option></select></div></div>
+    <div id="vd-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-vendedor').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarVendedor(${id?`'${id}'`:''})">💾 Salvar</button></div></div>`;
+  modal.classList.add('open');
+}
+async function salvarVendedor(id){
+  const fb=document.getElementById('vd-feedback');
+  const g=k=>document.getElementById(k)?.value||'';
+  const body={nome:g('vd-nome').trim(),telefone:g('vd-telefone').trim()||null,cargo_id:g('vd-cargo'),ativo:g('vd-ativo')==='true'};
+  if(!body.nome){if(fb)fb.innerHTML='<span style="color:#ef4444">Nome obrigatório.</span>';return;}
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
+  const res=id?await dbPatch('vendedores',body,`?id=eq.${id}`):await db('vendedores','POST',{...body,criado_em:_agoraBrasilia()});
+  if(res===null||(Array.isArray(res)&&res.length===0)){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';return;}
+  await logAcao(id?'editar_vendedor':'criar_vendedor',{vendedor_id:id||res[0]?.id,nome:body.nome,cargo:body.cargo_id});
+  showNotif('✅ Vendedor salvo!',body.nome);
+  document.getElementById('modal-vendedor')?.classList.remove('open');
+  renderCadastrosPage('vendedores');
+}
+// <option>s do campo "Vendedor responsável" (Nova Loja / Editar Loja).
+async function _opcoesVendedorLoja(selecionado){
+  const vs=await db('vendedores','GET',null,'?order=nome.asc');
+  return '<option value="">— Nenhum —</option>'+vs.filter(v=>v.ativo||v.id===selecionado).map(v=>`<option value="${v.id}"${v.id===selecionado?' selected':''}>${_escHtml(v.nome)} (${v.cargo_id==='expansao'?'Expansão':'Vendedor'})</option>`).join('');
 }
 
 async function renderPedidosPage(){
@@ -8161,6 +8277,7 @@ const CATEGORIAS_LOJA=_GRUPOS_CATEGORIA_DEF.flatMap(g=>[...g.categorias,...g.mar
 async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
+  const vendedorOpts=await _opcoesVendedorLoja(l.vendedor_id);
   let modal=document.getElementById('modal-editar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
@@ -8187,7 +8304,7 @@ ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
-${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('',''))}
+${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
@@ -8245,6 +8362,7 @@ async function salvarEdicaoLoja(lojaId){
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
     pontos_padrao:g('el-pontos-padrao')!==''?parseInt(g('el-pontos-padrao'))||4:4,
     limite_pedidos_simultaneos:g('el-limite-pedidos-simultaneos')!==''?parseInt(g('el-limite-pedidos-simultaneos'))||2:2,
+    vendedor_id:g('el-vendedor')||null,
     // Roterizador removido deste modal (duplicava Configuração → Cliente,
     // que já cobre isso por loja — ver _renderConfigCliente/_rcSalvar) —
     // não inclui mais esses campos no PATCH, pra não sobrescrever com
@@ -8252,6 +8370,12 @@ async function salvarEdicaoLoja(lojaId){
     updated_at:new Date().toISOString()
   };
   if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
+  // C.A.C.: janela de 90 dias do bônus conta da atribuição do vendedor —
+  // só grava a data quando o vendedor MUDA (salvar a loja de novo com o
+  // mesmo vendedor não pode reiniciar a contagem).
+  if(update.vendedor_id!==(document.getElementById('el-vendedor')?.dataset?.orig||null)){
+    update.vendedor_atribuido_em=update.vendedor_id?_agoraBrasilia():null;
+  }
   const _endEl=document.getElementById('el-endereco');
   const _endChanged=(_endEl?.value||'')!==(_endEl?.dataset?.orig||'');
   let lat=_endChanged?null:parseFloat(document.getElementById('el-lat')?.value)||null;
@@ -8302,6 +8426,8 @@ async function criarLoja(){
     tipo_cobranca:g('loja-tipo-cobranca')||'faturamento',
     pontos_padrao:g('loja-pontos-padrao')!==''?parseInt(g('loja-pontos-padrao'))||4:4,
     limite_pedidos_simultaneos:g('loja-limite-pedidos-simultaneos')!==''?parseInt(g('loja-limite-pedidos-simultaneos'))||2:2,
+    vendedor_id:g('loja-vendedor')||null,
+    vendedor_atribuido_em:g('loja-vendedor')?_agoraBrasilia():null,
     roterizador_ativo:document.getElementById('loja-rot-ativo')?.checked||false,
     roterizador_raio_km:g('loja-rot-raio')!==''?parseFloat(g('loja-rot-raio'))||null:null,
     roterizador_max_pedidos:g('loja-rot-max')!==''?parseInt(g('loja-rot-max'))||null:null,
