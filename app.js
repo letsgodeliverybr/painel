@@ -1112,7 +1112,11 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       text-transform: uppercase !important;
       letter-spacing: .5px !important;
       border-bottom: 2px solid var(--border) !important;
-      text-align: left !important;
+      /* Sem text-align aqui de propósito: o padrão (esquerda) vem de
+         th{text-align:left} em index.html, SEM !important, pra cada
+         coluna poder definir o próprio alinhamento (right/center) no
+         style do <th>. Antes havia text-align:left!important aqui, que
+         ignorava silenciosamente esse alinhamento em todas as tabelas. */
     }
     td {
       padding: 12px 16px !important;
@@ -6667,15 +6671,17 @@ async function renderCacPage(){
   const [ano,mes]=_cacMes.split('-');
   const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}${c.meta_entregas_mes_teto!=null?` a ${N(c.meta_entregas_mes_teto)}`:''}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
   const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
+  // Colunas numéricas (nas duas tabelas): número centralizado embaixo do
+  // meio do cabeçalho — <th> e <td> com text-align:center.
   const resumoRows=resumo.filter(r=>r.lojas>0||r.vendedor.ativo).map(r=>`<tr>
       <td style="font-weight:600;color:var(--text)">${_escHtml(r.vendedor.nome)}${r.vendedor.ativo?'':' <span style="font-size:10px;color:var(--text3)">(inativo)</span>'}</td>
       <td>${_escHtml(r.cargo.nome||r.vendedor.cargo_id)}</td>
-      <td style="text-align:right">${N(r.lojas)}</td>
-      <td style="text-align:right">${N(r.pedidosJanela)}</td>
-      <td style="text-align:right">${R(r.bonusTotal)}</td>
-      <td style="text-align:right;font-weight:700;color:var(--green)">${R(r.bonusMes)}</td>
+      <td style="text-align:center;white-space:nowrap">${N(r.lojas)}</td>
+      <td style="text-align:center;white-space:nowrap">${N(r.pedidosJanela)}</td>
+      <td style="text-align:center;white-space:nowrap">${R(r.bonusTotal)}</td>
+      <td style="text-align:center;white-space:nowrap;font-weight:700;color:var(--green)">${R(r.bonusMes)}</td>
       <td>${metaBadge(r)}</td>
-      <td style="text-align:right">${R(r.custoMes)}</td>
+      <td style="text-align:center;white-space:nowrap">${R(r.custoMes)}</td>
     </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum vendedor cadastrado — cadastre em Cadastros → Vendedores.</td></tr>';
   const lojasRows=linhas.map(x=>`<tr>
       <td style="font-weight:600;color:var(--text)">${_escHtml(x.vendedor.nome)}</td>
@@ -6683,17 +6689,17 @@ async function renderCacPage(){
       <td>${_escHtml(x.loja.nome)}</td>
       <td style="font-size:12px">${formatarData(x.dataCadastro)}</td>
       <td style="font-size:12px">${formatarData(x.inicioJanela)}</td>
-      <td style="text-align:right">${x.dias??'—'}</td>
-      <td style="text-align:right">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
-      <td style="text-align:right;font-weight:700">${R(x.bonus)}</td>
+      <td style="text-align:center">${x.dias??'—'}</td>
+      <td style="text-align:center;white-space:nowrap">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
+      <td style="text-align:center;white-space:nowrap;font-weight:700">${R(x.bonus)}</td>
       <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do prazo':'Prazo encerrado'}</span></td>
     </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em Cadastros → Estabelecimentos → Editar Loja.</td></tr>';
   el.innerHTML=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por vendedor — ${mes}/${ano}</div>
-    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:right">Lojas novas</th><th style="text-align:right">Pedidos na janela</th><th style="text-align:right">Bônus acumulado</th><th style="text-align:right">Bônus no mês</th><th>Meta/mês</th><th style="text-align:right">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas novas</th><th style="text-align:center">Pedidos na janela</th><th style="text-align:center">Bônus acumulado</th><th style="text-align:center">Bônus no mês</th><th>Meta/mês</th><th style="text-align:center">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas novas por vendedor</div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início contagem</th><th style="text-align:right">Dias</th><th style="text-align:right">Pedidos (total / janela 90d)</th><th style="text-align:right">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (total / janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
 }
 
 // ── Cadastros → Vendedores (equipe comercial do C.A.C.) ────────────────
