@@ -5735,7 +5735,18 @@ async function excluirLoja(id,nome){
   try{await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: usuarios_painel skip',e);}
   await db('lojas','DELETE',null,`?id=eq.${id}`);
   showNotif('🗑️ Loja excluída','','var(--red)');
-  renderCadastrosPage('clientes');
+  _recarregarListaLojas();
+}
+// Depois de editar/excluir loja: atualiza SÓ a lista de onde o usuário
+// veio, sem navegar. Antes, salvar em Editar Loja chamava renderLojasPage()
+// (página legada "Lojas", fora do menu) e excluir ia pra aba Clientes —
+// os dois tiravam o usuário de Cadastros → Estabelecimentos e perdiam a
+// busca. _renderCadastrosConteudo('estabelecimentos') reaproveita
+// _estabelecimentosFiltro/_estabelecimentosBusca, então filtro e busca
+// continuam os mesmos.
+function _recarregarListaLojas(){
+  if(document.getElementById('tbody-estabelecimentos'))_renderCadastrosConteudo('estabelecimentos');
+  else if(document.getElementById('tbody-lojas'))renderLojasPage();
 }
 
 // Item 2 da leva de melhorias visuais (status do cadastro): aprovação
@@ -8394,7 +8405,7 @@ async function salvarEdicaoLoja(lojaId){
   // invalida cache de faixas para a loja editada
   const _lojaEdit=allLojas.find(l=>l.id===lojaId);if(_lojaEdit){_lojaEdit.tabela_cobranca_id=update.tabela_cobranca_id;_lojaEdit.tabela_pagamento_id=update.tabela_pagamento_id;_lojaEdit.tipo_cobranca=update.tipo_cobranca;if(update.tabela_cobranca_id)delete _faixasCachePorTabela[update.tabela_cobranca_id];if(update.tabela_pagamento_id)delete _faixasCachePorTabelaPag[update.tabela_pagamento_id];}
   if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
-  setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');renderLojasPage();},1200);
+  setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');_recarregarListaLojas();},1200);
 }
 async function criarLoja(){
   const g=(id)=>document.getElementById(id)?.value||'';
