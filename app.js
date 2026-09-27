@@ -6570,7 +6570,9 @@ let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
 // antiga que ganha vendedor hoje começa a contar hoje; trocar o vendedor
 // reinicia a contagem). Fallback lojas.created_at se vier vazio.
 // Meta mensal (só cargo Vendedor, 880): pedidos finalizados no mês de
-// TODAS as lojas dele, inclusive as que já passaram dos 90 dias.
+// TODAS as lojas dele, inclusive as que já passaram dos 90 dias — mas só
+// a partir do dia da atribuição (pedido de antes de a loja ser dele não
+// conta nem pra bônus nem pra meta).
 // Cadastro de vendedores: Cadastros → Vendedores. Atribuição: Editar Loja.
 // Ver migrations/add_cac_vendedores.sql.
 //
@@ -6612,7 +6614,7 @@ function _cacCalcular({vendedores,cargos,lojas,pedidos,hoje,mesRef}){
       const noMes=String(p.created_at).slice(0,7)===mesRef;
       const naJanela=cadN!=null&&d>=0&&d<janela;
       if(naJanela)janelaN++;
-      if(noMes)mesN++;
+      if(noMes&&cadN!=null&&d>=0)mesN++;
       if(naJanela&&noMes)janelaMesN++;
     });
     const bonus=+(janelaN*bonusUnit).toFixed(2);
@@ -6635,7 +6637,7 @@ async function renderCacPage(){
   _cacMes=_cacMes||hoje.slice(0,7);
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">🎯 C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta do Vendedor: 880 entregas finalizadas no mês somando todas as lojas que ele trouxe. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta do Vendedor: 880 entregas finalizadas no mês somando todas as lojas que ele trouxe, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
     <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
   const [vendedores,cargos,lojas]=await Promise.all([
