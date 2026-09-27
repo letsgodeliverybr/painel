@@ -6580,7 +6580,8 @@ let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
 // lojas.vendedor_atribuido_em (quando o vendedor foi ligado à loja — loja
 // antiga que ganha vendedor hoje começa a contar hoje; trocar o vendedor
 // reinicia a contagem). Fallback lojas.created_at se vier vazio.
-// Meta mensal (só cargo Vendedor, 880): pedidos finalizados no mês de
+// Meta mensal (faixa por cargo: Vendedor 880–2.500, Expansão 2.500–8.000;
+// bate ao atingir o mínimo, o teto é só informativo): pedidos finalizados no mês de
 // TODAS as lojas dele, inclusive as que já passaram dos 90 dias — mas só
 // a partir do dia da atribuição (pedido de antes de a loja ser dele não
 // conta nem pra bônus nem pra meta).
@@ -6609,7 +6610,7 @@ function _cacCalcular({vendedores,cargos,lojas,pedidos,hoje,mesRef}){
   vendedores.forEach(v=>{
     const c=cargoPor[v.cargo_id]||{};
     resumo[v.id]={vendedor:v,cargo:c,lojas:0,pedidosJanela:0,bonusTotal:0,pedidosJanelaMes:0,bonusMes:0,entregasMes:0,
-      meta:c.meta_entregas_mes??null,bateuMeta:null,custoMes:parseFloat(c.salario_fixo)||0};
+      meta:c.meta_entregas_mes??null,metaTeto:c.meta_entregas_mes_teto??null,bateuMeta:null,custoMes:parseFloat(c.salario_fixo)||0};
   });
   lojas.forEach(l=>{
     const v=vendPor[l.vendedor_id];if(!v)return;
@@ -6648,7 +6649,7 @@ async function renderCacPage(){
   _cacMes=_cacMes||hoje.slice(0,7);
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">🎯 C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta do Vendedor: 880 entregas finalizadas no mês somando todas as lojas que ele trouxe, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta mensal por cargo (Vendedor 880 a 2.500, Expansão 2.500 a 8.000 entregas): bate ao atingir o mínimo, somando as entregas finalizadas no mês de todas as lojas novas dele, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
     <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
   const [vendedores,cargos,lojas]=await Promise.all([
@@ -6664,8 +6665,8 @@ async function renderCacPage(){
   const R=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const N=n=>(n||0).toLocaleString('pt-BR');
   const [ano,mes]=_cacMes.split('-');
-  const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
-  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)}/${N(r.meta)})</span>`;
+  const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}${c.meta_entregas_mes_teto!=null?` a ${N(c.meta_entregas_mes_teto)}`:''}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
+  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
   const resumoRows=resumo.filter(r=>r.lojas>0||r.vendedor.ativo).map(r=>`<tr>
       <td style="font-weight:600;color:var(--text)">${_escHtml(r.vendedor.nome)}${r.vendedor.ativo?'':' <span style="font-size:10px;color:var(--text3)">(inativo)</span>'}</td>
       <td>${_escHtml(r.cargo.nome||r.vendedor.cargo_id)}</td>
@@ -6690,7 +6691,7 @@ async function renderCacPage(){
   el.innerHTML=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por vendedor — ${mes}/${ano}</div>
-    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:right">Lojas trazidas</th><th style="text-align:right">Pedidos na janela</th><th style="text-align:right">Bônus acumulado</th><th style="text-align:right">Bônus no mês</th><th>Meta 880/mês</th><th style="text-align:right">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:right">Lojas novas</th><th style="text-align:right">Pedidos na janela</th><th style="text-align:right">Bônus acumulado</th><th style="text-align:right">Bônus no mês</th><th>Meta/mês</th><th style="text-align:right">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas novas por vendedor</div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início contagem</th><th style="text-align:right">Dias</th><th style="text-align:right">Pedidos (total / janela 90d)</th><th style="text-align:right">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
 }
