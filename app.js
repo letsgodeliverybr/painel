@@ -1152,6 +1152,17 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     tr:last-child td { border-bottom: none !important; }
     tr:hover td { background: #f8faff !important; }
 
+    /* ── MENU FLUTUANTE DO RODAPÉ DA LOJA (Configurações / Perfil) ──
+       Tem que ficar AQUI (CSS injetado pelo app.js), não no index.html:
+       produção (sistema.letsgodelivery.com.br) usa um HTML próprio que só
+       carrega este app.js — CSS posto no index.html do repo nunca chega
+       lá. Bug real 2026-09-29: sem isso o popover nascia position:static
+       no fim da página, fora da tela, e "clicar não abria nada". */
+    .nav-popover{position:fixed;z-index:1300;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:200px;box-shadow:0 8px 28px rgba(0,0,0,.4);padding:6px;}
+    .nav-popover button{display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-radius:8px;color:var(--text);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;}
+    .nav-popover button:hover{background:var(--surface2);}
+    .nav-popover button.active{color:var(--accent);font-weight:700;}
+
     /* ── BOTÕES ── */
     .btn-sm {
       padding: 7px 14px !important;
