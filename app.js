@@ -130,7 +130,7 @@ const NAV_ITEMS_ADM=[{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'map
 // continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
 // Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
 // renderVagasPage, renderFaturasLojaPage, renderMeuCardapioPage).
-const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'meu-cardapio',icon:'utensils',label:'Cardápio'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'faturas',icon:'receipt',label:'Financeiro'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'loja-clientes',icon:'users',label:'Clientes'},{id:'meu-cardapio',icon:'utensils',label:'Cardápio'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'faturas',icon:'receipt',label:'Financeiro'}];
 // Rodapé fixo do menu da loja (padrão iFood: Gestor de Pedidos /
 // Configurações / Perfil sempre embaixo, separados do menu principal por
 // uma linha). "Gestor de Pedidos" é o antigo item "Mapa ao Vivo" — mesma
@@ -3610,7 +3610,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -12005,6 +12005,134 @@ async function renderLojaRelatorioPage(){
 let _mcCatSelecionada=null;
 let _mcCategorias=[];
 let _mcProdutos=[];
+
+// ── Clientes (visão loja) ──────────────────────────────────────────────
+// Métricas dos clientes da PRÓPRIA loja (inspirado em "Seus clientes" do
+// portal do iFood), 2026-09-29.
+// Privacidade: a consulta filtra loja_id=currentUser.loja_id explicitamente
+// e o resultado é filtrado de novo no client (defesa extra) — a RLS do
+// banco ainda é allow-all, o isolamento entre lojas é este filtro.
+// Regras:
+// - Só pedidos status='finalizado' (cancelados e em andamento ficam fora).
+// - Cliente único = telefone normalizado (só dígitos, tira 55 da frente,
+//   10/11 dígitos, não só zeros); sem telefone válido → nome+endereço
+//   normalizados (sem acento/caixa/pontuação). Sem nome e sem endereço →
+//   o pedido não conta como cliente.
+// - Datas: pedidos.created_at é timestamp sem fuso já em hora de Brasília
+//   — a conta é em dia de calendário nos dígitos YYYY-MM-DD (_cacDiaNum),
+//   com "hoje" de _dataHojeBrasilia(). 90 dias = hoje e os 89 anteriores.
+// - Itens: hoje os pedidos não guardam itens (itens/item vazios) — o card
+//   "item mais pedido" só aparece se algum pedido tiver itens com nome.
+// - Ticket médio: só pedidos com valor>0 (muitas lojas não informam o
+//   valor); o card some com menos de 5 pedidos com valor.
+function _cliNorm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
+function _cliChave(p){
+  let t=String(p.telefone||'').replace(/\D/g,'');
+  if((t.length===12||t.length===13)&&t.startsWith('55'))t=t.slice(2);
+  if((t.length===10||t.length===11)&&!/^0+$/.test(t))return 'tel:'+t;
+  const n=_cliNorm(p.cliente),e=_cliNorm(p.endereco);
+  if(!n&&!e)return null;
+  return 'ne:'+n+'|'+e;
+}
+// Função pura (sem banco/DOM): pedidos finalizados da loja + hoje (YYYY-MM-DD).
+function _cliCalcular(pedidos,hoje){
+  const hojeN=_cacDiaNum(hoje);
+  const porCli={};
+  pedidos.forEach(p=>{
+    const k=_cliChave(p);if(!k)return;
+    const d=_cacDiaNum(p.created_at);if(d==null||d>hojeN)return;
+    const c=(porCli[k]=porCli[k]||{nome:'',telefone:'',pedidos:[]});
+    c.pedidos.push({d,valor:parseFloat(p.valor)||0,itens:p.itens});
+    if(p.cliente&&String(p.cliente).trim())c.nome=String(p.cliente).trim(); // o mais recente vence (lista vem em ordem de data)
+    if(p.telefone)c.telefone=String(p.telefone);
+  });
+  const clientes=Object.values(porCli);
+  clientes.forEach(c=>{c.pedidos.sort((a,b)=>a.d-b.d);c.primeiro=c.pedidos[0].d;c.ultimo=c.pedidos[c.pedidos.length-1].d;});
+  const noPeriodo=(c,dias)=>c.pedidos.filter(x=>hojeN-x.d<dias);
+  const c90=clientes.filter(c=>noPeriodo(c,90).length);
+  const novos30=clientes.filter(c=>hojeN-c.primeiro<30);
+  const recorr30=clientes.filter(c=>noPeriodo(c,30).length>=2);
+  const pedidosRecorr30=recorr30.reduce((s,c)=>s+noPeriodo(c,30).length,0);
+  const semanas=[];
+  for(let i=12;i>=0;i--){const fim=hojeN-i*7,ini=fim-6;const cs=clientes.filter(c=>c.pedidos.some(x=>x.d>=ini&&x.d<=fim));semanas.push({ini,fim,clientes:cs.length,novos:cs.filter(c=>c.primeiro>=ini&&c.primeiro<=fim).length});}
+  const ped90=c90.flatMap(c=>noPeriodo(c,90));
+  const comValor=ped90.filter(x=>x.valor>0);
+  const ticket=comValor.length?comValor.reduce((s,x)=>s+x.valor,0)/comValor.length:null;
+  const dow=[0,0,0,0,0,0,0];ped90.forEach(x=>{dow[new Date(x.d*86400000).getUTCDay()]++;});
+  const contItens={};
+  ped90.forEach(x=>{if(!Array.isArray(x.itens))return;x.itens.forEach(it=>{const nome=it&&(it.nome||it.name||it.descricao);if(!nome)return;contItens[nome]=(contItens[nome]||0)+(parseFloat(it.quantidade??it.qtd??it.quantity)||1);});});
+  const topItem=Object.entries(contItens).sort((a,b)=>b[1]-a[1])[0]||null;
+  const ranking=c90.map(c=>{const ps=noPeriodo(c,90),cv=ps.filter(x=>x.valor>0);return {nome:c.nome,telefone:c.telefone,pedidos:ps.length,ultimo:c.ultimo,ticket:cv.length?cv.reduce((s,x)=>s+x.valor,0)/cv.length:null};})
+    .sort((a,b)=>b.pedidos-a.pedidos||b.ultimo-a.ultimo);
+  return {total90:c90.length,novos30:novos30.length,recorrentes30:recorr30.length,pedidosRecorrentes30:pedidosRecorr30,semanas,ticket,pedidosComValor:comValor.length,pedidos90:ped90.length,dow,topItem,ranking};
+}
+const _CLI_DIAS=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const _cliDataBR=n=>{const d=new Date(n*86400000);return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;};
+const _cliDiaMes=n=>{const d=new Date(n*86400000);return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}`;};
+function _cliTelMascarado(t){const d=String(t||'').replace(/\D/g,'');return d.length>=8?`••••-${d.slice(-4)}`:'—';}
+let _cliRanking=[];
+async function renderLojaClientesPage(){
+  const cab=`<div class="page-header"><div class="page-title">${_icone('users',22)} Clientes</div></div>`;
+  const body=document.getElementById('app-body');
+  const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
+  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>`;return;}
+  body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
+  const linhas=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&status=eq.finalizado&select=id,loja_id,cliente,telefone,endereco,valor,itens,created_at&order=created_at.asc,id.asc`);
+  if(!document.getElementById('app-body'))return;
+  const m=_cliCalcular((Array.isArray(linhas)?linhas:[]).filter(p=>p.loja_id===lojaId),_dataHojeBrasilia());
+  _cliRanking=m.ranking;
+  if(!m.total90){
+    body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="color:var(--text3);margin-bottom:12px">${_icone('users',40)}</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Ainda não há clientes para mostrar</div><div style="font-size:13px;color:var(--text2);line-height:1.6">Assim que sua loja tiver pedidos finalizados nos últimos 90 dias, você vai ver aqui quantos clientes atendeu, quantos são novos e quem pede com mais frequência.</div></div></div>`;
+    return;
+  }
+  const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const N=n=>n.toLocaleString('pt-BR');
+  const mediaRec=m.recorrentes30?(m.pedidosRecorrentes30/m.recorrentes30):0;
+  const maxSem=Math.max(1,...m.semanas.map(s=>s.clientes));
+  const barras=m.semanas.map((s,i)=>{const h=Math.round(s.clientes/maxSem*120),hn=Math.round(s.novos/maxSem*120);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0" title="Semana de ${_cliDiaMes(s.ini)} a ${_cliDiaMes(s.fim)}: ${s.clientes} cliente(s), ${s.novos} novo(s)">
+      <div style="font-size:10px;color:var(--text3)">${s.clientes||''}</div>
+      <div style="width:100%;max-width:28px;height:120px;display:flex;flex-direction:column;justify-content:flex-end"><div style="height:${h-hn}px;background:var(--accent);opacity:.45;border-radius:4px 4px 0 0"></div><div style="height:${hn}px;background:var(--accent);border-radius:${h-hn?0:4}px ${h-hn?0:4}px 0 0"></div></div>
+      <div style="font-size:9px;color:var(--text3);white-space:nowrap;overflow:visible;width:0;display:flex;justify-content:center">${i%2===0?_cliDiaMes(s.ini):'&nbsp;'}</div></div>`;}).join('');
+  const maxDow=Math.max(...m.dow),diaTop=m.dow.indexOf(maxDow);
+  const cardsHabitos=[
+    m.pedidosComValor>=5?`<div class="stat-card"><div class="stat-label">Ticket médio</div><div class="stat-value">${R(m.ticket)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">com base em ${N(m.pedidosComValor)} de ${N(m.pedidos90)} pedidos com valor informado (90 dias)</div></div>`:'',
+    `<div class="stat-card"><div class="stat-label">Dia com mais pedidos</div><div class="stat-value" style="font-size:22px!important">${_CLI_DIAS[diaTop].replace(/^./,c=>c.toUpperCase())}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(maxDow)} pedido(s) nos últimos 90 dias</div></div>`,
+    m.topItem?`<div class="stat-card"><div class="stat-label">Item mais pedido</div><div class="stat-value" style="font-size:20px!important">${_escHtml(m.topItem[0])}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.topItem[1])} unidade(s) nos últimos 90 dias</div></div>`:'',
+  ].filter(Boolean).join('');
+  body.innerHTML=`<div class="alt-page">${cab}
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Clientes identificados pelo telefone (ou nome + endereço quando não há telefone), contando só pedidos finalizados da sua loja.</div>
+    <div class="stats-grid" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">Clientes (90 dias)</div><div class="stat-value">${N(m.total90)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.pedidos90)} pedidos finalizados</div></div>
+      <div class="stat-card"><div class="stat-label">Clientes novos (30 dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">fizeram o primeiro pedido nesse período</div></div>
+      <div class="stat-card"><div class="stat-label">Pediram 2x ou mais (30 dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
+    </div>
+    <div class="card" style="padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução de clientes por semana</div>
+        <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span>novos</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.45"></span>que já compravam</span></div></div>
+      <div style="display:flex;align-items:flex-end;gap:6px;overflow-x:auto;padding:0 14px 2px">${barras}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Últimas 13 semanas · cada barra é uma semana (clientes diferentes que pediram)</div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin:4px 0 8px">Hábitos de compra</div>
+    <div class="stats-grid" style="margin-bottom:16px">${cardsHabitos}</div>
+    <div class="card" style="padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text)">Clientes mais frequentes (90 dias)</div>
+        <input type="text" id="cli-busca" placeholder="Buscar por nome ou final do telefone..." oninput="_cliRenderLista(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:220px;outline:none"/></div>
+      <div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Telefone</th><th style="text-align:center">Pedidos</th><th>Último pedido</th><th style="text-align:center">Ticket médio</th></tr></thead><tbody id="cli-tbody"></tbody></table></div>
+      <div id="cli-rodape" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+    </div>
+  </div>`;
+  _cliRenderLista('');
+}
+function _cliRenderLista(busca){
+  const tb=document.getElementById('cli-tbody');if(!tb)return;
+  const q=_cliNorm(busca),qd=String(busca||'').replace(/\D/g,'');
+  const lista=_cliRanking.filter(c=>!q||_cliNorm(c.nome).includes(q)||(qd&&String(c.telefone||'').replace(/\D/g,'').endsWith(qd)));
+  const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  tb.innerHTML=lista.slice(0,50).map(c=>`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(c.nome||'(sem nome)')}</td><td style="font-size:12px;color:var(--text3)">${_cliTelMascarado(c.telefone)}</td><td style="text-align:center;font-weight:700">${c.pedidos}</td><td style="font-size:12px">${_cliDataBR(c.ultimo)}</td><td style="text-align:center;white-space:nowrap">${c.ticket!=null?R(c.ticket):'—'}</td></tr>`).join('')
+    ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">Nenhum cliente encontrado${busca?' para essa busca':''}.</td></tr>`;
+  const rod=document.getElementById('cli-rodape');if(rod)rod.textContent=lista.length>50?`Mostrando os 50 mais frequentes de ${lista.length}.`:`${lista.length} cliente(s).`;
+}
 
 async function renderMeuCardapioPage(){
   const lojaId=currentUser?.loja_id;
