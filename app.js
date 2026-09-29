@@ -1287,6 +1287,10 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     body.nav-col .nav-item{justify-content:center !important;padding:10px 0 !important;gap:0 !important;}
     body.nav-col .nav-item-label,body.nav-col .nav-item-seta{display:none !important;}
     body.nav-col .nav-badge{position:absolute;top:6px;right:10px;width:9px;height:9px;min-width:0;padding:0 !important;font-size:0 !important;border-radius:50% !important;margin:0 !important;box-shadow:0 0 0 2px var(--surface);}
+    /* tooltip do menu recolhido (ver _navTipMostrar): aparece sem atraso */
+    .nav-tip{position:fixed;display:none;transform:translateY(-50%);z-index:1400;background:#111827;color:#f9fafb;font-size:12px;font-weight:600;font-family:Inter,sans-serif;line-height:1;padding:7px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:none;}
+    .nav-tip::before{content:'';position:absolute;left:-4px;top:50%;width:8px;height:8px;background:#111827;transform:translateY(-50%) rotate(45deg);}
+
     /* tela do mapa: a lista de pedidos nasce com 600px fixos (.sb-dark
        min-width + arrasto manual) e engolia o mapa com o menu ocupando
        espaço — limita a 45% da área no modo desktop do menu. min-width
@@ -3473,6 +3477,7 @@ function abrirInfoPedido(pedidoId){
 
 function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
+  _navTipEsconder();
   setTimeout(()=>{ // depois do innerHTML do corpo do menu, logo abaixo
     const bm=document.getElementById('btn-ir-mapa');
     if(bm)bm.classList.toggle('lg-btn-ativo',_navAtivo==='mapa'&&!document.querySelector('#nav-sidebar-body .nav-item.active'));
@@ -3487,11 +3492,11 @@ function renderNavSidebar(activeId){
     const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     if(item.submenu){
       const ativo=item.submenu.some(x=>x.id===_navAtivo);
-      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" title="${item.label}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span><span class="nav-item-seta" style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
+      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" data-label="${item.label}" aria-label="${item.label}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span><span class="nav-item-seta" style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
     }
-    return`<button class="nav-item${_navAtivo===item.id?' active':''}" title="${item.label}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span>${badge}</button>`;
+    return`<button class="nav-item${_navAtivo===item.id?' active':''}" data-label="${item.label}" aria-label="${item.label}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span>${badge}</button>`;
   };
-  const sair=`<button class="nav-item" title="Sair" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span class="nav-item-label">Sair</span></button>`;
+  const sair=`<button class="nav-item" data-label="Sair" aria-label="Sair" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span class="nav-item-label">Sair</span></button>`;
   if(currentPerfil==='loja'){
     // Loja: rodapé (Gestor de Pedidos, Configurações, Perfil — nessa ordem)
     // ancorado no fim do menu (margin-top:auto num wrapper flex coluna com
@@ -3558,6 +3563,29 @@ function abrirNavSidebar(){
   }
   renderNavSidebar(_navAtivo);_aplicarEstadoNav(true);
 }
+// Tooltip do menu RECOLHIDO (desktop): nome do item na hora, sem o atraso
+// do title nativo. Elemento único position:fixed (o corpo do menu tem
+// overflow e cortaria um ::after), à direita do ícone e centralizado na
+// vertical. Mouse e foco por teclado. Só com body.nav-col — no expandido o
+// texto já aparece e no celular não há hover.
+function _navTipMostrar(item){
+  if(!document.body.classList.contains('nav-col'))return;
+  let tip=document.getElementById('nav-tip');
+  if(!tip){tip=document.createElement('div');tip.id='nav-tip';tip.className='nav-tip';tip.setAttribute('role','tooltip');document.body.appendChild(tip);}
+  const r=item.getBoundingClientRect();
+  tip.textContent=item.dataset.label||'';
+  tip.style.left=(r.right+10)+'px';tip.style.top=(r.top+r.height/2)+'px';tip.style.display='block';
+}
+function _navTipEsconder(){const tip=document.getElementById('nav-tip');if(tip)tip.style.display='none';}
+document.addEventListener('mouseover',e=>{const it=e.target.closest&&e.target.closest('#nav-sidebar-body .nav-item');if(it)_navTipMostrar(it);});
+// mousemove: reaparece depois de uma rolagem do menu (que esconde o tooltip)
+document.addEventListener('mousemove',e=>{const tip=document.getElementById('nav-tip');if(tip&&tip.style.display==='block')return;const it=e.target.closest&&e.target.closest('#nav-sidebar-body .nav-item');if(it)_navTipMostrar(it);});
+document.addEventListener('mouseout',e=>{const it=e.target.closest&&e.target.closest('#nav-sidebar-body .nav-item');if(it&&!(e.relatedTarget&&it.contains(e.relatedTarget)))_navTipEsconder();});
+document.addEventListener('focusin',e=>{const it=e.target.closest&&e.target.closest('#nav-sidebar-body .nav-item');if(it)_navTipMostrar(it);else _navTipEsconder();});
+document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#nav-sidebar-body .nav-item'))_navTipEsconder();});
+document.addEventListener('click',()=>_navTipEsconder(),true);
+document.addEventListener('scroll',()=>_navTipEsconder(),true);
+
 // Menu flutuante dos itens do rodapé da loja com submenu (Configurações,
 // Perfil). position:fixed ancorado no botão: à direita do menu lateral
 // quando cabe, senão por cima do próprio menu (celular), sempre subindo a
