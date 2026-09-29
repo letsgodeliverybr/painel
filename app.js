@@ -12292,13 +12292,16 @@ let _mcProdutos=[];
 // vídeos/tutoriais; vazio = bloco escondido.
 const LOJA_INICIO_CONTEUDOS=[];
 const _LOJA_INICIO_SLIDES=[
-  {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
-  {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
-  {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
+  // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
+  // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas a partir de R$ 8,00",texto:'Escolha como quer entregar: 100% demanda a partir de R$ 8,00 por entrega e sobre demanda a partir de R$ 10,45 por entrega.',botao:'Ver planos'},
   // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
   // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
   // abaixo do botão.
   {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: seu produto na mão do cliente em até 10 minutos",texto:'Tem produto de marca própria? Deixe seu estoque na nossa base Turbo Fresh Ribeirão. Pedido aprovado, expedição em 1 minuto e entrega em até 10 minutos na região de Ribeirão Preto. A partir de R$ 49,90/mês + valor por entrega.',botao:'Quero o Turbo',linha:'Dúvidas sobre cadastro e aprovação? (11) 99170-2772'},
+  {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
+  {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
+  {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
 ];
 let _liSlide=0,_liTimer=null,_liPausado=false;
 function _liEstilos(){
@@ -12381,7 +12384,7 @@ async function renderLojaInicioPage(){
   _carregarSaldoTopbar();
   _liSlide=0;_liPausado=false;
   const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
-      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} Novidade para sua loja</div>
+      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} ${s.tag||'Novidade para sua loja'}</div>
         <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc">${s.texto}</div>
         ${s.url
           ?`<a class="li-btn" href="${s.url}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',16,'btn-ico')}${s.botao}</a>`
