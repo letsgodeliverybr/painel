@@ -3881,8 +3881,15 @@ async function _lojaCarregarCrescimento(){
 }
 function _renderLojaBannerBoasVindas(){
   _lojaBannerRenderizadoAgora=false;
-  const deveMostrar=currentPerfil==='loja'&&_lojaLoginRecente;
+  // DESLIGADA (2026-09-29, pedido do usuário): a loja vai direto pro Gestor
+  // de Pedidos depois do login. A flag continua sendo consumida (o login de
+  // produção ainda liga _lojaLoginRecente), mas nada é desenhado. Nada mais
+  // dependia desta tela: mapa, pedidos, saldo, banner de fatura e chat são
+  // iniciados pelo renderMapaPage por conta própria. O código abaixo e o do
+  // gráfico "Crescimento da loja" (_lojaCarregarCrescimento etc.) ficaram
+  // sem uso — manter só se a tela voltar.
   _lojaLoginRecente=false;
+  const deveMostrar=false;
   if(!deveMostrar)return'';
   _lojaBannerRenderizadoAgora=true;
   _lojaBannerInjectStyles();
