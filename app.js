@@ -118,7 +118,11 @@ function _icone(nome,tam=18,classe=''){
   return`<svg class="icone${classe?' '+classe:''}" xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
 }
 const NAV_ITEMS_ADM=[{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'cac',icon:'target',label:'C.A.C.'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:"Métricas Let's Go"},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'utensils',label:'Meu Cardápio'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'faturas',icon:'receipt',label:'Faturas'}];
+// Nomes da visão loja (2026-09-29) — só o texto exibido muda; ids/rotas
+// continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
+// Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
+// renderVagasPage, renderFaturasLojaPage, renderMeuCardapioPage).
+const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'meu-cardapio',icon:'utensils',label:'Cardápio'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'faturas',icon:'receipt',label:'Financeiro'}];
 // Rodapé fixo do menu da loja (padrão iFood: Gestor de Pedidos /
 // Configurações / Perfil sempre embaixo, separados do menu principal por
 // uma linha). "Gestor de Pedidos" é o antigo item "Mapa ao Vivo" — mesma
@@ -8056,7 +8060,7 @@ async function renderMetricasPage(){
   const dataFimPadrao=`${anoAtual}-12-31`;
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
-  const _titulo=_icone('chart-column',22)+' '+(currentPerfil==='loja'?'Minhas Métricas':"Métricas Let's Go");
+  const _titulo=_icone('chart-column',22)+' '+(currentPerfil==='loja'?'Desempenho':"Métricas Let's Go");
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">${_titulo}</div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
@@ -9330,9 +9334,9 @@ async function _cpExcluir(id){
 // não é uma garantia de RLS a nível de banco. Ver conversa/memória sobre a
 // auditoria de RLS/anon-vs-JWT pendente.
 async function renderFaturasLojaPage(){
-  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Faturas</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Financeiro</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('receipt',22)} Faturas</div></div>
+    <div class="page-header"><div class="page-title">${_icone('receipt',22)} Financeiro</div></div>
     <div id="fl-atual"></div>
     <div class="card"><div class="card-header"><span class="card-title">📜 Histórico</span></div><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
   </div>`;
@@ -9582,7 +9586,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button></div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='loja'?'Entrega Dedicada':'Solicitar Fixo'}</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button></div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
@@ -11952,11 +11956,11 @@ let _mcProdutos=[];
 
 async function renderMeuCardapioPage(){
   const lojaId=currentUser?.loja_id;
-  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('utensils',22)+' Meu Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('utensils',22)+' Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`
   <div class="alt-page">
     <div class="page-header">
-      <div class="page-title">${_icone('utensils',22)} Meu Cardápio</div>
+      <div class="page-title">${_icone('utensils',22)} Cardápio</div>
     </div>
     <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;height:calc(100vh - 120px);min-height:400px">
       <!-- Coluna esquerda: categorias -->
