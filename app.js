@@ -9586,7 +9586,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='loja'?'Entrega Dedicada':'Solicitar Fixo'}</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button></div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='loja'?'Entrega Dedicada':'Solicitar Fixo'}</div>${currentPerfil==='adm'?`<button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button>`:''}</div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
@@ -9787,7 +9787,13 @@ async function _vagasConfirmarAlocar(vagaId,entregadorId){
   if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto);
 }
 
+// Só admin (2026-09-29): feriados_importantes é global (sem loja_id) e
+// define o preço da vaga (R$40 feriado/fim de semana, R$30 senão — ver
+// _vagasCalcularValor); loja/suporte não podem mexer. Guarda aqui também
+// além de esconder o botão em renderVagasPage. Obs.: a tabela está com RLS
+// ligada e sem política (nem o admin grava) — correção de RLS pendente.
 async function _vagasAbrirFeriados(){
+  if(currentPerfil!=='adm')return;
   let modal=document.getElementById('modal-feriados');
   if(!modal){modal=document.createElement('div');modal.id='modal-feriados';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px">
