@@ -125,7 +125,11 @@ function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
   return`<svg class="icone${classe?' '+classe:''}" xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
 }
-const NAV_ITEMS_ADM=[{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'cac',icon:'target',label:'C.A.C.'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:"Métricas Let's Go"},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
+// Menu do admin (2026-09-29): C.A.C. em primeiro; "Mapa ao Vivo" saiu do
+// menu (a tela continua, pelo botão do topo, que fica destacado quando ela
+// está aberta — ver renderNavSidebar); nomes iguais aos da loja (Pedidos,
+// Desempenho, Entrega Dedicada). Só o texto mudou: ids/rotas iguais.
+const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
 // Nomes da visão loja (2026-09-29) — só o texto exibido muda; ids/rotas
 // continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
 // Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
@@ -1285,6 +1289,10 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        espaço — limita a 45% da área no modo desktop do menu. min-width
        zerado com !important (min-width sempre vence max-width). */
     body.nav-desktop #sidebar-mapa{max-width:45%;min-width:0 !important;}
+
+    /* Botão "Mapa ao Vivo" do topo destacado quando a tela do mapa está
+       aberta e o menu não tem item pra ela (admin — ver renderNavSidebar). */
+    .lg-btn.lg-btn-ativo{color:var(--accent) !important;border-color:var(--accent) !important;box-shadow:inset 0 0 0 1px var(--accent) !important;}
 
     /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
        .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
@@ -3462,6 +3470,10 @@ function abrirInfoPedido(pedidoId){
 
 function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
+  setTimeout(()=>{ // depois do innerHTML do corpo do menu, logo abaixo
+    const bm=document.getElementById('btn-ir-mapa');
+    if(bm)bm.classList.toggle('lg-btn-ativo',_navAtivo==='mapa'&&!document.querySelector('#nav-sidebar-body .nav-item.active'));
+  },0);
   // Botão ✕ de fechar o menu vem do HTML (produção usa HTML próprio, fora
   // deste repo) — troca pelo ícone Lucide aqui, uma vez.
   const _fechar=document.querySelector('#nav-sidebar .nav-sidebar-header button');
@@ -8137,7 +8149,7 @@ async function renderMetricasPage(){
   const dataFimPadrao=`${anoAtual}-12-31`;
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
-  const _titulo=_icone('chart-column',22)+' '+(currentPerfil==='loja'?'Desempenho':"Métricas Let's Go");
+  const _titulo=_icone('chart-column',22)+' '+(currentPerfil==='loja'||currentPerfil==='adm'?'Desempenho':"Métricas Let's Go");
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">${_titulo}</div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
@@ -9663,7 +9675,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='loja'?'Entrega Dedicada':'Solicitar Fixo'}</div>${currentPerfil==='adm'?`<button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button>`:''}</div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='suporte'?'Solicitar Fixo':'Entrega Dedicada'}</div>${currentPerfil==='adm'?`<button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button>`:''}</div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
