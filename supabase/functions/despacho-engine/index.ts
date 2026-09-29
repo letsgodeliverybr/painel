@@ -172,6 +172,8 @@ serve(async () => {
       // ingênua-mas-Brasília, ver comentário completo no topo do arquivo.
       const janela = formatarBrasiliaNaive(new Date(Date.now() - tempoEspera * 1000));
 
+      // retirada=false: pedido de retirada não pode ser agrupado numa rota
+      // de entrega — não tem entregador nenhum pra fazer esse trajeto.
       const { data: pedidosLoja } = await supabase
         .from("pedidos")
         .select("id, taxa_motoboy, latitude, longitude")
@@ -179,6 +181,7 @@ serve(async () => {
         .eq("loja_id", loja.id)
         .is("motoboy_id", null)
         .is("rota_agrupada_id", null)
+        .eq("retirada", false)
         .gte("created_at", janela);
 
       if (!pedidosLoja || pedidosLoja.length < 2) continue;
@@ -313,10 +316,13 @@ serve(async () => {
     // loja_id: precisa pra checar exclusividade de clã em entregadores_no_raio.
     // pronto_em: ver comentário abaixo sobre segundosPassados — precisa
     // vir junto pra não depender de um segundo round-trip por pedido.
+    // retirada=false: pedido de retirada na loja não tem entregador
+    // nenhum envolvido (cliente busca pessoalmente) — nunca deveria entrar
+    // em despacho_fila nem gerar push pra ninguém.
     const { data: pedidos } = await supabase
       .from("pedidos").select("id, numero, latitude, longitude, created_at, pronto_em, loja_id")
       .eq("status", "pronto").is("motoboy_id", null)
-      .is("rota_agrupada_id", null);
+      .is("rota_agrupada_id", null).eq("retirada", false);
 
     for (const pedido of pedidos || []) {
       const agora = new Date();
