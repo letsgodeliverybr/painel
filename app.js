@@ -1269,8 +1269,14 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .nav-item{position:relative;}
     body.nav-desktop .nav-sidebar{left:0 !important;top:var(--topbar-h,58px) !important;height:calc(100vh - var(--topbar-h,58px)) !important;width:280px !important;z-index:90 !important;}
     body.nav-desktop #app>:not(.topbar){margin-left:280px;transition:margin-left .25s ease;}
-    body.nav-desktop .topbar-logo{display:none !important;}
-    body.nav-desktop .nav-sidebar-header>button{display:none !important;}
+    /* LOGO (2026-09-29): uma só, FIXA na barra do topo (ícone + "Lets Go
+       DELIVERY"; em tela estreita só o ícone — o HTML de produção já esconde
+       o texto <=768px). O menu lateral não tem mais cabeçalho de logo: no
+       desktop o cabeçalho some; na gaveta do celular sobra só o X. */
+    @media (min-width:769px){ .topbar-logo-sub{display:block !important;} }
+    body.nav-desktop .nav-sidebar-header{display:none !important;}
+    .nav-sidebar-header img,.nav-sidebar-header>div{display:none !important;}
+    .nav-sidebar-header{justify-content:flex-end !important;padding:10px 12px !important;}
     @media (min-width:700px) and (max-width:899px){
       body.nav-desktop:not(.nav-col) .nav-sidebar{width:240px !important;}
       body.nav-desktop:not(.nav-col) #app>:not(.topbar){margin-left:240px;}
@@ -1278,9 +1284,6 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     /* recolhido: 64px, só ícones centralizados, nome no title (tooltip) */
     body.nav-desktop.nav-col .nav-sidebar{width:64px !important;}
     body.nav-desktop.nav-col #app>:not(.topbar){margin-left:64px;}
-    body.nav-col .nav-sidebar-header{justify-content:center;padding-left:0 !important;padding-right:0 !important;}
-    body.nav-col .nav-sidebar-header>div{display:none !important;}
-    body.nav-col .nav-sidebar-header img{height:32px !important;}
     body.nav-col .nav-item{justify-content:center !important;padding:10px 0 !important;gap:0 !important;}
     body.nav-col .nav-item-label,body.nav-col .nav-item-seta{display:none !important;}
     body.nav-col .nav-badge{position:absolute;top:6px;right:10px;width:9px;height:9px;min-width:0;padding:0 !important;font-size:0 !important;border-radius:50% !important;margin:0 !important;box-shadow:0 0 0 2px var(--surface);}
@@ -3646,6 +3649,11 @@ function goTab(id){
   // arquivo — goTab roda depois de qualquer login. Loja vê a tela do mapa
   // igual já via pelo Gestor de Pedidos (decisão do usuário: sem filtro).
   const _btnMapaTopo=document.getElementById('btn-ir-mapa');if(_btnMapaTopo&&currentPerfil)_btnMapaTopo.style.display='flex';
+  // Logo da barra do topo: no HTML de produção o clique abria o menu; agora
+  // volta pra tela inicial do perfil (adm: Visão Executiva; loja/suporte:
+  // mapa). Liga uma vez só.
+  const _logoTopo=document.querySelector('#app .topbar-logo');
+  if(_logoTopo&&!_logoTopo.dataset.inicio){_logoTopo.dataset.inicio='1';_logoTopo.removeAttribute('onclick');_logoTopo.title='Início';_logoTopo.addEventListener('click',()=>goTab(currentPerfil==='adm'?'ceo':'mapa'));}
   // Emoji 🗺️ do botão vem do HTML de produção — troca pelo ícone Lucide
   // (mantém o <span class="lg-btn-label"> que some no celular), uma vez.
   if(_btnMapaTopo&&!_btnMapaTopo.querySelector('svg.icone')){const _lbl=_btnMapaTopo.querySelector('.lg-btn-label');_btnMapaTopo.innerHTML=_icone('map',16)+(_lbl?' '+_lbl.outerHTML:'');}
