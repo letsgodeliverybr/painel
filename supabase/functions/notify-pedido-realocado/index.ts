@@ -38,6 +38,19 @@ const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
 const FCM_SA = JSON.parse(Deno.env.get("FCM_SERVICE_ACCOUNT") ?? "{}");
 const FCM_PROJECT = FCM_SA.project_id ?? "";
 
+// Bloqueio de entregador por loja (migrations/bloqueio_entregador_por_loja.sql).
+// A trava de verdade é o gatilho no banco (o pedido nem chega a ser atribuído);
+// esta checagem é a segunda camada, pro push não sair por nenhum caminho.
+// Erro na consulta (ex: migration ainda não aplicada) → segue sem bloquear.
+async function bloqueadoNaLoja(entregadorId: string, pedidoId: string): Promise<boolean> {
+  const { data: ped, error: pedErr } = await supabase.from("pedidos").select("loja_id").eq("id", pedidoId).maybeSingle();
+  if (pedErr || !ped?.loja_id) return false;
+  const { data, error } = await supabase.from("loja_entregadores_bloqueados")
+    .select("id").eq("loja_id", ped.loja_id).eq("entregador_id", entregadorId).limit(1);
+  if (error) { console.error("[bloqueio] consulta falhou:", error.message); return false; }
+  return (data?.length ?? 0) > 0;
+}
+
 async function getFcmAccessToken(): Promise<string> {
   const payload = {
     iss: FCM_SA.client_email,
@@ -84,6 +97,9 @@ serve(async (req) => {
     }
     // papel omitido = chamada antiga, comportamento igual de sempre (quem ganhou).
     const tipo = papel === "antigo" ? "pedido_realocado" : "novo_pedido";
+    if (tipo === "novo_pedido" && await bloqueadoNaLoja(entregador_id, pedido_id)) {
+      return new Response(JSON.stringify({ ok: false, motivo: "entregador bloqueado nesta loja" }), { status: 200 });
+    }
 
     const { data: ent, error: entErr } = await supabase
       .from("entregadores").select("fcm_token").eq("id", entregador_id).single();

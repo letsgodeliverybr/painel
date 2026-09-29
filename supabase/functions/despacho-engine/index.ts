@@ -284,6 +284,11 @@ serve(async () => {
           // presos: nunca recebiam despacho_fila e, por continuarem com
           // rota_agrupada_id preenchido, ficavam de fora do loop individual
           // também. Resultado: pedido "sumia" sem nunca ser despachado.
+          // Push só se ao menos uma oferta foi gravada — o gatilho
+          // tg_00_bloqueio_loja_despacho_fila recusa oferta pra entregador
+          // bloqueado na loja (migrations/bloqueio_entregador_por_loja.sql);
+          // antes o push saía mesmo com a inserção falhando.
+          let ofertasGravadas = 0;
           for (const pid of pedidoIds) {
             const { error: filaErr } = await supabase.from("despacho_fila").insert({
               pedido_id: pid, entregador_id: e.id,
@@ -291,7 +296,9 @@ serve(async () => {
               status: "aguardando", onda: 1, expira_em: expira.toISOString(),
             });
             logErr(`inserir despacho_fila (rota ${rota.id}, pedido ${pid}, entregador ${e.id})`, filaErr);
+            if (!filaErr) ofertasGravadas++;
           }
+          if (ofertasGravadas === 0) continue;
           const { data: ent, error: entErr } = await supabase.from("entregadores")
             .select("fcm_token").eq("id", e.id).single();
           logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
@@ -420,6 +427,7 @@ serve(async () => {
             status: "aguardando", onda: 99, expira_em: expira.toISOString(),
           });
           logErr(`inserir despacho_fila fallback (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
+          if (filaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
           const { data: ent, error: entErr } = await supabase.from("entregadores")
             .select("fcm_token").eq("id", e.id).single();
           logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
@@ -471,6 +479,7 @@ serve(async () => {
             status: "aguardando", onda: 1, expira_em: expiraTodos.toISOString(),
           });
           logErr(`inserir despacho_fila (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
+          if (filaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
           const { data: ent, error: entErr } = await supabase.from("entregadores")
             .select("fcm_token").eq("id", e.id).single();
           logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
@@ -521,6 +530,7 @@ serve(async () => {
           status: "aguardando", onda: ondaNum, expira_em: expira.toISOString(),
         });
         logErr(`inserir despacho_fila (onda ${ondaNum}, pedido ${pedido.id}, entregador ${proximo.id})`, filaOndaErr);
+        if (filaOndaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
 
         const { data: ent, error: entOndaErr } = await supabase.from("entregadores")
           .select("fcm_token").eq("id", proximo.id).single();

@@ -181,6 +181,7 @@ let _tabelaFiltros={busca:'',entregador:'',status:'',data:''};
 let _entFiltro='todos';
 let _estabelecimentosFiltro='todos';
 let _entBusca='',_entDataCache=[];
+let _entBloqPlat=new Map(); // entregador_id → bloqueio automático na plataforma ainda valendo
 let _estabelecimentosBusca='',_estabelecimentosDataCache=[];
 
 const TABELA_PAGAMENTO_ID='7bf1cf41-b3f2-4694-b326-d4e830dae8e1';
@@ -4991,7 +4992,10 @@ async function abrirAlocarMotoboy(pedidoId){
   // Exclui só quem tem distância calculada E está fora do raio — sem
   // coordenada (_dist null, loja/pedido sem geocodificação) continua
   // aparecendo, senão falta de dado vira "ninguém disponível" errado.
-  const motoboysNoRaio=motoboysComDist.filter(m=>m._dist==null||m._dist<=raioKm);
+  // Bloqueados por esta loja não aparecem (o banco recusa de qualquer jeito).
+  const _bloqLoja=p.loja_id?await dbRpc('listar_bloqueios_loja',{p_loja_id:p.loja_id}):[];
+  const _idsBloqLoja=new Set((Array.isArray(_bloqLoja)?_bloqLoja:[]).map(b=>b.entregador_id));
+  const motoboysNoRaio=motoboysComDist.filter(m=>(m._dist==null||m._dist<=raioKm)&&!_idsBloqLoja.has(m.id));
   // Limite de simultaneidade na alocação manual (2026-09-24, LIMITE_PEDIDOS_ALOCACAO_MANUAL=4):
   // conta pedidos ativos por motoboy via _pedidosAtivosGlobal (já carregado,
   // cobre todas as lojas). Mostra a contagem e desabilita quem já está no
@@ -5032,6 +5036,12 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   if(_p&&jaTinha&&jaTinha!==motoboyId&&_p.status!=='pronto'){
     if(!confirm(`Esse pedido já está com um entregador em andamento (status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} agora vai DESALOCAR o entregador atual e reabrir o pedido como disponível. O entregador atual será avisado por notificação, mas o pedido sai da rota dele imediatamente.\n\nConfirma a realocação?`))return;
   }
+  // Bloqueio por loja (migrations/bloqueio_entregador_por_loja.sql): o banco
+  // recusa a alocação de qualquer jeito; aqui é pra dar a mensagem certa.
+  if(_p?.loja_id&&(await dbRpc('entregador_bloqueado_na_loja',{p_entregador_id:motoboyId,p_loja_id:_p.loja_id}))===true){
+    showNotif('Entregador bloqueado nesta loja',`${motoboyNome} foi bloqueado por esta loja e não pode receber pedidos dela.`,'var(--red)');
+    return;
+  }
   // Limite de simultaneidade na alocação manual (2026-09-24): trava real,
   // com dado fresco do banco — o "lotado" em abrirAlocarMotoboy() é só
   // visual, baseado em _pedidosAtivosGlobal que pode estar até 5s
@@ -5051,7 +5061,12 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const taxaMotoboy=_p?(_calcTaxaMotoboy(_p,_faixasPagAloc.length?_faixasPagAloc:undefined)??parseFloat(_p.taxa_entrega||0)):0;
   const _patchAgora=_agoraBrasilia();
   const _patch={motoboy_id:motoboyId,status:'aceito',status_detalhado:'aceito',aceito_em:_patchAgora,updated_at:_patchAgora,taxa_entrega_motoboy:taxaMotoboy};
-  await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
+  const _resAloc=await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
+  if(!Array.isArray(_resAloc)||!_resAloc.length){
+    // db() devolve [] em erro — ex: gatilho de bloqueio por loja recusou.
+    showNotif('Não foi possível alocar','O pedido não foi alterado. Veja o console.','var(--red)');
+    return;
+  }
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
   // Push real pro entregador (bug real corrigido 2026-09-12, pedido #3):
   // alocação manual só fazia o PATCH + log interno + toast pro OPERADOR —
@@ -5065,7 +5080,7 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
     await fetch(`${SB_URL}/functions/v1/notify-novo-pedido`,{
       method:'POST',
       headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
-      body:JSON.stringify({entregador_id:motoboyId,tipo:'novo_pedido'}),
+      body:JSON.stringify({entregador_id:motoboyId,pedido_id:pedidoId,tipo:'novo_pedido'}),
     });
   }catch(e){console.error('[alocarMotoboy] falha ao notificar entregador:',e);}
   showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
@@ -5873,8 +5888,9 @@ async function _renderClientesAppTab(el){
 
 async function _renderEntregadoresTab(el){
   const _entQuery='?select=*&order=updated_at.desc';
-  const data=await db('entregadores','GET',null,_entQuery);
+  const [data,_bp]=await Promise.all([db('entregadores','GET',null,_entQuery),dbRpc('bloqueios_plataforma_ativos')]);
   _entDataCache=data;
+  _entBloqPlat=new Map((Array.isArray(_bp)?_bp:[]).map(b=>[b.entregador_id,b]));
   const _cTotal=data.length;
   const _cAprov=data.filter(e=>e.status!=='bloqueado'&&(e.aprovado===true||e.status_cadastro==='aprovado')).length;
   const _cAnalise=data.filter(e=>e.status_cadastro==='em_analise').length;
@@ -5972,7 +5988,7 @@ function _renderTbodyEntregadores(){
         <td style="text-align:center">${_fotoBtn(e.foto_cnh||e.cnh)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_crlv||e.crlv)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia||e.comprovante_residencia)}</td>
-        <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?'Clique para desbloquear':'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
+        <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?(_entBloqPlat.has(e.id)?_escHtml(`${_entBloqPlat.get(e.id).motivo} (${(_entBloqPlat.get(e.id).lojas_nomes||[]).join(', ')}) em ${new Date(_entBloqPlat.get(e.id).criado_em).toLocaleDateString('pt-BR')}. Clique para desbloquear`).replace(/"/g,'&quot;'):'Clique para desbloquear'):'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
@@ -8704,6 +8720,8 @@ async function abrirEditarLoja(lojaId){
   const [data,tabelasCobranca,tabelasPagamento]=await Promise.all([db('lojas','GET',null,`?id=eq.${lojaId}`),db('tabelas_preco','GET',null,'?tipo=eq.cobranca&order=nome.asc'),db('tabelas_preco','GET',null,'?tipo=eq.pagamento&order=nome.asc')]);
   const l=data[0];if(!l)return;
   const vendedorOpts=await _opcoesVendedorLoja(l.vendedor_id);
+  const [_bloqAtuais,_bloqTodos]=await Promise.all([dbRpc('listar_bloqueios_loja',{p_loja_id:lojaId}),db('entregadores','GET',null,'?select=id,nome,telefone,status&order=nome.asc')]);
+  _elBloqIniciar(_bloqAtuais,_bloqTodos);
   let modal=document.getElementById('modal-editar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
@@ -8731,6 +8749,7 @@ ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 ${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
+${r1(fi('Entregador bloqueado',_elBloqCampoHtml(is)))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
@@ -8749,6 +8768,54 @@ async function geocodificarLoja(){
   const geo=await geocodificarEndereco(endereco);
   if(geo){document.getElementById('el-lat').value=geo.lat.toFixed(6);document.getElementById('el-lng').value=geo.lng.toFixed(6);if(fb)fb.innerHTML=`<span style="color:var(--green)">✅ ${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)}</span>`;}
   else{if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Não encontrado</span>';}
+}
+// ── Entregador bloqueado por loja (Editar Loja) ──
+// Bloqueado aqui = não recebe pedido desta loja de jeito nenhum (despacho,
+// push, oferta, aceite, alocação manual). A trava de verdade é no banco
+// (migrations/bloqueio_entregador_por_loja.sql); 3 lojas diferentes
+// bloqueando o mesmo entregador → bloqueio na plataforma (gatilho no banco).
+// Leitura/gravação só pelas funções listar_/salvar_bloqueios_loja — a
+// tabela tem RLS sem política pro painel.
+let _elBloq={sel:new Map(),orig:[],todos:[]};
+function _elBloqIniciar(atuais,todos){
+  _elBloq={sel:new Map((Array.isArray(atuais)?atuais:[]).map(b=>[b.entregador_id,{nome:b.nome,telefone:b.telefone}])),orig:[],todos:Array.isArray(todos)?todos:[]};
+  _elBloq.orig=[..._elBloq.sel.keys()].sort();
+}
+function _elBloqCampoHtml(is){
+  return`<div style="position:relative"><input id="el-bloq-busca" type="text" autocomplete="off" placeholder="Buscar entregador por nome ou telefone" oninput="_elBloqSugerir()" onfocus="_elBloqSugerir()" onblur="setTimeout(()=>{const s=document.getElementById('el-bloq-sug');if(s)s.style.display='none'},150)" style="${is}"/><div id="el-bloq-sug" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div><div id="el-bloq-lista" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${_elBloqListaHtml()}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Não recebe pedido desta loja (despacho, aviso e aceite). Bloqueado por 3 lojas diferentes, é bloqueado na plataforma automaticamente.</div>`;
+}
+function _elBloqListaHtml(){
+  if(!_elBloq.sel.size)return'<span style="font-size:12px;color:var(--text3)">Nenhum entregador bloqueado.</span>';
+  return[..._elBloq.sel].map(([id,e])=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#ef444418;border:1px solid #ef444455;color:var(--text);border-radius:20px;padding:4px 6px 4px 12px;font-size:12px;font-weight:600">${_escHtml(e.nome||'—')}<button type="button" onclick="_elBloqRemover('${id}')" title="Remover" style="background:none;border:none;cursor:pointer;color:var(--text3);display:inline-flex;padding:2px">${_icone('x',14)}</button></span>`).join('');
+}
+function _elBloqSugerir(){
+  const inp=document.getElementById('el-bloq-busca'),box=document.getElementById('el-bloq-sug');if(!inp||!box)return;
+  const n=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const t=n(inp.value.trim()),dig=inp.value.replace(/\D/g,'');
+  if(!t){box.style.display='none';return;}
+  const res=_elBloq.todos.filter(e=>!_elBloq.sel.has(e.id)&&(n(e.nome).includes(t)||(dig.length>=3&&String(e.telefone||'').replace(/\D/g,'').includes(dig)))).slice(0,20);
+  box.innerHTML=res.length?res.map(e=>`<div onmousedown="event.preventDefault();_elBloqAdicionar('${e.id}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:var(--text)"><b>${_escHtml(e.nome||'—')}</b> <span style="color:var(--text3);font-size:12px">${_escHtml(e.telefone||'')}${e.status==='bloqueado'?' · já bloqueado na plataforma':''}</span></div>`).join(''):'<div style="padding:10px 12px;font-size:12px;color:var(--text3)">Nenhum entregador encontrado</div>';
+  box.style.display='block';
+}
+function _elBloqAdicionar(id){
+  const e=_elBloq.todos.find(x=>x.id===id);if(!e)return;
+  _elBloq.sel.set(id,{nome:e.nome,telefone:e.telefone});
+  const inp=document.getElementById('el-bloq-busca');if(inp)inp.value='';
+  const box=document.getElementById('el-bloq-sug');if(box)box.style.display='none';
+  _elBloqRender();
+}
+function _elBloqRemover(id){_elBloq.sel.delete(id);_elBloqRender();}
+function _elBloqRender(){const l=document.getElementById('el-bloq-lista');if(l)l.innerHTML=_elBloqListaHtml();}
+// Só chama o banco se a lista mudou — salvar a loja sem mexer aqui não
+// depende da migration estar aplicada.
+async function _elBloqSalvar(lojaId){
+  const ids=[..._elBloq.sel.keys()].sort();
+  if(JSON.stringify(ids)===JSON.stringify(_elBloq.orig))return{ok:true,mudou:false};
+  const r=await dbRpc('salvar_bloqueios_loja',{p_loja_id:lojaId,p_entregador_ids:ids,p_criado_por:`${currentUser?.nome||''} (${currentUser?.email||currentPerfil||''})`});
+  if(!r||Array.isArray(r))return{ok:false};
+  await logAcao('bloqueio_entregador_loja',{loja_id:lojaId,entregadores:ids,adicionados:r.adicionados,removidos:r.removidos,bloqueados_plataforma:r.bloqueados_plataforma});
+  _elBloq.orig=ids;
+  return{ok:true,mudou:true,r};
 }
 async function salvarEdicaoLoja(lojaId){
   const fb=document.getElementById('el-feedback');
@@ -8815,6 +8882,10 @@ async function salvarEdicaoLoja(lojaId){
   const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
   await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
+  const _bq=await _elBloqSalvar(lojaId);
+  if(!_bq.ok){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Loja salva, mas a lista de entregadores bloqueados NÃO foi salva. Veja o console.</div>';showNotif('Erro ao salvar entregadores bloqueados','Os demais dados da loja foram salvos.','var(--red)');return;}
+  const _bqPlat=_bq.r?.bloqueados_plataforma||[];
+  if(_bqPlat.length)showNotif('Bloqueado na plataforma',`${_bqPlat.map(b=>b.nome).join(', ')}: bloqueado por 3 lojas diferentes.`,'var(--red)');
   // invalida cache de faixas para a loja editada
   const _lojaEdit=allLojas.find(l=>l.id===lojaId);if(_lojaEdit){_lojaEdit.tabela_cobranca_id=update.tabela_cobranca_id;_lojaEdit.tabela_pagamento_id=update.tabela_pagamento_id;_lojaEdit.tipo_cobranca=update.tipo_cobranca;if(update.tabela_cobranca_id)delete _faixasCachePorTabela[update.tabela_cobranca_id];if(update.tabela_pagamento_id)delete _faixasCachePorTabelaPag[update.tabela_pagamento_id];}
   if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);

@@ -139,6 +139,23 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  // pedido_id (opcional; o painel manda na alocação manual): recusa push pra
+  // entregador bloqueado na loja do pedido — migrations/bloqueio_entregador_por_loja.sql.
+  // Erro na consulta (ex: migration ainda não aplicada) → segue sem bloquear;
+  // a trava de verdade é o gatilho no banco.
+  const pedidoId: string | undefined = payload.pedido_id;
+  if (pedidoId) {
+    const { data: ped } = await supabase.from("pedidos").select("loja_id").eq("id", pedidoId).maybeSingle();
+    if (ped?.loja_id) {
+      const { data: bloq, error: bloqErr } = await supabase.from("loja_entregadores_bloqueados")
+        .select("id").eq("loja_id", ped.loja_id).eq("entregador_id", entregadorId).limit(1);
+      if (bloqErr) console.error("[bloqueio] consulta falhou:", bloqErr.message);
+      if (bloq?.length) {
+        return new Response(JSON.stringify({ sent: 0, motivo: "entregador bloqueado nesta loja" }), { status: 200 });
+      }
+    }
+  }
+
   // Envio direcionado a um único entregador (ex: item colocado na fila
   // individual dele pelo despacho-engine) — sem exigir disponivel=true,
   // a fila já foi montada pra ele especificamente.
