@@ -45,8 +45,45 @@ const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
-const NAV_ITEMS_ADM=[{id:'ceo',icon:'🧭',label:'Visão Executiva'},{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'cac',icon:'🎯',label:'C.A.C.'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:"Métricas Let's Go"},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'cobranca-pagamento',icon:'💰',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'financeiro',icon:'💵',label:'Financeiro'},{id:'creditos',icon:'💳',label:'Créditos'},{id:'saque-rapido',icon:'⚡',label:'Saque Rápido'},{id:'ranking',icon:'🏆',label:'Ranking Entregador'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'whatsapp',icon:'📲',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'🔔',label:'Disparar Notificações'},{id:'configuracao',icon:'⚙️',label:'Configuração'},{id:'auditoria',icon:'🔍',label:'Auditoria'},{id:'logs',icon:'📋',label:'Logs'}];
-const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
+// ── Ícones de linha (Lucide v1.48.0, licença ISC — https://lucide.dev) ──
+// Biblioteca única de ícones do painel daqui pra frente (substitui
+// emojis, começando pelo menu lateral — 2026-09-29). Os SVGs ficam
+// embutidos aqui em vez de carregar o pacote por <script>: produção
+// (sistema.letsgodelivery.com.br) usa HTML próprio que só carrega este
+// app.js. Pra adicionar um ícone: copiar o conteúdo interno do <svg> de
+// node_modules/lucide-static/icons/<nome>.svg (mesma versão) pra cá.
+const ICONES_LUCIDE={
+  'compass':'<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
+  'map':'<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+  'target':'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  'package':'<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>',
+  'chart-column':'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  'folder-open':'<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  'circle-dollar-sign':'<circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/>',
+  'trending-up':'<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+  'banknote':'<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+  'credit-card':'<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 14h2"/>',
+  'zap':'<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+  'trophy':'<path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/>',
+  'calendar-days':'<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/>',
+  'message-circle':'<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
+  'bell':'<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+  'settings':'<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+  'search':'<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  'scroll-text':'<path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>',
+  'utensils':'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  'receipt':'<path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>',
+  'clipboard-list':'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+  'user':'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  'log-out':'<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+  'chevron-right':'<path d="m9 18 6-6-6-6"/>'
+};
+function _icone(nome,tam=18){
+  const c=ICONES_LUCIDE[nome];if(!c)return'';
+  return`<svg class="icone" xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
+}
+const NAV_ITEMS_ADM=[{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'cac',icon:'target',label:'C.A.C.'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:"Métricas Let's Go"},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'utensils',label:'Meu Cardápio'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'faturas',icon:'receipt',label:'Faturas'}];
 // Rodapé fixo do menu da loja (padrão iFood: Gestor de Pedidos /
 // Configurações / Perfil sempre embaixo, separados do menu principal por
 // uma linha). "Gestor de Pedidos" é o antigo item "Mapa ao Vivo" — mesma
@@ -58,8 +95,8 @@ const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'📦',label:'Relatório Entregas'}
 // cada vez. Ver regra de CNPJ/e-mail somente leitura pra loja antes de
 // construir Perfil da loja / Minha conta.
 const NAV_ITEMS_LOJA_RODAPE=[
-  {id:'mapa',icon:'📋',label:'Gestor de Pedidos'},
-  {id:'loja-configuracoes',icon:'⚙️',label:'Configurações',submenu:[
+  {id:'mapa',icon:'clipboard-list',label:'Gestor de Pedidos'},
+  {id:'loja-configuracoes',icon:'settings',label:'Configurações',submenu:[
     {id:'loja-config-perfil',label:'Perfil da loja'},
     {id:'loja-config-horarios',label:'Horários'},
     {id:'loja-config-entrega',label:'Entrega'},
@@ -67,13 +104,13 @@ const NAV_ITEMS_LOJA_RODAPE=[
     {id:'loja-config-pagamento',label:'Formas de pagamento'},
     {id:'loja-config-bancarios',label:'Dados bancários'},
   ]},
-  {id:'loja-perfil',icon:'👤',label:'Perfil',submenu:[
+  {id:'loja-perfil',icon:'user',label:'Perfil',submenu:[
     {id:'loja-minha-conta',label:'Minha conta'},
     {id:'logout',label:'Sair',perigo:true},
   ]},
 ];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
@@ -1151,6 +1188,11 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     }
     tr:last-child td { border-bottom: none !important; }
     tr:hover td { background: #f8faff !important; }
+
+    /* ── ÍCONES DO MENU LATERAL (Lucide, ver ICONES_LUCIDE) — aqui e não
+       no index.html pelo mesmo motivo do menu flutuante abaixo. ── */
+    .nav-item-icon{width:24px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .nav-item-icon svg{display:block;}
 
     /* ── MENU FLUTUANTE DO RODAPÉ DA LOJA (Configurações / Perfil) ──
        Tem que ficar AQUI (CSS injetado pelo app.js), não no index.html:
@@ -3307,11 +3349,11 @@ function renderNavSidebar(activeId){
     const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     if(item.submenu){
       const ativo=item.submenu.some(x=>x.id===_navAtivo);
-      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span><span style="margin-left:auto;font-size:11px;opacity:.6">▸</span></button>`;
+      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span>${item.label}</span><span style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
     }
-    return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
+    return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span>${item.label}</span>${badge}</button>`;
   };
-  const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button>`;
+  const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span>Sair</span></button>`;
   const rodape=currentPerfil==='loja'?NAV_ITEMS_LOJA_RODAPE.map(_navBtn).join(''):sair;
   body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${rodape}</div>`;
 }
