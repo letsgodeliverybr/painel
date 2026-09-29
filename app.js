@@ -111,7 +111,15 @@ const ICONES_LUCIDE={
   'save':'<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
   'send':'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
   'trash-2':'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
-  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
+  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  'alarm-clock':'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>',
+  'circle-check':'<circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/>',
+  'crown':'<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>',
+  'file-check':'<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m9 15 2 2 4-4"/>',
+  'info':'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  'lock':'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  'triangle-alert':'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  'wrench':'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>'
 };
 function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -2173,6 +2181,9 @@ function verificarNovosProtos(pedidos){
   });
 }
 
+// Emoji no começo do título de notificação → ícone Lucide com o mesmo
+// sentido; os de status (✅ ❌ ⚠️ ℹ️) caem no ícone do tipo pela cor.
+const _NOTIF_ICONE_EMOJI={'✅':'circle-check','❌':'circle-x','⚠':'triangle-alert','ℹ':'info','🗑':'trash-2','🔔':'bell','⏰':'alarm-clock','🔒':'lock','⏳':'hourglass','📲':'send'};
 function showNotif(title,msg,color='var(--green)'){
   const _c=color||'';
   let type='info';
@@ -2180,12 +2191,21 @@ function showNotif(title,msg,color='var(--green)'){
   else if(_c.includes('red')||_c.includes('ef4444'))type='error';
   else if(_c.includes('yellow')||_c.includes('eab308')||_c.includes('f59e0b')||_c.includes('orange')||_c.includes('f97316'))type='warning';
   const _cf={
-    success:{bg:'#0a1e10',bc:'#22c55e',ic:'#22c55e',tc:'#4ade80',svg:'<polyline points="20 6 9 17 4 12"/>'},
-    error:  {bg:'#1e0a0a',bc:'#ef4444',ic:'#ef4444',tc:'#f87171',svg:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'},
-    warning:{bg:'#1e180a',bc:'#eab308',ic:'#d97706',tc:'#fbbf24',svg:'<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
-    info:   {bg:'#0a0f1e',bc:'#1A56DB',ic:'#1A56DB',tc:'#60a5fa',svg:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/>'},
+    success:{bg:'#0a1e10',bc:'#22c55e',ic:'#22c55e',tc:'#4ade80',icone:'circle-check'},
+    error:  {bg:'#1e0a0a',bc:'#ef4444',ic:'#ef4444',tc:'#f87171',icone:'circle-x'},
+    warning:{bg:'#1e180a',bc:'#eab308',ic:'#d97706',tc:'#fbbf24',icone:'triangle-alert'},
+    info:   {bg:'#0a0f1e',bc:'#1A56DB',ic:'#60a5fa',tc:'#60a5fa',icone:'info'},
   };
   const cf=_cf[type];
+  // Fase 4 Lucide (2026-09-29): o emoji do começo do título (✅ ❌ ⚠️ 🗑️...)
+  // sai do texto e vira ícone Lucide na cor do TIPO (verde sucesso,
+  // vermelho erro, amarelo aviso, azul info). Emoji com significado próprio
+  // (lixeira, sino, cadeado...) escolhe o desenho; sem emoji, usa o ícone
+  // do tipo — toda notificação fica com ícone. Feito aqui (central) e não
+  // em cada chamada: cobre também títulos montados dinamicamente.
+  let _titulo=String(title??'');let _icNome=cf.icone;
+  const _mEmo=_titulo.match(/^\s*((?:\p{Extended_Pictographic}|\p{Regional_Indicator})\uFE0F?)\s*/u);
+  if(_mEmo){_icNome=_NOTIF_ICONE_EMOJI[_mEmo[1].replace('\uFE0F','')]||cf.icone;_titulo=_titulo.slice(_mEmo[0].length);}
   const id='_t'+Date.now()+Math.random().toString(36).slice(2,5);
   let stack=document.getElementById('_toast_stack');
   if(!stack){
@@ -2197,7 +2217,7 @@ function showNotif(title,msg,color='var(--green)'){
   const toast=document.createElement('div');
   toast.id=id;
   toast.style.cssText=`pointer-events:all;min-width:320px;max-width:420px;padding:14px 18px;background:${cf.bg};border:1px solid ${cf.bc}33;border-left:4px solid ${cf.bc};border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);transform:translateX(calc(100% + 32px));opacity:0;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .25s ease;font-family:Inter,sans-serif`;
-  toast.innerHTML=`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/><div style="flex:1;min-width:0;overflow:hidden"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:14px;font-weight:600;color:${cf.tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</span></div><div style="font-size:13px;font-weight:600;color:${cf.tc};margin-bottom:${msg?'3px':'0'}">${title}</div>${msg?`<div style="font-size:12px;color:${cf.tc};opacity:.75;line-height:1.4;word-break:break-word">${msg}</div>`:''}</div><button id="${id}_x" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  toast.innerHTML=`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/><div style="flex:1;min-width:0;overflow:hidden"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:14px;font-weight:600;color:${cf.tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</span></div><div style="font-size:13px;font-weight:600;color:${cf.tc};margin-bottom:${msg?'3px':'0'};display:flex;align-items:flex-start;gap:6px"><span style="color:${cf.ic};display:inline-flex;flex-shrink:0;margin-top:1px">${_icone(_icNome,16)}</span><span style="min-width:0">${_titulo}</span></div>${msg?`<div style="font-size:12px;color:${cf.tc};opacity:.75;line-height:1.4;word-break:break-word">${msg}</div>`:''}</div><button id="${id}_x" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   stack.appendChild(toast);
   const dismiss=()=>{toast.style.opacity='0';toast.style.transform='translateX(calc(100% + 32px))';setTimeout(()=>toast.remove(),350);};
   document.getElementById(id+'_x').addEventListener('click',dismiss);
@@ -3566,6 +3586,9 @@ function goTab(id){
   // arquivo — goTab roda depois de qualquer login. Loja vê a tela do mapa
   // igual já via pelo Gestor de Pedidos (decisão do usuário: sem filtro).
   const _btnMapaTopo=document.getElementById('btn-ir-mapa');if(_btnMapaTopo&&currentPerfil)_btnMapaTopo.style.display='flex';
+  // Emoji 🗺️ do botão vem do HTML de produção — troca pelo ícone Lucide
+  // (mantém o <span class="lg-btn-label"> que some no celular), uma vez.
+  if(_btnMapaTopo&&!_btnMapaTopo.querySelector('svg.icone')){const _lbl=_btnMapaTopo.querySelector('.lg-btn-label');_btnMapaTopo.innerHTML=_icone('map',16)+(_lbl?' '+_lbl.outerHTML:'');}
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
@@ -5163,11 +5186,11 @@ let _cadastrosAba='estabelecimentos';
 
 function renderCadastrosPage(aba){
   const todasAbas=[
-    {id:'estabelecimentos', icon:'🏪', label:'Estabelecimentos'},
-    {id:'clientes',         icon:'👤', label:'Clientes'},
-    {id:'entregadores',     icon:'🛵', label:'Entregadores'},
-    {id:'usuarios',         icon:'👥', label:'Usuários'},
-    {id:'vendedores',       icon:'🎯', label:'Vendedores'},
+    {id:'estabelecimentos', icon:'store', label:'Estabelecimentos'},
+    {id:'clientes',         icon:'user', label:'Clientes'},
+    {id:'entregadores',     icon:'bike', label:'Entregadores'},
+    {id:'usuarios',         icon:'users', label:'Usuários'},
+    {id:'vendedores',       icon:'target', label:'Vendedores'},
   ];
   const abas=currentPerfil==='suporte'?todasAbas.filter(a=>a.id==='entregadores'):todasAbas;
   const defaultAba=currentPerfil==='suporte'?'entregadores':'estabelecimentos';
@@ -5178,7 +5201,7 @@ function renderCadastrosPage(aba){
       <div class="page-header"><div class="page-title">${_icone('folder-open',22)} Cadastros</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button id="cad-aba-${a.id}" onclick="renderCadastrosPage('${a.id}')"
-          style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_cadastrosAba===a.id?'var(--accent)':'transparent'};color:${_cadastrosAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+          style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_cadastrosAba===a.id?'var(--accent)':'transparent'};color:${_cadastrosAba===a.id?'var(--accent)':'var(--text3)'}">${_icone(a.icon,16,'btn-ico')}${a.label}</button>`).join('')}
       </div>
       <div id="cad-content"></div>
     </div>`;
@@ -5233,10 +5256,10 @@ async function _renderEstabelecimentosTab(el){
   };
   const filtroBtns=`
     ${btnFiltro('todos','Todas',_cTotal)}
-    ${btnFiltro('aprovadas','✅ Aprovadas',_cAprov)}
-    ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
-    ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
-    ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
+    ${btnFiltro('aprovadas',_icone('circle-check',14,'btn-ico')+'Aprovadas',_cAprov)}
+    ${btnFiltro('em_analise',_icone('search',14,'btn-ico')+'Em Análise',_cAnalise)}
+    ${btnFiltro('pendentes',_icone('hourglass',14,'btn-ico')+'Pendentes',_cPend)}
+    ${btnFiltro('reprovadas',_icone('circle-x',14,'btn-ico')+'Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
@@ -5706,10 +5729,10 @@ async function _renderEntregadoresTab(el){
   };
   const filtroBtns=`
     ${btnFiltro('todos','Todos',_cTotal)}
-    ${btnFiltro('aprovados','✅ Aprovados',_cAprov)}
-    ${btnFiltro('em_analise','🔍 Em Análise',_cAnalise)}
-    ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
-    ${btnFiltro('reprovados','❌ Reprovados',_cReprov)}`;
+    ${btnFiltro('aprovados',_icone('circle-check',14,'btn-ico')+'Aprovados',_cAprov)}
+    ${btnFiltro('em_analise',_icone('search',14,'btn-ico')+'Em Análise',_cAnalise)}
+    ${btnFiltro('pendentes',_icone('hourglass',14,'btn-ico')+'Pendentes',_cPend)}
+    ${btnFiltro('reprovados',_icone('circle-x',14,'btn-ico')+'Reprovados',_cReprov)}`;
 
   const _buscaEsc=(_entBusca||'').replace(/"/g,'&quot;');
   el.innerHTML=`
@@ -9050,17 +9073,17 @@ function _atualizarAlertaSaqueRapidoMapa(){
 async function renderFinanceiroPage(aba){
   _financeiroAba=aba||_financeiroAba||'gerar-cobranca';
   const abas=[
-    {id:'gerar-cobranca',icon:'🏪',label:'Gerar Cobranças'},
-    {id:'aprovar-cobrancas',icon:'📲',label:'Aprovar Faturas'},
-    {id:'gerar-pagamento',icon:'💸',label:'Gerar Pagamentos'},
-    {id:'aprovar-saques',icon:'✅',label:'Aprovar Pagamentos'},
-    {id:'contas-pagar',icon:'🧾',label:'Contas a Pagar'},
+    {id:'gerar-cobranca',icon:'receipt',label:'Gerar Cobranças'},
+    {id:'aprovar-cobrancas',icon:'file-check',label:'Aprovar Faturas'},
+    {id:'gerar-pagamento',icon:'banknote',label:'Gerar Pagamentos'},
+    {id:'aprovar-saques',icon:'circle-check',label:'Aprovar Pagamentos'},
+    {id:'contas-pagar',icon:'wallet',label:'Contas a Pagar'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('banknote',22)} Financeiro</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
-        ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+        ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${_icone(a.icon,16,'btn-ico')}${a.label}</button>`).join('')}
       </div>
       <div id="financeiro-content"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
     </div>`;
@@ -9412,11 +9435,11 @@ const _RANKING_PREMIOS=[100,80,70,60,50,40,30,20,15,10];
 let _rankingAba='ranking';
 async function renderRankingPage(aba){
   _rankingAba=aba||_rankingAba||'ranking';
-  const abas=[{id:'ranking',icon:'🏆',label:'Ranking'},{id:'clas',icon:'👑',label:'Clãs'}];
+  const abas=[{id:'ranking',icon:'trophy',label:'Ranking'},{id:'clas',icon:'crown',label:'Clãs'}];
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">${_icone('trophy',22)} Ranking Entregador</div></div>
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
-      ${abas.map(a=>`<button onclick="renderRankingPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_rankingAba===a.id?'var(--accent)':'transparent'};color:${_rankingAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+      ${abas.map(a=>`<button onclick="renderRankingPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_rankingAba===a.id?'var(--accent)':'transparent'};color:${_rankingAba===a.id?'var(--accent)':'var(--text3)'}">${_icone(a.icon,16,'btn-ico')}${a.label}</button>`).join('')}
     </div>
     <div id="ranking-content"></div>
   </div>`;
@@ -11283,17 +11306,17 @@ async function _npEnviarTodos(tipo){
 function renderConfiguracaoPage(aba){
   _configAba=aba||_configAba||'cliente';
   const abas=[
-    {id:'cliente',       icon:'👤', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
-    {id:'integracao',    icon:'🔗', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
-    {id:'open-delivery', icon:'🚀', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
-    {id:'operacao',      icon:'🛠️', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
-    {id:'logs-ifood',    icon:'📋', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
+    {id:'cliente',       icon:'user', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
+    {id:'integracao',    icon:'link', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
+    {id:'open-delivery', icon:'rocket', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
+    {id:'operacao',      icon:'wrench', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
+    {id:'logs-ifood',    icon:'scroll-text', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('settings',22)} Configuração</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
-        ${abas.map(a=>`<button onclick="renderConfiguracaoPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_configAba===a.id?'var(--accent)':'transparent'};color:${_configAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
+        ${abas.map(a=>`<button onclick="renderConfiguracaoPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_configAba===a.id?'var(--accent)':'transparent'};color:${_configAba===a.id?'var(--accent)':'var(--text3)'}">${_icone(a.icon,16,'btn-ico')}${a.label}</button>`).join('')}
       </div>
       <div id="config-content"></div>
     </div>`;
