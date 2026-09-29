@@ -81,6 +81,7 @@ const ICONES_LUCIDE={
   'bike':'<circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>',
   'upload':'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
   'circle-x':'<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+  'phone':'<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>',
   'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
   'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   'store':'<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
@@ -12294,6 +12295,10 @@ const _LOJA_INICIO_SLIDES=[
   {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
   {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
   {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
+  // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
+  // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
+  // abaixo do botão.
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: seu produto na mão do cliente em até 10 minutos",texto:'Tem produto de marca própria? Deixe seu estoque na nossa base Turbo Fresh Ribeirão. Pedido aprovado, expedição em 1 minuto e entrega em até 10 minutos na região de Ribeirão Preto. A partir de R$ 49,90/mês + valor por entrega.',botao:'Quero o Turbo',linha:'Dúvidas sobre cadastro e aprovação? (11) 99170-2772'},
 ];
 let _liSlide=0,_liTimer=null,_liPausado=false;
 function _liEstilos(){
@@ -12309,6 +12314,7 @@ function _liEstilos(){
     .li-slide-titulo{font-size:22px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:10px}
     .li-slide-desc{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px;max-width:520px}
     .li-slide-arte{flex-shrink:0;width:220px;height:170px}
+    .li-slide-linha{display:flex;align-items:center;gap:6px;font-size:11.5px;color:rgba(255,255,255,.6);margin-top:12px}
     .li-seta{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(13,17,23,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
     .li-seta:hover{background:rgba(26,86,219,.5)}
     .li-pontos{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:2}
@@ -12377,7 +12383,10 @@ async function renderLojaInicioPage(){
   const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
       <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} Novidade para sua loja</div>
         <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc">${s.texto}</div>
-        <button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button></div>
+        ${s.url
+          ?`<a class="li-btn" href="${s.url}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',16,'btn-ico')}${s.botao}</a>`
+          :`<button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button>`}
+        ${s.linha?`<div class="li-slide-linha">${_icone('phone',13)}<span>${s.linha.replace(/(\(\d{2}\) [\d-]+)/,'<span style="white-space:nowrap">$1</span>')}</span></div>`:''}</div>
       <div class="li-slide-arte">${_liArte(s.icone,i)}</div></div>`).join('');
   const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos para você</div>
     <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
