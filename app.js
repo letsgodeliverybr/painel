@@ -1284,8 +1284,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     /* recolhido: 64px, só ícones centralizados, nome no title (tooltip) */
     body.nav-desktop.nav-col .nav-sidebar{width:64px !important;}
     body.nav-desktop.nav-col #app>:not(.topbar){margin-left:64px;}
-    body.nav-col .nav-item{justify-content:center !important;padding:10px 0 !important;gap:0 !important;}
-    body.nav-col .nav-item-label,body.nav-col .nav-item-seta{display:none !important;}
+    /* Ícones PARADOS ao recolher/expandir: mesma geometria nos dois modos
+       (corpo sem padding lateral, item com margem 8px e padding 12px → ícone
+       sempre em x=20, que é o centro dos 64px do recolhido). Só a largura do
+       menu anima; o texto fica sempre no DOM (nowrap + overflow hidden) e só
+       muda de opacidade — nada de display:none, nada de reflow. */
+    body.nav-desktop .nav-sidebar-body{padding-left:0 !important;padding-right:0 !important;overflow-x:hidden !important;}
+    body.nav-desktop .nav-item{justify-content:flex-start !important;padding:10px 12px !important;gap:10px !important;overflow:hidden;white-space:nowrap;}
+    body.nav-desktop .nav-item-label,body.nav-desktop .nav-item-seta{white-space:nowrap;overflow:hidden;min-width:0;transition:opacity .2s ease .05s;}
+    body.nav-col .nav-item-label,body.nav-col .nav-item-seta{opacity:0;transition:opacity .1s ease;}
     body.nav-col .nav-badge{position:absolute;top:6px;right:10px;width:9px;height:9px;min-width:0;padding:0 !important;font-size:0 !important;border-radius:50% !important;margin:0 !important;box-shadow:0 0 0 2px var(--surface);}
     /* tooltip do menu recolhido (ver _navTipMostrar): aparece sem atraso */
     .nav-tip{position:fixed;display:none;transform:translateY(-50%);z-index:1400;background:#111827;color:#f9fafb;font-size:12px;font-weight:600;font-family:Inter,sans-serif;line-height:1;padding:7px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:none;}
