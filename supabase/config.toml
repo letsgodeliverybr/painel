@@ -81,3 +81,9 @@ verify_jwt = false
 # padrão de x-webhook-secret das outras functions de ação de pedido acima.
 [functions.ifood-shipping]
 verify_jwt = false
+
+# notify-vaga: aviso ao entregador quando a vaga dele é cancelada ou ele é
+# desatribuído (painel, Entrega Dedicada). Mesmo padrão x-webhook-secret
+# das functions de ação chamadas pelo app.js.
+[functions.notify-vaga]
+verify_jwt = false

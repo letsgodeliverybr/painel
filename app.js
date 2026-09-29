@@ -126,7 +126,8 @@ const ICONES_LUCIDE={
   'house':'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
   'moon':'<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
-  'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'
+  'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  'user-minus':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/>'
 };
 function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -1304,6 +1305,16 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     /* tooltip do menu recolhido (ver _navTipMostrar): aparece sem atraso */
     .nav-tip{position:fixed;display:none;transform:translateY(-50%);z-index:1400;background:#111827;color:#f9fafb;font-size:12px;font-weight:600;font-family:Inter,sans-serif;line-height:1;padding:7px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:none;}
     .nav-tip::before{content:'';position:absolute;left:-4px;top:50%;width:8px;height:8px;background:#111827;transform:translateY(-50%) rotate(45deg);}
+
+    /* Entrega Dedicada: ações da vaga (ver _vagasAcoesHtml) */
+    .vg-acoes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .vg-acao{display:inline-flex;align-items:center;justify-content:center;gap:0;padding:7px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap;min-width:0;transition:background .15s,border-color .15s}
+    .vg-acao .icone.btn-ico{margin-right:5px}
+    .vg-acao:hover:not(:disabled){border-color:var(--text3)}
+    .vg-acao-azul:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
+    .vg-acao-verde:not(:disabled){color:#22c55e;border-color:rgba(34,197,94,.45)}
+    .vg-acao-vermelho:not(:disabled){color:#ef4444;border-color:rgba(239,68,68,.45)}
+    .vg-acao:disabled{opacity:.38;cursor:not-allowed}
 
     /* Entrega Dedicada: painel do dia abaixo do calendário (ver _vagasAbrirDia) */
     .vg-painel-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
@@ -9817,7 +9828,7 @@ function _vagasRenderCalendario(){
   for(let i=0;i<primeiroDiaSemana;i++){html+=`<div></div>`;}
   for(let dia=1;dia<=totalDias;dia++){
     const dataStr=`${_vagasAno}-${String(_vagasMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-    const vagasDoDia=porDia[dataStr]||[];
+    const vagasDoDia=(porDia[dataStr]||[]).filter(v=>v.status!=='cancelada'); // cancelada não conta no calendário (aparece no painel do dia)
     const temDisponivel=vagasDoDia.some(v=>v.status==='disponivel');
     const temAlguma=vagasDoDia.length>0;
     const cor=temDisponivel?'#22c55e':temAlguma?'#6b7280':'transparent';
@@ -9835,7 +9846,8 @@ function _vagasRenderCalendario(){
 function _vagasRenderCard(v){
   const loja=_vagasLojas.find(l=>l.id===v.loja_id)||allLojas.find(l=>l.id===v.loja_id);
   const entregador=_vagasEntregadoresCache.find(e=>e.id===v.entregador_id);
-  const badge=v.status==='preenchida'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">Preenchida</span>`:`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">Disponível</span>`;
+  const _selo=(fundo,cor,txt)=>`<span style="background:${fundo};color:${cor};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">${txt}</span>`;
+  const badge=v.status==='preenchida'?_selo('#dbeafe','#1d4ed8','Preenchida'):v.status==='finalizada'?_selo('#e5e7eb','#374151','Finalizada'):v.status==='cancelada'?_selo('#fee2e2','#b91c1c','Cancelada'):_selo('#d1fae5','#059669','Disponível');
   return `<div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px">
       <div>
@@ -9846,7 +9858,7 @@ function _vagasRenderCard(v){
       </div>
       ${badge}
     </div>
-    ${v.status==='disponivel'?`<button onclick="_vagasAbrirAlocar('${v.id}')" style="width:100%;margin-top:6px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">${_icone('user-plus',16,'btn-ico')}Alocar Entregador</button>`:''}
+    ${_vagasAcoesHtml(v)}
   </div>`;
 }
 
@@ -9931,6 +9943,55 @@ async function _vagasSalvar(dataStr){
     if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao criar vaga.</span>';
   }
 }
+
+// Ações da vaga (2026-09-29): 4 botões sempre visíveis; os que não valem no
+// status/dia ficam desabilitados com o motivo no title. Regra aprovada:
+//   disponível hoje/futuro: Alocar, Cancelar   | disponível passado: Cancelar
+//   preenchida futuro: Desatribuir, Cancelar   | preenchida hoje: Desatribuir, Finalizar, Cancelar
+//   preenchida passado: Finalizar, Cancelar    | finalizada/cancelada: nenhum
+// Vale pros 3 perfis (loja só vê as vagas dela — _lojaFiltro). Cada ação
+// grava em logs_acoes (logAcao) e, se havia entregador, avisa por push
+// (edge function notify-vaga).
+function _vagasRegraAcoes(v){
+  const hoje=_dataHojeBrasilia(),passado=v.data<hoje,ehHoje=v.data===hoje;
+  const fechada=v.status==='finalizada'||v.status==='cancelada';
+  const livre=v.status==='disponivel',ocupada=v.status==='preenchida';
+  const motivoFechada=v.status==='finalizada'?'Vaga já finalizada':'Vaga já cancelada';
+  return {
+    alocar:livre&&!passado?null:fechada?motivoFechada:ocupada?'Vaga já tem entregador':'Dia já passou',
+    desatribuir:ocupada&&!passado?null:fechada?motivoFechada:livre?'Vaga sem entregador':'Dia já passou',
+    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga sem entregador':'Só no dia da vaga ou depois',
+    cancelar:fechada?motivoFechada:null,
+  };
+}
+function _vagasAcoesHtml(v){
+  const r=_vagasRegraAcoes(v);
+  const b=(chave,icone,txt,fn,cor)=>{const bloq=r[chave];return `<button class="vg-acao${cor?' vg-acao-'+cor:''}" ${bloq?`disabled title="${bloq}"`:`onclick="${fn}('${v.id}')" title="${txt}"`}>${_icone(icone,15,'btn-ico')}${txt}</button>`;};
+  return `<div class="vg-acoes">${b('alocar','user-plus','Alocar Entregador','_vagasAbrirAlocar','azul')}${b('desatribuir','user-minus','Desatribuir','_vagasDesatribuir')}${b('finalizar','circle-check','Finalizar Vaga','_vagasFinalizar','verde')}${b('cancelar','circle-x','Cancelar Vaga','_vagasCancelar','vermelho')}</div>`;
+}
+async function _vagasMudarStatus(vagaId,acao){
+  const v=_vagasDoMes.find(x=>x.id===vagaId);if(!v)return;
+  if(_vagasRegraAcoes(v)[acao]){showNotif('Ação indisponível',_vagasRegraAcoes(v)[acao],'var(--yellow)');return;}
+  const [ano,mes,dia]=v.data.split('-');const quando=`${dia}/${mes} ${(v.horario_inicio||'').slice(0,5)}–${(v.horario_fim||'').slice(0,5)}`;
+  const txt={desatribuir:`Tirar o entregador da vaga de ${quando}? Ela volta a ficar disponível.`,finalizar:`Finalizar a vaga de ${quando} como cumprida?`,cancelar:`Cancelar a vaga de ${quando}?${v.entregador_id?' O entregador será avisado.':''}`}[acao];
+  if(!confirm(txt))return;
+  // condição de status no filtro: não sobrescreve se a vaga mudou em outra tela
+  const de={desatribuir:'preenchida',finalizar:'preenchida',cancelar:v.status}[acao];
+  const para={desatribuir:{status:'disponivel',entregador_id:null},finalizar:{status:'finalizada'},cancelar:{status:'cancelada'}}[acao];
+  const res=await dbPatch('vagas_motoboy_fixo',{...para,updated_at:new Date().toISOString()},`?id=eq.${vagaId}&status=eq.${de}`);
+  if(res===null){showNotif('❌ Erro ao atualizar a vaga','','var(--red)');return;}
+  if(Array.isArray(res)&&!res.length){showNotif('⚠️ A vaga mudou','Atualizando a lista…','var(--yellow)');await _vagasCarregarMes();return;}
+  await logAcao('vaga_'+acao,{vaga_id:vagaId,loja_id:v.loja_id,data:v.data,horario:`${(v.horario_inicio||'').slice(0,5)}-${(v.horario_fim||'').slice(0,5)}`,status_anterior:v.status,entregador_id:v.entregador_id||null});
+  if(v.entregador_id&&(acao==='desatribuir'||acao==='cancelar')){
+    fetch(`${SB_URL}/functions/v1/notify-vaga`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({vaga_id:vagaId,entregador_id:v.entregador_id,acao:acao==='cancelar'?'cancelada':'desatribuida'})})
+      .then(r=>{if(!r.ok)console.warn('[notify-vaga] HTTP',r.status);}).catch(e=>console.warn('[notify-vaga]',e));
+  }
+  showNotif({desatribuir:'✅ Entregador removido da vaga',finalizar:'✅ Vaga finalizada',cancelar:'🗑️ Vaga cancelada'}[acao],'',acao==='cancelar'?'var(--red)':'var(--green)');
+  await _vagasCarregarMes();
+}
+function _vagasDesatribuir(id){return _vagasMudarStatus(id,'desatribuir');}
+function _vagasFinalizar(id){return _vagasMudarStatus(id,'finalizar');}
+function _vagasCancelar(id){return _vagasMudarStatus(id,'cancelar');}
 
 function _vagasAbrirAlocar(vagaId){
   let modal=document.getElementById('modal-vagas-alocar');
