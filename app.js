@@ -1255,30 +1255,36 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     button .icone{vertical-align:-0.2em;flex-shrink:0;}
     button .icone.btn-ico{margin-right:6px;}
 
-    /* ── MENU LATERAL QUE EMPURRA (>=700px) — ver _aplicarEstadoNav.
-       Mesma duração (.25s) na gaveta e no deslocamento do conteúdo.
-       700–899px: menu mais estreito (240px em vez de 280px) pra sobrar
-       espaço pro conteúdo; o limite de 700px tem que bater com
-       _NAV_MQ_DESKTOP no JS. ── */
-    .nav-sidebar{transition:left .25s ease !important;}
-    #app{transition:margin-left .25s ease;}
-    @media (min-width:700px){
-      body.nav-empurra #app{margin-left:280px;}
-    }
+    /* ── MENU LATERAL (desktop >=700px) — ver _navAplicarLayout ──
+       Menu fixo ABAIXO da barra do topo (--topbar-h, medido no JS); a barra
+       fica parada em largura total. Só os irmãos da .topbar dentro do #app
+       (conteúdo, banner) ganham margin-left. Expandido 280px (240px entre
+       700 e 899px), recolhido 64px só com ícones. Transição .25s. O limite
+       de 700px tem que bater com _NAV_MQ_DESKTOP no JS. */
+    .nav-sidebar{transition:left .25s ease, width .25s ease !important;}
+    .nav-item{position:relative;}
+    body.nav-desktop .nav-sidebar{left:0 !important;top:var(--topbar-h,58px) !important;height:calc(100vh - var(--topbar-h,58px)) !important;width:280px !important;z-index:90 !important;}
+    body.nav-desktop #app>:not(.topbar){margin-left:280px;transition:margin-left .25s ease;}
+    body.nav-desktop .topbar-logo{display:none !important;}
+    body.nav-desktop .nav-sidebar-header>button{display:none !important;}
     @media (min-width:700px) and (max-width:899px){
-      .nav-sidebar{width:240px;}
-      .nav-sidebar:not(.open){left:-240px;}
-      body.nav-empurra #app{margin-left:240px;}
+      body.nav-desktop:not(.nav-col) .nav-sidebar{width:240px !important;}
+      body.nav-desktop:not(.nav-col) #app>:not(.topbar){margin-left:240px;}
     }
-    /* Tela do mapa com o menu empurrando: a lista de pedidos nasce com
-       600px fixos (iniciarDragSidebar, flex-shrink:0) — com o conteúdo
-       estreitado pelo menu, em 800–980px ela engolia o mapa inteiro (0px)
-       e cortava a barra de Criar Entrega. Limita a lista a 45% da área
-       só enquanto o menu empurra; menu fechado/celular sem mudança.
-       min-width precisa ser zerado (!important): .sb-dark tem
-       min-width:600px e o arrasto manual grava min-width inline, e
-       min-width sempre vence max-width. */
-    body.nav-empurra #sidebar-mapa{max-width:45%;min-width:0 !important;}
+    /* recolhido: 64px, só ícones centralizados, nome no title (tooltip) */
+    body.nav-desktop.nav-col .nav-sidebar{width:64px !important;}
+    body.nav-desktop.nav-col #app>:not(.topbar){margin-left:64px;}
+    body.nav-col .nav-sidebar-header{justify-content:center;padding-left:0 !important;padding-right:0 !important;}
+    body.nav-col .nav-sidebar-header>div{display:none !important;}
+    body.nav-col .nav-sidebar-header img{height:32px !important;}
+    body.nav-col .nav-item{justify-content:center !important;padding:10px 0 !important;gap:0 !important;}
+    body.nav-col .nav-item-label,body.nav-col .nav-item-seta{display:none !important;}
+    body.nav-col .nav-badge{position:absolute;top:6px;right:10px;width:9px;height:9px;min-width:0;padding:0 !important;font-size:0 !important;border-radius:50% !important;margin:0 !important;box-shadow:0 0 0 2px var(--surface);}
+    /* tela do mapa: a lista de pedidos nasce com 600px fixos (.sb-dark
+       min-width + arrasto manual) e engolia o mapa com o menu ocupando
+       espaço — limita a 45% da área no modo desktop do menu. min-width
+       zerado com !important (min-width sempre vence max-width). */
+    body.nav-desktop #sidebar-mapa{max-width:45%;min-width:0 !important;}
 
     /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
        .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
@@ -3463,14 +3469,14 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   const _navBtn=item=>{
-    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
+    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     if(item.submenu){
       const ativo=item.submenu.some(x=>x.id===_navAtivo);
-      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span>${item.label}</span><span style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
+      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" title="${item.label}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span><span class="nav-item-seta" style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
     }
-    return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span>${item.label}</span>${badge}</button>`;
+    return`<button class="nav-item${_navAtivo===item.id?' active':''}" title="${item.label}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span>${badge}</button>`;
   };
-  const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span>Sair</span></button>`;
+  const sair=`<button class="nav-item" title="Sair" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span class="nav-item-label">Sair</span></button>`;
   if(currentPerfil==='loja'){
     // Loja: rodapé (Gestor de Pedidos, Configurações, Perfil — nessa ordem)
     // ancorado no fim do menu (margin-top:auto num wrapper flex coluna com
@@ -3481,37 +3487,60 @@ function renderNavSidebar(activeId){
   }
   body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${sair}</div>`;
 }
-// ── Menu lateral: EMPURRA o conteúdo no desktop, gaveta com overlay no
-// celular (2026-09-29). Telas >=700px (limite baixado de 1024 a pedido do
-// usuário; 700–899px usa menu de 240px, ver CSS "MENU LATERAL QUE EMPURRA"): body.nav-empurra desloca o #app (topbar + conteúdo) com
-// margin-left, sem overlay/blur — tudo continua visível e clicável, e o
-// menu só fecha pelo X ou pelo botão de menu (navegar não fecha).
-// Celular: comportamento antigo (overlay escuro, fecha ao navegar).
+// ── Menu lateral (2026-09-29, estilo portal do iFood) ────────────────
+// Desktop (>=700px, _NAV_MQ_DESKTOP): menu SEMPRE visível, fixo ABAIXO da
+// barra do topo, em dois modos — recolhido (64px, só ícones, nome no
+// tooltip) e expandido (280px; 240px entre 700 e 899px). O ☰ alterna entre
+// os dois; começa recolhido e lembra a escolha (localStorage, try/catch).
+// A barra do topo NÃO se mexe: só os irmãos dela dentro do #app (área de
+// conteúdo, banner de saldo) ganham margin-left (body.nav-desktop /
+// body.nav-col — ver CSS "MENU LATERAL"). Sem overlay; navegar não mexe no
+// menu. Celular (<700px): gaveta sobreposta com overlay, como antes.
 // Leaflet não percebe a mudança de largura sozinho: ao fim da transição
 // chama map.invalidateSize() e dispara 'resize' (gráficos etc.).
 const _NAV_MQ_DESKTOP=window.matchMedia('(min-width: 700px)');
 function _navModoEmpurrar(){return _NAV_MQ_DESKTOP.matches;}
 function _navAberto(){return document.getElementById('nav-sidebar')?.classList.contains('open');}
+let _navExpandido=false;
+try{_navExpandido=localStorage.getItem('lg_nav_expandido')==='1';}catch(e){}
 let _navResizeTimer=null;
+function _navAgendarResize(){
+  clearTimeout(_navResizeTimer);
+  _navResizeTimer=setTimeout(()=>{
+    try{if(typeof map!=='undefined'&&map)map.invalidateSize();}catch(e){}
+    try{if(typeof _npMap!=='undefined'&&_npMap)_npMap.invalidateSize();}catch(e){}
+    window.dispatchEvent(new Event('resize'));
+  },280); // transição de .25s + folga
+}
+// Aplica o estado atual nas classes. Só com alguém logado (antes do login
+// o menu não pode aparecer por cima da tela de login).
+function _navAplicarLayout(){
+  const sb=document.getElementById('nav-sidebar'),ov=document.getElementById('nav-overlay');if(!sb)return;
+  const antes=document.body.className;
+  const desk=_navModoEmpurrar()&&!!currentPerfil;
+  const tb=document.querySelector('#app .topbar');
+  if(tb&&tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',tb.offsetHeight+'px');
+  document.body.classList.toggle('nav-desktop',desk);
+  document.body.classList.toggle('nav-col',desk&&!_navExpandido);
+  if(desk){sb.classList.add('open');if(ov)ov.classList.remove('open');}
+  else if(antes.includes('nav-desktop')){sb.classList.remove('open');if(ov)ov.classList.remove('open');}
+  if(antes!==document.body.className)_navAgendarResize();
+}
+// Gaveta do celular (abrir/fechar com overlay).
 function _aplicarEstadoNav(aberto){
   const sb=document.getElementById('nav-sidebar'),ov=document.getElementById('nav-overlay');if(!sb)return;
-  const empurra=_navModoEmpurrar();
-  const mudouLargura=document.body.classList.contains('nav-empurra')!==(aberto&&empurra);
+  if(_navModoEmpurrar()&&currentPerfil){_navAplicarLayout();return;}
   sb.classList.toggle('open',aberto);
-  if(ov)ov.classList.toggle('open',aberto&&!empurra);
-  document.body.classList.toggle('nav-empurra',aberto&&empurra);
-  if(mudouLargura){
-    clearTimeout(_navResizeTimer);
-    _navResizeTimer=setTimeout(()=>{
-      try{if(typeof map!=='undefined'&&map)map.invalidateSize();}catch(e){}
-      try{if(typeof _npMap!=='undefined'&&_npMap)_npMap.invalidateSize();}catch(e){}
-      window.dispatchEvent(new Event('resize'));
-    },280); // transição de .25s + folga
-  }
+  if(ov)ov.classList.toggle('open',aberto);
 }
-_NAV_MQ_DESKTOP.addEventListener('change',()=>_aplicarEstadoNav(_navAberto()));
+_NAV_MQ_DESKTOP.addEventListener('change',()=>{if(currentPerfil){renderNavSidebar(_navAtivo);_navAplicarLayout();}});
+window.addEventListener('resize',()=>{const tb=document.querySelector('#app .topbar');if(tb&&tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',tb.offsetHeight+'px');});
 function abrirNavSidebar(){
-  if(_navModoEmpurrar()&&_navAberto()){fecharNavSidebar();return;} // botão de menu alterna no desktop
+  if(_navModoEmpurrar()&&currentPerfil){ // ☰ alterna recolhido/expandido
+    _fecharNavPopover();_navExpandido=!_navExpandido;
+    try{localStorage.setItem('lg_nav_expandido',_navExpandido?'1':'0');}catch(e){}
+    renderNavSidebar(_navAtivo);_navAplicarLayout();return;
+  }
   renderNavSidebar(_navAtivo);_aplicarEstadoNav(true);
 }
 // Menu flutuante dos itens do rodapé da loja com submenu (Configurações,
@@ -3535,8 +3564,9 @@ function _abrirNavPopover(ev,itemId){
 }
 function _fecharNavPopover(){document.getElementById('nav-popover')?.remove();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')_fecharNavPopover();});
-function fecharNavSidebar(){_fecharNavPopover();_aplicarEstadoNav(false);}
-function navGoTab(id){if(_navModoEmpurrar()){_fecharNavPopover();goTab(id);return;}fecharNavSidebar();setTimeout(()=>goTab(id),50);}
+// No desktop o menu é fixo (recolhido/expandido) — "fechar" não se aplica.
+function fecharNavSidebar(){_fecharNavPopover();if(_navModoEmpurrar()&&currentPerfil)return;_aplicarEstadoNav(false);}
+function navGoTab(id){if(_navModoEmpurrar()&&currentPerfil){_fecharNavPopover();goTab(id);return;}fecharNavSidebar();setTimeout(()=>goTab(id),50);}
 
 async function fazerLogin(){
   const email=document.getElementById('login-email').value.trim(),senha=document.getElementById('login-senha').value,perfil=document.getElementById('login-perfil').value;
@@ -3581,6 +3611,7 @@ function logout(){
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
+  document.body.classList.remove('nav-desktop','nav-col');_fecharNavPopover();document.getElementById('nav-sidebar')?.classList.remove('open');document.getElementById('nav-overlay')?.classList.remove('open');
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
   document.getElementById('login-email').value='';document.getElementById('login-senha').value='';
 }
@@ -3606,7 +3637,7 @@ function goTab(id){
   // Emoji 🗺️ do botão vem do HTML de produção — troca pelo ícone Lucide
   // (mantém o <span class="lg-btn-label"> que some no celular), uma vez.
   if(_btnMapaTopo&&!_btnMapaTopo.querySelector('svg.icone')){const _lbl=_btnMapaTopo.querySelector('.lg-btn-label');_btnMapaTopo.innerHTML=_icone('map',16)+(_lbl?' '+_lbl.outerHTML:'');}
-  _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
+  _navAtivo=id;renderNavSidebar(id);if(_navModoEmpurrar())_navAplicarLayout();clearInterval(realtimeInterval);
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
