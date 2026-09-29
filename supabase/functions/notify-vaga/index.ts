@@ -2,6 +2,14 @@
 // CANCELADA ou quando ele é DESATRIBUÍDO dela (painel: Entrega Dedicada →
 // card da vaga). 2026-09-29.
 //
+// acao 'nova' (Tarefa D): vaga recém-criada → "Nova vaga disponível" pros
+// elegíveis (SQL entregadores_para_vaga: online, moto, no raio, respeita clã,
+// não bloqueado na loja, sem vaga no mesmo horário). Chamada pelo gatilho
+// tg_aviso_vaga_nova (migrations/aviso_vaga_nova.sql). tipo 'nova_vaga' = mesmo
+// canal/som/vibração do pedido novo no app. Só envia se
+// configuracoes.vaga_nova_push_ativo = 'true' (app antigo não conhece o tipo)
+// e uma vez só por vaga (aviso_nova_enviado_em marcado antes de enviar).
+//
 // Chamada pelo app.js com o mesmo padrão de auth das outras functions de
 // ação do painel (x-webhook-secret, verify_jwt=false). Como esse segredo é
 // visível no app.js, a function NÃO aceita texto livre: o título/corpo são
@@ -60,11 +68,56 @@ async function getFcmAccessToken(): Promise<string> {
   return (await tokenRes.json()).access_token;
 }
 
+const brl = (n: unknown) => `R$ ${Number(n ?? 0).toFixed(2).replace(".", ",")}`;
+
+async function avisarVagaNova(vagaId: string) {
+  const { data: cfg } = await supabase.from("configuracoes").select("valor").eq("chave", "vaga_nova_push_ativo").maybeSingle();
+  if (String(cfg?.valor ?? "").toLowerCase() !== "true") {
+    return json({ ok: false, motivo: "aviso de vaga nova desligado (configuracoes.vaga_nova_push_ativo)" });
+  }
+  // Marca ANTES de enviar, de forma atômica: só a primeira chamada pra uma
+  // vaga disponível criada há no máximo 2 min passa daqui.
+  const desde = new Date(Date.now() - JANELA_MS).toISOString();
+  const { data: marcada, error: marcarErr } = await supabase.from("vagas_motoboy_fixo")
+    .update({ aviso_nova_enviado_em: new Date().toISOString() })
+    .eq("id", vagaId).eq("status", "disponivel").is("entregador_id", null)
+    .is("aviso_nova_enviado_em", null).gte("created_at", desde)
+    .select("id,data,horario_inicio,horario_fim,valor,loja_id");
+  if (marcarErr) return json({ ok: false, motivo: marcarErr.message }, 500);
+  const vaga = marcada?.[0];
+  if (!vaga) return json({ ok: false, motivo: "vaga já avisada, não disponível ou antiga" }, 409);
+
+  const { data: loja } = await supabase.from("lojas").select("nome").eq("id", vaga.loja_id).single();
+  const [, m, d] = String(vaga.data).split("-");
+  const periodo = `${String(vaga.horario_inicio).slice(0, 5)}–${String(vaga.horario_fim).slice(0, 5)}`;
+  const titulo = "Nova vaga disponível";
+  const corpo = `${loja?.nome ?? "Loja"} · ${d}/${m} · ${periodo} · ${brl(vaga.valor)}`;
+
+  const { data: alvos, error: alvosErr } = await supabase.rpc("entregadores_para_vaga", { p_vaga_id: vagaId });
+  if (alvosErr) return json({ ok: false, motivo: alvosErr.message }, 500);
+  if (!alvos?.length || !FCM_PROJECT) return json({ ok: true, enviados: 0 });
+
+  const accessToken = await getFcmAccessToken();
+  let enviados = 0;
+  for (const e of alvos as { id: string; fcm_token: string }[]) {
+    const res = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_PROJECT}/messages:send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ message: { token: e.fcm_token, data: { tipo: "nova_vaga", titulo, corpo, vaga_id: vagaId }, android: { priority: "HIGH" } } }),
+    });
+    if (res.ok) enviados++;
+    else console.error(`[notify-vaga] erro FCM (nova, entregador ${e.id}):`, await res.text());
+  }
+  console.log(`[notify-vaga] vaga nova ${vagaId}: ${enviados}/${alvos.length} avisados`);
+  return json({ ok: true, enviados, elegiveis: alvos.length });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
   if (req.headers.get("x-webhook-secret") !== WEBHOOK_SECRET) return json({ ok: false, motivo: "não autorizado" }, 401);
   try {
     const { vaga_id, entregador_id, acao } = await req.json();
+    if (acao === "nova" && vaga_id) return await avisarVagaNova(String(vaga_id));
     if (!vaga_id || !entregador_id || !["cancelada", "desatribuida"].includes(acao)) {
       return json({ ok: false, motivo: "vaga_id, entregador_id e acao (cancelada|desatribuida) obrigatórios" }, 400);
     }
