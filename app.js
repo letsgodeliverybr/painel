@@ -1213,6 +1213,21 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .page-title .icone,.modal-title .icone{vertical-align:-0.18em;margin-right:2px;flex-shrink:0;}
     .page-title .icone{color:var(--accent);-webkit-text-fill-color:initial;}
 
+    /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
+       .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
+       100vh); o wrapper ocupa no mínimo a altura toda dele e empurra o
+       grupo de baixo com margin-top:auto. Em tela baixa o conteúdo passa
+       da altura e o corpo rola normalmente (min-height, não height). */
+    .nav-loja-wrap{display:flex;flex-direction:column;min-height:100%;}
+    .nav-loja-base{margin-top:auto;border-top:1px solid var(--border);padding-top:8px;}
+    /* Em flex as margens verticais não colapsam: o tema dá margin:2px 8px
+       (!important) em todo .nav-item, que no fluxo normal vira 2px entre
+       itens e aqui viraria 4px. Zera o topo a partir do 2º item pra manter
+       o espaçamento idêntico ao de adm/suporte; e garante 16px mínimos
+       antes da linha quando a tela é baixa (margin-top:auto vira 0). */
+    .nav-loja-wrap>.nav-item~.nav-item{margin-top:0 !important;}
+    .nav-loja-wrap>.nav-item:last-of-type{margin-bottom:16px !important;}
+
     /* ── MENU FLUTUANTE DO RODAPÉ DA LOJA (Configurações / Perfil) ──
        Tem que ficar AQUI (CSS injetado pelo app.js), não no index.html:
        produção (sistema.letsgodelivery.com.br) usa um HTML próprio que só
@@ -3373,8 +3388,17 @@ function renderNavSidebar(activeId){
     return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span>${item.label}</span>${badge}</button>`;
   };
   const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span>Sair</span></button>`;
-  const rodape=currentPerfil==='loja'?NAV_ITEMS_LOJA_RODAPE.map(_navBtn).join(''):sair;
-  body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${rodape}</div>`;
+  if(currentPerfil==='loja'){
+    // Loja: Configurações + Perfil ancorados no fim do menu (margin-top:auto
+    // num wrapper flex coluna com min-height:100% do corpo rolável);
+    // Gestor de Pedidos fica no grupo de cima, depois dos itens principais.
+    // Só a loja usa esse wrapper — adm/suporte continuam no HTML abaixo.
+    const topo=[...items,...NAV_ITEMS_LOJA_RODAPE.filter(i=>!i.submenu)];
+    const base=NAV_ITEMS_LOJA_RODAPE.filter(i=>i.submenu);
+    body.innerHTML=`<div class="nav-loja-wrap">${topo.map(_navBtn).join('')}<div class="nav-loja-base">${base.map(_navBtn).join('')}</div></div>`;
+    return;
+  }
+  body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${sair}</div>`;
 }
 function abrirNavSidebar(){renderNavSidebar(_navAtivo);document.getElementById('nav-sidebar').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}
 // Menu flutuante dos itens do rodapé da loja com submenu (Configurações,
