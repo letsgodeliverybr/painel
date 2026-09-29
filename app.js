@@ -1255,13 +1255,30 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     button .icone{vertical-align:-0.2em;flex-shrink:0;}
     button .icone.btn-ico{margin-right:6px;}
 
-    /* ── MENU LATERAL QUE EMPURRA (desktop >=1024px) — ver _aplicarEstadoNav.
-       Mesma duração (.25s) na gaveta e no deslocamento do conteúdo. ── */
+    /* ── MENU LATERAL QUE EMPURRA (>=700px) — ver _aplicarEstadoNav.
+       Mesma duração (.25s) na gaveta e no deslocamento do conteúdo.
+       700–899px: menu mais estreito (240px em vez de 280px) pra sobrar
+       espaço pro conteúdo; o limite de 700px tem que bater com
+       _NAV_MQ_DESKTOP no JS. ── */
     .nav-sidebar{transition:left .25s ease !important;}
     #app{transition:margin-left .25s ease;}
-    @media (min-width:1024px){
+    @media (min-width:700px){
       body.nav-empurra #app{margin-left:280px;}
     }
+    @media (min-width:700px) and (max-width:899px){
+      .nav-sidebar{width:240px;}
+      .nav-sidebar:not(.open){left:-240px;}
+      body.nav-empurra #app{margin-left:240px;}
+    }
+    /* Tela do mapa com o menu empurrando: a lista de pedidos nasce com
+       600px fixos (iniciarDragSidebar, flex-shrink:0) — com o conteúdo
+       estreitado pelo menu, em 800–980px ela engolia o mapa inteiro (0px)
+       e cortava a barra de Criar Entrega. Limita a lista a 45% da área
+       só enquanto o menu empurra; menu fechado/celular sem mudança.
+       min-width precisa ser zerado (!important): .sb-dark tem
+       min-width:600px e o arrasto manual grava min-width inline, e
+       min-width sempre vence max-width. */
+    body.nav-empurra #sidebar-mapa{max-width:45%;min-width:0 !important;}
 
     /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
        .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
@@ -3465,14 +3482,14 @@ function renderNavSidebar(activeId){
   body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${sair}</div>`;
 }
 // ── Menu lateral: EMPURRA o conteúdo no desktop, gaveta com overlay no
-// celular (2026-09-29). Desktop (>=1024px, onde sobra espaço pros 280px do
-// menu): body.nav-empurra desloca o #app (topbar + conteúdo) com
+// celular (2026-09-29). Telas >=700px (limite baixado de 1024 a pedido do
+// usuário; 700–899px usa menu de 240px, ver CSS "MENU LATERAL QUE EMPURRA"): body.nav-empurra desloca o #app (topbar + conteúdo) com
 // margin-left, sem overlay/blur — tudo continua visível e clicável, e o
 // menu só fecha pelo X ou pelo botão de menu (navegar não fecha).
 // Celular: comportamento antigo (overlay escuro, fecha ao navegar).
 // Leaflet não percebe a mudança de largura sozinho: ao fim da transição
 // chama map.invalidateSize() e dispara 'resize' (gráficos etc.).
-const _NAV_MQ_DESKTOP=window.matchMedia('(min-width: 1024px)');
+const _NAV_MQ_DESKTOP=window.matchMedia('(min-width: 700px)');
 function _navModoEmpurrar(){return _NAV_MQ_DESKTOP.matches;}
 function _navAberto(){return document.getElementById('nav-sidebar')?.classList.contains('open');}
 let _navResizeTimer=null;
