@@ -124,7 +124,9 @@ const ICONES_LUCIDE={
   'chevron-left':'<path d="m15 18-6-6 6-6"/>',
   'circle-play':'<path d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"/><circle cx="12" cy="12" r="10"/>',
   'house':'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
-  'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>'
+  'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+  'moon':'<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
+  'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'
 };
 function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -1302,6 +1304,30 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     /* tooltip do menu recolhido (ver _navTipMostrar): aparece sem atraso */
     .nav-tip{position:fixed;display:none;transform:translateY(-50%);z-index:1400;background:#111827;color:#f9fafb;font-size:12px;font-weight:600;font-family:Inter,sans-serif;line-height:1;padding:7px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:none;}
     .nav-tip::before{content:'';position:absolute;left:-4px;top:50%;width:8px;height:8px;background:#111827;transform:translateY(-50%) rotate(45deg);}
+
+    /* Entrega Dedicada: painel do dia abaixo do calendário (ver _vagasAbrirDia) */
+    .vg-painel-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+    @media (max-width:760px){.vg-painel-grid{grid-template-columns:1fr}}
+    .vg-form-bloqueado fieldset{opacity:.55}
+    .vg-periodos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+    .vg-periodo{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;min-width:0;transition:border-color .15s,background .15s}
+    /* o card é um <label> dentro de .fi: vence o .fi label do tema (uppercase,
+       11px, display:block, com !important) */
+    html .fi label.vg-periodo{display:flex !important;text-transform:none !important;letter-spacing:0 !important;font-size:13px !important;font-weight:400 !important;margin:0 !important;color:var(--text) !important}
+    html .fi label.vg-periodo:not(:has(input:checked)){border-color:rgba(255,255,255,.16) !important;background:rgba(255,255,255,.035) !important}
+    html .fi label.vg-periodo:not(:has(input:checked)):hover{border-color:rgba(255,255,255,.3) !important}
+    .vg-periodo input{position:absolute;opacity:0;pointer-events:none}
+    .vg-periodo-caixa{flex-shrink:0;width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text3);display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s}
+    .vg-periodo-icone{flex-shrink:0;display:inline-flex;color:var(--text2)}
+    .vg-periodo-texto{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+    .vg-periodo-nome{font-size:13px;font-weight:700;color:var(--text)}
+    .vg-periodo-hora{font-size:12px;color:var(--text3);white-space:nowrap}
+    .vg-periodo:has(input:checked){border-color:var(--accent);background:rgba(26,86,219,.12)}
+    .vg-periodo:has(input:checked) .vg-periodo-caixa{background:var(--accent);border-color:var(--accent);color:#fff}
+    .vg-periodo:has(input:checked) .vg-periodo-icone{color:var(--accent)}
+    .vg-periodo:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+    fieldset:disabled .vg-periodo{cursor:not-allowed}
+    @media (max-width:380px){.vg-periodos{grid-template-columns:1fr}}
 
     /* tela do mapa: a lista de pedidos nasce com 600px fixos (.sb-dark
        min-width + arrasto manual) e engolia o mapa com o menu ocupando
@@ -9749,7 +9775,9 @@ async function renderVagasPage(){
         <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block"></span> Só vagas preenchidas</div>
       </div>
     </div></div>
+    <div class="card" id="vagas-dia-painel" style="margin-top:16px"></div>
   </div>`;
+  _vagasDiaAberto=_dataHojeBrasilia(); // abre com o dia de hoje selecionado
   if(currentPerfil!=='loja'){
     _vagasLojas=await db('lojas','GET',null,'?ativo=eq.true&select=id,nome,endereco&order=nome.asc');
   } else {
@@ -9763,6 +9791,8 @@ function _vagasMudarMes(delta){
   _vagasMes+=delta;
   if(_vagasMes<0){_vagasMes=11;_vagasAno--;}
   if(_vagasMes>11){_vagasMes=0;_vagasAno++;}
+  const pref=`${_vagasAno}-${String(_vagasMes+1).padStart(2,'0')}-`,hoje=_dataHojeBrasilia();
+  if(!(_vagasDiaAberto||'').startsWith(pref))_vagasDiaAberto=hoje.startsWith(pref)?hoje:pref+'01';
   _vagasCarregarMes();
 }
 
@@ -9783,6 +9813,7 @@ async function _vagasCarregarMes(){
   const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const lbl=document.getElementById('vagas-mes-label');if(lbl)lbl.textContent=`${meses[_vagasMes]} ${_vagasAno}`;
   _vagasRenderCalendario();
+  if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto,true);
 }
 
 function _vagasRenderCalendario(){
@@ -9802,8 +9833,9 @@ function _vagasRenderCalendario(){
     const temAlguma=vagasDoDia.length>0;
     const cor=temDisponivel?'#22c55e':temAlguma?'#6b7280':'transparent';
     const ehFeriado=_feriadosCache.some(f=>f.data===dataStr);
-    html+=`<div onclick="_vagasAbrirDia('${dataStr}')" style="cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 4px;min-height:56px;background:var(--surface2);position:relative;text-align:center">
-      <div style="font-size:13px;font-weight:600;color:${ehFeriado?'#f59e0b':'var(--text)'}">${dia}</div>
+    const sel=dataStr===_vagasDiaAberto,ehHoje=dataStr===_dataHojeBrasilia();
+    html+=`<div onclick="_vagasAbrirDia('${dataStr}')" data-dia="${dataStr}" style="cursor:pointer;border:${sel?'2px solid var(--accent)':'1px solid var(--border)'};border-radius:8px;padding:${sel?'7px 3px':'8px 4px'};min-height:56px;background:${sel?'rgba(26,86,219,.16)':'var(--surface2)'};position:relative;text-align:center">
+      <div style="font-size:13px;font-weight:${sel||ehHoje?800:600};color:${ehFeriado?'#f59e0b':sel?'var(--accent)':'var(--text)'}">${dia}${ehHoje?'<div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.3px">HOJE</div>':''}</div>
       ${temAlguma?`<div style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${cor};display:inline-block"></span><span style="font-size:10px;color:var(--text3)">${vagasDoDia.length}</span></div>`:''}
     </div>`;
   }
@@ -9821,7 +9853,7 @@ function _vagasRenderCard(v){
         ${currentPerfil!=='loja'?`<div style="font-size:13px;font-weight:700;color:var(--text)">${loja?.nome||'—'}</div>`:''}
         <div style="font-size:12px;color:var(--text2)">${v.endereco||'—'}</div>
         <div style="font-size:12px;color:var(--text3)">${(v.horario_inicio||'').slice(0,5)} - ${(v.horario_fim||'').slice(0,5)} · R$ ${parseFloat(v.valor).toFixed(2)}</div>
-        ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px">🛵 ${entregador?.nome||'Motoboy alocado'}</div>`:''}
+        ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:5px">${_icone('bike',14)} ${entregador?.nome||'Motoboy alocado'}</div>`:''}
       </div>
       ${badge}
     </div>
@@ -9829,36 +9861,53 @@ function _vagasRenderCard(v){
   </div>`;
 }
 
-function _vagasAbrirDia(dataStr){
+// Painel do dia (2026-09-29): antes era um modal (#modal-vagas-dia); agora o
+// conteúdo fica na própria tela, abaixo do calendário. Mesma lógica de
+// criação (_vagasSalvar), preço (_vagasCalcularValor) e alocação. Dia
+// passado: mostra as vagas mas desabilita o formulário ("Dia já passou").
+// semRolar=true quando é só um re-render (troca de mês / após salvar).
+function _vagasAbrirDia(dataStr,semRolar){
   _vagasDiaAberto=dataStr;
-  let modal=document.getElementById('modal-vagas-dia');
-  if(!modal){modal=document.createElement('div');modal.id='modal-vagas-dia';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const painel=document.getElementById('vagas-dia-painel');if(!painel)return;
+  document.querySelectorAll('#vagas-calendario [data-dia]').forEach(el=>{const sel=el.dataset.dia===dataStr;el.style.border=sel?'2px solid var(--accent)':'1px solid var(--border)';el.style.padding=sel?'7px 3px':'8px 4px';el.style.background=sel?'rgba(26,86,219,.16)':'var(--surface2)';const n=el.firstElementChild;if(n&&!_feriadosCache.some(f=>f.data===el.dataset.dia))n.style.color=sel?'var(--accent)':'var(--text)';});
   const [ano,mes,dia]=dataStr.split('-');
+  const passado=dataStr<_dataHojeBrasilia();
+  const diasSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const dow=diasSem[new Date(Date.UTC(+ano,+mes-1,+dia)).getUTCDay()];
   const vagasDoDia=_vagasDoMes.filter(v=>v.data===dataStr);
   const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}" onchange="_vagasAtualizarEnderecoLoja()"><option value="">Selecione a loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}" data-endereco="${(l.endereco||'').replace(/"/g,'&quot;')}">${l.nome}</option>`).join('')}</select>`;
   const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
-  modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">${_icone('calendar-days',18)} ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">${_icone('x',16)}</button></div>
-    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
-      <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
-      <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">➕ Nova vaga em ${dia}/${mes}/${ano}</div>
-        ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
-        <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione a loja acima'}" style="${_scInput()};opacity:.7"/></div>
-        <div class="fi" style="margin-bottom:10px"><label>Período</label>
-          <div style="display:flex;gap:16px;margin-top:6px">
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer"><input type="checkbox" id="vg-periodo-almoco"/> 🍽️ Almoço (10:00–14:00)</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer"><input type="checkbox" id="vg-periodo-jantar"/> 🌙 Jantar (18:00–23:59)</label>
-          </div>
-        </div>
-        <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente, por vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
-        <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">${_icone('check',16,'btn-ico')}Criar Vaga</button>
-        <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
+  const periodo=(id,icone,nome,hora)=>`<label class="vg-periodo" for="${id}"><input type="checkbox" id="${id}"/><span class="vg-periodo-caixa">${_icone('check',14)}</span><span class="vg-periodo-icone">${_icone(icone,18)}</span><span class="vg-periodo-texto"><span class="vg-periodo-nome">${nome}</span><span class="vg-periodo-hora">${hora}</span></span></label>`;
+  painel.innerHTML=`<div style="padding:18px 20px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <span style="color:var(--accent);display:inline-flex">${_icone('calendar-days',20)}</span>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">${dia}/${mes}/${ano}</div>
+        <div style="font-size:12.5px;color:var(--text3)">${dow.replace(/^./,c=>c.toUpperCase())}</div>
+        ${passado?`<span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px">Dia já passou</span>`:''}
       </div>
-    </div>
-  </div>`;
-  modal.classList.add('open');
+      <div class="vg-painel-grid">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Vagas do dia${vagasDoDia.length?` (${vagasDoDia.length})`:''}</div>
+          <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:14px;background:var(--surface2);border-radius:8px">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
+        </div>
+        <div class="vg-form${passado?' vg-form-bloqueado':''}">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova vaga em ${dia}/${mes}/${ano}</div>
+          ${passado?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_icone('lock',16)} Dia já passou — não é possível criar vagas nesta data.</div>`:''}
+          <fieldset ${passado?'disabled':''} style="border:none;padding:0;margin:0;min-width:0">
+            ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
+            <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione a loja acima'}" style="${_scInput()};opacity:.7"/></div>
+            <div class="fi" style="margin-bottom:10px"><label>Período</label>
+              <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','10:00–14:00')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
+            </div>
+            <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente, por vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
+            <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:${passado?'not-allowed':'pointer'};width:100%;opacity:${passado?.5:1};display:inline-flex;align-items:center;justify-content:center">${_icone('check',16,'btn-ico')}Criar Vaga</button>
+          </fieldset>
+          <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
+        </div>
+      </div>
+    </div>`;
+  if(!semRolar&&window.innerWidth<700)painel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function _vagasAtualizarEnderecoLoja(){
@@ -9888,8 +9937,7 @@ async function _vagasSalvar(dataStr){
   }
   if(!erro){
     if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${periodos.length>1?'Vagas criadas!':'Vaga criada!'}</span>`;
-    await _vagasCarregarMes();
-    setTimeout(()=>_vagasAbrirDia(dataStr),300);
+    await _vagasCarregarMes(); // re-renderiza calendário e painel do dia
   } else {
     if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao criar vaga.</span>';
   }
@@ -9934,7 +9982,7 @@ async function _vagasConfirmarAlocar(vagaId,entregadorId){
   showNotif('✅ Entregador alocado!','');
   document.getElementById('modal-vagas-alocar')?.classList.remove('open');
   await _vagasCarregarMes();
-  if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto);
+  if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto,true);
 }
 
 // Só admin (2026-09-29): feriados_importantes é global (sem loja_id) e
