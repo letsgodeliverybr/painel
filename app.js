@@ -119,7 +119,12 @@ const ICONES_LUCIDE={
   'info':'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   'lock':'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   'triangle-alert':'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
-  'wrench':'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>'
+  'wrench':'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
+  'arrow-right':'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+  'circle-play':'<path d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"/><circle cx="12" cy="12" r="10"/>',
+  'house':'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>'
 };
 function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -134,7 +139,7 @@ const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'com
 // continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
 // Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
 // renderVagasPage, renderFaturasLojaPage, renderMeuCardapioPage).
-const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'loja-clientes',icon:'users',label:'Clientes'},{id:'meu-cardapio',icon:'utensils',label:'Cardápio'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'faturas',icon:'receipt',label:'Financeiro'}];
+const NAV_ITEMS_LOJA_ADM=[{id:'loja-inicio',icon:'house',label:'Início'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'loja-clientes',icon:'users',label:'Clientes'},{id:'meu-cardapio',icon:'utensils',label:'Cardápio'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'faturas',icon:'receipt',label:'Financeiro'}];
 // Rodapé fixo do menu da loja (padrão iFood: Gestor de Pedidos /
 // Configurações / Perfil sempre embaixo, separados do menu principal por
 // uma linha). "Gestor de Pedidos" é o antigo item "Mapa ao Vivo" — mesma
@@ -3660,7 +3665,7 @@ function logout(){
   }catch{}
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
-  currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();
+  currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();_navUltimoLogin=null;clearInterval(_liTimer);
   document.body.classList.remove('nav-desktop','nav-col');_fecharNavPopover();document.getElementById('nav-sidebar')?.classList.remove('open');document.getElementById('nav-overlay')?.classList.remove('open');
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
   document.getElementById('login-email').value='';document.getElementById('login-senha').value='';
@@ -3677,7 +3682,13 @@ function renderTabs(){
 function _renderLojaEmBrevePage(icon,titulo,texto){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
 }
+let _navUltimoLogin=null;
 function goTab(id){
+  // Loja entra pela tela Início: o login (de produção e deste arquivo)
+  // sempre chama goTab('mapa') — na PRIMEIRA navegação de cada login a loja
+  // é desviada pra 'loja-inicio' antes de qualquer render (sem flash).
+  const _chaveLogin=currentUser?(currentUser.id+'|'+currentPerfil):null;
+  if(_chaveLogin&&_chaveLogin!==_navUltimoLogin){_navUltimoLogin=_chaveLogin;if(currentPerfil==='loja'&&id==='mapa')id='loja-inicio';}
   // Botão "Mapa ao Vivo" do topo: visível pros 3 perfis (2026-09-29; antes
   // só adm). Precisa ser aqui: o HTML de produção tem login próprio que
   // esconde o botão pra quem não é adm e nunca chama o fazerLogin() deste
@@ -3688,7 +3699,7 @@ function goTab(id){
   // volta pra tela inicial do perfil (adm: Visão Executiva; loja/suporte:
   // mapa). Liga uma vez só.
   const _logoTopo=document.querySelector('#app .topbar-logo');
-  if(_logoTopo&&!_logoTopo.dataset.inicio){_logoTopo.dataset.inicio='1';_logoTopo.removeAttribute('onclick');_logoTopo.title='Início';_logoTopo.addEventListener('click',()=>goTab(currentPerfil==='adm'?'ceo':'mapa'));}
+  if(_logoTopo&&!_logoTopo.dataset.inicio){_logoTopo.dataset.inicio='1';_logoTopo.removeAttribute('onclick');_logoTopo.title='Início';_logoTopo.addEventListener('click',()=>goTab(currentPerfil==='adm'?'ceo':currentPerfil==='loja'?'loja-inicio':'mapa'));}
   // Emoji 🗺️ do botão vem do HTML de produção — troca pelo ícone Lucide
   // (mantém o <span class="lg-btn-label"> que some no celular), uma vez.
   if(_btnMapaTopo&&!_btnMapaTopo.querySelector('svg.icone')){const _lbl=_btnMapaTopo.querySelector('.lg-btn-label');_btnMapaTopo.innerHTML=_icone('map',16)+(_lbl?' '+_lbl.outerHTML:'');}
@@ -3696,7 +3707,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -12098,6 +12109,161 @@ async function renderLojaRelatorioPage(){
 let _mcCatSelecionada=null;
 let _mcCategorias=[];
 let _mcProdutos=[];
+
+// ── Início (visão loja) — 2026-09-29 ────────────────────────────────────
+// Tela inicial da loja, inspirada na home do portal do iFood: carrossel de
+// destaques, atalhos ("Comece por aqui"), resumo do dia, aviso de fatura em
+// aberto e bloco de conteúdos (só aparece quando houver itens em
+// LOJA_INICIO_CONTEUDOS). Vira a tela de entrada da loja: goTab troca o
+// primeiro 'mapa' depois do login por 'loja-inicio' (o login de produção
+// sempre chama goTab('mapa')), sem desenhar o mapa antes.
+// Privacidade: todas as consultas filtram loja_id=currentUser.loja_id.
+// Sem imagens nem chamadas externas: ilustrações em SVG com ICONES_LUCIDE.
+// Conteúdos para você: {titulo, descricao, url} — preencher quando houver
+// vídeos/tutoriais; vazio = bloco escondido.
+const LOJA_INICIO_CONTEUDOS=[];
+const _LOJA_INICIO_SLIDES=[
+  {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
+  {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
+  {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
+];
+let _liSlide=0,_liTimer=null,_liPausado=false;
+function _liEstilos(){
+  if(document.getElementById('loja-inicio-styles'))return;
+  const st=document.createElement('style');st.id='loja-inicio-styles';
+  st.textContent=`
+    .li-wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    .li-carrossel{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--border);background:linear-gradient(135deg,#0f1b3d 0%,#101522 55%,#0d1117 100%)}
+    .li-trilho{display:flex;transition:transform .5s ease}
+    .li-slide{min-width:100%;display:flex;align-items:center;gap:28px;padding:32px 64px;box-sizing:border-box;min-height:230px}
+    .li-slide-texto{flex:1;min-width:0}
+    .li-slide-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#93b4ff;margin-bottom:10px}
+    .li-slide-titulo{font-size:22px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:10px}
+    .li-slide-desc{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px;max-width:520px}
+    .li-slide-arte{flex-shrink:0;width:220px;height:170px}
+    .li-seta{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(13,17,23,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+    .li-seta:hover{background:rgba(26,86,219,.5)}
+    .li-pontos{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:2}
+    .li-ponto{width:8px;height:8px;border-radius:50%;border:none;padding:0;background:rgba(255,255,255,.28);cursor:pointer;transition:width .2s,background .2s}
+    .li-ponto.ativo{width:22px;border-radius:4px;background:#fff}
+    .li-secao-titulo{font-size:15px;font-weight:700;color:var(--text);margin:4px 0 0}
+    .li-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .li-card{padding:20px 22px;display:flex;gap:16px;align-items:flex-start}
+    .li-card-icone{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:rgba(26,86,219,.14);color:var(--accent);display:flex;align-items:center;justify-content:center}
+    .li-card-titulo{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+    .li-card-texto{font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:14px}
+    .li-aviso{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;flex-wrap:wrap}
+    .li-btn{display:inline-flex;align-items:center;gap:6px;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;transition:background .15s}
+    .li-btn:hover{background:#1646b5}
+    .li-btn .icone.btn-ico{margin-right:0}
+    @media (max-width:760px){
+      .li-slide{flex-direction:column;align-items:flex-start;padding:24px 22px 40px;min-height:0}
+      .li-slide-arte{width:150px;height:110px;order:-1}
+      .li-slide-titulo{font-size:18px}
+      .li-seta{display:none}
+      .li-grid2{grid-template-columns:1fr}
+    }`;
+  document.head.appendChild(st);
+}
+// Ilustração do slide: círculos em gradiente + ícone Lucide grande (SVG puro).
+function _liArte(icone,i){
+  const id='liG'+i;
+  return `<svg viewBox="0 0 220 170" width="100%" height="100%" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A56DB"/><stop offset="1" stop-color="#6d8dff"/></linearGradient></defs>
+    <circle cx="120" cy="86" r="70" fill="url(#${id})" opacity=".18"/>
+    <circle cx="120" cy="86" r="50" fill="url(#${id})" opacity=".35"/>
+    <circle cx="36" cy="40" r="6" fill="#6d8dff" opacity=".5"/><circle cx="196" cy="132" r="9" fill="#1A56DB" opacity=".45"/><circle cx="192" cy="30" r="4" fill="#fff" opacity=".35"/>
+    <rect x="18" y="118" width="56" height="10" rx="5" fill="#fff" opacity=".12"/><rect x="18" y="134" width="36" height="10" rx="5" fill="#fff" opacity=".08"/>
+    <svg x="88" y="54" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONES_LUCIDE[icone]||''}</svg>
+  </svg>`;
+}
+function _liIrSlide(n){
+  const t=document.getElementById('li-trilho');if(!t)return;
+  const total=_LOJA_INICIO_SLIDES.length;_liSlide=(n+total)%total;
+  t.style.transform=`translateX(-${_liSlide*100}%)`;
+  document.querySelectorAll('#li-carrossel .li-ponto').forEach((p,i)=>p.classList.toggle('ativo',i===_liSlide));
+}
+function _liIniciarTimer(){
+  clearInterval(_liTimer);
+  _liTimer=setInterval(()=>{if(!document.getElementById('li-trilho')){clearInterval(_liTimer);return;}if(!_liPausado)_liIrSlide(_liSlide+1);},8000);
+}
+// Mesmo fluxo do botão "Novo Pedido" da barra do topo.
+function _liNovoPedido(){
+  const b=document.getElementById('btn-novo-pedido');
+  if(b&&getComputedStyle(b).display!=='none')b.click();else abrirModal('modal-pedido');
+}
+async function renderLojaInicioPage(){
+  _liEstilos();
+  const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
+  const body=document.getElementById('app-body');
+  const cab=`<div class="page-header"><div class="page-title">${_icone('house',22)} Início</div></div>`;
+  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>`;return;}
+  // o que antes só começava no Gestor de Pedidos (renderMapaPage) também
+  // começa aqui, já que a loja agora entra por esta tela
+  if(!_faturaBannerTickInterval)_iniciarFaturaBannerLoja();
+  if(!_chatBadgeInterval)_iniciarChatBadgeLoja();
+  _carregarSaldoTopbar();
+  _liSlide=0;_liPausado=false;
+  const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
+      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} Novidade para sua loja</div>
+        <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc">${s.texto}</div>
+        <button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button></div>
+      <div class="li-slide-arte">${_liArte(s.icone,i)}</div></div>`).join('');
+  const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos para você</div>
+    <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
+  body.innerHTML=`<div class="alt-page"><div class="li-wrap">
+    ${cab}
+    <div id="li-aviso-fatura"></div>
+    <div class="li-carrossel" id="li-carrossel" onmouseenter="_liPausado=true" onmouseleave="_liPausado=false">
+      <div class="li-trilho" id="li-trilho">${slides}</div>
+      <button class="li-seta" style="left:12px" onclick="_liIrSlide(_liSlide-1);_liIniciarTimer()" aria-label="Anterior">${_icone('chevron-left',18)}</button>
+      <button class="li-seta" style="right:12px" onclick="_liIrSlide(_liSlide+1);_liIniciarTimer()" aria-label="Próximo">${_icone('chevron-right',18)}</button>
+      <div class="li-pontos">${_LOJA_INICIO_SLIDES.map((_,i)=>`<button class="li-ponto${i===0?' ativo':''}" onclick="_liIrSlide(${i});_liIniciarTimer()" aria-label="Destaque ${i+1}"></button>`).join('')}</div>
+    </div>
+    <div class="li-secao-titulo">Comece por aqui</div>
+    <div class="li-grid2">
+      <div class="card li-card"><div class="li-card-icone">${_icone('clipboard-list',22)}</div><div><div class="li-card-titulo">Acesse o Gestor de Pedidos</div><div class="li-card-texto">Acompanhe seus pedidos em tempo real no mapa, com o status de cada entrega.</div><button class="li-btn" onclick="goTab('mapa')">Acessar Gestor de Pedidos</button></div></div>
+      <div class="card li-card"><div class="li-card-icone">${_icone('plus',22)}</div><div><div class="li-card-titulo">Crie uma entrega</div><div class="li-card-texto">Chame um entregador para uma nova entrega em poucos cliques.</div><button class="li-btn" onclick="_liNovoPedido()">${_icone('plus',16,'btn-ico')}Novo Pedido</button></div></div>
+    </div>
+    <div class="li-secao-titulo">Resumo de hoje</div>
+    <div id="li-resumo"><div class="card" style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
+    ${conteudos}
+  </div></div>`;
+  _liIniciarTimer();
+  // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
+  // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
+  const hoje=_dataHojeBrasilia();
+  const [pedidos]=await Promise.all([
+    db('pedidos','GET',null,`?loja_id=eq.${lojaId}&created_at=gte.${hoje}T00:00:00&created_at=lte.${hoje}T23:59:59.999&select=id,loja_id,status,status_detalhado,valor`),
+    _carregarFaturaAtualLoja(),
+  ]);
+  const res=document.getElementById('li-resumo');if(!res)return;
+  const lista=(Array.isArray(pedidos)?pedidos:[]).filter(p=>p.loja_id===lojaId);
+  const k=p=>getStatusKey(p);
+  const canc=lista.filter(p=>k(p)==='cancelado').length,fin=lista.filter(p=>k(p)==='finalizado').length;
+  const comValor=lista.filter(p=>k(p)!=='cancelado'&&parseFloat(p.valor)>0);
+  const fat=comValor.reduce((s,p)=>s+parseFloat(p.valor),0);
+  const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  res.innerHTML=!lista.length
+    ?`<div class="card" style="padding:28px 24px;text-align:center"><div style="color:var(--text3);margin-bottom:8px">${_icone('package',30)}</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Nenhum pedido hoje ainda</div><div style="font-size:12.5px;color:var(--text2)">Assim que os pedidos de hoje chegarem, o resumo aparece aqui.</div></div>`
+    :`<div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Pedidos hoje</div><div class="stat-value">${lista.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Faturamento hoje</div><div class="stat-value">${comValor.length?R(fat):'—'}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${comValor.length?`soma do valor de ${comValor.length} pedido(s) não cancelado(s)`:'valor não informado nos pedidos de hoje'}</div></div>
+      <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" style="color:#22c55e!important">${fin}</div></div>
+      <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" style="color:#ef4444!important">${canc}</div></div>
+    </div>`;
+  // Aviso de fatura em aberto — mesmos dados do banner do Gestor
+  // (_faturaAtualLoja), só nesta tela: não duplica o banner de lá.
+  const av=document.getElementById('li-aviso-fatura');
+  const f=_faturaAtualLoja;
+  if(av&&f){
+    const venc=f._diasAtraso>=1,hojeV=f._diasAtraso===0;
+    const cor=venc?'#ef4444':hojeV?'#f59e0b':'#1A56DB';
+    const msg=venc?'Fatura vencida! Regularize o pagamento para continuar criando entregas.':hojeV?'Sua fatura vence hoje às 18:00. Evite atrasos no pagamento.':'Você tem uma fatura em aberto.';
+    const val=parseFloat(f.valor_total);
+    av.innerHTML=`<div class="li-aviso" style="background:${cor}1f;border:1px solid ${cor}66"><span style="color:${cor};display:inline-flex">${_icone(venc?'ban':hojeV?'alarm-clock':'receipt',22)}</span><div style="flex:1;min-width:200px"><div style="font-size:14px;font-weight:700;color:var(--text)">${msg}</div>${val>0?`<div style="font-size:12px;color:var(--text2);margin-top:2px">Valor: ${R(val)}</div>`:''}</div><button class="btn-sm btn-primary-sm" onclick="goTab('faturas')">${_icone('file-text',16,'btn-ico')}Ver no Financeiro</button></div>`;
+  }
+}
 
 // ── Clientes (visão loja) ──────────────────────────────────────────────
 // Métricas dos clientes da PRÓPRIA loja (inspirado em "Seus clientes" do
