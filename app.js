@@ -12112,8 +12112,7 @@ let _mcProdutos=[];
 
 // ── Início (visão loja) — 2026-09-29 ────────────────────────────────────
 // Tela inicial da loja, inspirada na home do portal do iFood: carrossel de
-// destaques, atalhos ("Comece por aqui"), resumo do dia, aviso de fatura em
-// aberto e bloco de conteúdos (só aparece quando houver itens em
+// destaques, atalhos ("Comece por aqui"), resumo do dia e bloco de conteúdos (só aparece quando houver itens em
 // LOJA_INICIO_CONTEUDOS). Vira a tela de entrada da loja: goTab troca o
 // primeiro 'mapa' depois do login por 'loja-inicio' (o login de produção
 // sempre chama goTab('mapa')), sem desenhar o mapa antes.
@@ -12152,7 +12151,6 @@ function _liEstilos(){
     .li-card-icone{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:rgba(26,86,219,.14);color:var(--accent);display:flex;align-items:center;justify-content:center}
     .li-card-titulo{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
     .li-card-texto{font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:14px}
-    .li-aviso{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;flex-wrap:wrap}
     .li-btn{display:inline-flex;align-items:center;gap:6px;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;transition:background .15s}
     .li-btn:hover{background:#1646b5}
     .li-btn .icone.btn-ico{margin-right:0}
@@ -12199,7 +12197,10 @@ async function renderLojaInicioPage(){
   const cab=`<div class="page-header"><div class="page-title">${_icone('house',22)} Início</div></div>`;
   if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>`;return;}
   // o que antes só começava no Gestor de Pedidos (renderMapaPage) também
-  // começa aqui, já que a loja agora entra por esta tela
+  // começa aqui, já que a loja agora entra por esta tela. O aviso de fatura
+  // NÃO aparece no Início (pedido do usuário): _iniciarFaturaBannerLoja só
+  // carrega os dados e o ciclo; o balão só é desenhado se
+  // #alerta-fatura-loja existir, e ele só existe no Gestor (renderMapaPage).
   if(!_faturaBannerTickInterval)_iniciarFaturaBannerLoja();
   if(!_chatBadgeInterval)_iniciarChatBadgeLoja();
   _carregarSaldoTopbar();
@@ -12213,7 +12214,6 @@ async function renderLojaInicioPage(){
     <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
   body.innerHTML=`<div class="alt-page"><div class="li-wrap">
     ${cab}
-    <div id="li-aviso-fatura"></div>
     <div class="li-carrossel" id="li-carrossel" onmouseenter="_liPausado=true" onmouseleave="_liPausado=false">
       <div class="li-trilho" id="li-trilho">${slides}</div>
       <button class="li-seta" style="left:12px" onclick="_liIrSlide(_liSlide-1);_liIniciarTimer()" aria-label="Anterior">${_icone('chevron-left',18)}</button>
@@ -12233,10 +12233,7 @@ async function renderLojaInicioPage(){
   // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
   // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
   const hoje=_dataHojeBrasilia();
-  const [pedidos]=await Promise.all([
-    db('pedidos','GET',null,`?loja_id=eq.${lojaId}&created_at=gte.${hoje}T00:00:00&created_at=lte.${hoje}T23:59:59.999&select=id,loja_id,status,status_detalhado,valor`),
-    _carregarFaturaAtualLoja(),
-  ]);
+  const pedidos=await db('pedidos','GET',null,`?loja_id=eq.${lojaId}&created_at=gte.${hoje}T00:00:00&created_at=lte.${hoje}T23:59:59.999&select=id,loja_id,status,status_detalhado,valor`);
   const res=document.getElementById('li-resumo');if(!res)return;
   const lista=(Array.isArray(pedidos)?pedidos:[]).filter(p=>p.loja_id===lojaId);
   const k=p=>getStatusKey(p);
@@ -12252,17 +12249,6 @@ async function renderLojaInicioPage(){
       <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" style="color:#22c55e!important">${fin}</div></div>
       <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" style="color:#ef4444!important">${canc}</div></div>
     </div>`;
-  // Aviso de fatura em aberto — mesmos dados do banner do Gestor
-  // (_faturaAtualLoja), só nesta tela: não duplica o banner de lá.
-  const av=document.getElementById('li-aviso-fatura');
-  const f=_faturaAtualLoja;
-  if(av&&f){
-    const venc=f._diasAtraso>=1,hojeV=f._diasAtraso===0;
-    const cor=venc?'#ef4444':hojeV?'#f59e0b':'#1A56DB';
-    const msg=venc?'Fatura vencida! Regularize o pagamento para continuar criando entregas.':hojeV?'Sua fatura vence hoje às 18:00. Evite atrasos no pagamento.':'Você tem uma fatura em aberto.';
-    const val=parseFloat(f.valor_total);
-    av.innerHTML=`<div class="li-aviso" style="background:${cor}1f;border:1px solid ${cor}66"><span style="color:${cor};display:inline-flex">${_icone(venc?'ban':hojeV?'alarm-clock':'receipt',22)}</span><div style="flex:1;min-width:200px"><div style="font-size:14px;font-weight:700;color:var(--text)">${msg}</div>${val>0?`<div style="font-size:12px;color:var(--text2);margin-top:2px">Valor: ${R(val)}</div>`:''}</div><button class="btn-sm btn-primary-sm" onclick="goTab('faturas')">${_icone('file-text',16,'btn-ico')}Ver no Financeiro</button></div>`;
-  }
 }
 
 // ── Clientes (visão loja) ──────────────────────────────────────────────
