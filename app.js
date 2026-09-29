@@ -161,7 +161,7 @@ const NAV_ITEMS_LOJA_RODAPE=[
   ]},
 ];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Vagas Disponíveis'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
