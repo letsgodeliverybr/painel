@@ -3529,7 +3529,7 @@ async function fazerLogin(){
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'ceo':'mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
   const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';
-  const btnIrMapa=document.getElementById('btn-ir-mapa');if(btnIrMapa)btnIrMapa.style.display=currentPerfil==='adm'?'flex':'none';
+  const btnIrMapa=document.getElementById('btn-ir-mapa');if(btnIrMapa)btnIrMapa.style.display='flex';
   _carregarSaldoTopbar();
   if(currentPerfil==='adm'){_carregarBadgeSaques();_carregarBadgeSaqueRapido();}
   if(currentPerfil==='adm'||currentPerfil==='suporte')iniciarRoteirizacao();
@@ -3560,6 +3560,12 @@ function _renderLojaEmBrevePage(icon,titulo,texto){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
 }
 function goTab(id){
+  // Botão "Mapa ao Vivo" do topo: visível pros 3 perfis (2026-09-29; antes
+  // só adm). Precisa ser aqui: o HTML de produção tem login próprio que
+  // esconde o botão pra quem não é adm e nunca chama o fazerLogin() deste
+  // arquivo — goTab roda depois de qualquer login. Loja vê a tela do mapa
+  // igual já via pelo Gestor de Pedidos (decisão do usuário: sem filtro).
+  const _btnMapaTopo=document.getElementById('btn-ir-mapa');if(_btnMapaTopo&&currentPerfil)_btnMapaTopo.style.display='flex';
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
@@ -12466,7 +12472,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
     const btnCriarTop2=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop2)btnCriarTop2.style.display=currentPerfil==='suporte'?'flex':'none';
-    const btnIrMapa2=document.getElementById('btn-ir-mapa');if(btnIrMapa2)btnIrMapa2.style.display=currentPerfil==='adm'?'flex':'none';
+    const btnIrMapa2=document.getElementById('btn-ir-mapa');if(btnIrMapa2)btnIrMapa2.style.display='flex';
     renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'ceo':'mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
     if(currentPerfil==='loja')_iniciarFaturaBannerLoja();
