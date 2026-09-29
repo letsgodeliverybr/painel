@@ -49,11 +49,29 @@ const NAV_ITEMS_ADM=[{id:'ceo',icon:'🧭',label:'Visão Executiva'},{id:'mapa',
 const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'metricas',icon:'📊',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'},{id:'vagas',icon:'🗓️',label:'Solicitar Fixo'},{id:'faturas',icon:'🧾',label:'Faturas'}];
 // Rodapé fixo do menu da loja (padrão iFood: Gestor de Pedidos /
 // Configurações / Perfil sempre embaixo, separados do menu principal por
-// uma linha, seguidos de Sair). "Gestor de Pedidos" é o antigo item "Mapa
-// ao Vivo" — mesma tela (id 'mapa'), só renomeado e reposicionado
-// (2026-09-29). Configurações e Perfil ainda são telas "Em breve"
-// (_renderLojaEmBrevePage) — conteúdo a definir.
-const NAV_ITEMS_LOJA_RODAPE=[{id:'mapa',icon:'📋',label:'Gestor de Pedidos'},{id:'loja-configuracoes',icon:'⚙️',label:'Configurações'},{id:'loja-perfil',icon:'👤',label:'Perfil'}];
+// uma linha). "Gestor de Pedidos" é o antigo item "Mapa ao Vivo" — mesma
+// tela (id 'mapa'), só renomeado e reposicionado (2026-09-29).
+// Configurações e Perfil NÃO navegam: abrem um menu flutuante
+// (_abrirNavPopover) com os sub-itens — mesmos nomes do iFood. "Sair" da
+// loja vive só dentro do Perfil (sem item solto no rodapé). Sub-telas
+// ainda "Em breve" (_renderLojaEmBrevePage) — conteúdo a definir, uma de
+// cada vez. Ver regra de CNPJ/e-mail somente leitura pra loja antes de
+// construir Perfil da loja / Minha conta.
+const NAV_ITEMS_LOJA_RODAPE=[
+  {id:'mapa',icon:'📋',label:'Gestor de Pedidos'},
+  {id:'loja-configuracoes',icon:'⚙️',label:'Configurações',submenu:[
+    {id:'loja-config-perfil',label:'Perfil da loja'},
+    {id:'loja-config-horarios',label:'Horários'},
+    {id:'loja-config-entrega',label:'Entrega'},
+    {id:'loja-config-usuarios',label:'Usuários'},
+    {id:'loja-config-pagamento',label:'Formas de pagamento'},
+    {id:'loja-config-bancarios',label:'Dados bancários'},
+  ]},
+  {id:'loja-perfil',icon:'👤',label:'Perfil',submenu:[
+    {id:'loja-minha-conta',label:'Minha conta'},
+    {id:'logout',label:'Sair',perigo:true},
+  ]},
+];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
 const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
@@ -3276,13 +3294,39 @@ function renderNavSidebar(activeId){
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   const _navBtn=item=>{
     const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
+    if(item.submenu){
+      const ativo=item.submenu.some(x=>x.id===_navAtivo);
+      return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span><span style="margin-left:auto;font-size:11px;opacity:.6">▸</span></button>`;
+    }
     return`<button class="nav-item${_navAtivo===item.id?' active':''}" onclick="navGoTab('${item.id}')"><span class="nav-item-icon">${item.icon}</span><span>${item.label}</span>${badge}</button>`;
   };
-  const rodape=currentPerfil==='loja'?NAV_ITEMS_LOJA_RODAPE:[];
-  body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${rodape.map(_navBtn).join('')}<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button></div>`;
+  const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">🚪</span><span>Sair</span></button>`;
+  const rodape=currentPerfil==='loja'?NAV_ITEMS_LOJA_RODAPE.map(_navBtn).join(''):sair;
+  body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${rodape}</div>`;
 }
 function abrirNavSidebar(){renderNavSidebar(_navAtivo);document.getElementById('nav-sidebar').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}
-function fecharNavSidebar(){document.getElementById('nav-sidebar').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}
+// Menu flutuante dos itens do rodapé da loja com submenu (Configurações,
+// Perfil). position:fixed ancorado no botão: à direita do menu lateral
+// quando cabe, senão por cima do próprio menu (celular), sempre subindo a
+// partir da base do botão pra não sair da tela (os itens ficam no rodapé).
+function _abrirNavPopover(ev,itemId){
+  ev.stopPropagation();
+  const jaAberto=document.getElementById('nav-popover')?.dataset.item===itemId;
+  _fecharNavPopover();
+  if(jaAberto)return;
+  const item=NAV_ITEMS_LOJA_RODAPE.find(x=>x.id===itemId);if(!item)return;
+  const pop=document.createElement('div');pop.id='nav-popover';pop.className='nav-popover';pop.dataset.item=itemId;
+  pop.innerHTML=item.submenu.map(sub=>`<button class="${_navAtivo===sub.id?'active':''}" style="${sub.perigo?'color:var(--red)':''}" onclick="_fecharNavPopover();${sub.id==='logout'?'logout()':`navGoTab('${sub.id}')`}">${sub.label}</button>`).join('');
+  document.body.appendChild(pop);
+  const r=ev.currentTarget.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
+  const left=r.right+8+w<=window.innerWidth?r.right+8:Math.max(8,r.right-w-8);
+  const top=Math.max(8,Math.min(r.bottom-h,window.innerHeight-h-8));
+  pop.style.left=left+'px';pop.style.top=top+'px';
+  setTimeout(()=>{document.addEventListener('click',_fecharNavPopover,{once:true});},0);
+}
+function _fecharNavPopover(){document.getElementById('nav-popover')?.remove();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')_fecharNavPopover();});
+function fecharNavSidebar(){_fecharNavPopover();document.getElementById('nav-sidebar').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}
 function navGoTab(id){fecharNavSidebar();setTimeout(()=>goTab(id),50);}
 
 async function fazerLogin(){
@@ -3348,7 +3392,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-configuracoes':()=>_renderLojaEmBrevePage('⚙️','Configurações','Aqui você vai poder editar os dados da sua loja — horário de funcionamento, endereço e contato — sem precisar falar com a gente.'),'loja-perfil':()=>_renderLojaEmBrevePage('👤','Perfil','Aqui você vai poder ver e editar os dados da sua conta — nome, e-mail e senha.'),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'👤':'⚙️',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
