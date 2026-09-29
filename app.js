@@ -8135,16 +8135,6 @@ function renderCeoPage(){
     </div>
 
     <div class="ceo-block">
-      <div class="ceo-block-header"><span class="ceo-block-title">🎯 Metas Patrimoniais</span></div>
-      <div class="ceo-block-body">
-        <div class="metas-grid">
-          <div class="metas-col"><div class="metas-col-titulo">🏢 Empresa</div>${_METAS_CONFIG.filter(m=>m.col==='empresa').map(_renderMetaCard).join('')}</div>
-          <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="ceo-block">
       <div class="ceo-block-header">
         <span class="ceo-block-title">🎯 Hoje, o que merece sua atenção</span>
         <div style="display:flex;align-items:center;gap:10px">
@@ -8159,10 +8149,9 @@ function renderCeoPage(){
   </div>`;
   document.querySelector(`.ceo-periodo-btn[data-p="${_ceoPeriodoAtual}"]`)?.classList.add('active');
   _carregarDadosCeo();
-  // Cards de Metas Patrimoniais — mesma fonte/lógica da página Métricas
-  // (_METAS_CONFIG/_buscarMeta/configuracoes), sem duplicar nada, só
-  // reexibidos aqui também.
-  _buscarTodasMetas();
+  // Metas Patrimoniais saíram da Visão Executiva (2026-09-29, pedido do
+  // usuário): continuam na tela Desempenho do admin (renderMetricasPage),
+  // com a mesma fonte (_METAS_CONFIG/_buscarMeta/configuracoes).
 }
 async function _carregarDadosCeo(){
   const hoje=_dataHojeBrasilia();
