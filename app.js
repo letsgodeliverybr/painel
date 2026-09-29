@@ -3431,13 +3431,11 @@ function renderNavSidebar(activeId){
   };
   const sair=`<button class="nav-item" onclick="logout()" style="color:var(--red)"><span class="nav-item-icon">${_icone('log-out')}</span><span>Sair</span></button>`;
   if(currentPerfil==='loja'){
-    // Loja: Configurações + Perfil ancorados no fim do menu (margin-top:auto
-    // num wrapper flex coluna com min-height:100% do corpo rolável);
-    // Gestor de Pedidos fica no grupo de cima, depois dos itens principais.
+    // Loja: rodapé (Gestor de Pedidos, Configurações, Perfil — nessa ordem)
+    // ancorado no fim do menu (margin-top:auto num wrapper flex coluna com
+    // min-height:100% do corpo rolável), abaixo da linha separadora.
     // Só a loja usa esse wrapper — adm/suporte continuam no HTML abaixo.
-    const topo=[...items,...NAV_ITEMS_LOJA_RODAPE.filter(i=>!i.submenu)];
-    const base=NAV_ITEMS_LOJA_RODAPE.filter(i=>i.submenu);
-    body.innerHTML=`<div class="nav-loja-wrap">${topo.map(_navBtn).join('')}<div class="nav-loja-base">${base.map(_navBtn).join('')}</div></div>`;
+    body.innerHTML=`<div class="nav-loja-wrap">${items.map(_navBtn).join('')}<div class="nav-loja-base">${NAV_ITEMS_LOJA_RODAPE.map(_navBtn).join('')}</div></div>`;
     return;
   }
   body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${sair}</div>`;
