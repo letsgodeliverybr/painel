@@ -88,11 +88,34 @@ const ICONES_LUCIDE={
   'wallet':'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
   'user-plus':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
   'calendar':'<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>',
-  'chart-line':'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>'
+  'chart-line':'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
+  'arrow-left':'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  'ban':'<circle cx="12" cy="12" r="10"/><path d="M4.929 4.929 19.07 19.071"/>',
+  'camera':'<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/>',
+  'check':'<path d="M20 6 9 17l-5-5"/>',
+  'copy':'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  'download':'<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+  'eye':'<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  'eye-off':'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  'file-text':'<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  'flask-conical':'<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/>',
+  'hard-hat':'<path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M14 6a6 6 0 0 1 6 6v3"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><rect x="2" y="15" width="20" height="4" rx="1"/>',
+  'hourglass':'<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'map-pin':'<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  'megaphone':'<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
+  'menu':'<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>',
+  'printer':'<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+  'refresh-cw':'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  'rocket':'<path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/>',
+  'save':'<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
+  'send':'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  'trash-2':'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
 };
-function _icone(nome,tam=18){
+function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
-  return`<svg class="icone" xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
+  return`<svg class="icone${classe?' '+classe:''}" xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
 }
 const NAV_ITEMS_ADM=[{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'cac',icon:'target',label:'C.A.C.'},{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:"Métricas Let's Go"},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
 const NAV_ITEMS_LOJA_ADM=[{id:'pedidos',icon:'package',label:'Relatório Entregas'},{id:'metricas',icon:'chart-column',label:'Minhas Métricas'},{id:'meu-cardapio',icon:'utensils',label:'Meu Cardápio'},{id:'vagas',icon:'calendar-days',label:'Solicitar Fixo'},{id:'faturas',icon:'receipt',label:'Faturas'}];
@@ -642,7 +665,7 @@ function _abrirChatLoja(){
   let modal=document.getElementById('modal-chat-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-chat-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px;height:70vh;display:flex;flex-direction:column">
-    <div class="modal-header"><span class="modal-title">${_icone('message-circle',18)} Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('message-circle',18)} Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">${_icone('x',16)}</button></div>
     <div id="chat-loja-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
       <input id="chat-loja-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
@@ -669,7 +692,7 @@ async function _abrirChatAdmin(){
   let modal=document.getElementById('modal-chat-admin');
   if(!modal){modal=document.createElement('div');modal.id='modal-chat-admin';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:820px;width:92vw;height:75vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    <div class="modal-header" style="padding:14px 20px;flex-shrink:0"><span class="modal-title">${_icone('message-circle',18)} Chat</span><button class="modal-close" onclick="_fecharChatAdmin()">✕</button></div>
+    <div class="modal-header" style="padding:14px 20px;flex-shrink:0"><span class="modal-title">${_icone('message-circle',18)} Chat</span><button class="modal-close" onclick="_fecharChatAdmin()">${_icone('x',16)}</button></div>
     <div class="chat-admin-layout" style="flex:1;display:flex;gap:14px;min-height:0;padding:0 16px 16px">
       <div style="width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:10px" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="chat-painel-conversa">
@@ -1212,6 +1235,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        SVG). */
     .page-title .icone,.modal-title .icone{vertical-align:-0.18em;margin-right:2px;flex-shrink:0;}
     .page-title .icone{color:var(--accent);-webkit-text-fill-color:initial;}
+
+    /* ── ÍCONES EM BOTÕES (fase 3 Lucide) ── .btn-ico = ícone seguido de
+       texto: margem própria porque em botão display:flex o espaço de
+       texto entre o <svg> e o rótulo some. Ícone sozinho (✕, lápis,
+       lixeira...) fica sem margem. */
+    button .icone{vertical-align:-0.2em;flex-shrink:0;}
+    button .icone.btn-ico{margin-right:6px;}
 
     /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
        .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
@@ -2015,7 +2045,7 @@ async function _criarContaAuth(email,senha){
 // quem está logado (a Edge Function confere que é um admin ativo).
 function _toggleSenhaVisivel(inputId,btn){
   const el=document.getElementById(inputId);if(!el)return;
-  if(el.type==='password'){el.type='text';btn.textContent='🙈';}else{el.type='password';btn.textContent='👁️';}
+  if(el.type==='password'){el.type='text';btn.innerHTML=_icone('eye-off',16);}else{el.type='password';btn.innerHTML=_icone('eye',16);}
 }
 async function _redefinirSenhaAuth(email,novaSenha){
   let sessao=null;
@@ -2200,7 +2230,7 @@ async function abrirModal(id){
         </div>
         <div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div>
         <div class="form-row full">
-          <div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
+          <div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
         </div>
         <div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div>
         <div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div>
@@ -3020,7 +3050,7 @@ function _atualizarBtnCriarEntrega(){
   btn.disabled=insuficiente;
   btn.style.setProperty('background',insuficiente?'#6b7280':_faturaVencidaLoja?'#f59e0b':'#1A56DB','important');
   btn.style.cursor=insuficiente?'not-allowed':'pointer';
-  btn.innerHTML=insuficiente?'🚫 Saldo insuficiente':_faturaVencidaLoja?'🚫 Fatura vencida':'➕ Criar Entrega';
+  btn.innerHTML=insuficiente?_icone('ban',16,'btn-ico')+'Saldo insuficiente':_faturaVencidaLoja?_icone('ban',16,'btn-ico')+'Fatura vencida':_icone('plus',16,'btn-ico')+'Criar Entrega';
 }
 
 // ── RECARGA DE SALDO VIA PIX MANUAL (BR Code / Pix Copia e Cola) ──
@@ -3076,7 +3106,7 @@ function _abrirModalRecargaPix(){
     </div>`;
   };
   modal.innerHTML=`<div class="modal" style="width:640px;max-width:95vw">
-    <div class="modal-header"><span class="modal-title">${_icone('wallet',18)} Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('wallet',18)} Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" id="mrp-body">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha um valor para recarregar seu saldo. Pacotes maiores têm bônus de crédito.</div>
       <div class="pix-pacotes-grid">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
@@ -3092,7 +3122,7 @@ function _selecionarPacotePix(i){
   const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}\nCrédito a receber: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
   const waLink=`https://wa.me/${PIX_WHATSAPP}?text=${encodeURIComponent(msg)}`;
   body.innerHTML=`
-    <button onclick="_abrirModalRecargaPix()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0">← Voltar aos pacotes</button>
+    <button onclick="_abrirModalRecargaPix()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0">${_icone('arrow-left',16,'btn-ico')}Voltar aos pacotes</button>
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-size:13px;color:var(--text2)">Valor a pagar</div>
       <div style="font-size:26px;font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
@@ -3106,7 +3136,7 @@ function _selecionarPacotePix(i){
       <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Chave Pix</div>
       <div style="font-size:20px;font-weight:800;color:var(--text)">${PIX_CONFIG.chave}</div>
     </div>
-    <button onclick="_copiarCodigoPix()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:Inter,sans-serif">📋 Copiar código Pix</button>
+    <button onclick="_copiarCodigoPix()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:Inter,sans-serif">${_icone('copy',16,'btn-ico')}Copiar código Pix</button>
     <a href="${waLink}" target="_blank" style="display:block;box-sizing:border-box;text-align:center;text-decoration:none;width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp</a>
     <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;text-align:center">⏳ Crédito será adicionado em até 24h úteis após confirmação do pagamento</div>
   `;
@@ -3201,8 +3231,8 @@ function _blocoTrocaEndereco(p){
     <div style="font-size:13px;color:#78350f;margin-bottom:8px">${enderecoTxt||'—'}</div>
     <div style="font-size:11px;color:#92400e;margin-bottom:10px">${expirado?'Prazo de 15min expirado — o iFood já rejeitou automaticamente':`Prazo: ${restanteMin}min restantes`}</div>
     <div style="display:flex;gap:8px">
-      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Aceitar novo endereço</button>
-      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Rejeitar</button>
+      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Aceitar novo endereço</button>
+      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">${_icone('x',16,'btn-ico')}Rejeitar</button>
     </div>
   </div>`;
 }
@@ -3225,7 +3255,7 @@ async function _abrirCancelamentoIfood(pedidoId){
   let modal=document.getElementById('modal-ifood-cancelar');
   if(!modal){modal=document.createElement('div');modal.id='modal-ifood-cancelar';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px;width:95%">
-    <div class="modal-header"><span class="modal-title">Cancelar pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">Cancelar pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="padding:16px">
       <div id="ifood-cancel-body" style="font-size:13px;color:var(--text2)">⏳ Buscando motivos de cancelamento...</div>
     </div>
@@ -3323,7 +3353,7 @@ function abrirInfoPedido(pedidoId){
         <span class="modal-title">#${p.numero||pedidoId.substring(0,6)}</span>
         <span class="p-badge b-${sk}" style="background:${cor}20;color:${cor}">${STATUS_LABEL[sk]||sk}</span>
       </div>
-      <button class="modal-close" onclick="document.getElementById('modal-info-pedido').classList.remove('open')">✕</button>
+      <button class="modal-close" onclick="document.getElementById('modal-info-pedido').classList.remove('open')">${_icone('x',16)}</button>
     </div>
     <div class="modal-body" style="max-height:80vh;overflow-y:auto;padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:16px">
@@ -3366,8 +3396,8 @@ function abrirInfoPedido(pedidoId){
         </div>
       </div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
-        <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir comanda</button>
+        ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento recebido</button>`:''}
+        <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir comanda</button>
         <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar link de rastreio</button>
       </div>
     </div>
@@ -3377,6 +3407,10 @@ function abrirInfoPedido(pedidoId){
 
 function renderNavSidebar(activeId){
   _navAtivo=activeId||_navAtivo;
+  // Botão ✕ de fechar o menu vem do HTML (produção usa HTML próprio, fora
+  // deste repo) — troca pelo ícone Lucide aqui, uma vez.
+  const _fechar=document.querySelector('#nav-sidebar .nav-sidebar-header button');
+  if(_fechar&&_fechar.textContent.trim()==='✕')_fechar.innerHTML=_icone('x',20);
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   const _navBtn=item=>{
@@ -3743,23 +3777,23 @@ function renderMapaPage(){
       </div>
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
       <div id="sidebar-disparar-footer" style="display:none;padding:10px 8px;border-top:1px solid var(--sb-border);background:var(--sb-bg)">
-        <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">🛵 Disparar Rota (0 pedidos) ++</button>
+        <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">${_icone('bike',16,'btn-ico')}Disparar Rota (0 pedidos) ++</button>
       </div>
     </div>
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
         <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center">
-          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#1f2937 !important;display:flex;align-items:center;justify-content:center">☰</button>
+          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#1f2937 !important;display:flex;align-items:center;justify-content:center">${_icone('menu',16)}</button>
           <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Finalizados hoje</div></div></div>
           <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Cancelados hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
-          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">💬<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
-          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" class="mapa-float-btn">🪖</button>
-          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" class="mapa-float-btn">🏪</button>
+          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">${_icone('message-circle',16)}<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
+          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" class="mapa-float-btn">${_icone('hard-hat',16)}</button>
+          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" class="mapa-float-btn">${_icone('store',16)}</button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -3797,7 +3831,7 @@ function renderMapaPage(){
           <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
-          <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" class="cr-btn-criar">➕ Criar Entrega</button>
+          <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" class="cr-btn-criar">${_icone('plus',16,'btn-ico')}Criar Entrega</button>
         </div>
         <div style="flex:1;overflow:auto;background:var(--bg) !important;min-height:300px;min-width:0">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:var(--bg) !important;border:1px solid var(--border)">
@@ -4335,9 +4369,9 @@ function renderPedidosLista(){
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarAgendado(p.agendado_para)}</div>`:''}
           ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido já classificado como pronto</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
-            ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💰 Pagamento recebido</button>`:''}
-            <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🖨️ Comanda</button>
-            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar rastreio</button>
+            ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento recebido</button>`:''}
+            <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Comanda</button>
+            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('link',16,'btn-ico')}Copiar rastreio</button>
           </div>
         </div>`:'';
       // ── CARD FECHADO ──────────────────────────────────────────────
@@ -4397,7 +4431,7 @@ function renderPedidosLista(){
     if(_pedidosSelecionados.size>=2){
       footer.style.display='block';
       const btn=footer.querySelector('button');
-      if(btn)btn.textContent=`🛵 Disparar Rota (${_pedidosSelecionados.size} pedidos) ++`;
+      if(btn)btn.innerHTML=`${_icone('bike',16,'btn-ico')}Disparar Rota (${_pedidosSelecionados.size} pedidos) ++`;
     } else {
       footer.style.display='none';
     }
@@ -4508,7 +4542,7 @@ function abrirEditarPedido(pedidoId){
   const temAgend=!!(p.agendado_para);
   const agendVal=temAgend?_agendadoInputBrasilia(p.agendado_para):'';
   const esc=v=>(v||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
 <div class="form-row">
   <div class="fi"><label>Nº Pedido</label><input id="ep-numero" value="${esc(p.numero)}"/></div>
   <div class="fi"><label>Cliente</label><input id="ep-cliente" value="${esc(p.cliente||p.nome_cliente)}"/></div>
@@ -4517,7 +4551,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
   <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
 </div>
-<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div></div></div>
+<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div></div></div>
 <div class="form-row">
   <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
   <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
@@ -4561,7 +4595,7 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
 </div>
 <div id="ep-recalc-info" style="font-size:12px;color:var(--text2);min-height:14px;margin:2px 0 4px"></div>
 <div id="ep-feedback" style="margin-top:4px"></div>
-</div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">✓ Salvar</button></div></div>`;
+</div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 let _npRetornoAtivo=false;
@@ -4752,7 +4786,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const avisoRealocacao=temEntregadorAtivo
     ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse pedido já tem um entregador em andamento.</b> Escolher outro abaixo vai desalocar o entregador atual (ele será avisado por notificação) e reabrir o pedido como disponível pro novo.</div>`
     :'';
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
   modal.classList.add('open');
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
@@ -5156,7 +5190,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes','⏳ Pendentes',_cPend)}
     ${btnFiltro('reprovadas','❌ Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">📥 Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">🔄 Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -5290,10 +5324,10 @@ async function _abrirModalImportarLojas(){
     _importLojasExistentesCache=(r||[]).map(l=>({nome:l.nome,nomeNorm:_normalizarTextoDup(l.nome),nucleoEnd:_nucleoEnderecoDup(l.endereco)}));
   }).catch(()=>{_importLojasExistentesCache=[];});
   modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
-    <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ Dados pendentes" pra você completar individualmente depois em Editar Loja.</div>
-      <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">⬇️ Baixar modelo CSV</button>
+      <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">${_icone('download',16,'btn-ico')}Baixar modelo CSV</button>
       <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado padrão (pra geocodificar endereços sem cidade no texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
       <div class="fi" style="margin-bottom:16px"><label>Planilha preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
       <div id="import-lojas-preview"></div>
@@ -5436,7 +5470,7 @@ async function _confirmarImportarLojas(){
   let sucesso=0,falhas=0,semGeo=0,suspeitas=0;
   for(let i=0;i<total;i++){
     const loja=_importLojasValidadas[i];
-    if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent=`⏳ Importando e geocodificando... ${i+1}/${total}`;}
+    if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.innerHTML=`${_icone('hourglass',16,'btn-ico')}Importando e geocodificando... ${i+1}/${total}`;}
     let lat=null,lng=null;
     try{
       const enderecoBusca=cidadePadrao?`${loja.endereco}, ${cidadePadrao}`:loja.endereco;
@@ -5490,7 +5524,7 @@ async function _recalcularEnderecosDadosPendentes(){
   const btn=document.querySelector('button[onclick="_recalcularEnderecosDadosPendentes()"]');
   for(let i=0;i<lojas.length;i++){
     const loja=lojas[i];
-    if(btn)btn.textContent=`⏳ Recalculando... ${i+1}/${lojas.length}`;
+    if(btn)btn.innerHTML=`${_icone('hourglass',16,'btn-ico')}Recalculando... ${i+1}/${lojas.length}`;
     try{
       const geo=await geocodificarEndereco(loja.endereco);
       if(!geo){semGeo++;console.warn(`[recalcular-enderecos] sem resultado pra "${loja.nome}" (endereço: "${loja.endereco}") — coordenada antiga mantida.`);continue;}
@@ -5499,7 +5533,7 @@ async function _recalcularEnderecosDadosPendentes(){
       sucesso++;
     }catch(e){falhas++;console.error(`[recalcular-enderecos] erro pra "${loja.nome}":`,e);}
   }
-  if(btn){btn.textContent='🔄 Recalcular Endereços em Massa';}
+  if(btn){btn.innerHTML=_icone('refresh-cw',16,'btn-ico')+'Recalcular Endereços em Massa';}
   const avisoFalha=(semGeo+falhas)>0?` (${semGeo+falhas} sem sucesso — veja o console)`:'';
   showNotif(sucesso>0?'✅ Recálculo concluído':'⚠️ Nenhuma coordenada atualizada',`${sucesso} de ${lojas.length} loja${lojas.length===1?'':'s'} recalculada${sucesso===1?'':'s'}${avisoFalha}`,sucesso>0?'var(--green)':'var(--yellow)');
   await logAcao('recalcular_enderecos_dados_pendentes',{total:lojas.length,sucesso,semGeo,falhas});
@@ -5520,7 +5554,7 @@ function _renderTbodyEstabelecimentos(){
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -5560,7 +5594,7 @@ function _reprovarLoja(id,nome){
   let modal=document.getElementById('modal-reprovar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-loja-motivo" placeholder="Ex: Dados incompletos, endereço inválido..." style="min-height:80px;resize:vertical"></textarea></div>
@@ -5568,7 +5602,7 @@ function _reprovarLoja(id,nome){
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">Cancelar</button>
-      <button onclick="_confirmarReprovacaoLoja('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">❌ Confirmar</button>
+      <button onclick="_confirmarReprovacaoLoja('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">${_icone('x',16,'btn-ico')}Confirmar</button>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -5634,8 +5668,8 @@ async function _renderEntregadoresTab(el){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar nome ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
       <div style="display:flex;gap:8px">
-        <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">➕ Novo</button>
-        <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">↻ Atualizar</button>
+        <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">${_icone('plus',16,'btn-ico')}Novo</button>
+        <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
       </div>
     </div>
     <div class="card"><div style="overflow-x:auto">
@@ -5694,8 +5728,8 @@ function _renderTbodyEntregadores(){
         <td style="font-size:12px;color:var(--text3)">${formatarData(e.created_at)}</td>
         <td style="white-space:nowrap">
           <span onclick="_abrirDropdownCadastro(event,'${e.id}')" style="background:#3b82f6;color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none;margin-right:6px">🔍 Em Análise ▾</span>
-          <button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">✏️</button>
-          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">🗑️</button>
+          <button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">${_icone('pencil',16)}</button>
+          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">${_icone('trash-2',16)}</button>
         </td>
       </tr>`).join('');
   } else {
@@ -5713,7 +5747,7 @@ function _renderTbodyEntregadores(){
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
-        <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="event.stopPropagation();excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td>
+        <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="event.stopPropagation();excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td>
       </tr>`).join('');
   }
 
@@ -5796,7 +5830,7 @@ function _reprovarEntregador(id,nome){
   let modal=document.getElementById('modal-reprovar-ent');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-ent';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-motivo" placeholder="Ex: Documentação incompleta, CNH inválida..." style="min-height:80px;resize:vertical"></textarea></div>
@@ -5804,7 +5838,7 @@ function _reprovarEntregador(id,nome){
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">Cancelar</button>
-      <button onclick="_confirmarReprovacao('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">❌ Confirmar</button>
+      <button onclick="_confirmarReprovacao('${id}')" style="background:#ef4444;color:#fff;border:none;border-radius:9px;padding:11px 22px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer">${_icone('x',16,'btn-ico')}Confirmar</button>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -5938,8 +5972,8 @@ function _blocoDocumentosAdmin(entId,e){
       ${motivo&&status==='reprovado'?`<div style="font-size:11px;color:var(--text3);margin-top:4px">Motivo: ${motivo.replace(/</g,'&lt;')}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:8px">
         ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não enviado</span>`}
-        <button type="button" onclick="_aprovarDocumento('${entId}','${campo}')" ${status==='aprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='aprovado'?'var(--border)':'#10b98122'};color:${status==='aprovado'?'var(--text3)':'#10b981'};font-size:12px;font-weight:700;cursor:${status==='aprovado'?'default':'pointer'};font-family:Inter,sans-serif">✓ Aprovar</button>
-        <button type="button" onclick="_reprovarDocumento('${entId}','${campo}','${label.replace(/'/g,"\\'")}')" ${status==='reprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='reprovado'?'var(--border)':'#ef444422'};color:${status==='reprovado'?'var(--text3)':'#ef4444'};font-size:12px;font-weight:700;cursor:${status==='reprovado'?'default':'pointer'};font-family:Inter,sans-serif">✗ Reprovar</button>
+        <button type="button" onclick="_aprovarDocumento('${entId}','${campo}')" ${status==='aprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='aprovado'?'var(--border)':'#10b98122'};color:${status==='aprovado'?'var(--text3)':'#10b981'};font-size:12px;font-weight:700;cursor:${status==='aprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar</button>
+        <button type="button" onclick="_reprovarDocumento('${entId}','${campo}','${label.replace(/'/g,"\\'")}')" ${status==='reprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='reprovado'?'var(--border)':'#ef444422'};color:${status==='reprovado'?'var(--text3)':'#ef4444'};font-size:12px;font-weight:700;cursor:${status==='reprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Reprovar</button>
       </div>
     </div>`;
   }).join('');
@@ -5955,7 +5989,7 @@ function _reprovarDocumento(entId,campo,label){
   let modal=document.getElementById('modal-reprovar-doc');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-doc';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar ${label}</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar ${label}</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       <div class="fi"><label>Motivo</label><textarea id="repdoc-motivo" placeholder="Ex: Foto ilegível, documento vencido..." style="min-height:80px;resize:vertical"></textarea></div>
       <div id="repdoc-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
@@ -6015,7 +6049,7 @@ async function abrirEditarEntregador(entId){
   const row2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
   const row1=(a)=>`<div class="form-row full">${a}</div>`;
   const fi=(label,content)=>`<div class="fi"><label>${label}</label>${content}</div>`;
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
 ${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
@@ -6024,7 +6058,7 @@ ${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
-${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
+${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
 ${sec('📎 Documentos')}
 ${_blocoDocumentosAdmin(entId,e)}
 ${sec('🛵 Dados do Veículo')}
@@ -6035,7 +6069,7 @@ ${sec('💰 Dados de Pagamento')}
 ${row2(fi('Tipo de pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
 ${row2(fi('Tipo chave PIX',sel('ee-tipo-pix',e.tipo_chave_pix,[['cpf','CPF'],['cnpj','CNPJ'],['email','Email'],['telefone','Telefone'],['aleatoria','Aleatória']])),fi('Chave PIX',inp('ee-chave-pix',e.chave_pix)))}
 ${row1(`<div class="fi"><label>Máquina de cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui máquina de cartão</span></label></div>`)}
-<div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">💾 Salvar</button></div></div>`;
+<div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6108,7 +6142,7 @@ function abrirNovoEntregador(){
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
   let modal=document.getElementById('modal-novo-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-novo-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">🚀 Criar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">${_icone('rocket',16,'btn-ico')}Criar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6135,11 +6169,11 @@ async function criarNovoEntregador(){
 }
 
 async function _renderUsuariosTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;}).join('');
 }
 
 async function abrirEditarUsuario(userId){
@@ -6150,7 +6184,7 @@ async function abrirEditarUsuario(userId){
   let modal=document.getElementById('modal-editar-usuario');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-usuario';modal.className='modal-overlay';document.body.appendChild(modal);}
   const lojaOpts='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6176,8 +6210,8 @@ async function salvarEdicaoUsuario(userId){
 async function _renderPrecificacaoTab(el){
   el.innerHTML=`
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)">
-      <button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button>
-      <button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button>
+      <button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('clipboard-list',16,'btn-ico')}Cobrança Cliente</button>
+      <button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">${_icone('bike',16,'btn-ico')}Pagamento Motoboy</button>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><div id="tp-btn-novo"></div></div>
     <div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
@@ -6366,7 +6400,7 @@ function _renderPrecoDinamicoTab(el,tipo){
           </div>
         </div>
         <div id="preco-din-feedback-${tipo}" style="margin-bottom:12px;font-size:12px"></div>
-        <button class="btn-modal-primary" onclick="salvarPrecoDinamico('${tipo}')">💾 Salvar</button>
+        <button class="btn-modal-primary" onclick="salvarPrecoDinamico('${tipo}')">${_icone('save',16,'btn-ico')}Salvar</button>
       </div>
     </div>`;
   // Restaurar estado do localStorage imediatamente (antes da query ao banco)
@@ -6574,7 +6608,7 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
           </div>
         </div>
         <div id="pd-cid-feedback-${cidKey}" style="margin-bottom:10px;font-size:12px"></div>
-        <button class="btn-modal-primary" onclick="_salvarPdCidade('${tipo}','${cidSafe}','${cidade}','${multiId}')">💾 Salvar</button>
+        <button class="btn-modal-primary" onclick="_salvarPdCidade('${tipo}','${cidSafe}','${cidade}','${multiId}')">${_icone('save',16,'btn-ico')}Salvar</button>
       </div>
     </div>`;
   if(valor>0&&cfg.ativado_em){
@@ -6726,7 +6760,7 @@ async function renderNovoPedidoPage(){
   const seletorLoja=currentPerfil==='adm'
     ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
@@ -6806,7 +6840,7 @@ async function renderCacPage(){
   const hoje=_dataHojeBrasilia();
   _cacMes=_cacMes||hoje.slice(0,7);
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('target',22)} C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
+    <div class="page-header"><div class="page-title">${_icone('target',22)} C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div></div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta mensal por cargo (Vendedor 880 a 2.500, Expansão 2.500 a 8.000 entregas): bate ao atingir o mínimo, somando as entregas finalizadas no mês de todas as lojas novas dele, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
     <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
@@ -6858,7 +6892,7 @@ async function renderCacPage(){
 
 // ── Cadastros → Vendedores (equipe comercial do C.A.C.) ────────────────
 async function _renderVendedoresTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalVendedor()">➕ Novo Vendedor</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('vendedores')">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Lojas</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-vendedores"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalVendedor()">${_icone('plus',16,'btn-ico')}Novo Vendedor</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('vendedores')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Lojas</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-vendedores"></tbody></table></div></div>`;
   const [data,cargos,lojas]=await Promise.all([
     db('vendedores','GET',null,'?order=nome.asc'),
     db('cargos_comerciais','GET',null,''),
@@ -6867,7 +6901,7 @@ async function _renderVendedoresTab(el){
   const tbody=document.getElementById('tbody-cad-vendedores');if(!tbody)return;
   tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum vendedor cadastrado</td></tr>':data.map(v=>{
     const c=cargos.find(x=>x.id===v.cargo_id);
-    return`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(v.nome)}</td><td>${_escHtml(c?c.nome:v.cargo_id)}</td><td style="font-size:12px">${_escHtml(v.telefone||'—')}</td><td>${lojas.filter(l=>l.vendedor_id===v.id).length}</td><td><span class="p-badge b-${v.ativo?'em_rota':'fila'}">${v.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(v.criado_em)}</td><td><button onclick="abrirModalVendedor('${v.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button></td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(v.nome)}</td><td>${_escHtml(c?c.nome:v.cargo_id)}</td><td style="font-size:12px">${_escHtml(v.telefone||'—')}</td><td>${lojas.filter(l=>l.vendedor_id===v.id).length}</td><td><span class="p-badge b-${v.ativo?'em_rota':'fila'}">${v.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(v.criado_em)}</td><td><button onclick="abrirModalVendedor('${v.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;
   }).join('');
 }
 async function abrirModalVendedor(id){
@@ -6877,10 +6911,10 @@ async function abrirModalVendedor(id){
   const q=x=>(x||'').toString().replace(/"/g,'&quot;');
   let modal=document.getElementById('modal-vendedor');
   if(!modal){modal=document.createElement('div');modal.id='modal-vendedor';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone(id?'pencil':'plus',18)} ${id?'Editar':'Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">✕</button></div><div class="modal-body">
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone(id?'pencil':'plus',18)} ${id?'Editar':'Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body">
     <div class="form-row"><div class="fi"><label>Nome</label><input id="vd-nome" value="${q(v.nome)}"/></div><div class="fi"><label>Telefone</label><input id="vd-telefone" value="${q(v.telefone)}" placeholder="(16) 99999-9999"/></div></div>
     <div class="form-row"><div class="fi"><label>Cargo</label><select id="vd-cargo" style="${ss}">${cargos.map(c=>`<option value="${c.id}"${c.id===v.cargo_id?' selected':''}>${_escHtml(c.nome)} — fixo R$ ${parseFloat(c.salario_fixo).toFixed(2)}</option>`).join('')}</select></div><div class="fi"><label>Status</label><select id="vd-ativo" style="${ss}"><option value="true"${v.ativo?' selected':''}>Ativo</option><option value="false"${!v.ativo?' selected':''}>Inativo</option></select></div></div>
-    <div id="vd-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-vendedor').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarVendedor(${id?`'${id}'`:''})">💾 Salvar</button></div></div>`;
+    <div id="vd-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-vendedor').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarVendedor(${id?`'${id}'`:''})">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 async function salvarVendedor(id){
@@ -6907,7 +6941,7 @@ async function renderPedidosPage(){
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('package',22)} Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div>
+    <div class="page-header"><div class="page-title">${_icone('package',22)} Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">${_icone('plus',16,'btn-ico')}Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('DATA INÍCIO')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
@@ -6915,7 +6949,7 @@ async function renderPedidosPage(){
         <div>${_lbl('LOJA')}<select id="fp-loja" style="${_is};min-width:130px"><option value="">Todas</option></select></div>
         <div>${_lbl('ENTREGADOR')}<select id="fp-entregador" style="${_is};min-width:130px"><option value="">Todos</option></select></div>
         <div>${_lbl('BUSCAR PEDIDO')}<input type="text" id="fp-numero" placeholder="Nº pedido..." style="${_is};min-width:110px"/></div>
-        <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Buscar</button>
+        <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
     </div></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:10px">
@@ -7112,7 +7146,7 @@ async function _buscarPedidosAdmin(){
   const _fpCols=currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td><td style="text-align:center"><button onclick="event.stopPropagation();_verLinhaTempoPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif;white-space:nowrap">⏱️ Ver</button></td></tr>`;}).join('');
+  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td><td style="text-align:center"><button onclick="event.stopPropagation();_verLinhaTempoPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif;white-space:nowrap">${_icone('history',16,'btn-ico')}Ver</button></td></tr>`;}).join('');
   // Linhas extras de crédito/débito manual de entregador — só quando adm e
   // sem filtro de loja/número (não fazem sentido pra esses filtros). Usa o
   // mesmo formato de 13 colunas do adm; não participam de nenhum card de
@@ -7185,7 +7219,7 @@ function _verLinhaTempoPedido(pedidoId){
     </div>`;
   };
   modal.innerHTML=`<div class="modal" style="max-width:440px">
-    <div class="modal-header"><span class="modal-title">${_icone('history',18)} Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('history',18)} Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       ${passos.map(linhaMarco).join('')}
       ${faltouDadoNoMeio?`<div style="margin-top:6px;font-size:12px;color:var(--text3)">⚠️ Um ou mais marcos não foram registrados pra esse pedido (comum em pedidos antigos — anteriores ao marco existir no sistema —, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas).</div>`:''}
@@ -7861,9 +7895,9 @@ function renderCeoPage(){
           <div class="ceo-avatar" onclick="_ceoToggleDropdown()"><img src="https://letsgodeliverybr.github.io/painel/img/gabriel-avatar.png" alt="${nomeUsuario}" onerror="this.parentElement.textContent='${iniciais}'"/></div>
           <div class="ceo-dropdown" id="ceo-dropdown">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:12.5px;font-weight:700;color:var(--text)">${nomeUsuario}</div><div style="font-size:11px;color:var(--text3)">CEO</div></div>
-            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">👤 Meu perfil</button>
-            <button onclick="_ceoToggleDropdown();goTab('configuracao')">⚙️ Configurações</button>
-            <button onclick="logout()" style="color:#ef4444">🚪 Sair</button>
+            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">${_icone('user',16,'btn-ico')}Meu perfil</button>
+            <button onclick="_ceoToggleDropdown();goTab('configuracao')">${_icone('settings',16,'btn-ico')}Configurações</button>
+            <button onclick="logout()" style="color:#ef4444">${_icone('log-out',16,'btn-ico')}Sair</button>
           </div>
         </div>
       </div>
@@ -7897,7 +7931,7 @@ function renderCeoPage(){
         <span class="ceo-block-title">🎯 Hoje, o que merece sua atenção</span>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:11px;color:var(--text3)" id="ceo-atualizado-ha">—</span>
-          <button class="ceo-btn-refresh" onclick="_carregarDadosCeo()">↻ Atualizar</button>
+          <button class="ceo-btn-refresh" onclick="_carregarDadosCeo()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
         </div>
       </div>
       <div class="ceo-block-body" id="ceo-alertas"><div style="color:var(--text3);text-align:center;padding:16px">Carregando...</div></div>
@@ -7991,7 +8025,7 @@ async function renderMetricasPage(){
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('DE')}<input type="date" id="mm-data-ini" value="${dataIniPadrao}" style="${_is}"/></div>
         <div>${_lbl('ATÉ')}<input type="date" id="mm-data-fim" value="${dataFimPadrao}" style="${_is}"/></div>
-        <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">🔍 Aplicar</button>
+        <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('search',16,'btn-ico')}Aplicar</button>
       </div>
     </div></div>
     <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
@@ -8128,7 +8162,7 @@ function _renderMetaCard(meta){
           <label style="font-size:11px">Valor atual (R$)</label>
           <div style="display:flex;gap:8px;align-items:center">
             <input type="number" id="meta-valor-${meta.id}" step="0.01" min="0" placeholder="0,00" style="flex:1;min-width:0"/>
-            <button class="btn-modal-primary" onclick="_salvarMeta('${meta.id}')" style="padding:8px 14px;font-size:12px;white-space:nowrap;flex-shrink:0">💾 Salvar</button>
+            <button class="btn-modal-primary" onclick="_salvarMeta('${meta.id}')" style="padding:8px 14px;font-size:12px;white-space:nowrap;flex-shrink:0">${_icone('save',16,'btn-ico')}Salvar</button>
           </div>
         </div>
         <div id="meta-progresso-${meta.id}"><div style="color:var(--text3);text-align:center;padding:12px;font-size:12px">Carregando...</div></div>
@@ -8379,7 +8413,7 @@ function _abrirDrilldownCategoria(chartId,grupo){
   let modal=document.getElementById('modal-categoria-detalhe');
   if(!modal){modal=document.createElement('div');modal.id='modal-categoria-detalhe';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">${_icone('search',18)} ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('search',18)} ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">${_renderDonutCategoria(detalhado,{rotuloCentro,rotuloCentroPlural,corFn:_corMarca})}</div>
   </div>`;
   modal.classList.add('open');
@@ -8429,17 +8463,17 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   _buscarPedidosAdmin();
 }
 async function renderMotoboyPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('bike',22)} Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('bike',22)} Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-moto');if(!tbody)return;
   tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td></tr>`).join('');
 }
 
 async function renderLojasPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -8463,7 +8497,7 @@ async function abrirEditarLoja(lojaId){
   const fi=(lbl,content)=>`<div class="fi"><label>${lbl}</label>${content}</div>`;
   const r2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
   const r1=(a)=>`<div class="form-row full">${a}</div>`;
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r1(fi('Categoria',sel('el-categoria',l.categoria,[['','Selecione...'],...CATEGORIAS_LOJA.map(c=>[c,c])])))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
@@ -8474,14 +8508,14 @@ ${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione..
 ${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
 ${r1(fi('CPF ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
 ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-original-email="${v(l.email)}" style="${is}"/>`),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
-${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div>`))}
+${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 ${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
 
-<div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div></div>`;
+<div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
 }
@@ -8703,7 +8737,7 @@ async function enviarCadastroLoja(){
 }
 
 async function renderUsuariosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
@@ -8735,7 +8769,7 @@ async function renderRelatoriosPage(){
   const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
   const inputStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text)';
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">🔍 Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">${_icone('search',16,'btn-ico')}Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
   carregarRelatorio();
 }
 async function carregarRelatorio(){
@@ -8796,7 +8830,7 @@ async function renderAuditoriaPage(){
           <input type="date" id="aud-de" value="${hoje}" style="${inputStyle}"/>
           <label style="font-size:12px;color:var(--text3);font-weight:600">Até</label>
           <input type="date" id="aud-ate" value="${hoje}" style="${inputStyle}"/>
-          <button class="btn-sm btn-primary-sm" onclick="_runAuditoria()">🔍 Verificar</button>
+          <button class="btn-sm btn-primary-sm" onclick="_runAuditoria()">${_icone('search',16,'btn-ico')}Verificar</button>
         </div>
       </div>
       <div id="aud-resultado" style="margin-top:4px">
@@ -8925,7 +8959,7 @@ async function _runAuditoria(){
 }
 
 async function renderLogsPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
   const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
   tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
@@ -9189,7 +9223,7 @@ async function _cpBuscar(){
       <td style="font-weight:700;color:var(--text)">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
       <td>${statusBadge(r.status)}</td>
       <td style="font-size:12px;color:var(--text3)">${r.vencimento?r.vencimento.split('-').reverse().join('/'):'—'}</td>
-      <td style="white-space:nowrap"><button onclick="_cpEditar('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;margin-right:4px">✏️</button><button onclick="_cpExcluir('${r.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">🗑️</button></td>
+      <td style="white-space:nowrap"><button onclick="_cpEditar('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;margin-right:4px">${_icone('pencil',16)}</button><button onclick="_cpExcluir('${r.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">${_icone('trash-2',16)}</button></td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
@@ -9299,7 +9333,7 @@ async function _flBuscar(){
       <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
       <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.status==='pago'&&c.valor_pago_final!=null?c.valor_pago_final:c.valor_total)||0).toFixed(2)}${c.status==='pago'&&c.valor_pago_final!=null&&c.valor_pago_final!==c.valor_total?`<div style="font-size:10px;font-weight:600;color:var(--text3)">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`:''}</td>
       <td>${badge(c)}</td>
-      <td><button onclick="verFaturaCobranca('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📄 Ver Fatura</button></td>
+      <td><button onclick="verFaturaCobranca('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('file-text',16,'btn-ico')}Ver Fatura</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -9320,7 +9354,7 @@ function _renderFaturaAtualCard(c){
         <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Vencimento</div><div style="font-size:14px;font-weight:600;color:${vencida?'#ef4444':'var(--text)'}">${formatarDataBR(c._vencYMD)}${vencida?` · ${diasAtraso} dia${diasAtraso>1?'s':''} de atraso`:''}</div></div>
       </div>
       ${vencida?`<div style="font-size:28px;font-weight:800;color:#dc2626;margin-bottom:16px">R$ ${valorAtualizado.toFixed(2)}</div>`:`<div style="font-size:28px;font-weight:800;color:#1A56DB;margin-bottom:16px">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`}
-      <button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button>
+      <button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('file-text',16,'btn-ico')}Ver Fatura</button>
     </div>
   </div>`;
 }
@@ -9399,7 +9433,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
       <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Nenhum clã criado pra essa cidade ainda.</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <select id="cla-uf-${cidSafe}" style="${_ss};max-width:100px">${_UF_LIST.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
-        <button class="btn-modal-primary" onclick="_criarCla('${cidadeEsc}','${cidSafe}')">➕ Criar Clã de ${cidade}</button>
+        <button class="btn-modal-primary" onclick="_criarCla('${cidadeEsc}','${cidSafe}')">${_icone('plus',16,'btn-ico')}Criar Clã de ${cidade}</button>
       </div>
     </div></div>`;
   }
@@ -9414,7 +9448,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
     ${_claPickerHtml('loja',cidSafe,lojasDisponiveis,lojasDoCla)}
     ${_claPickerHtml('ent',cidSafe,entDisponiveis,entDoCla)}
     <div id="cla-feedback-${cidSafe}" style="margin:10px 0;font-size:12px"></div>
-    <button class="btn-modal-primary" onclick="_salvarCla('${cla.id}','${cidSafe}')">💾 Salvar</button>
+    <button class="btn-modal-primary" onclick="_salvarCla('${cla.id}','${cidSafe}')">${_icone('save',16,'btn-ico')}Salvar</button>
   </div></div>`;
 }
 
@@ -9450,7 +9484,7 @@ function _claVerLista(multiId,verLabel){
   const listaHtml=nomes.length
     ?nomes.map(n=>`<div style="padding:9px 2px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)">${n}</div>`).join('')
     :`<div style="text-align:center;padding:24px;color:var(--text3)">Nenhum selecionado ainda</div>`;
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${verLabel} (${nomes.length})</span><button class="modal-close" onclick="fecharModal('modal-cla-ver-lista')">✕</button></div><div class="modal-body" style="max-height:340px;overflow-y:auto">${listaHtml}</div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${verLabel} (${nomes.length})</span><button class="modal-close" onclick="fecharModal('modal-cla-ver-lista')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:340px;overflow-y:auto">${listaHtml}</div></div>`;
   modal.classList.add('open');
   modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
 }
@@ -9510,7 +9544,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button></div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
@@ -9599,7 +9633,7 @@ function _vagasRenderCard(v){
       </div>
       ${badge}
     </div>
-    ${v.status==='disponivel'?`<button onclick="_vagasAbrirAlocar('${v.id}')" style="width:100%;margin-top:6px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">👤 Alocar Entregador</button>`:''}
+    ${v.status==='disponivel'?`<button onclick="_vagasAbrirAlocar('${v.id}')" style="width:100%;margin-top:6px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">${_icone('user-plus',16,'btn-ico')}Alocar Entregador</button>`:''}
   </div>`;
 }
 
@@ -9613,7 +9647,7 @@ function _vagasAbrirDia(dataStr){
   const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">${_icone('calendar-days',18)} ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('calendar-days',18)} ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
       <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
@@ -9627,7 +9661,7 @@ function _vagasAbrirDia(dataStr){
           </div>
         </div>
         <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente, por vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
-        <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">✅ Criar Vaga</button>
+        <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">${_icone('check',16,'btn-ico')}Criar Vaga</button>
         <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
       </div>
     </div>
@@ -9673,10 +9707,10 @@ function _vagasAbrirAlocar(vagaId){
   let modal=document.getElementById('modal-vagas-alocar');
   if(!modal){modal=document.createElement('div');modal.id='modal-vagas-alocar';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       <div class="fi" style="margin-bottom:12px"><label>CPF do motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
-      <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">🔍 Buscar</button>
+      <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">${_icone('search',16,'btn-ico')}Buscar</button>
       <div id="va-resultado" style="margin-top:14px"></div>
     </div>
   </div>`;
@@ -9699,7 +9733,7 @@ async function _vagasBuscarCpf(vagaId){
     return;
   }
   resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Encontrado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${ent.nome}</div></div>
-    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirmar alocação</button>`;
+    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Confirmar alocação</button>`;
 }
 
 async function _vagasConfirmarAlocar(vagaId,entregadorId){
@@ -9715,13 +9749,13 @@ async function _vagasAbrirFeriados(){
   let modal=document.getElementById('modal-feriados');
   if(!modal){modal=document.createElement('div');modal.id='modal-feriados';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px">
-    <div class="modal-header"><span class="modal-title">${_icone('calendar',18)} Feriados Importantes</span><button class="modal-close" onclick="document.getElementById('modal-feriados').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('calendar',18)} Feriados Importantes</span><button class="modal-close" onclick="document.getElementById('modal-feriados').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end">
         <div class="fi" style="flex:1"><label>Data</label><input type="date" id="fer-data" style="${_scInput()}"/></div>
         <div class="fi" style="flex:1"><label>Descrição (opcional)</label><input type="text" id="fer-descricao" placeholder="Ex: Natal" style="${_scInput()}"/></div>
       </div>
-      <button onclick="_feriadoSalvar()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px">➕ Adicionar</button>
+      <button onclick="_feriadoSalvar()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px">${_icone('plus',16,'btn-ico')}Adicionar</button>
       <div id="fer-lista"></div>
     </div>
   </div>`;
@@ -9738,7 +9772,7 @@ async function _feriadosBuscar(){
     const [ano,mes,dia]=f.data.split('-');
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
       <div><span style="font-weight:700;color:var(--text)">${dia}/${mes}/${ano}</span>${f.descricao?` <span style="color:var(--text3);font-size:12px">— ${f.descricao}</span>`:''}</div>
-      <button onclick="_feriadoExcluir('${f.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px">🗑️</button>
+      <button onclick="_feriadoExcluir('${f.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px">${_icone('trash-2',16)}</button>
     </div>`;
   }).join('');
 }
@@ -9830,7 +9864,7 @@ function _renderGerarPagamento(){
             <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gp-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
           </div></div>
-        <button onclick="_calcularPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+        <button onclick="_calcularPagamentos()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
       <div id="gp-resumo" style="margin-bottom:16px"></div>
       <div id="gp-lista"></div>
@@ -9949,7 +9983,7 @@ async function _calcularPagamentos(){
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
-      <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💳 Gerar Pagamento</button>
+      <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('credit-card',16,'btn-ico')}Gerar Pagamento</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total a Pagar</th><th>Chave PIX</th><th>Tipo PIX</th></tr></thead>
@@ -9980,7 +10014,7 @@ async function _buscarPagamentos(){
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
-      <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
+      <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionados</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
@@ -9998,7 +10032,7 @@ async function _buscarPagamentos(){
         <td style="font-family:monospace;font-size:12px">${ent.chave_pix||'—'}</td>
         <td>${ent.tipo_chave_pix||'—'}</td>
         <td>${ent.banco||'—'}</td>
-        <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+        <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
   _renderHistoricoAprovarSaques();
@@ -10039,7 +10073,7 @@ function _renderAprovarSaques(){
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
         <div style="font-size:14px;font-weight:700;color:var(--text)">Saques pendentes de aprovação</div>
-        <button onclick="_buscarPagamentos()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔄 Atualizar</button>
+        <button onclick="_buscarPagamentos()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
       </div>
       <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
@@ -10126,14 +10160,14 @@ let _srCaixaAtual=0;
 function renderSaqueRapidoPage(){
   const hoje=_dataHojeBrasilia();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('zap',22)} Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">🔄 Atualizar</button></div>
+    <div class="page-header"><div class="page-title">${_icone('zap',22)} Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div>
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">CAIXA <span onclick="_srEditarCaixaToggle()" style="cursor:pointer" title="Definir caixa">✏️</span></div>
         <div class="stat-value" id="sr-card-caixa" style="font-size:22px;color:var(--accent)">—</div>
         <div id="sr-caixa-edit" style="display:none;margin-top:10px;gap:6px">
           <input type="number" id="sr-caixa-input" step="0.01" min="0" style="width:110px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:Inter,sans-serif;font-size:13px"/>
-          <button onclick="_srSalvarCaixa()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">✔</button>
+          <button onclick="_srSalvarCaixa()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16)}</button>
         </div>
       </div>
       <div class="stat-card"><div class="stat-label">PAGO NO PERÍODO</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
@@ -10142,7 +10176,7 @@ function renderSaqueRapidoPage(){
     <div class="card" style="margin-bottom:20px"><div style="padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
       <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA INÍCIO</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
       <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA FIM</label><input type="date" id="sr-data-fim" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
-      <button onclick="_srAplicarPeriodo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Filtrar</button>
+      <button onclick="_srAplicarPeriodo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Filtrar</button>
     </div></div>
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques rápidos pendentes de aprovação</div>
@@ -10209,7 +10243,7 @@ async function _buscarSaquesRapidos(){
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="sr-sel-all" onchange="_srToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
-      <button onclick="_aprovarSaquesRapidosSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionados</button>
+      <button onclick="_aprovarSaquesRapidosSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionados</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
@@ -10227,7 +10261,7 @@ async function _buscarSaquesRapidos(){
         <td style="font-family:monospace;font-size:12px">${s.chave_pix||'—'}</td>
         <td>${s.tipo_chave_pix||'—'}</td>
         <td>${s.banco||'—'}</td>
-        <td><button onclick="recusarSaqueRapido('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+        <td><button onclick="recusarSaqueRapido('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
   _renderHistoricoSaqueRapido();
@@ -10315,7 +10349,7 @@ function _renderGerarCobranca(){
             <input type="date" id="gc-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gc-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
           </div></div>
-        <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+        <button onclick="_buscarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
       <div id="gc-resumo" style="margin-bottom:16px"></div>
       <div id="gc-lista"></div>
@@ -10340,7 +10374,7 @@ async function _carregarHistoricoCobrancas(append){
     <td>${c.qtd_pedidos??'—'}</td>
     <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td>
-    <td style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_gcBadge(c.status)}${c.status==='pendente'?`<button onclick="_enviarFaturaHistorico('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📲 Enviar</button>`:''}</td>
+    <td style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_gcBadge(c.status)}${c.status==='pendente'?`<button onclick="_enviarFaturaHistorico('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('send',16,'btn-ico')}Enviar</button>`:''}</td>
   </tr>`).join('');
   if(append){
     const tbody=el.querySelector('tbody');
@@ -10422,7 +10456,7 @@ async function _buscarCobrancas(){
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gc-sel-all" onchange="_gcToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
-      <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🏪 Gerar Cobrança</button>
+      <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('store',16,'btn-ico')}Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th></tr></thead>
@@ -10466,7 +10500,7 @@ function _renderAprovarCobrancas(){
           <input type="date" id="ac-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
           <input type="date" id="ac-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
-        <button onclick="_buscarAprovarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🔍 Buscar</button>
+        <button onclick="_buscarAprovarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
       <div id="ac-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
@@ -10498,7 +10532,7 @@ async function _buscarCobrancasPendentes(){
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
-      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar Selecionadas</button>
+      <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionadas</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Vencimento</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
@@ -10516,7 +10550,7 @@ async function _buscarCobrancasPendentes(){
         <td>${c.qtd_pedidos||'—'}</td>
         <td style="font-weight:700;color:${vencida?'#dc2626':'#1A56DB'}">R$ ${(vencida?valorAtualizado:(parseFloat(c.valor_total)||0)).toFixed(2)}${vencida?`<div style="font-size:10px;font-weight:600;color:#dc2626">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)} ${detalheVencida}</div>`:''}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.created_at)}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="_aprovarCobrancaUnica('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">✅ Aprovar</button><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📄 Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">❌ Recusar</button></td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="_aprovarCobrancaUnica('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar</button><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('file-text',16,'btn-ico')}Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
 }
@@ -10704,8 +10738,8 @@ async function verFaturaCobranca(cobId){
     </div>
     <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
-      <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">🖨️ Imprimir</button>
-      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp Financeiro</button>`:''}
+      <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir</button>
+      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('send',16,'btn-ico')}Enviar comprovante no WhatsApp Financeiro</button>`:''}
     </div>
   </div>`;
   modal.innerHTML=invoice;
@@ -10915,9 +10949,9 @@ async function renderWhatsappPage(){
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('message-circle',22)} Disparo WhatsApp</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
-        <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">🛵 Mensagem em Rota</button>
-        <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">💵 Financeiro</button>
-        <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">⚙️ Configuração API</button>
+        <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('bike',16,'btn-ico')}Mensagem em Rota</button>
+        <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">${_icone('banknote',16,'btn-ico')}Financeiro</button>
+        <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">${_icone('settings',16,'btn-ico')}Configuração API</button>
       </div>
       <div id="wa-content"></div>
     </div>`;
@@ -10950,7 +10984,7 @@ async function _waGoAba(aba){
       <div class="fi" style="margin-bottom:12px"><label>Instância</label><input id="wa-api-inst" placeholder="nome-da-instancia" value="${(instR&&instR[0]?.valor)||''}"/></div>
       <div class="fi" style="margin-bottom:16px"><label>Token (apikey)</label><input id="wa-api-token" type="password" placeholder="••••••••••" value="${(tokenR&&tokenR[0]?.valor)||''}"/></div>
       <div id="wa-cfg-fb" style="min-height:18px;margin-bottom:12px"></div>
-      <button onclick="_salvarConfigEvolution()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Configuração</button>
+      <button onclick="_salvarConfigEvolution()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar Configuração</button>
     </div>`;
     return;
   }
@@ -10964,7 +10998,7 @@ async function _waGoAba(aba){
       <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-em-rota" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{cliente}</code> nome &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{link}</code> rastreio &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{numero}</code> nº pedido</div>
       <div id="wa-emrota-fb" style="min-height:18px;margin-bottom:12px"></div>
-      <button onclick="_salvarMsgWhatsapp('em_rota')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Mensagem</button>
+      <button onclick="_salvarMsgWhatsapp('em_rota')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar Mensagem</button>
     </div>`;
     return;
   }
@@ -10979,8 +11013,8 @@ async function _waGoAba(aba){
       <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{loja}</code> nome da loja</div>
       <div id="wa-fin-fb" style="min-height:18px;margin-bottom:12px"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button onclick="_salvarMsgWhatsapp('financeiro')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">✅ Salvar Mensagem</button>
-        <button onclick="_dispararWhatsappFinanceiro(true)" style="background:#10b981;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">📲 Disparar Agora</button>
+        <button onclick="_salvarMsgWhatsapp('financeiro')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar Mensagem</button>
+        <button onclick="_dispararWhatsappFinanceiro(true)" style="background:#10b981;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('send',16,'btn-ico')}Disparar Agora</button>
       </div>
     </div>`;
     return;
@@ -11020,9 +11054,9 @@ async function renderDisparoNotificacoesPage(){
         <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-av-corpo" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${avCorpo}</textarea></div>
         <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
-          <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
-          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
+          <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
+          <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar comigo</button>
+          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar agora pra todos</button>
         </div>
       </div>
       <div class="card" style="max-width:460px;flex:1;min-width:320px">
@@ -11032,9 +11066,9 @@ async function renderDisparoNotificacoesPage(){
         <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-in-corpo" rows="5" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${inCorpo}</textarea></div>
         <div id="np-in-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">💾 Salvar Texto</button>
-          <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">🧪 Testar comigo</button>
-          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">📢 Enviar agora pra todos</button>
+          <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
+          <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar comigo</button>
+          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar agora pra todos</button>
         </div>
       </div>
     </div>
@@ -11090,8 +11124,8 @@ function _npCardPeriodico(dia,horario,valores){
     <div class="fi" style="margin-bottom:5px"><label style="font-size:10px">Mensagem</label><textarea id="np-${chave}-corpo" rows="2" placeholder="vazio = não dispara" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px;color:var(--text);font-family:Inter,sans-serif;font-size:12px;line-height:1.4;resize:vertical">${corpo}</textarea></div>
     <div id="np-${chave}-fb" style="min-height:14px;margin-bottom:6px;font-size:11px"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button onclick="_npSalvarTexto('${chave}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">💾 Salvar</button>
-      <button onclick="_npTestar('${chave}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">🧪 Testar</button>
+      <button onclick="_npSalvarTexto('${chave}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar</button>
+      <button onclick="_npTestar('${chave}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar</button>
     </div>
   </div>`;
 }
@@ -11273,7 +11307,7 @@ function _renderConfigCliente(){
         </div>
 
         <div id="rc-feedback" style="min-height:18px;margin-bottom:12px"></div>
-        <button id="rc-btn-salvar" onclick="_salvarConfigCliente()" disabled style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;opacity:.45">💾 Salvar Configurações</button>
+        <button id="rc-btn-salvar" onclick="_salvarConfigCliente()" disabled style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;opacity:.45">${_icone('save',16,'btn-ico')}Salvar Configurações</button>
       </div>
     </div>`;
   _carregarConfigCliente();
@@ -11358,7 +11392,7 @@ function _cardPlataforma(nome){
   return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
     <div style="font-size:13px;font-weight:700;color:var(--text)">${nome}</div>
     <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid ${statusInfo.cor};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:${statusInfo.cor};width:fit-content">${statusInfo.emoji} ${statusInfo.label}</div>
-    <button disabled style="background:var(--surface);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;opacity:.6">⚙️ Configurar</button>
+    <button disabled style="background:var(--surface);color:var(--text3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;opacity:.6">${_icone('settings',16,'btn-ico')}Configurar</button>
   </div>`;
 }
 
@@ -11402,7 +11436,7 @@ async function _renderConfigIntegracao(){
       <div style="padding:24px 28px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
           <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
-          <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">➕ Adicionar integração</button>
+          <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('plus',16,'btn-ico')}Adicionar integração</button>
         </div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao Merchant ID do app do iFood (Portal do Desenvolvedor → seu app → Merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
         <div id="ifood-merchant-contador" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Carregando...</div>
@@ -11453,7 +11487,7 @@ async function _carregarIfoodErros(){
     :`Mostrando os ${Math.min(_IFOOD_ERROS_LIMITE_PADRAO,logs.length)} mais recentes.`;
   if(btnWrap)btnWrap.innerHTML=_ifoodErrosCompleto
     ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar só recentes</button>`
-    :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📜 Ver histórico completo</button>`;
+    :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('scroll-text',16,'btn-ico')}Ver histórico completo</button>`;
 }
 function _toggleIfoodErrosCompleto(){
   _ifoodErrosCompleto=!_ifoodErrosCompleto;
@@ -11482,7 +11516,7 @@ async function _carregarIfoodMerchantLojas(){
       <td style="padding:8px 12px;font-size:13px;color:var(--text);white-space:nowrap;border-top:1px solid var(--border)">${nomeEsc}</td>
       <td style="padding:8px 12px;border-top:1px solid var(--border)"><input type="text" id="ifood-merchant-input-${l.id}" value="${merchantEsc}" placeholder="ex: cbdadf92-da29-4ea3-9fd9-afc6ca35b7c4" style="width:100%;min-width:260px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:monospace;background:var(--surface);color:var(--text);box-sizing:border-box"/></td>
       <td style="padding:8px 12px;border-top:1px solid var(--border);white-space:nowrap;vertical-align:top">
-        <button onclick="_salvarIfoodMerchantId('${l.id}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar</button>
+        <button onclick="_salvarIfoodMerchantId('${l.id}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('save',16,'btn-ico')}Salvar</button>
         <div id="ifood-merchant-fb-${l.id}" style="font-size:11px;margin-top:4px;min-height:14px;white-space:normal;max-width:220px;line-height:1.4"></div>
       </td>
     </tr>`;
@@ -11533,7 +11567,7 @@ async function _abrirModalAdicionarIntegracaoIfood(){
   if(!modal){modal=document.createElement('div');modal.id='modal-ifood-add-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   _ifoodAddLojaSelecionadaId=null;
   modal.innerHTML=`<div class="modal" style="max-width:560px;width:92vw">
-    <div class="modal-header"><span class="modal-title">${_icone('plus',18)} Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('plus',18)} Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="padding:28px !important;max-height:75vh;overflow-y:auto">
       <div class="fi ifood-busca-wrap" style="position:relative;gap:8px">
         <label>🏪 Buscar loja</label>
@@ -11556,7 +11590,7 @@ async function _abrirModalAdicionarIntegracaoIfood(){
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">Cancelar</button>
-      <button class="btn-modal-primary" onclick="_salvarNovaIntegracaoIfood()">💾 Vincular</button>
+      <button class="btn-modal-primary" onclick="_salvarNovaIntegracaoIfood()">${_icone('save',16,'btn-ico')}Vincular</button>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -11612,10 +11646,10 @@ function _renderConfigOperacao(){
           <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Define como os pedidos são enviados aos entregadores disponíveis.</div>
           <div style="display:flex;gap:10px;margin-bottom:0">
             <button id="op-modo-todos" onclick="_opSetModo('todos')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
-              📢 Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos os disponíveis recebem ao mesmo tempo</div>
+              ${_icone('megaphone',16,'btn-ico')}Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos os disponíveis recebem ao mesmo tempo</div>
             </button>
             <button id="op-modo-sequencial" onclick="_opSetModo('sequencial')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
-              🔄 Sequencial<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Envia um por vez; passa pro próximo se não aceitar</div>
+              ${_icone('refresh-cw',16,'btn-ico')}Sequencial<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Envia um por vez; passa pro próximo se não aceitar</div>
             </button>
           </div>
         </div>
@@ -11686,7 +11720,7 @@ function _renderConfigOperacao(){
         </div>
 
         <div id="op-feedback" style="min-height:18px;margin-bottom:12px"></div>
-        <button onclick="_salvarConfigOperacao()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">💾 Salvar Configurações</button>
+        <button onclick="_salvarConfigOperacao()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('save',16,'btn-ico')}Salvar Configurações</button>
       </div>
     </div>`;
   _carregarConfigOperacao();
@@ -11755,18 +11789,18 @@ async function _salvarConfigOperacao(){
 
 let _tabAba='cobranca';
 async function renderTabelasPrecoPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('circle-dollar-sign',22)} Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('circle-dollar-sign',22)} Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('clipboard-list',16,'btn-ico')}Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">${_icone('bike',16,'btn-ico')}Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   _tabAba='cobranca';await carregarTabelasPreco();
 }
 function trocarAbaTabela(aba){_tabAba=aba;const bc=document.getElementById('aba-cobranca'),bp=document.getElementById('aba-pagamento');if(aba==='cobranca'){bc.style.borderBottom='2px solid var(--accent)';bc.style.color='var(--accent)';bp.style.borderBottom='2px solid transparent';bp.style.color='var(--text3)';}else{bp.style.borderBottom='2px solid #10b981';bp.style.color='#10b981';bc.style.borderBottom='2px solid transparent';bc.style.color='var(--text3)';}carregarTabelasPreco();}
 async function carregarTabelasPreco(){
   const tabelas=await db('tabelas_preco','GET',null,`?tipo=eq.${_tabAba}&order=nome.asc`);
   const el=document.getElementById('tabelas-lista'),btnNovo=document.getElementById('tp-btn-novo');if(!el)return;
-  if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_tabAba==='pagamento'?'➕ Novo Pagamento':'➕ Nova Cobrança';btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
+  if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_icone('plus',16,'btn-ico')+(_tabAba==='pagamento'?'Novo Pagamento':'Nova Cobrança');btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
   _tabelasPrecoCache=tabelas;
   tabelas.forEach(t=>console.log('[FAIXAS] tabela id:',t.id,'nome:',t.nome));
-  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">📊 Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">✏️</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">📋</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 function verFaixasTabela(id){const t=_tabelasPrecoCache.find(x=>x.id===id);if(t)verFaixas(t.id,t.nome,t.tipo||'cobranca');}
 async function verFaixas(tabelaId,tabelaNome,tipo){
@@ -11776,7 +11810,7 @@ async function verFaixas(tabelaId,tabelaNome,tipo){
   ]);
   const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">✏️</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">🗑️</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">➕ Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">💾</button></div></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
@@ -11801,7 +11835,7 @@ async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
 }
 function abrirModalNovaTabela(tipo){
   _faixaCount=1;const isPag=tipo==='pagamento',cor=isPag?'#10b981':'var(--accent)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">➕ Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">✅ Cadastrar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">${_icone('plus',16,'btn-ico')}Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">${_icone('check',16,'btn-ico')}Cadastrar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 let _faixaCount=1;
@@ -11822,7 +11856,7 @@ async function salvarNovaTabela(tipo){
 async function adicionarFaixa(tabelaId,tabelaNome,tipo){fecharModal('modal-tabela-preco');const de=prompt('Km de:','0'),ate=prompt('Km até:',''),sem=prompt('Sem retorno (R$):','0.0000'),com=prompt('Com retorno (R$):','0.0000');if(!ate)return;await db('tabelas_preco_faixas','POST',{tabela_id:tabelaId,km_de:parseFloat(de)||0,km_ate:parseFloat(ate)||0,valor_sem_retorno:parseFloat(sem)||0,valor_com_retorno:parseFloat(com)||0});showNotif('✅ Faixa adicionada!','');verFaixas(tabelaId,tabelaNome,tipo);}
 function editarFaixa(faixaId,tabelaId,tabelaNome,tipo,de,ate,sem,com){
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km de</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">✅ Salvar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km de</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
@@ -11856,7 +11890,7 @@ async function clonarTabela(id,nome){
 }
 
 async function renderLojaPedidosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('package',22)} Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">↻</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('package',22)} Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">${_icone('refresh-cw',16)}</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];
   const tbody=document.getElementById('tbody-loja-pedidos');if(!tbody)return;
   tbody.innerHTML=pedidos.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>`<tr><td style="font-weight:700">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${getStatusKey(p)}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td></tr>`).join('');
@@ -11922,8 +11956,8 @@ async function _mcCarregarCategorias(){
         <div style="font-size:11px;color:${c.ativo?'#10b981':'#ef4444'}">${c.ativo?'Ativa':'Inativa'}</div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
-        <button onclick="_mcAbrirModalCategoria('${c.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
-        <button onclick="_mcToggleCategoria('${c.id}',${!c.ativo})" title="${c.ativo?'Desativar':'Ativar'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${c.ativo?'🔴':'🟢'}</button>
+        <button onclick="_mcAbrirModalCategoria('${c.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone('pencil',16)}</button>
+        <button onclick="_mcToggleCategoria('${c.id}',${!c.ativo})" title="${c.ativo?'Desativar':'Ativar'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone(c.ativo?'eye-off':'eye',14)}</button>
       </div>
     </div>`).join('');
 }
@@ -11958,9 +11992,9 @@ async function _mcCarregarProdutos(catId){
         <div style="display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:6px;border-top:1px solid var(--border)">
           <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${p.disponivel?'#05966920':'#ef444420'};color:${p.disponivel?'#10b981':'#ef4444'};font-weight:600">${p.disponivel?'Disponível':'Indisponível'}</span>
           <div style="margin-left:auto;display:flex;gap:4px">
-            <button onclick="_mcToggleProduto('${p.id}',${!p.disponivel})" title="${p.disponivel?'Marcar indisponível':'Marcar disponível'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${p.disponivel?'🔴':'🟢'}</button>
-            <button onclick="_mcAbrirModalProduto('${p.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
-            <button onclick="_mcExcluirProduto('${p.id}','${(p.nome||'').replace(/'/g,"\\'")}')" title="Excluir" style="background:none;border:1px solid #ef4444;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+            <button onclick="_mcToggleProduto('${p.id}',${!p.disponivel})" title="${p.disponivel?'Marcar indisponível':'Marcar disponível'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone(p.disponivel?'eye-off':'eye',14)}</button>
+            <button onclick="_mcAbrirModalProduto('${p.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone('pencil',16)}</button>
+            <button onclick="_mcExcluirProduto('${p.id}','${(p.nome||'').replace(/'/g,"\\'")}')" title="Excluir" style="background:none;border:1px solid #ef4444;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone('trash-2',16)}</button>
           </div>
         </div>
       </div>
@@ -11975,7 +12009,7 @@ function _mcAbrirModalCategoria(catId){
   if(!m){m=document.createElement('div');m.id='mc-modal-cat';m.className='modal-overlay';document.body.appendChild(m);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box';
   m.innerHTML=`<div class="modal" style="max-width:400px">
-    <div class="modal-header"><span class="modal-title">${_icone(cat?'pencil':'plus',18)} ${cat?'Editar':'Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone(cat?'pencil':'plus',18)} ${cat?'Editar':'Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       <div class="fi"><label>Nome da Categoria</label><input id="mc-cat-nome" value="${v(cat?.nome)}" placeholder="Ex: Lanches, Bebidas..." style="${ss}"/></div>
       <div class="form-row" style="margin-top:12px">
@@ -11984,7 +12018,7 @@ function _mcAbrirModalCategoria(catId){
       </div>
       <div id="mc-cat-fb" style="margin-top:10px"></div>
     </div>
-    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarCategoria(${catId?`'${catId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div>
+    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarCategoria(${catId?`'${catId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div>
   </div>`;
   m.classList.add('open');
   setTimeout(()=>document.getElementById('mc-cat-nome')?.focus(),100);
@@ -12028,7 +12062,7 @@ function _mcAbrirModalProduto(prodId){
   const catOpts=_mcCategorias.map(c=>`<option value="${c.id}"${(prod?.categoria_id||_mcCatSelecionada)===c.id?' selected':''}>${c.nome}</option>`).join('');
   const fotoAtual=prod?.foto_url||'';
   m.innerHTML=`<div class="modal" style="max-width:480px">
-    <div class="modal-header"><span class="modal-title">${_icone(prod?'pencil':'plus',18)} ${prod?'Editar':'Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone(prod?'pencil':'plus',18)} ${prod?'Editar':'Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div class="form-row full fi"><label>Categoria</label><select id="mc-prod-cat" style="${ss}">${catOpts}</select></div>
       <div class="form-row full fi" style="margin-top:10px"><label>Nome do Produto</label><input id="mc-prod-nome" value="${v(prod?.nome)}" placeholder="Ex: X-Burguer Especial" style="${ss}"/></div>
@@ -12044,12 +12078,12 @@ function _mcAbrirModalProduto(prodId){
           `<div id="mc-prod-foto-preview" style="display:none"></div>`}
         <input type="file" id="mc-prod-foto-file" accept="image/jpeg,image/png,image/webp" onchange="_mcPreviewFoto(this)" style="display:none"/>
         <input id="mc-prod-foto-url" type="text" value="${v(fotoAtual)}" placeholder="URL da foto ou escolha arquivo abaixo" style="${ss};margin-bottom:6px" oninput="_mcAtualizarPreviewUrl(this.value)"/>
-        <button type="button" onclick="document.getElementById('mc-prod-foto-file').click()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;width:100%">📷 Escolher imagem (máx. 2MB)</button>
+        <button type="button" onclick="document.getElementById('mc-prod-foto-file').click()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;width:100%">${_icone('camera',16,'btn-ico')}Escolher imagem (máx. 2MB)</button>
         <div id="mc-prod-foto-status" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
       </div>
       <div id="mc-prod-fb" style="margin-top:10px"></div>
     </div>
-    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarProduto(${prodId?`'${prodId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">✓ Salvar</button></div>
+    <div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">Cancelar</button><button onclick="_mcSalvarProduto(${prodId?`'${prodId}'`:'null'})" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div>
   </div>`;
   m.classList.add('open');
   setTimeout(()=>document.getElementById('mc-prod-nome')?.focus(),100);
@@ -12242,7 +12276,7 @@ async function _rastreioCompartilhar(){
   }
   try{
     await navigator.clipboard.writeText(url);
-    if(btn){const original=btn.textContent;btn.textContent='✅ Link copiado!';setTimeout(()=>{btn.textContent=original;},2000);}
+    if(btn){const original=btn.innerHTML;btn.innerHTML=_icone('check',16,'btn-ico')+'Link copiado!';setTimeout(()=>{btn.innerHTML=original;},2000);}
   }catch(e){ /* ambiente sem clipboard API — raro, falha silenciosa */ }
 }
 // Tela final quando o pedido chega em "finalizado" — substitui TODO o
