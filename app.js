@@ -76,7 +76,19 @@ const ICONES_LUCIDE={
   'clipboard-list':'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
   'user':'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   'log-out':'<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
-  'chevron-right':'<path d="m9 18 6-6-6-6"/>'
+  'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+  'pencil':'<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  'bike':'<circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>',
+  'upload':'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
+  'circle-x':'<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+  'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  'store':'<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
+  'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+  'wallet':'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  'user-plus':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+  'calendar':'<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>',
+  'chart-line':'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>'
 };
 function _icone(nome,tam=18){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -630,7 +642,7 @@ function _abrirChatLoja(){
   let modal=document.getElementById('modal-chat-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-chat-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px;height:70vh;display:flex;flex-direction:column">
-    <div class="modal-header"><span class="modal-title">💬 Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('message-circle',18)} Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">✕</button></div>
     <div id="chat-loja-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
       <input id="chat-loja-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
@@ -657,7 +669,7 @@ async function _abrirChatAdmin(){
   let modal=document.getElementById('modal-chat-admin');
   if(!modal){modal=document.createElement('div');modal.id='modal-chat-admin';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:820px;width:92vw;height:75vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    <div class="modal-header" style="padding:14px 20px;flex-shrink:0"><span class="modal-title">💬 Chat</span><button class="modal-close" onclick="_fecharChatAdmin()">✕</button></div>
+    <div class="modal-header" style="padding:14px 20px;flex-shrink:0"><span class="modal-title">${_icone('message-circle',18)} Chat</span><button class="modal-close" onclick="_fecharChatAdmin()">✕</button></div>
     <div class="chat-admin-layout" style="flex:1;display:flex;gap:14px;min-height:0;padding:0 16px 16px">
       <div style="width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:10px" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="chat-painel-conversa">
@@ -1193,6 +1205,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        no index.html pelo mesmo motivo do menu flutuante abaixo. ── */
     .nav-item-icon{width:24px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
     .nav-item-icon svg{display:block;}
+
+    /* ── ÍCONES NOS TÍTULOS DE PÁGINA/JANELA (fase 2 Lucide) ──
+       vertical-align alinha o ícone na linha do texto; na page-title a
+       cor vem da accent (o texto usa gradiente/text-fill, que não pinta
+       SVG). */
+    .page-title .icone,.modal-title .icone{vertical-align:-0.18em;margin-right:2px;flex-shrink:0;}
+    .page-title .icone{color:var(--accent);-webkit-text-fill-color:initial;}
 
     /* ── MENU FLUTUANTE DO RODAPÉ DA LOJA (Configurações / Perfil) ──
        Tem que ficar AQUI (CSS injetado pelo app.js), não no index.html:
@@ -3042,7 +3061,7 @@ function _abrirModalRecargaPix(){
     </div>`;
   };
   modal.innerHTML=`<div class="modal" style="width:640px;max-width:95vw">
-    <div class="modal-header"><span class="modal-title">💰 Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('wallet',18)} Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">✕</button></div>
     <div class="modal-body" id="mrp-body">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha um valor para recarregar seu saldo. Pacotes maiores têm bônus de crédito.</div>
       <div class="pix-pacotes-grid">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
@@ -3438,14 +3457,14 @@ function renderTabs(){
 // Tela provisória das páginas novas do rodapé da loja (Configurações /
 // Perfil) até o conteúdo de cada uma ser definido.
 function _renderLojaEmBrevePage(icon,titulo,texto){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${icon} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
 }
 function goTab(id){
   _navAtivo=id;renderNavSidebar(id);clearInterval(realtimeInterval);
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'👤':'⚙️',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -4465,7 +4484,7 @@ function abrirEditarPedido(pedidoId){
   const temAgend=!!(p.agendado_para);
   const agendVal=temAgend?_agendadoInputBrasilia(p.agendado_para):'';
   const esc=v=>(v||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Pedido #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:78vh;overflow-y:auto">
 <div class="form-row">
   <div class="fi"><label>Nº Pedido</label><input id="ep-numero" value="${esc(p.numero)}"/></div>
   <div class="fi"><label>Cliente</label><input id="ep-cliente" value="${esc(p.cliente||p.nome_cliente)}"/></div>
@@ -4709,7 +4728,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const avisoRealocacao=temEntregadorAtivo
     ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse pedido já tem um entregador em andamento.</b> Escolher outro abaixo vai desalocar o entregador atual (ele será avisado por notificação) e reabrir o pedido como disponível pro novo.</div>`
     :'';
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">🛵 Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">✕</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
   modal.classList.add('open');
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
@@ -5050,7 +5069,7 @@ function renderCadastrosPage(aba){
   if(!abas.find(a=>a.id===_cadastrosAba)) _cadastrosAba=abas[0].id;
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">🗂️ Cadastros</div></div>
+      <div class="page-header"><div class="page-title">${_icone('folder-open',22)} Cadastros</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button id="cad-aba-${a.id}" onclick="renderCadastrosPage('${a.id}')"
           style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_cadastrosAba===a.id?'var(--accent)':'transparent'};color:${_cadastrosAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
@@ -5247,7 +5266,7 @@ async function _abrirModalImportarLojas(){
     _importLojasExistentesCache=(r||[]).map(l=>({nome:l.nome,nomeNorm:_normalizarTextoDup(l.nome),nucleoEnd:_nucleoEnderecoDup(l.endereco)}));
   }).catch(()=>{_importLojasExistentesCache=[];});
   modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
-    <div class="modal-header"><span class="modal-title">📥 Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ Dados pendentes" pra você completar individualmente depois em Editar Loja.</div>
       <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">⬇️ Baixar modelo CSV</button>
@@ -5517,7 +5536,7 @@ function _reprovarLoja(id,nome){
   let modal=document.getElementById('modal-reprovar-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">❌ Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-loja-motivo" placeholder="Ex: Dados incompletos, endereço inválido..." style="min-height:80px;resize:vertical"></textarea></div>
@@ -5753,7 +5772,7 @@ function _reprovarEntregador(id,nome){
   let modal=document.getElementById('modal-reprovar-ent');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-ent';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">❌ Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-motivo" placeholder="Ex: Documentação incompleta, CNH inválida..." style="min-height:80px;resize:vertical"></textarea></div>
@@ -5912,7 +5931,7 @@ function _reprovarDocumento(entId,campo,label){
   let modal=document.getElementById('modal-reprovar-doc');
   if(!modal){modal=document.createElement('div');modal.id='modal-reprovar-doc';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">❌ Reprovar ${label}</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar ${label}</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-doc').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       <div class="fi"><label>Motivo</label><textarea id="repdoc-motivo" placeholder="Ex: Foto ilegível, documento vencido..." style="min-height:80px;resize:vertical"></textarea></div>
       <div id="repdoc-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
@@ -5972,7 +5991,7 @@ async function abrirEditarEntregador(entId){
   const row2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
   const row1=(a)=>`<div class="form-row full">${a}</div>`;
   const fi=(label,content)=>`<div class="fi"><label>${label}</label>${content}</div>`;
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
 ${row2(fi('Nome completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
 ${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
@@ -6065,7 +6084,7 @@ function abrirNovoEntregador(){
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
   let modal=document.getElementById('modal-novo-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-novo-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">➕ Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">🚀 Criar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">🚀 Criar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6107,7 +6126,7 @@ async function abrirEditarUsuario(userId){
   let modal=document.getElementById('modal-editar-usuario');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-usuario';modal.className='modal-overlay';document.body.appendChild(modal);}
   const lojaOpts='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">✏️ Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">✕</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">👁️</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">💾 Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6144,7 +6163,7 @@ async function _renderPrecificacaoTab(el){
 async function renderPrecoDinamicoPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">📈 Preço Dinâmico</div></div>
+      <div class="page-header"><div class="page-title">${_icone('trending-up',22)} Preço Dinâmico</div></div>
       <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">GLOBAL (TODAS AS CIDADES)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
         <div id="pd-wrap-cliente"></div>
@@ -6683,7 +6702,7 @@ async function renderNovoPedidoPage(){
   const seletorLoja=currentPerfil==='adm'
     ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">➕ Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">📍 Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">🚀 Criar Pedido</button></div></div></div></div></div>`;
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
@@ -6763,7 +6782,7 @@ async function renderCacPage(){
   const hoje=_dataHojeBrasilia();
   _cacMes=_cacMes||hoje.slice(0,7);
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🎯 C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
+    <div class="page-header"><div class="page-title">${_icone('target',22)} C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">↻ Atualizar</button></div></div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta mensal por cargo (Vendedor 880 a 2.500, Expansão 2.500 a 8.000 entregas): bate ao atingir o mínimo, somando as entregas finalizadas no mês de todas as lojas novas dele, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
     <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
@@ -6834,7 +6853,7 @@ async function abrirModalVendedor(id){
   const q=x=>(x||'').toString().replace(/"/g,'&quot;');
   let modal=document.getElementById('modal-vendedor');
   if(!modal){modal=document.createElement('div');modal.id='modal-vendedor';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${id?'✏️ Editar':'➕ Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">✕</button></div><div class="modal-body">
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone(id?'pencil':'plus',18)} ${id?'Editar':'Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">✕</button></div><div class="modal-body">
     <div class="form-row"><div class="fi"><label>Nome</label><input id="vd-nome" value="${q(v.nome)}"/></div><div class="fi"><label>Telefone</label><input id="vd-telefone" value="${q(v.telefone)}" placeholder="(16) 99999-9999"/></div></div>
     <div class="form-row"><div class="fi"><label>Cargo</label><select id="vd-cargo" style="${ss}">${cargos.map(c=>`<option value="${c.id}"${c.id===v.cargo_id?' selected':''}>${_escHtml(c.nome)} — fixo R$ ${parseFloat(c.salario_fixo).toFixed(2)}</option>`).join('')}</select></div><div class="fi"><label>Status</label><select id="vd-ativo" style="${ss}"><option value="true"${v.ativo?' selected':''}>Ativo</option><option value="false"${!v.ativo?' selected':''}>Inativo</option></select></div></div>
     <div id="vd-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-vendedor').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarVendedor(${id?`'${id}'`:''})">💾 Salvar</button></div></div>`;
@@ -6864,7 +6883,7 @@ async function renderPedidosPage(){
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">📦 Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div>
+    <div class="page-header"><div class="page-title">${_icone('package',22)} Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">➕ Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">↻ Atualizar</button></div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('DATA INÍCIO')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
@@ -7142,7 +7161,7 @@ function _verLinhaTempoPedido(pedidoId){
     </div>`;
   };
   modal.innerHTML=`<div class="modal" style="max-width:440px">
-    <div class="modal-header"><span class="modal-title">⏱️ Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('history',18)} Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       ${passos.map(linhaMarco).join('')}
       ${faltouDadoNoMeio?`<div style="margin-top:6px;font-size:12px;color:var(--text3)">⚠️ Um ou mais marcos não foram registrados pra esse pedido (comum em pedidos antigos — anteriores ao marco existir no sistema —, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas).</div>`:''}
@@ -7941,7 +7960,7 @@ async function renderMetricasPage(){
   const dataFimPadrao=`${anoAtual}-12-31`;
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
   const _lbl=t=>`<label style="display:block;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.4px;white-space:nowrap">${t}</label>`;
-  const _titulo=currentPerfil==='loja'?'📊 Minhas Métricas':"📊 Métricas Let's Go";
+  const _titulo=_icone('chart-column',22)+' '+(currentPerfil==='loja'?'Minhas Métricas':"Métricas Let's Go");
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">${_titulo}</div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
@@ -8336,7 +8355,7 @@ function _abrirDrilldownCategoria(chartId,grupo){
   let modal=document.getElementById('modal-categoria-detalhe');
   if(!modal){modal=document.createElement('div');modal.id='modal-categoria-detalhe';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">🔎 ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('search',18)} ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">✕</button></div>
     <div class="modal-body">${_renderDonutCategoria(detalhado,{rotuloCentro,rotuloCentroPlural,corFn:_corMarca})}</div>
   </div>`;
   modal.classList.add('open');
@@ -8386,14 +8405,14 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   _buscarPedidosAdmin();
 }
 async function renderMotoboyPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🛵 Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('bike',22)} Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-moto');if(!tbody)return;
   tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td></tr>`).join('');
 }
 
 async function renderLojasPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">🏪 Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">➕ Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✏️</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">🗑️</button></td></tr>`).join('');
@@ -8420,7 +8439,7 @@ async function abrirEditarLoja(lojaId){
   const fi=(lbl,content)=>`<div class="fi"><label>${lbl}</label>${content}</div>`;
   const r2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
   const r1=(a)=>`<div class="form-row full">${a}</div>`;
-  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">✏️ Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
+  modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">✕</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r1(fi('Categoria',sel('el-categoria',l.categoria,[['','Selecione...'],...CATEGORIAS_LOJA.map(c=>[c,c])])))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
@@ -8660,7 +8679,7 @@ async function enviarCadastroLoja(){
 }
 
 async function renderUsuariosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">👥 Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">➕ Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
@@ -8692,7 +8711,7 @@ async function renderRelatoriosPage(){
   const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
   const inputStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text)';
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">📈 Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">🔍 Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">🔍 Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
   carregarRelatorio();
 }
 async function carregarRelatorio(){
@@ -8747,7 +8766,7 @@ async function renderAuditoriaPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header" style="flex-wrap:wrap;gap:10px">
-        <div class="page-title">🔍 Auditoria</div>
+        <div class="page-title">${_icone('search',22)} Auditoria</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <label style="font-size:12px;color:var(--text3);font-weight:600">De</label>
           <input type="date" id="aud-de" value="${hoje}" style="${inputStyle}"/>
@@ -8882,7 +8901,7 @@ async function _runAuditoria(){
 }
 
 async function renderLogsPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📋 Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">↻ Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
   const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
   tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
@@ -8933,7 +8952,7 @@ async function renderFinanceiroPage(aba){
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">💵 Financeiro</div></div>
+      <div class="page-header"><div class="page-title">${_icone('banknote',22)} Financeiro</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderFinanceiroPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_financeiroAba===a.id?'var(--accent)':'transparent'};color:${_financeiroAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
       </div>
@@ -8995,7 +9014,7 @@ function _renderCredito(){
 }
 
 function renderCreditosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">💳 Créditos</div></div><div id="financeiro-content"></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('credit-card',22)} Créditos</div></div><div id="financeiro-content"></div></div>`;
   _renderCredito();
 }
 
@@ -9215,9 +9234,9 @@ async function _cpExcluir(id){
 // não é uma garantia de RLS a nível de banco. Ver conversa/memória sobre a
 // auditoria de RLS/anon-vs-JWT pendente.
 async function renderFaturasLojaPage(){
-  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">🧾 Faturas</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Faturas</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🧾 Faturas</div></div>
+    <div class="page-header"><div class="page-title">${_icone('receipt',22)} Faturas</div></div>
     <div id="fl-atual"></div>
     <div class="card"><div class="card-header"><span class="card-title">📜 Histórico</span></div><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
   </div>`;
@@ -9289,7 +9308,7 @@ async function renderRankingPage(aba){
   _rankingAba=aba||_rankingAba||'ranking';
   const abas=[{id:'ranking',icon:'🏆',label:'Ranking'},{id:'clas',icon:'👑',label:'Clãs'}];
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🏆 Ranking Entregador</div></div>
+    <div class="page-header"><div class="page-title">${_icone('trophy',22)} Ranking Entregador</div></div>
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
       ${abas.map(a=>`<button onclick="renderRankingPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_rankingAba===a.id?'var(--accent)':'transparent'};color:${_rankingAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
     </div>
@@ -9467,7 +9486,7 @@ async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">🗓️ Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} Solicitar Fixo</div><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">📅 Gerenciar Feriados</button></div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
@@ -9570,7 +9589,7 @@ function _vagasAbrirDia(dataStr){
   const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">🗓️ ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('calendar-days',18)} ${dia}/${mes}/${ano}</span><button class="modal-close" onclick="document.getElementById('modal-vagas-dia').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
       <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
@@ -9630,7 +9649,7 @@ function _vagasAbrirAlocar(vagaId){
   let modal=document.getElementById('modal-vagas-alocar');
   if(!modal){modal=document.createElement('div');modal.id='modal-vagas-alocar';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px">
-    <div class="modal-header"><span class="modal-title">👤 Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       <div class="fi" style="margin-bottom:12px"><label>CPF do motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
       <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">🔍 Buscar</button>
@@ -9672,7 +9691,7 @@ async function _vagasAbrirFeriados(){
   let modal=document.getElementById('modal-feriados');
   if(!modal){modal=document.createElement('div');modal.id='modal-feriados';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px">
-    <div class="modal-header"><span class="modal-title">📅 Feriados Importantes</span><button class="modal-close" onclick="document.getElementById('modal-feriados').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('calendar',18)} Feriados Importantes</span><button class="modal-close" onclick="document.getElementById('modal-feriados').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end">
         <div class="fi" style="flex:1"><label>Data</label><input type="date" id="fer-data" style="${_scInput()}"/></div>
@@ -10083,7 +10102,7 @@ let _srCaixaAtual=0;
 function renderSaqueRapidoPage(){
   const hoje=_dataHojeBrasilia();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">⚡ Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">🔄 Atualizar</button></div>
+    <div class="page-header"><div class="page-title">${_icone('zap',22)} Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">🔄 Atualizar</button></div>
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">CAIXA <span onclick="_srEditarCaixaToggle()" style="cursor:pointer" title="Definir caixa">✏️</span></div>
@@ -10870,7 +10889,7 @@ let _waAba='em-rota';
 async function renderWhatsappPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">📲 Disparo WhatsApp</div></div>
+      <div class="page-header"><div class="page-title">${_icone('message-circle',22)} Disparo WhatsApp</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">🛵 Mensagem em Rota</button>
         <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">💵 Financeiro</button>
@@ -10952,7 +10971,7 @@ async function _waGoAba(aba){
 async function renderDisparoNotificacoesPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">🔔 Disparar Notificações</div></div>
+      <div class="page-header"><div class="page-title">${_icone('bell',22)} Disparar Notificações</div></div>
       <div id="dn-content"><div style="padding:24px;color:var(--text3)">⏳ Carregando...</div></div>
     </div>`;
   const el=document.getElementById('dn-content');if(!el)return;
@@ -11160,7 +11179,7 @@ function renderConfiguracaoPage(aba){
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
-      <div class="page-header"><div class="page-title">⚙️ Configuração</div></div>
+      <div class="page-header"><div class="page-title">${_icone('settings',22)} Configuração</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
         ${abas.map(a=>`<button onclick="renderConfiguracaoPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_configAba===a.id?'var(--accent)':'transparent'};color:${_configAba===a.id?'var(--accent)':'var(--text3)'}">${a.icon} ${a.label}</button>`).join('')}
       </div>
@@ -11490,7 +11509,7 @@ async function _abrirModalAdicionarIntegracaoIfood(){
   if(!modal){modal=document.createElement('div');modal.id='modal-ifood-add-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   _ifoodAddLojaSelecionadaId=null;
   modal.innerHTML=`<div class="modal" style="max-width:560px;width:92vw">
-    <div class="modal-header"><span class="modal-title">➕ Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('plus',18)} Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="padding:28px !important;max-height:75vh;overflow-y:auto">
       <div class="fi ifood-busca-wrap" style="position:relative;gap:8px">
         <label>🏪 Buscar loja</label>
@@ -11712,7 +11731,7 @@ async function _salvarConfigOperacao(){
 
 let _tabAba='cobranca';
 async function renderTabelasPrecoPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">💰 Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('circle-dollar-sign',22)} Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">🛵 Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   _tabAba='cobranca';await carregarTabelasPreco();
 }
 function trocarAbaTabela(aba){_tabAba=aba;const bc=document.getElementById('aba-cobranca'),bp=document.getElementById('aba-pagamento');if(aba==='cobranca'){bc.style.borderBottom='2px solid var(--accent)';bc.style.color='var(--accent)';bp.style.borderBottom='2px solid transparent';bp.style.color='var(--text3)';}else{bp.style.borderBottom='2px solid #10b981';bp.style.color='#10b981';bc.style.borderBottom='2px solid transparent';bc.style.color='var(--text3)';}carregarTabelasPreco();}
@@ -11813,7 +11832,7 @@ async function clonarTabela(id,nome){
 }
 
 async function renderLojaPedidosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📦 Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">↻</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('package',22)} Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">↻</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];
   const tbody=document.getElementById('tbody-loja-pedidos');if(!tbody)return;
   tbody.innerHTML=pedidos.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>`<tr><td style="font-weight:700">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${getStatusKey(p)}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td></tr>`).join('');
@@ -11823,7 +11842,7 @@ function renderLojaMapaPage(){
   setTimeout(()=>{if(map){map.remove();map=null;}_mapaJaCentralizado=false;map=L.map('map',{zoomControl:false}).setView([-21.1775,-47.8103],13);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);const at=async()=>{const p=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];allPedidos=p;const ms=document.getElementById('ms-pedidos');if(ms)ms.textContent=p.length;atualizarMarcadores();};at();realtimeInterval=setInterval(at,5000);},100);
 }
 async function renderLojaRelatorioPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">📈 Relatório</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="lr-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="lr-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="lr-fat" style="color:var(--accent)">—</div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('chart-line',22)} Relatório</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="lr-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="lr-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="lr-fat" style="color:var(--accent)">—</div></div></div></div>`;
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}`):[];
   document.getElementById('lr-total').textContent=pedidos.length;document.getElementById('lr-ent').textContent=pedidos.filter(p=>p.status==='finalizado'||p.status==='entregue').length;document.getElementById('lr-fat').textContent='R$'+pedidos.reduce((s,p)=>s+(p.valor||0),0).toFixed(2);
 }
@@ -11837,11 +11856,11 @@ let _mcProdutos=[];
 
 async function renderMeuCardapioPage(){
   const lojaId=currentUser?.loja_id;
-  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">🍽️ Meu Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('utensils',22)+' Meu Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`
   <div class="alt-page">
     <div class="page-header">
-      <div class="page-title">🍽️ Meu Cardápio</div>
+      <div class="page-title">${_icone('utensils',22)} Meu Cardápio</div>
     </div>
     <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;height:calc(100vh - 120px);min-height:400px">
       <!-- Coluna esquerda: categorias -->
@@ -11932,7 +11951,7 @@ function _mcAbrirModalCategoria(catId){
   if(!m){m=document.createElement('div');m.id='mc-modal-cat';m.className='modal-overlay';document.body.appendChild(m);}
   const ss='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box';
   m.innerHTML=`<div class="modal" style="max-width:400px">
-    <div class="modal-header"><span class="modal-title">${cat?'✏️ Editar':'➕ Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone(cat?'pencil':'plus',18)} ${cat?'Editar':'Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">✕</button></div>
     <div class="modal-body">
       <div class="fi"><label>Nome da Categoria</label><input id="mc-cat-nome" value="${v(cat?.nome)}" placeholder="Ex: Lanches, Bebidas..." style="${ss}"/></div>
       <div class="form-row" style="margin-top:12px">
@@ -11985,7 +12004,7 @@ function _mcAbrirModalProduto(prodId){
   const catOpts=_mcCategorias.map(c=>`<option value="${c.id}"${(prod?.categoria_id||_mcCatSelecionada)===c.id?' selected':''}>${c.nome}</option>`).join('');
   const fotoAtual=prod?.foto_url||'';
   m.innerHTML=`<div class="modal" style="max-width:480px">
-    <div class="modal-header"><span class="modal-title">${prod?'✏️ Editar':'➕ Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone(prod?'pencil':'plus',18)} ${prod?'Editar':'Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">✕</button></div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div class="form-row full fi"><label>Categoria</label><select id="mc-prod-cat" style="${ss}">${catOpts}</select></div>
       <div class="form-row full fi" style="margin-top:10px"><label>Nome do Produto</label><input id="mc-prod-nome" value="${v(prod?.nome)}" placeholder="Ex: X-Burguer Especial" style="${ss}"/></div>
