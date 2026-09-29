@@ -81,6 +81,14 @@ const ICONES_LUCIDE={
   'bike':'<circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>',
   'upload':'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
   'circle-x':'<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+  'pizza':'<path d="m12 14-1 1"/><path d="m13.75 18.25-1.25 1.42"/><path d="M17.775 5.654a15.68 15.68 0 0 0-12.121 12.12"/><path d="M18.8 9.3a1 1 0 0 0 2.1 7.7"/><path d="M21.964 20.732a1 1 0 0 1-1.232 1.232l-18-5a1 1 0 0 1-.695-1.232A19.68 19.68 0 0 1 15.732 2.037a1 1 0 0 1 1.232.695z"/>',
+  'hamburger':'<path d="M12 16H4a2 2 0 1 1 0-4h16a2 2 0 1 1 0 4h-4.25"/><path d="M5 12a2 2 0 0 1-2-2 9 7 0 0 1 18 0 2 2 0 0 1-2 2"/><path d="M5 16a2 2 0 0 0-2 2 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 2 2 0 0 0-2-2q0 0 0 0"/><path d="m6.67 12 6.13 4.6a2 2 0 0 0 2.8-.4l3.15-4.2"/>',
+  'shopping-basket':'<path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/>',
+  'pill':'<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+  'paw-print':'<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
+  'mail':'<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/>',
+  'circle-alert':'<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  'chef-hat':'<path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/>',
   'phone':'<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>',
   'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
   'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
@@ -8993,6 +9001,27 @@ function _validarDocumentoLoja(v){
   return false;
 }
 
+// Gravação do autocadastro — ÚNICA fonte da verdade, usada pelo modal antigo
+// (enviarCadastroLoja, ainda no HTML do Hostinger) e pelo fluxo em etapas
+// abaixo. Mesma ordem e mesmos dados de sempre: conta de login → geocodifica
+// se faltou lat/lng → lojas (em_analise, inativa) → usuarios_painel (inativo).
+// categoria (segmento escolhido no fluxo novo) é opcional — coluna já existe.
+async function _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,email,senha,documento,lat,lng,categoria},progresso){
+  const auth=await _criarContaAuth(email,senha);
+  if(!auth.ok)return{ok:false,erro:auth.error};
+  if(endereco&&(!lat||!lng)){
+    progresso?.('geo');
+    const geo=await geocodificarEndereco(endereco).catch(()=>null);
+    if(geo){lat=geo.lat;lng=geo.lng;}
+  }
+  const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat||null,longitude:lng||null,created_at:_agoraBrasilia()};
+  if(categoria)payload.categoria=categoria;
+  const lojas=await db('lojas','POST',payload);
+  if(!lojas||lojas.length===0)return{ok:false,erro:'Erro ao enviar cadastro.'};
+  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
+  return{ok:true};
+}
+
 async function enviarCadastroLoja(){
   const g=(id)=>document.getElementById(id)?.value?.trim()||'';
   const nome=g('cl-nome'),endereco=g('cl-endereco'),telefone=g('cl-telefone'),celular=g('cl-celular'),responsavel=g('cl-responsavel'),email=g('cl-email');
@@ -9004,19 +9033,9 @@ async function enviarCadastroLoja(){
   if(!_validarDocumentoLoja(documento)){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">CPF ou CNPJ inválido — confere os números.</div>';return;}
   if(senha.length<6){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">⏳ Enviando cadastro...</div>';
-  const auth=await _criarContaAuth(email,senha);
-  if(!auth.ok){fb.innerHTML=`<div style="color:var(--red,#ef4444);font-size:13px">❌ ${auth.error}</div>`;return;}
-  let lat=parseFloat(document.getElementById('cl-lat')?.value)||null;
-  let lng=parseFloat(document.getElementById('cl-lng')?.value)||null;
-  if(endereco&&(!lat||!lng)){
-    fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">📍 Geocodificando endereço...</div>';
-    const geo=await geocodificarEndereco(endereco).catch(()=>null);
-    if(geo){lat=geo.lat;lng=geo.lng;}
-  }
-  const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat,longitude:lng,created_at:_agoraBrasilia()};
-  const lojas=await db('lojas','POST',payload);
-  if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">❌ Erro ao enviar cadastro.</div>';return;}
-  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
+  const res=await _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,email,senha,documento,lat:parseFloat(document.getElementById('cl-lat')?.value)||null,lng:parseFloat(document.getElementById('cl-lng')?.value)||null},
+    ()=>{fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">📍 Geocodificando endereço...</div>';});
+  if(!res.ok){fb.innerHTML=`<div style="color:var(--red,#ef4444);font-size:13px">❌ ${res.erro}</div>`;return;}
   fb.innerHTML='<div style="color:var(--green,#10b981);font-size:13px">✅ Cadastro enviado! Você será avisado quando for aprovado.</div>';
   showNotif('✅ Cadastro enviado!','Nosso time vai analisar e liberar seu acesso em breve.');
   setTimeout(()=>{
@@ -9024,6 +9043,408 @@ async function enviarCadastroLoja(){
     ['cl-nome','cl-endereco','cl-lat','cl-lng','cl-telefone','cl-celular','cl-responsavel','cl-email','cl-senha','cl-documento'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     fb.innerHTML='';
   },2500);
+}
+
+// ── Cadastro de loja em etapas (2026-09-29) ─────────────────────────────
+// Substitui o modal "Cadastrar minha loja" do login (estilo parceiros do
+// iFood): entrada com 2 cartões (Restaurantes / Multicategorias) → etapas
+// com barra de progresso → revisão → envio. O botão do login continua no
+// HTML do Hostinger; _clfLigarBotao() só troca o que ele abre, sem subir
+// arquivo nenhum. Nada é gravado antes de "Enviar cadastro" (a gravação é a
+// mesma de sempre, _gravarCadastroLoja). Os dados ficam só em memória
+// (_clf) enquanto o fluxo está aberto — a senha nunca vai pra log, atributo
+// HTML nem localStorage, e é descartada ao fechar ou enviar.
+// Segmento: grava em lojas.categoria (lista CATEGORIAS_LOJA de sempre); o
+// tipo (Restaurantes/Multicategorias) sai da própria categoria.
+const _CLF_TIPOS={
+  restaurantes:{nome:'Restaurantes',desc:'Restaurantes, lanchonetes, pizzarias, docerias, cafeterias e outros estabelecimentos de comida.',cenas:['utensils','pizza','hamburger'],
+    segmentos:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Café']},
+  multicategorias:{nome:'Multicategorias',desc:'Mercados, farmácias, pet shops, adegas, conveniências e outros tipos de comércio.',cenas:['shopping-basket','pill','paw-print'],
+    segmentos:['Mercado','Conveniência','Adega','Empório','Pet Shop','Farmácia','Suplementos','Tabacarias','Auto Peças']},
+};
+const _CLF_ETAPAS=[
+  {id:'sobre',nome:'Sobre a loja',icone:'store',titulo:'Sobre a sua loja',sub:'Conte pra gente como sua loja se chama e o que ela vende.'},
+  {id:'endereco',nome:'Endereço',icone:'map-pin',titulo:'Onde fica a sua loja',sub:'É daqui que os entregadores vão retirar os pedidos.'},
+  {id:'contato',nome:'Contato',icone:'phone',titulo:'Contato',sub:'Como nossa equipe fala com a loja e com o responsável.'},
+  {id:'documento',nome:'Documento',icone:'file-text',titulo:'Documento da loja',sub:'Informe o CPF ou o CNPJ do responsável pela loja.'},
+  {id:'acesso',nome:'Acesso',icone:'lock',titulo:'Dados de acesso',sub:'Você vai usar este e-mail e esta senha para entrar no sistema depois da aprovação.'},
+  {id:'revisao',nome:'Revisão',icone:'circle-check',titulo:'Revise seus dados',sub:'Confira tudo antes de enviar. Você pode alterar qualquer etapa.'},
+];
+let _clf=null;
+const _clfEsc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function _clfLigarBotao(){
+  const b=document.getElementById('login-cadastrar-loja');
+  if(!b||b.dataset.clf)return;
+  b.dataset.clf='1';
+  b.onclick=e=>{e.preventDefault();_clfAbrir();};
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_clfLigarBotao);else _clfLigarBotao();
+
+function _clfEstilos(){
+  if(document.getElementById('clf-styles'))return;
+  const st=document.createElement('style');st.id='clf-styles';
+  st.textContent=`
+  #clf{position:fixed;inset:0;z-index:10050;overflow-y:auto;font-family:Inter,system-ui,sans-serif;
+    --k-bg:#0b0e14;--k-s1:#131722;--k-s2:#1a1f2c;--k-bd:#262d3d;--k-tx:#e8eaf0;--k-tx2:#a4abba;--k-tx3:#6e7586;--k-ac:#1A56DB;--k-ac2:#4f7ef7;--k-red:#f05252;--k-green:#22c55e;
+    background:radial-gradient(1200px 500px at 50% -120px,rgba(26,86,219,.18),transparent 70%),var(--k-bg);color:var(--k-tx)}
+  #clf *{box-sizing:border-box}
+  #clf .icone{display:inline-block;vertical-align:middle;flex-shrink:0}
+  .clf-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 28px;background:rgba(11,14,20,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--k-bd)}
+  .clf-marca{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:-.2px}
+  .clf-marca-ico{width:34px;height:34px;border-radius:10px;background:var(--k-ac);display:flex;align-items:center;justify-content:center;color:#fff}
+  .clf-marca small{display:block;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--k-ac2)}
+  .clf-link{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--k-bd);color:var(--k-tx2);border-radius:10px;padding:8px 14px;font:600 13px Inter,sans-serif;cursor:pointer}
+  .clf-link:hover{color:var(--k-tx);border-color:#39415a}
+  .clf-main{max-width:1060px;margin:0 auto;padding:44px 24px 72px}
+  .clf-h1{font-size:34px;font-weight:800;text-align:center;letter-spacing:-.6px;line-height:1.2;margin:0 auto 12px;max-width:860px}
+  .clf-h1 span{color:var(--k-ac2);white-space:nowrap}
+  .clf-sub{text-align:center;color:var(--k-tx2);font-size:15px;line-height:1.5;margin:0 auto 40px;max-width:560px}
+  .clf-cards{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .clf-card{background:var(--k-s1);border:1px solid var(--k-bd);border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:16px;transition:opacity .3s ease,transform .3s ease,border-color .3s ease,box-shadow .3s ease}
+  .clf-cards.foco .clf-card:not(.ativo){opacity:.42}
+  .clf-card.ativo{border-color:rgba(79,126,247,.7);transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .clf-arte{position:relative;height:200px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#0f1b3d,#111827 60%,#0d1117)}
+  .clf-cena{position:absolute;inset:0;opacity:0;transition:opacity .3s ease}
+  .clf-cena.vis{opacity:1}
+  .clf-card h3{margin:0;font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .clf-card p{margin:0;color:var(--k-tx2);font-size:14px;line-height:1.55;flex:1}
+  .clf-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:12px;border:none;font:700 15px Inter,sans-serif;cursor:pointer;transition:background .15s,opacity .15s}
+  .clf-btn-pri{background:var(--k-ac);color:#fff}.clf-btn-pri:hover{background:#1646b5}
+  .clf-btn-pri[disabled]{opacity:.6;cursor:default}
+  .clf-btn-sec{background:transparent;color:var(--k-tx);border:1px solid var(--k-bd)}.clf-btn-sec:hover{border-color:#39415a}
+  .clf-card .clf-btn{align-self:flex-start}
+  .clf-prog{max-width:680px;margin:0 auto 22px}
+  .clf-prog-topo{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--k-tx2);margin-bottom:10px}
+  .clf-prog-topo b{color:var(--k-tx);font-weight:700}
+  .clf-trilha{height:6px;border-radius:6px;background:var(--k-s2);overflow:hidden}
+  .clf-trilha div{height:100%;background:linear-gradient(90deg,var(--k-ac),var(--k-ac2));border-radius:6px;transition:width .35s ease}
+  .clf-passos{display:flex;justify-content:space-between;margin-top:12px;gap:6px}
+  .clf-passo{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--k-tx3);white-space:nowrap}
+  .clf-passo.feito{color:var(--k-green)}.clf-passo.atual{color:var(--k-tx);font-weight:700}
+  .clf-box{max-width:680px;margin:0 auto;background:var(--k-s1);border:1px solid var(--k-bd);border-radius:22px;padding:34px}
+  .clf-tipo{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--k-ac2);margin-bottom:10px}
+  .clf-et-titulo{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:800;letter-spacing:-.4px;margin:0 0 6px}
+  .clf-et-sub{color:var(--k-tx2);font-size:14px;line-height:1.5;margin:0 0 26px}
+  .clf-campo{margin-bottom:18px}
+  .clf-campo label{display:block;font-size:13px;font-weight:600;color:var(--k-tx);margin-bottom:8px}
+  #clf .clf-campo input{width:100%!important;height:50px!important;background:var(--k-s2)!important;border:1px solid var(--k-bd)!important;border-radius:12px!important;padding:0 15px!important;color:var(--k-tx)!important;font:500 15px Inter,sans-serif!important;outline:none!important;box-shadow:none!important;transition:border-color .15s,box-shadow .15s}
+  #clf .clf-senha input{padding-right:50px!important}
+  #clf .clf-campo input::placeholder{color:var(--k-tx3)!important}
+  #clf .clf-campo input:focus{border-color:var(--k-ac2)!important;box-shadow:0 0 0 3px rgba(79,126,247,.22)!important}
+  #clf .clf-campo.erro input{border-color:var(--k-red)!important}
+  .clf-msg{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--k-red);margin-top:7px}
+  .clf-dica{font-size:12.5px;color:var(--k-tx3);margin-top:7px}
+  .clf-dica.ok{color:var(--k-green)}
+  .clf-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+  .clf-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .clf-senha{position:relative}
+  .clf-olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;background:none;color:var(--k-tx2);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .clf-olho:hover{color:var(--k-tx);background:rgba(255,255,255,.05)}
+  .clf-segs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .clf-seg{height:46px;border-radius:12px;border:1px solid var(--k-bd);background:var(--k-s2);color:var(--k-tx);font:600 13.5px Inter,sans-serif;cursor:pointer;transition:border-color .15s,background .15s;padding:0 10px}
+  .clf-seg:hover{border-color:#39415a}
+  .clf-seg.sel{border-color:var(--k-ac2);background:rgba(26,86,219,.18);color:#fff}
+  .clf-campo.erro .clf-seg{border-color:rgba(240,82,82,.55)}
+  .clf-acoes{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding-top:22px;border-top:1px solid var(--k-bd)}
+  .clf-rev{border:1px solid var(--k-bd);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  .clf-rev-cab{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--k-s2);font-weight:700;font-size:14px}
+  .clf-rev-cab span{display:flex;align-items:center;gap:8px}
+  .clf-rev-cab button{background:none;border:none;color:var(--k-ac2);font:700 13px Inter,sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .clf-rev-lin{display:flex;justify-content:space-between;gap:16px;padding:10px 16px;font-size:14px;border-top:1px solid var(--k-bd)}
+  .clf-rev-lin span:first-child{color:var(--k-tx2)}
+  .clf-rev-lin span:last-child{text-align:right;font-weight:600;word-break:break-word}
+  .clf-erro-geral{display:flex;gap:8px;align-items:flex-start;background:rgba(240,82,82,.1);border:1px solid rgba(240,82,82,.35);color:#fca5a5;border-radius:12px;padding:12px 14px;font-size:13.5px;margin-top:16px}
+  .clf-fim{text-align:center;padding:24px 8px}
+  .clf-fim-ico{width:84px;height:84px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;background:rgba(34,197,94,.14);color:var(--k-green)}
+  .clf-fim h2{font-size:26px;font-weight:800;margin:0 0 10px;letter-spacing:-.4px}
+  .clf-fim p{color:var(--k-tx2);font-size:15px;line-height:1.55;margin:0 auto 28px;max-width:440px}
+  .pac-container{z-index:10060!important}
+  @media (max-width:760px){
+    .clf-top{padding:12px 16px}
+    .clf-main{padding:28px 16px 56px}
+    .clf-h1{font-size:25px}
+    .clf-sub{font-size:14px;margin-bottom:26px}
+    .clf-cards{grid-template-columns:1fr;gap:16px}
+    .clf-card{padding:20px}
+    .clf-arte{height:160px}
+    .clf-card .clf-btn{align-self:stretch}
+    .clf-box{padding:22px 18px;border-radius:18px}
+    .clf-et-titulo{font-size:20px}
+    .clf-grid,.clf-grid2{grid-template-columns:1fr}
+    .clf-segs{grid-template-columns:1fr 1fr}
+    .clf-passos{display:none}
+    .clf-acoes{flex-direction:column-reverse}
+    .clf-acoes .clf-btn{width:100%}
+    .clf-link span{display:none}
+  }`;
+  document.head.appendChild(st);
+}
+
+// Cena da ilustração: mesmo desenho dos slides do Início (círculos em
+// gradiente + ícone Lucide grande), uma por ícone do segmento.
+function _clfCena(icone,chave,vis){
+  const id='clfG'+chave;
+  return`<svg class="clf-cena${vis?' vis':''}" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A56DB"/><stop offset="1" stop-color="#6d8dff"/></linearGradient></defs>
+    <circle cx="200" cy="100" r="82" fill="url(#${id})" opacity=".16"/>
+    <circle cx="200" cy="100" r="58" fill="url(#${id})" opacity=".34"/>
+    <circle cx="96" cy="50" r="6" fill="#6d8dff" opacity=".5"/><circle cx="310" cy="150" r="9" fill="#1A56DB" opacity=".45"/><circle cx="300" cy="44" r="4" fill="#fff" opacity=".35"/>
+    <rect x="70" y="140" width="64" height="10" rx="5" fill="#fff" opacity=".1"/><rect x="70" y="156" width="40" height="10" rx="5" fill="#fff" opacity=".07"/>
+    <svg x="162" y="62" width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICONES_LUCIDE[icone]||''}</svg>
+  </svg>`;
+}
+
+function _clfAbrir(){
+  _clfEstilos();
+  _clfFechar();
+  _clf={tipo:null,etapa:-1,d:{},senha:'',erros:{},erroGeral:'',enviando:false,timers:[]};
+  const el=document.createElement('div');el.id='clf';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');
+  document.body.appendChild(el);
+  document.body.style.overflow='hidden';
+  _clfRender();
+}
+function _clfFechar(){
+  if(_clf){_clf.timers.forEach(clearInterval);_clf.senha='';}
+  _clf=null;
+  document.getElementById('clf')?.remove();
+  document.body.style.overflow='';
+}
+function _clfPararCenas(){if(_clf){_clf.timers.forEach(clearInterval);_clf.timers=[];}}
+
+function _clfTopo(){
+  return`<div class="clf-top"><div class="clf-marca"><div class="clf-marca-ico">${_icone('bike',18)}</div><div>Let's Go<small>DELIVERY</small></div></div>
+    <button class="clf-link" onclick="_clfFechar()">${_icone('arrow-left',16)}<span>Voltar ao login</span></button></div>`;
+}
+
+function _clfRender(){
+  const el=document.getElementById('clf');if(!el||!_clf)return;
+  _clfPararCenas();
+  let corpo;
+  if(_clf.etapa===-1)corpo=_clfEntradaHtml();
+  else if(_clf.etapa===_CLF_ETAPAS.length)corpo=_clfFimHtml();
+  else corpo=_clfEtapaHtml();
+  el.innerHTML=_clfTopo()+`<div class="clf-main">${corpo}</div>`;
+  el.scrollTop=0;
+  if(_clf.etapa===-1)_clfLigarCenas();
+  else if(_clf.etapa<_CLF_ETAPAS.length)_clfPosRender();
+}
+
+// ── Entrada ──
+function _clfEntradaHtml(){
+  const card=k=>{const t=_CLF_TIPOS[k];return`<div class="clf-card" data-tipo="${k}" onmouseenter="_clfFoco('${k}',true)" onmouseleave="_clfFoco('${k}',false)">
+    <div class="clf-arte">${t.cenas.map((c,i)=>_clfCena(c,k+i,i===0)).join('')}</div>
+    <h3>${t.nome}</h3><p>${t.desc}</p>
+    <button class="clf-btn clf-btn-pri" onclick="_clfEscolher('${k}')">Cadastrar agora ${_icone('arrow-right',18)}</button></div>`;};
+  return`<h1 class="clf-h1">Cadastre sua loja e comece a vender com a <span>Let's Go</span></h1>
+    <p class="clf-sub">Escolha o tipo do seu negócio. O cadastro leva poucos minutos e nossa equipe analisa e libera o seu acesso.</p>
+    <div class="clf-cards" id="clf-cards">${card('restaurantes')}${card('multicategorias')}</div>`;
+}
+function _clfTrocarCena(k){
+  const cenas=[...document.querySelectorAll(`.clf-card[data-tipo="${k}"] .clf-cena`)];if(!cenas.length)return;
+  const i=cenas.findIndex(c=>c.classList.contains('vis'));
+  cenas[i]?.classList.remove('vis');cenas[(i+1)%cenas.length].classList.add('vis');
+}
+// Com mouse: a cena só troca no cartão em foco, e o outro fica atenuado.
+// Sem hover (celular/toque): as cenas dos dois cartões alternam sozinhas.
+function _clfLigarCenas(){
+  if(window.matchMedia&&matchMedia('(hover: none)').matches){
+    _clf.timers.push(setInterval(()=>_clfTrocarCena('restaurantes'),2600));
+    setTimeout(()=>{if(_clf&&_clf.etapa===-1)_clf.timers.push(setInterval(()=>_clfTrocarCena('multicategorias'),2600));},1300);
+  }
+}
+function _clfFoco(k,entrou){
+  if(!_clf||(window.matchMedia&&matchMedia('(hover: none)').matches))return;
+  const cards=document.getElementById('clf-cards');if(!cards)return;
+  _clfPararCenas();
+  cards.classList.toggle('foco',entrou);
+  document.querySelectorAll('.clf-card').forEach(c=>c.classList.toggle('ativo',entrou&&c.dataset.tipo===k));
+  if(entrou){_clfTrocarCena(k);_clf.timers.push(setInterval(()=>_clfTrocarCena(k),1100));}
+}
+function _clfEscolher(k){
+  if(!_clf)return;
+  // trocou de tipo: segmento do outro tipo não vale mais
+  if(_clf.tipo&&_clf.tipo!==k)delete _clf.d.categoria;
+  _clf.tipo=k;_clf.etapa=0;_clf.erros={};_clf.erroGeral='';
+  _clfRender();
+}
+
+// ── Etapas ──
+function _clfCampo(id,label,{valor='',ph='',tipo='text',extra='',dica=''}={}){
+  const err=_clf.erros[id];
+  return`<div class="clf-campo${err?' erro':''}" id="clf-c-${id}"><label for="clf-${id}">${label}</label>
+    <input id="clf-${id}" type="${tipo}" value="${_clfEsc(valor)}" placeholder="${_clfEsc(ph)}" ${extra} onkeydown="if(event.key==='Enter'){event.preventDefault();_clfContinuar();}"/>
+    ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:dica?`<div class="clf-dica" id="clf-dica-${id}">${dica}</div>`:''}</div>`;
+}
+function _clfEtapaHtml(){
+  const et=_CLF_ETAPAS[_clf.etapa],t=_CLF_TIPOS[_clf.tipo],d=_clf.d,n=_CLF_ETAPAS.length;
+  const pct=Math.round(((_clf.etapa+1)/n)*100);
+  const passos=_CLF_ETAPAS.map((e,i)=>`<div class="clf-passo${i<_clf.etapa?' feito':i===_clf.etapa?' atual':''}">${i<_clf.etapa?_icone('circle-check',14):''}${e.nome}</div>`).join('');
+  let campos='';
+  if(et.id==='sobre'){
+    const err=_clf.erros.categoria;
+    campos=_clfCampo('nome','Nome da loja',{valor:d.nome,ph:'Ex.: Pizzaria Central',extra:'autocomplete="organization" maxlength="120"'})
+      +`<div class="clf-campo${err?' erro':''}"><label>Segmento</label><div class="clf-segs">${t.segmentos.map(s=>`<button type="button" class="clf-seg${d.categoria===s?' sel':''}" onclick="_clfSegmento(this)" data-seg="${_clfEsc(s)}">${s}</button>`).join('')}</div>
+        ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:''}</div>`;
+  }else if(et.id==='endereco'){
+    const loc=d.lat&&d.lng;
+    campos=_clfCampo('rua','Rua',{valor:d.rua,ph:'Comece a digitar e escolha na lista',extra:'autocomplete="off" oninput="_clfEnderecoEditado()"',dica:loc?`${_icone('circle-check',13)} Endereço localizado no mapa`:'Escolher o endereço na lista ajuda a localizar sua loja no mapa.'})
+      +`<div class="clf-grid">${_clfCampo('bairro','Bairro',{valor:d.bairro,ph:'Ex.: Centro',extra:'oninput="_clfEnderecoEditado()"'})}${_clfCampo('numero','Número',{valor:d.numero,ph:'Ex.: 123',extra:'inputmode="numeric" maxlength="10" oninput="_clfEnderecoEditado()"'})}</div>`;
+  }else if(et.id==='contato'){
+    campos=`<div class="clf-grid2">${_clfCampo('telefone','Telefone da loja',{valor:d.telefone,ph:'(16) 3333-3333',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}${_clfCampo('celular','Telefone financeiro',{valor:d.celular,ph:'(16) 99999-9999',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}</div>`
+      +_clfCampo('responsavel','Nome do responsável',{valor:d.responsavel,ph:'Nome completo',extra:'autocomplete="name" maxlength="120"'});
+  }else if(et.id==='documento'){
+    campos=_clfCampo('documento','CPF ou CNPJ',{valor:d.documento,ph:'000.000.000-00 ou 00.000.000/0000-00',extra:'inputmode="numeric" maxlength="18" oninput="_maskDocumentoLoja(this)"',dica:'Usamos o documento só para validar o cadastro da loja.'});
+  }else if(et.id==='acesso'){
+    const err=_clf.erros.senha;
+    campos=_clfCampo('email','E-mail',{valor:d.email,ph:'loja@email.com',tipo:'email',extra:'autocomplete="email" maxlength="160"'})
+      +`<div class="clf-campo${err?' erro':''}"><label for="clf-senha">Senha</label><div class="clf-senha">
+        <input id="clf-senha" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();_clfContinuar();}"/>
+        <button type="button" class="clf-olho" aria-label="Mostrar senha" onclick="_clfOlho(this)">${_icone('eye',18)}</button></div>
+        ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:'<div class="clf-dica">Use pelo menos 6 caracteres.</div>'}</div>`;
+  }else{
+    const bloco=(i,linhas)=>`<div class="clf-rev"><div class="clf-rev-cab"><span>${_icone(_CLF_ETAPAS[i].icone,16)}${_CLF_ETAPAS[i].nome}</span><button onclick="_clfIr(${i})">${_icone('pencil',14)}Alterar</button></div>${linhas.map(([a,b])=>`<div class="clf-rev-lin"><span>${a}</span><span>${_clfEsc(b||'—')}</span></div>`).join('')}</div>`;
+    campos=bloco(0,[['Tipo',t.nome],['Nome da loja',d.nome],['Segmento',d.categoria]])
+      +bloco(1,[['Endereço',_clfEnderecoCompleto()]])
+      +bloco(2,[['Telefone da loja',d.telefone],['Telefone financeiro',d.celular],['Responsável',d.responsavel]])
+      +bloco(3,[[(d.documento||'').replace(/\D/g,'').length===14?'CNPJ':'CPF',d.documento]])
+      +bloco(4,[['E-mail',d.email],['Senha','•'.repeat(Math.min(_clf.senha.length,12))]])
+      +(_clf.erroGeral?`<div class="clf-erro-geral">${_icone('circle-alert',16)}<div>${_clfEsc(_clf.erroGeral)}</div></div>`:'');
+  }
+  const ultima=et.id==='revisao';
+  return`<div class="clf-prog"><div class="clf-prog-topo"><span>Etapa <b>${_clf.etapa+1}</b> de ${n} · ${et.nome}</span><span>${pct}%</span></div>
+      <div class="clf-trilha"><div style="width:${pct}%"></div></div><div class="clf-passos">${passos}</div></div>
+    <div class="clf-box"><div class="clf-tipo">${_icone(_clf.tipo==='restaurantes'?'utensils':'shopping-basket',14)} ${t.nome}</div>
+      <h2 class="clf-et-titulo">${_icone(et.icone,22)}${et.titulo}</h2><p class="clf-et-sub">${et.sub}</p>
+      ${campos}
+      <div class="clf-acoes"><button class="clf-btn clf-btn-sec" onclick="_clfVoltar()" ${_clf.enviando?'disabled':''}>${_icone('arrow-left',18)}Voltar</button>
+        ${ultima
+          ?`<button class="clf-btn clf-btn-pri" id="clf-enviar" onclick="_clfEnviar()" ${_clf.enviando?'disabled':''}>${_clf.enviando?'Enviando...':`${_icone('check',18)}Enviar cadastro`}</button>`
+          :`<button class="clf-btn clf-btn-pri" onclick="_clfContinuar()">Continuar ${_icone('arrow-right',18)}</button>`}</div>
+    </div>`;
+}
+function _clfPosRender(){
+  const et=_CLF_ETAPAS[_clf.etapa].id;
+  if(et==='acesso'){const s=document.getElementById('clf-senha');if(s)s.value=_clf.senha;} // senha só via .value, nunca em atributo
+  if(et==='endereco')_clfAutocomplete();
+  // corrigiu o campo → some o aviso dele na hora (a validação volta no Continuar)
+  document.querySelectorAll('#clf .clf-campo input').forEach(inp=>inp.addEventListener('input',()=>{
+    const id=inp.id.replace('clf-','');if(!_clf?.erros[id])return;
+    delete _clf.erros[id];const c=inp.closest('.clf-campo');c?.classList.remove('erro');c?.querySelector('.clf-msg')?.remove();
+  }));
+  const primeiroErro=Object.keys(_clf.erros)[0];
+  const alvo=document.getElementById('clf-'+(primeiroErro||''))||document.querySelector('#clf .clf-box input');
+  if(alvo&&window.matchMedia&&!matchMedia('(hover: none)').matches)alvo.focus();
+}
+function _clfSegmento(b){
+  _clf.d.categoria=b.dataset.seg;
+  document.querySelectorAll('#clf .clf-seg').forEach(x=>x.classList.toggle('sel',x===b));
+  if(_clf.erros.categoria){delete _clf.erros.categoria;const c=b.closest('.clf-campo');c?.classList.remove('erro');c?.querySelector('.clf-msg')?.remove();}
+}
+function _clfOlho(b){
+  const i=document.getElementById('clf-senha');if(!i)return;
+  const mostrar=i.type==='password';i.type=mostrar?'text':'password';
+  b.innerHTML=_icone(mostrar?'eye-off':'eye',18);b.setAttribute('aria-label',mostrar?'Ocultar senha':'Mostrar senha');
+}
+function _clfMaskTel(el){
+  let v=el.value.replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'').slice(0,11);
+  if(v.length>10)v=v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3');
+  else if(v.length>6)v=v.replace(/^(\d{2})(\d{4})(\d{0,4}).*/,'($1) $2-$3');
+  else if(v.length>2)v=v.replace(/^(\d{2})(\d{0,5})/,'($1) $2');
+  else if(v.length)v=v.replace(/^(\d{0,2})/,'($1');
+  el.value=v;
+}
+// Endereço: mesmo Google Places do resto do painel, pedindo também os
+// componentes pra preencher rua/número/bairro separados. Editar à mão
+// depois de escolher invalida a localização (volta a ser geocodificado no
+// envio, como sempre foi).
+function _clfAutocomplete(){
+  const input=document.getElementById('clf-rua');if(!input)return;
+  const tentar=(n=0)=>{
+    if(!document.body.contains(input))return;
+    if(!window.google?.maps?.places){if(n<10)setTimeout(()=>tentar(n+1),200);return;}
+    const ac=new google.maps.places.Autocomplete(input,{componentRestrictions:{country:'br'},fields:['geometry','address_components','formatted_address'],types:['address']});
+    ac.addListener('place_changed',()=>{
+      const p=ac.getPlace();if(!p?.geometry||!_clf)return;
+      const comp=t=>(p.address_components||[]).find(c=>c.types.includes(t));
+      _clfSalvarCampos();
+      const d=_clf.d;
+      d.rua=comp('route')?.long_name||input.value;
+      if(comp('street_number'))d.numero=comp('street_number').long_name;
+      const b=comp('sublocality_level_1')||comp('sublocality')||comp('neighborhood');if(b)d.bairro=b.long_name;
+      d.cidade=comp('administrative_area_level_2')?.long_name||'';d.uf=comp('administrative_area_level_1')?.short_name||'';
+      d.lat=p.geometry.location.lat();d.lng=p.geometry.location.lng();
+      delete _clf.erros.rua;delete _clf.erros.numero;delete _clf.erros.bairro;
+      _clfRender();
+      if(!d.numero)setTimeout(()=>document.getElementById('clf-numero')?.focus(),50);
+    });
+  };
+  tentar();
+}
+function _clfEnderecoEditado(){
+  if(!_clf||!_clf.d.lat)return;
+  _clf.d.lat=null;_clf.d.lng=null;_clf.d.cidade='';_clf.d.uf='';
+  const dica=document.getElementById('clf-dica-rua');if(dica){dica.className='clf-dica';dica.textContent='Escolher o endereço na lista ajuda a localizar sua loja no mapa.';}
+}
+function _clfEnderecoCompleto(){
+  const d=_clf.d;
+  let s=`${(d.rua||'').trim()}, ${(d.numero||'').trim()} - ${(d.bairro||'').trim()}`;
+  if(d.cidade)s+=`, ${d.cidade}${d.uf?' - '+d.uf:''}`;
+  return s;
+}
+function _clfSalvarCampos(){
+  if(!_clf||_clf.etapa<0||_clf.etapa>=_CLF_ETAPAS.length)return;
+  const v=id=>document.getElementById('clf-'+id)?.value;
+  const d=_clf.d;
+  for(const k of ['nome','rua','numero','bairro','telefone','celular','responsavel','documento','email']){const x=v(k);if(x!==undefined)d[k]=x;}
+  const s=document.getElementById('clf-senha');if(s)_clf.senha=s.value;
+}
+function _clfValidar(){
+  const d=_clf.d,e={},et=_CLF_ETAPAS[_clf.etapa].id,t=x=>(x||'').trim();
+  const tel=x=>{const n=(x||'').replace(/\D/g,'');return n.length===10||n.length===11;};
+  if(et==='sobre'){if(t(d.nome).length<2)e.nome='Informe o nome da loja.';if(!d.categoria)e.categoria='Escolha o segmento da loja.';}
+  if(et==='endereco'){if(t(d.rua).length<3)e.rua='Informe a rua.';if(!t(d.numero))e.numero='Informe o número.';if(t(d.bairro).length<2)e.bairro='Informe o bairro.';}
+  if(et==='contato'){if(!tel(d.telefone))e.telefone='Telefone inválido. Use DDD + número.';if(!tel(d.celular))e.celular='Telefone inválido. Use DDD + número.';if(t(d.responsavel).length<3)e.responsavel='Informe o nome do responsável.';}
+  if(et==='documento'){if(!t(d.documento))e.documento='Informe o CPF ou o CNPJ.';else if(!_validarDocumentoLoja(d.documento))e.documento='CPF ou CNPJ inválido. Confira os números.';}
+  if(et==='acesso'){if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(d.email)))e.email='Informe um e-mail válido.';if((_clf.senha||'').length<6)e.senha='A senha precisa ter no mínimo 6 caracteres.';}
+  return e;
+}
+function _clfContinuar(){
+  if(!_clf)return;
+  _clfSalvarCampos();
+  _clf.erros=_clfValidar();
+  if(Object.keys(_clf.erros).length){_clfRender();return;}
+  _clf.etapa++;_clfRender();
+}
+function _clfVoltar(){
+  if(!_clf||_clf.enviando)return;
+  _clfSalvarCampos();_clf.erros={};_clf.erroGeral='';
+  _clf.etapa--; // etapa 0 → volta pros cartões, mantendo os dados
+  _clfRender();
+}
+function _clfIr(i){if(!_clf||_clf.enviando)return;_clf.erros={};_clf.erroGeral='';_clf.etapa=i;_clfRender();}
+
+async function _clfEnviar(){
+  if(!_clf||_clf.enviando)return;
+  // revalida tudo (qualquer etapa pode ter sido alterada pela revisão)
+  const atual=_clf.etapa;
+  for(let i=0;i<_CLF_ETAPAS.length-1;i++){_clf.etapa=i;const e=_clfValidar();if(Object.keys(e).length){_clf.erros=e;_clfRender();return;}}
+  _clf.etapa=atual;
+  const d=_clf.d;
+  _clf.enviando=true;_clf.erroGeral='';_clfRender();
+  const res=await _gravarCadastroLoja({
+    nome:d.nome.trim(),endereco:_clfEnderecoCompleto(),telefone:d.telefone.trim(),celular:d.celular.trim(),responsavel:d.responsavel.trim(),
+    email:d.email.trim(),senha:_clf.senha,documento:d.documento.replace(/\D/g,''),lat:d.lat||null,lng:d.lng||null,categoria:d.categoria,
+  },()=>{const b=document.getElementById('clf-enviar');if(b)b.textContent='Localizando endereço...';}).catch(()=>({ok:false,erro:'Erro de conexão.'}));
+  if(!_clf)return; // fechou no meio
+  _clf.enviando=false;
+  if(!res.ok){_clf.erroGeral=`Não foi possível enviar o cadastro: ${res.erro}`;_clfRender();return;}
+  _clf.senha='';_clf.etapa=_CLF_ETAPAS.length;_clfRender();
+}
+function _clfFimHtml(){
+  return`<div class="clf-box"><div class="clf-fim"><div class="clf-fim-ico">${_icone('circle-check',44)}</div>
+    <h2>Cadastro enviado!</h2><p>Nossa equipe vai analisar e liberar seu acesso. Assim que for aprovado, é só entrar com o e-mail e a senha que você cadastrou.</p>
+    <button class="clf-btn clf-btn-pri" onclick="_clfFechar()">${_icone('arrow-left',18)}Voltar ao login</button></div></div>`;
 }
 
 async function renderUsuariosPage(){
