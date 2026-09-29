@@ -1243,6 +1243,14 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     button .icone{vertical-align:-0.2em;flex-shrink:0;}
     button .icone.btn-ico{margin-right:6px;}
 
+    /* ── MENU LATERAL QUE EMPURRA (desktop >=1024px) — ver _aplicarEstadoNav.
+       Mesma duração (.25s) na gaveta e no deslocamento do conteúdo. ── */
+    .nav-sidebar{transition:left .25s ease !important;}
+    #app{transition:margin-left .25s ease;}
+    @media (min-width:1024px){
+      body.nav-empurra #app{margin-left:280px;}
+    }
+
     /* ── MENU LATERAL DA LOJA: Configurações/Perfil ancorados embaixo ──
        .nav-sidebar-body já é o flex:1 rolável do .nav-sidebar (coluna,
        100vh); o wrapper ocupa no mínimo a altura toda dele e empurra o
@@ -3434,7 +3442,39 @@ function renderNavSidebar(activeId){
   }
   body.innerHTML=items.map(_navBtn).join('')+`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:16px">${sair}</div>`;
 }
-function abrirNavSidebar(){renderNavSidebar(_navAtivo);document.getElementById('nav-sidebar').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}
+// ── Menu lateral: EMPURRA o conteúdo no desktop, gaveta com overlay no
+// celular (2026-09-29). Desktop (>=1024px, onde sobra espaço pros 280px do
+// menu): body.nav-empurra desloca o #app (topbar + conteúdo) com
+// margin-left, sem overlay/blur — tudo continua visível e clicável, e o
+// menu só fecha pelo X ou pelo botão de menu (navegar não fecha).
+// Celular: comportamento antigo (overlay escuro, fecha ao navegar).
+// Leaflet não percebe a mudança de largura sozinho: ao fim da transição
+// chama map.invalidateSize() e dispara 'resize' (gráficos etc.).
+const _NAV_MQ_DESKTOP=window.matchMedia('(min-width: 1024px)');
+function _navModoEmpurrar(){return _NAV_MQ_DESKTOP.matches;}
+function _navAberto(){return document.getElementById('nav-sidebar')?.classList.contains('open');}
+let _navResizeTimer=null;
+function _aplicarEstadoNav(aberto){
+  const sb=document.getElementById('nav-sidebar'),ov=document.getElementById('nav-overlay');if(!sb)return;
+  const empurra=_navModoEmpurrar();
+  const mudouLargura=document.body.classList.contains('nav-empurra')!==(aberto&&empurra);
+  sb.classList.toggle('open',aberto);
+  if(ov)ov.classList.toggle('open',aberto&&!empurra);
+  document.body.classList.toggle('nav-empurra',aberto&&empurra);
+  if(mudouLargura){
+    clearTimeout(_navResizeTimer);
+    _navResizeTimer=setTimeout(()=>{
+      try{if(typeof map!=='undefined'&&map)map.invalidateSize();}catch(e){}
+      try{if(typeof _npMap!=='undefined'&&_npMap)_npMap.invalidateSize();}catch(e){}
+      window.dispatchEvent(new Event('resize'));
+    },280); // transição de .25s + folga
+  }
+}
+_NAV_MQ_DESKTOP.addEventListener('change',()=>_aplicarEstadoNav(_navAberto()));
+function abrirNavSidebar(){
+  if(_navModoEmpurrar()&&_navAberto()){fecharNavSidebar();return;} // botão de menu alterna no desktop
+  renderNavSidebar(_navAtivo);_aplicarEstadoNav(true);
+}
 // Menu flutuante dos itens do rodapé da loja com submenu (Configurações,
 // Perfil). position:fixed ancorado no botão: à direita do menu lateral
 // quando cabe, senão por cima do próprio menu (celular), sempre subindo a
@@ -3456,8 +3496,8 @@ function _abrirNavPopover(ev,itemId){
 }
 function _fecharNavPopover(){document.getElementById('nav-popover')?.remove();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')_fecharNavPopover();});
-function fecharNavSidebar(){_fecharNavPopover();document.getElementById('nav-sidebar').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}
-function navGoTab(id){fecharNavSidebar();setTimeout(()=>goTab(id),50);}
+function fecharNavSidebar(){_fecharNavPopover();_aplicarEstadoNav(false);}
+function navGoTab(id){if(_navModoEmpurrar()){_fecharNavPopover();goTab(id);return;}fecharNavSidebar();setTimeout(()=>goTab(id),50);}
 
 async function fazerLogin(){
   const email=document.getElementById('login-email').value.trim(),senha=document.getElementById('login-senha').value,perfil=document.getElementById('login-perfil').value;
@@ -7871,7 +7911,7 @@ function _dataComemorativaHoje(){
 }
 function renderCeoPage(){
   _ceoInjectStyles();
-  fecharNavSidebar();
+  if(!_navModoEmpurrar())fecharNavSidebar(); // no desktop o menu empurra (não cobre) — pode ficar aberto
   const nomeUsuario=currentUser?.nome||'Administrador';
   const iniciais=_ceoIniciais(nomeUsuario);
   const agora=new Date();
