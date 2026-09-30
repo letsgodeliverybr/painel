@@ -2555,7 +2555,7 @@ async function _criarEntregaRapidaToggle(){
   const lbl=document.getElementById('cr-retorno-lbl');
   if(track){track.style.background=_crRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_crRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
   if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
-  if(lbl){lbl.textContent=_crRetornoAtivo?'Com ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
+  if(lbl){lbl.textContent=_crRetornoAtivo?'Com Ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
   if(_crLastDistKm!==null){
     const selCrEl=document.getElementById('cr-loja-id');
     const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
@@ -2751,7 +2751,7 @@ async function calcularTaxaAuto(forcado=false){
   if(_npBadge)_npBadge.style.display='none';
   const _gorjetaDisplay=parseFloat(document.getElementById('np-gorjeta')?.value)||0;
   const _totalDisplay=valorTaxa+_gorjetaDisplay;
-  if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada}) → Taxa: R$ ${_totalDisplay.toFixed(2)}</span>`;
+  if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada}) → taxa: R$ ${_totalDisplay.toFixed(2)}</span>`;
 }
 // Botão "📍 Recalcular" do Novo Pedido — mesmo papel do botão equivalente
 // em Editar Pedido (_epRecalcularTaxas): força uma nova tentativa de
@@ -3129,7 +3129,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:'pronto',via:'botao_rapido',desalocou_motoboy:tinhaMotoboy});
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
-  showNotif(tinhaMotoboy?'🔓 Motoboy desalocado':'🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');
+  showNotif(tinhaMotoboy?'🔓 Motoboy desalocado':'🔔 Pedido pronto!','Motoboys serão notificados','var(--pink)');
   await atualizarTudo();
 }
 
@@ -3413,7 +3413,7 @@ function _rcgRenderPacotes(){
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
       ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal para Começar</span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
-      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% de bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
+      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% de Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
       <span class="rcg-recebe">Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b></span>
     </button>`;
@@ -3454,7 +3454,7 @@ function _selecionarPacotePix(i){
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">
-      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar aos pacotes</button>
+      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar aos Pacotes</button>
       <div class="rcg-pix">
         <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR indisponível no momento — use o código copia e cola.</span></div>
         <div>
@@ -3464,7 +3464,7 @@ function _selecionarPacotePix(i){
           <div class="rcg-chave"><span>Chave Pix</span><b>${PIX_CONFIG.chave}</b></div>
           <div class="rcg-acoes">
             <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar código Pix (copia e cola)</button>
-            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar comprovante pelo WhatsApp</a>
+            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar Comprovante pelo WhatsApp</a>
           </div>
         </div>
       </div>
@@ -3559,11 +3559,11 @@ function _blocoTrocaEndereco(p){
   const end=p.troca_endereco_novo;
   const enderecoTxt=[end.streetName&&end.streetNumber?`${end.streetName}, ${end.streetNumber}`:end.streetName,end.complement,end.neighborhood,end.city,end.state].filter(Boolean).join(', ');
   return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:16px">
-    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📍 Cliente pediu troca de endereço</div>
+    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📍 Cliente Pediu Troca de Endereço</div>
     <div style="font-size:13px;color:#78350f;margin-bottom:8px">${enderecoTxt||'—'}</div>
     <div style="font-size:11px;color:#92400e;margin-bottom:10px">${expirado?'Prazo de 15min expirado — o iFood já rejeitou automaticamente':`Prazo: ${restanteMin}min restantes`}</div>
     <div style="display:flex;gap:8px">
-      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Aceitar novo endereço</button>
+      <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','aceitar')" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Aceitar Novo Endereço</button>
       <button onclick="event.stopPropagation();_ifoodResponderTroca('${p.id}','rejeitar')" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">${_icone('x',16,'btn-ico')}Rejeitar</button>
     </div>
   </div>`;
@@ -3630,7 +3630,7 @@ async function _confirmarCancelamentoIfood(pedidoId){
 // admin/loja no painel, digitando o código que o motoboy reportou.
 function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
   if(!codigo)return'';
-  if(validadoEm)return`<div style="background:#052e1a;border:1px solid #16a34a55;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#4ade80">✓ ${titulo} — validado</div>`;
+  if(validadoEm)return`<div style="background:#052e1a;border:1px solid #16a34a55;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#4ade80">✓ ${titulo} — Validado</div>`;
   const inputId=`ifood-codigo-${action}-${p.id}`;
   return`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
     <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: <span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span></div>
@@ -3728,8 +3728,8 @@ function abrirInfoPedido(pedidoId){
         </div>
       </div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento recebido</button>`:''}
-        <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir comanda</button>
+        ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento Recebido</button>`:''}
+        <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir Comanda</button>
         <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar Link de Rastreio</button>
       </div>
     </div>
@@ -4809,11 +4809,11 @@ function renderPedidosLista(){
             ${indicadorAtrasoHtml}
           </div>
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarAgendado(p.agendado_para)}</div>`:''}
-          ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido já classificado como pronto</div>`:''}
+          ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido Já Classificado Como Pronto</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
-            ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento recebido</button>`:''}
+            ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento Recebido</button>`:''}
             <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Comanda</button>
-            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('link',16,'btn-ico')}Copiar rastreio</button>
+            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('link',16,'btn-ico')}Copiar Rastreio</button>
           </div>
         </div>`:'';
       // ── CARD FECHADO ──────────────────────────────────────────────
@@ -4856,7 +4856,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
-              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} Para Evitar Atraso</div>`:''}
+              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} para Evitar Atraso</div>`:''}
             </div>
             ${_sobDemandaExpandidoId===p.id?_htmlSobDemandaInline(p):''}
           </div>
@@ -5003,7 +5003,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Retorno</label>
     <div id="ep-retorno-btn" onclick="_epToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:${p.com_retorno?'#1A56DB':'#3a3a3a'};transition:background .15s;user-select:none">
       <span style="font-size:16px">${p.com_retorno?'↩':'—'}</span>
-      <span id="ep-retorno-lbl" style="font-size:13px;font-weight:600;color:${p.com_retorno?'#ffffff':'#888888'}">${p.com_retorno?'Com retorno':'Sem retorno'}</span>
+      <span id="ep-retorno-lbl" style="font-size:13px;font-weight:600;color:${p.com_retorno?'#ffffff':'#888888'}">${p.com_retorno?'Com Retorno':'Sem retorno'}</span>
     </div>
   </div>
 </div>
@@ -5047,7 +5047,7 @@ function _npToggleRetorno(){
   const btn=document.getElementById('np-retorno-btn');
   const lbl=document.getElementById('np-retorno-lbl');
   if(btn)btn.style.background=_npRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_npRetornoAtivo?'Com retorno':'Sem retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
+  if(lbl){lbl.textContent=_npRetornoAtivo?'Com Retorno':'Sem retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
   calcularTaxaAuto();
 }
 let _epRetornoAtivo=false;
@@ -5057,7 +5057,7 @@ function _epToggleRetorno(){
   const btn=document.getElementById('ep-retorno-btn');
   const lbl=document.getElementById('ep-retorno-lbl');
   if(btn)btn.style.background=_epRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_epRetornoAtivo?'Com retorno':'Sem retorno';lbl.style.color=_epRetornoAtivo?'#fff':'#888888';}
+  if(lbl){lbl.textContent=_epRetornoAtivo?'Com Retorno':'Sem retorno';lbl.style.color=_epRetornoAtivo?'#fff':'#888888';}
 }
 function _epToggleColeta(){
   const on=document.getElementById('ep-coleta-toggle')?.checked;
@@ -5231,7 +5231,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const avisoRealocacao=temEntregadorAtivo
     ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse pedido já tem um entregador em andamento.</b> Escolher outro abaixo vai desalocar o entregador atual (ele será avisado por notificação) e reabrir o pedido como disponível pro novo.</div>`
     :'';
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys Disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
   modal.classList.add('open');
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
@@ -5783,7 +5783,7 @@ async function _abrirModalImportarLojas(){
     <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ dados pendentes" pra você completar individualmente depois em editar loja.</div>
-      <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">${_icone('download',16,'btn-ico')}Baixar modelo CSV</button>
+      <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">${_icone('download',16,'btn-ico')}Baixar Modelo CSV</button>
       <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado padrão (pra geocodificar endereços sem cidade no texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
       <div class="fi" style="margin-bottom:16px"><label>Planilha Preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
       <div id="import-lojas-preview"></div>
@@ -6010,7 +6010,7 @@ function _renderTbodyEstabelecimentos(){
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da loja" aria-label="Financeiro da loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da Loja" aria-label="Financeiro da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -6245,7 +6245,7 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
   if(_semGpsAoLigar){
     showNotif('⚠️ Ligado, mas sem GPS','Esse entregador só volta a aparecer no mapa depois que ele mesmo abrir o app — esse botão não reinicia o GPS pelo celular dele.','#f59e0b');
   }else{
-    showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
+    showNotif(novoValor?'🟢 Entregador online':'⚫ Entregador offline','','var(--green)');
   }
 }
 
@@ -7089,7 +7089,7 @@ function _pdFiltrarOpcoes(multiId,busca,cidKey){
     const selAllEl=document.getElementById(`pd-cid-selall-${cidKey}`);
     if(selAllEl){
       const todosChecked=visiveis.length>0&&visiveis.every(cb=>cb?.checked);
-      selAllEl.textContent=todosChecked?'Desmarcar todos':'Selecionar todos';
+      selAllEl.textContent=todosChecked?'Desmarcar Todos':'Selecionar Todos';
     }
   }
 }
@@ -7104,7 +7104,7 @@ function _pdSelecionarTodos(multiId){
   // atualiza label via hack: dispara evento no primeiro checkbox para re-checar estado
   const cidKey=wrap.id.replace('pd-cid-multi-','');
   const selAllEl=document.getElementById(`pd-cid-selall-${cidKey}`);
-  if(selAllEl)selAllEl.textContent=todosChecked?'Selecionar todos':'Desmarcar todos';
+  if(selAllEl)selAllEl.textContent=todosChecked?'Selecionar Todos':'Desmarcar Todos';
 }
 
 async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
@@ -7337,12 +7337,12 @@ async function renderCacPage(){
       <td style="text-align:center">${x.dias??'—'}</td>
       <td style="text-align:center;white-space:nowrap">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
       <td style="text-align:center;white-space:nowrap;font-weight:700">${R(x.bonus)}</td>
-      <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do prazo':'Prazo encerrado'}</span></td>
+      <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do Prazo':'Prazo Encerrado'}</span></td>
     </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em cadastros → estabelecimentos → editar loja.</td></tr>';
   el.innerHTML=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por vendedor — ${mes}/${ano}</div>
-    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas Novas</th><th style="text-align:center">Pedidos na Janela</th><th style="text-align:center">Bônus Acumulado</th><th style="text-align:center">Bônus no Mês</th><th>Meta/Mês</th><th style="text-align:center">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por Vendedor — ${mes}/${ano}</div>
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas Novas</th><th style="text-align:center">Pedidos na Janela</th><th style="text-align:center">Bônus Acumulado</th><th style="text-align:center">Bônus no Mês</th><th>Meta/Mês</th><th style="text-align:center">Custo no Mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas Novas por Vendedor</div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início Contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (total / janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
 }
@@ -7370,7 +7370,7 @@ async function abrirModalVendedor(id){
   if(!modal){modal=document.createElement('div');modal.id='modal-vendedor';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone(id?'pencil':'plus',18)} ${id?'Editar':'Novo'} Vendedor</span><button class="modal-close" onclick="document.getElementById('modal-vendedor').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body">
     <div class="form-row"><div class="fi"><label>Nome</label><input id="vd-nome" value="${q(v.nome)}"/></div><div class="fi"><label>Telefone</label><input id="vd-telefone" value="${q(v.telefone)}" placeholder="(16) 99999-9999"/></div></div>
-    <div class="form-row"><div class="fi"><label>Cargo</label><select id="vd-cargo" style="${ss}">${cargos.map(c=>`<option value="${c.id}"${c.id===v.cargo_id?' selected':''}>${_escHtml(c.nome)} — fixo R$ ${parseFloat(c.salario_fixo).toFixed(2)}</option>`).join('')}</select></div><div class="fi"><label>Status</label><select id="vd-ativo" style="${ss}"><option value="true"${v.ativo?' selected':''}>Ativo</option><option value="false"${!v.ativo?' selected':''}>Inativo</option></select></div></div>
+    <div class="form-row"><div class="fi"><label>Cargo</label><select id="vd-cargo" style="${ss}">${cargos.map(c=>`<option value="${c.id}"${c.id===v.cargo_id?' selected':''}>${_escHtml(c.nome)} — Fixo R$ ${parseFloat(c.salario_fixo).toFixed(2)}</option>`).join('')}</select></div><div class="fi"><label>Status</label><select id="vd-ativo" style="${ss}"><option value="true"${v.ativo?' selected':''}>Ativo</option><option value="false"${!v.ativo?' selected':''}>Inativo</option></select></div></div>
     <div id="vd-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-vendedor').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarVendedor(${id?`'${id}'`:''})">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
@@ -7613,7 +7613,7 @@ async function _buscarPedidosAdmin(){
     const isCredito=c.tipo==='credito';
     const badge=isCredito?`<span class="p-badge" style="background:#d1fae520;color:#059669">💰 Crédito</span>`:`<span class="p-badge" style="background:#fee2e220;color:#ef4444">💸 Débito</span>`;
     const valorStr=`<span style="font-weight:700;color:${isCredito?'#10b981':'#ef4444'}">${isCredito?'+':'-'}R$ ${(parseFloat(c.valor)||0).toFixed(2)}</span>`;
-    return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito manual':'Débito manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td><td style="text-align:center;color:var(--text3)">—</td></tr>`;
+    return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito Manual':'Débito Manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td><td style="text-align:center;color:var(--text3)">—</td></tr>`;
   }).join('');
   tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
 }
@@ -7671,7 +7671,7 @@ function _verLinhaTempoPedido(pedidoId){
       <div style="padding-bottom:${ehUltimo?2:20}px;flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:${m.done?'var(--text)':'var(--text3)'}">${m.icone} ${m.label}</div>
         <div style="font-size:12px;color:${m.done?'var(--text2)':'var(--text3)'};margin-top:2px">${m.done?formatarDataHora(m.tsRaw):'— ainda não aconteceu'}</div>
-        ${m.duracao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">⏱️ ${m.duracao} depois do marco anterior</div>`:''}
+        ${m.duracao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">⏱️ ${m.duracao} Depois do Marco Anterior</div>`:''}
       </div>
     </div>`;
   };
@@ -8352,7 +8352,7 @@ function renderCeoPage(){
           <div class="ceo-avatar" onclick="_ceoToggleDropdown()"><img src="https://letsgodeliverybr.github.io/painel/img/gabriel-avatar.png" alt="${nomeUsuario}" onerror="this.parentElement.textContent='${iniciais}'"/></div>
           <div class="ceo-dropdown" id="ceo-dropdown">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:12.5px;font-weight:700;color:var(--text)">${nomeUsuario}</div><div style="font-size:11px;color:var(--text3)">CEO</div></div>
-            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">${_icone('user',16,'btn-ico')}Meu perfil</button>
+            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">${_icone('user',16,'btn-ico')}Meu Perfil</button>
             <button onclick="_ceoToggleDropdown();goTab('configuracao')">${_icone('settings',16,'btn-ico')}Configurações</button>
             <button onclick="logout()" style="color:#ef4444">${_icone('log-out',16,'btn-ico')}Sair</button>
           </div>
@@ -8859,7 +8859,7 @@ function _abrirDrilldownCategoria(chartId,grupo){
   let modal=document.getElementById('modal-categoria-detalhe');
   if(!modal){modal=document.createElement('div');modal.id='modal-categoria-detalhe';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">${_icone('search',18)} ${grupo} — detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('search',18)} ${grupo} — Detalhamento</span><button class="modal-close" onclick="document.getElementById('modal-categoria-detalhe').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">${_renderDonutCategoria(detalhado,{rotuloCentro,rotuloCentroPlural,corFn:_corMarca})}</div>
   </div>`;
   modal.classList.add('open');
@@ -8919,7 +8919,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da loja" aria-label="Financeiro da loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da Loja" aria-label="Financeiro da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -9296,7 +9296,7 @@ function _clfAberturaDireta(){
 function _clfIniciar(){
   _clfLigarBotao();
   if(_clfAberturaDireta()&&!document.getElementById('clf')){
-    document.title="Cadastre sua loja | Let's Go";
+    document.title="Cadastre Sua Loja | Let's Go";
     _clfAbrir(true);
   }
 }
@@ -9463,7 +9463,7 @@ function _clfEntradaHtml(){
   const card=k=>{const t=_CLF_TIPOS[k];return`<div class="clf-card" data-tipo="${k}" onmouseenter="_clfFoco('${k}',true)" onmouseleave="_clfFoco('${k}',false)">
     <div class="clf-arte">${t.cenas.map((c,i)=>_clfCena(c,k+i,i===0)).join('')}</div>
     <h3>${t.nome}</h3><p>${t.desc}</p>
-    <button class="clf-btn clf-btn-pri" onclick="_clfEscolher('${k}')">Cadastrar agora ${_icone('arrow-right',18)}</button></div>`;};
+    <button class="clf-btn clf-btn-pri" onclick="_clfEscolher('${k}')">Cadastrar Agora ${_icone('arrow-right',18)}</button></div>`;};
   return`<h1 class="clf-h1">Cadastre sua loja e comece a vender com a <span>Let's Go</span></h1>
     <p class="clf-sub">Escolha o tipo do seu negócio. O cadastro leva poucos minutos e nossa equipe analisa e libera o seu acesso.</p>
     <div class="clf-cards" id="clf-cards">${card('restaurantes')}${card('multicategorias')}</div>`;
@@ -9572,7 +9572,7 @@ function _clfSegmento(b){
 function _clfOlho(b){
   const i=document.getElementById('clf-senha');if(!i)return;
   const mostrar=i.type==='password';i.type=mostrar?'text':'password';
-  b.innerHTML=_icone(mostrar?'eye-off':'eye',18);b.setAttribute('aria-label',mostrar?'Ocultar senha':'Mostrar senha');
+  b.innerHTML=_icone(mostrar?'eye-off':'eye',18);b.setAttribute('aria-label',mostrar?'Ocultar Senha':'Mostrar Senha');
 }
 function _clfMaskTel(el){
   let v=el.value.replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'').slice(0,11);
@@ -9672,7 +9672,7 @@ async function _clfEnviar(){
 function _clfFimHtml(){
   return`<div class="clf-box"><div class="clf-fim"><div class="clf-fim-ico">${_icone('circle-check',44)}</div>
     <h2>Cadastro enviado!</h2><p>Nossa equipe vai analisar e liberar seu acesso. Assim que for aprovado, é só entrar com o e-mail e a senha que você cadastrou.</p>
-    <button class="clf-btn clf-btn-pri" onclick="_clfSair()">${_icone('arrow-left',18)}Voltar ao login</button></div></div>`;
+    <button class="clf-btn clf-btn-pri" onclick="_clfSair()">${_icone('arrow-left',18)}Voltar ao Login</button></div></div>`;
 }
 
 async function renderUsuariosPage(){
@@ -10082,7 +10082,7 @@ async function _scAbrirModal(id){
     if(id){const opt=sel.querySelector(`option[value="${id}"]`);if(opt)opt.selected=true;}
   }
   const lblWrap=document.getElementById('sc-modal-entidade-wrap');
-  if(lblWrap){const lbl=lblWrap.querySelector('label');if(lbl)lbl.textContent=isLojas?'LOJA':'ENTREGADOR';}
+  if(lblWrap){const lbl=lblWrap.querySelector('label');if(lbl)lbl.textContent=isLojas?'Loja':'Entregador';}
   const titulo=document.getElementById('sc-modal-titulo');
   if(titulo)titulo.textContent=`Cadastrar Crédito / Débito — ${isLojas?'Loja':'Entregador'}`;
   // Loja: recarga passa pela função do servidor (1ª recarga mínima e bônus
@@ -10103,7 +10103,7 @@ async function _scAtualizarPrevia(recarregar){
   const recarga=isLojas&&document.getElementById('sc-m-motivo')?.value==='recarga';
   const show=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'block':'none';};
   show('sc-m-tipo-wrap',!recarga);show('sc-m-data-wrap',!recarga);
-  const lbl=document.querySelector('#sc-m-valor-wrap label');if(lbl)lbl.textContent=recarga?'VALOR PAGO PELA LOJA':'VALOR';
+  const lbl=document.querySelector('#sc-m-valor-wrap label');if(lbl)lbl.textContent=recarga?'Valor Pago pela Loja':'Valor';
   const box=document.getElementById('sc-m-previa');if(!box)return;
   if(!recarga){box.style.display='none';return;}
   const lojaId=document.getElementById('sc-m-ent')?.value;if(!lojaId){box.style.display='none';return;}
@@ -10118,7 +10118,7 @@ async function _scAtualizarPrevia(recarregar){
   if(info.primeira_recarga)h+=caixa(valor&&valor<min?'#ef4444':'#3b82f6','info',`<b>Primeira recarga: mínimo ${_rcgFmtCurto(min)}.</b>${valor&&valor<min?' O valor informado está abaixo do mínimo e será recusado.':''}`);
   const j=info.janela,pac=_rcgPacotes(info).find(p=>Math.abs(p.pago-valor)<0.005);
   if(j&&j.ativo){
-    h+=caixa('#10b981','badge-percent',`<b>Bônus ativo até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
+    h+=caixa('#10b981','badge-percent',`<b>Bônus ativo até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total Creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
   }else if(j){
     h+=caixa('#64748b','calendar',`<b>Bônus Fora da Janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
   }
@@ -10450,7 +10450,7 @@ function _finRenderExtrato(){
     if(g.entrega){
       const aberto=_fin.abertos.has(g.id),n=g.itens.length;
       return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor.entrega}"></i>Débito de Entrega</span>
-        <span class="fin-desc">${n} entrega${n>1?'s':''} no dia <button class="fin-exp" aria-expanded="${aberto}" onclick="_finToggle('${g.id}')">${aberto?'Ocultar':'Ver pedidos'} ${_icone(aberto?'chevron-up':'chevron-down',14)}</button></span>
+        <span class="fin-desc">${n} entrega${n>1?'s':''} no dia <button class="fin-exp" aria-expanded="${aberto}" onclick="_finToggle('${g.id}')">${aberto?'Ocultar':'Ver Pedidos'} ${_icone(aberto?'chevron-up':'chevron-down',14)}</button></span>
         <span class="v">${val(g.valor,-1)}</span><span class="s">${sal(g._saldo)}</span></div>
         ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
     }
@@ -10619,7 +10619,7 @@ function _claCardHtml(cidade,lojasAll,entAll){
 
 function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
   const label=tipo==='loja'?`🏪 Lojas do clã (${selecionadosIds.length})`:`🛵 Entregadores do clã (${selecionadosIds.length})`;
-  const verLabel=tipo==='loja'?'Ver lojas':'Ver entregadores';
+  const verLabel=tipo==='loja'?'Ver Lojas':'Ver Entregadores';
   const multiId=`cla-multi-${tipo}-${cidSafe}`;
   _claVerCache[multiId]=entidades.filter(e=>selecionadosIds.includes(e.id)).map(e=>e.nome);
   const optionsHtml=entidades.map(e=>`<label class="cla-opt" data-doc="${tipo==='ent'?(e.cpf||'').replace(/\D/g,''):''}" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${e.id}" ${selecionadosIds.includes(e.id)?'checked':''} style="width:14px;height:14px;cursor:pointer"/>${e.nome}</label>`).join('');
@@ -10840,7 +10840,7 @@ function _vagasAbrirDia(dataStr,semRolar){
           <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:14px;background:var(--surface2);border-radius:8px">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
         </div>
         <div class="vg-form${passado?' vg-form-bloqueado':''}">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova vaga em ${dia}/${mes}/${ano}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova Vaga em ${dia}/${mes}/${ano}</div>
           ${passado?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_icone('lock',16)} Dia já passou — não é possível criar vagas nesta data.</div>`:''}
           <fieldset ${passado?'disabled':''} style="border:none;padding:0;margin:0;min-width:0">
             ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
@@ -10903,11 +10903,11 @@ function _vagasRegraAcoes(v){
   const hoje=_dataHojeBrasilia(),passado=v.data<hoje,ehHoje=v.data===hoje;
   const fechada=v.status==='finalizada'||v.status==='cancelada';
   const livre=v.status==='disponivel',ocupada=v.status==='preenchida';
-  const motivoFechada=v.status==='finalizada'?'Vaga já finalizada':'Vaga já cancelada';
+  const motivoFechada=v.status==='finalizada'?'Vaga Já Finalizada':'Vaga Já Cancelada';
   return {
-    alocar:livre&&!passado?null:fechada?motivoFechada:ocupada?'Vaga já tem entregador':'Dia já passou',
-    desatribuir:ocupada&&!passado?null:fechada?motivoFechada:livre?'Vaga sem entregador':'Dia já passou',
-    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga sem entregador':'Só no dia da vaga ou depois',
+    alocar:livre&&!passado?null:fechada?motivoFechada:ocupada?'Vaga Já Tem Entregador':'Dia Já Passou',
+    desatribuir:ocupada&&!passado?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Dia Já Passou',
+    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Só no dia da vaga ou depois',
     cancelar:fechada?motivoFechada:null,
   };
 }
@@ -10970,7 +10970,7 @@ async function _vagasBuscarCpf(vagaId){
     return;
   }
   resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Encontrado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${ent.nome}</div></div>
-    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Confirmar alocação</button>`;
+    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Confirmar Alocação</button>`;
 }
 
 async function _vagasConfirmarAlocar(vagaId,entregadorId){
@@ -11956,7 +11956,7 @@ async function verFaturaCobranca(cobId){
         ${lojaEmail?`<div style="font-size:13px;color:#6b7280">✉️ ${lojaEmail}</div>`:''}
       </div>
       <div style="text-align:right;min-width:140px">
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${jaPago?'Total pago':'Total a pagar'}</div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${jaPago?'Total Pago':'Total a Pagar'}</div>
         ${faturaVencida?`<div style="font-size:13px;color:#9ca3af;text-decoration:line-through">R$ ${valorOriginalFatura.toFixed(2)}</div>`:''}
         <div style="font-size:30px;font-weight:800;color:${jaPago?'#059669':faturaVencida?'#dc2626':'#1A56DB'};line-height:1">R$ ${valorFinalExibido.toFixed(2)}</div>
       </div>
@@ -11993,7 +11993,7 @@ async function verFaturaCobranca(cobId){
     <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
       <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir</button>
-      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('send',16,'btn-ico')}Enviar comprovante no WhatsApp Financeiro</button>`:''}
+      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('send',16,'btn-ico')}Enviar Comprovante no WhatsApp Financeiro</button>`:''}
     </div>
   </div>`;
   modal.innerHTML=invoice;
@@ -12041,7 +12041,7 @@ function _imprimirComanda(pedidoId){
     .codigo .lbl{font-size:11px;letter-spacing:1px}
     .codigo .num{font-size:25px;font-weight:700;letter-spacing:6px}
   </style></head><body>
-    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 RETIRADA NA LOJA':'🛵 ENTREGA'}</div></div>
+    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 Retirada na Loja':'🛵 Entrega'}</div></div>
     ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">Código de Coleta (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
     <div class="secao">
       <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
@@ -12309,8 +12309,8 @@ async function renderDisparoNotificacoesPage(){
         <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
-          <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar comigo</button>
-          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar agora pra todos</button>
+          <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar Comigo</button>
+          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora pra Todos</button>
         </div>
       </div>
       <div class="card" style="max-width:460px;flex:1;min-width:320px">
@@ -12321,13 +12321,13 @@ async function renderDisparoNotificacoesPage(){
         <div id="np-in-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
-          <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar comigo</button>
-          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar agora pra todos</button>
+          <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar Comigo</button>
+          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora pra Todos</button>
         </div>
       </div>
     </div>
 
-    <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por dia da semana</div>
+    <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por Dia da Semana</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 Disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
     ${await _npRenderPeriodicos()}`;
 }
@@ -12661,7 +12661,7 @@ function _htmlOutrasPlataformas(){
         ${_PLATAFORMAS_MARKETPLACE.map(_cardPlataforma).join('')}
       </div>
 
-      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio digital / PDV e gestão</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio Digital / PDV e Gestão</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
         ${_PLATAFORMAS_CARDAPIO_PDV.map(_cardPlataforma).join('')}
       </div>
@@ -12689,8 +12689,8 @@ async function _renderConfigIntegracao(){
     <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
-          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de lojas — iFood</div>
-          <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('plus',16,'btn-ico')}Adicionar integração</button>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
+          <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('plus',16,'btn-ico')}Adicionar Integração</button>
         </div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao merchant ID do app do iFood (Portal do desenvolvedor → seu app → merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
         <div id="ifood-merchant-contador" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Carregando...</div>
@@ -12741,7 +12741,7 @@ async function _carregarIfoodErros(){
     :`Mostrando os ${Math.min(_IFOOD_ERROS_LIMITE_PADRAO,logs.length)} mais recentes.`;
   if(btnWrap)btnWrap.innerHTML=_ifoodErrosCompleto
     ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar Só Recentes</button>`
-    :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('scroll-text',16,'btn-ico')}Ver histórico completo</button>`;
+    :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('scroll-text',16,'btn-ico')}Ver Histórico Completo</button>`;
 }
 function _toggleIfoodErrosCompleto(){
   _ifoodErrosCompleto=!_ifoodErrosCompleto;
@@ -13054,7 +13054,7 @@ async function carregarTabelasPreco(){
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
   _tabelasPrecoCache=tabelas;
   tabelas.forEach(t=>console.log('[FAIXAS] tabela id:',t.id,'nome:',t.nome));
-  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar Tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver Faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar Tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 function verFaixasTabela(id){const t=_tabelasPrecoCache.find(x=>x.id===id);if(t)verFaixas(t.id,t.nome,t.tipo||'cobranca');}
 async function verFaixas(tabelaId,tabelaNome,tipo){
@@ -13064,7 +13064,7 @@ async function verFaixas(tabelaId,tabelaNome,tipo){
   ]);
   const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com Retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/Km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com Retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova Faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/Km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
@@ -13447,7 +13447,7 @@ async function renderLojaClientesPage(){
     <div class="stats-grid" style="margin-bottom:16px">
       <div class="stat-card"><div class="stat-label">Clientes (90 dias)</div><div class="stat-value">${N(m.total90)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.pedidos90)} pedidos finalizados</div></div>
       <div class="stat-card"><div class="stat-label">Clientes Novos (30 dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">fizeram o primeiro pedido nesse período</div></div>
-      <div class="stat-card"><div class="stat-label">Pediram 2x ou mais (30 dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
+      <div class="stat-card"><div class="stat-label">Pediram 2x ou Mais (30 dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
     </div>
     <div class="card" style="padding:16px 18px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução de Clientes por Semana</div>
@@ -13556,7 +13556,7 @@ async function _mcCarregarProdutos(catId){
         <div style="display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:6px;border-top:1px solid var(--border)">
           <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${p.disponivel?'#05966920':'#ef444420'};color:${p.disponivel?'#10b981':'#ef4444'};font-weight:600">${p.disponivel?'Disponível':'Indisponível'}</span>
           <div style="margin-left:auto;display:flex;gap:4px">
-            <button onclick="_mcToggleProduto('${p.id}',${!p.disponivel})" title="${p.disponivel?'Marcar indisponível':'Marcar disponível'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone(p.disponivel?'eye-off':'eye',14)}</button>
+            <button onclick="_mcToggleProduto('${p.id}',${!p.disponivel})" title="${p.disponivel?'Marcar Indisponível':'Marcar Disponível'}" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone(p.disponivel?'eye-off':'eye',14)}</button>
             <button onclick="_mcAbrirModalProduto('${p.id}')" title="Editar" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone('pencil',16)}</button>
             <button onclick="_mcExcluirProduto('${p.id}','${(p.nome||'').replace(/'/g,"\\'")}')" title="Excluir" style="background:none;border:1px solid #ef4444;border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">${_icone('trash-2',16)}</button>
           </div>
