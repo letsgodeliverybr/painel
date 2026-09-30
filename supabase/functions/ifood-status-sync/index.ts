@@ -445,6 +445,46 @@ async function processarEventoWebhook(evento: any): Promise<void> {
   }
 }
 
+// Confirmação automática do pedido no iFood — mesma regra de
+// ifood-polling/index.ts (ver comentário lá, 2026-09-30), duplicada aqui
+// pelo mesmo motivo do resto do arquivo. Pelo webhook, falha que vale
+// tentar de novo (429, 5xx, exceção) vira exceção → 500 → o iFood reenvia.
+function ehEvento(code: string | null, curto: string, longo: string): boolean {
+  return code === curto || code === longo;
+}
+
+async function marcarConfirmado(orderId: string): Promise<void> {
+  const { error } = await supabase.from("pedidos")
+    .update({ ifood_confirmado_em: new Date().toISOString() })
+    .eq("ifood_order_id", orderId).is("ifood_confirmado_em", null);
+  if (error) throw new Error(`falha ao marcar pedido confirmado ${orderId}: ${error.message}`);
+}
+
+async function confirmarPedidoSeNecessario(orderId: string, cfmNoLote: boolean): Promise<void> {
+  if (cfmNoLote) return;
+  const { data, error } = await supabase
+    .from("pedidos").select("id, status, ifood_confirmado_em").eq("ifood_order_id", orderId).limit(1);
+  if (error) throw new Error(`falha ao ler pedido pra confirmar ${orderId}: ${error.message}`);
+  const pedido = data?.[0];
+  if (!pedido || pedido.ifood_confirmado_em || pedido.status === "cancelado") return;
+
+  const token = await getAccessToken();
+  if (!token) throw new Error("sem token de acesso pra confirmar o pedido");
+  const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${orderId}/confirm`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (await logSeRateLimited("confirmar_pedido", res)) throw new Error(`rate limit ao confirmar ${orderId}`);
+  const body = await res.text().catch(() => "");
+  const { error: logErr } = await supabase.from("logs_acoes").insert({
+    acao: res.ok ? "ifood_confirmar_pedido" : "ifood_erro_confirmar_pedido_http",
+    detalhes: { orderId, pedidoId: pedido.id, status: res.status, body, via: "webhook" },
+  });
+  if (logErr) console.error("[ifood-status-sync] FALHA AO GRAVAR LOG DO /confirm:", logErr.message);
+  if (res.ok) { await marcarConfirmado(orderId); return; }
+  if (res.status >= 500) throw new Error(`HTTP ${res.status} ao confirmar ${orderId}`);
+}
+
 async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
   const rawBody = new Uint8Array(await req.arrayBuffer());
 
@@ -471,7 +511,15 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
     // status pra 'cancelado'/'finalizado' de novo, ou upsert do mesmo
     // pedido mapeado de novo, não duplica nem corrompe nada), então retry
     // do iFood em 5xx é seguro.
+    // Confirmação roda depois de todos os eventos gravados (o PLC pode
+    // criar o pedido no mesmo Promise.all) e pula quem tem CFM no lote.
     await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
+    const codigo = (e: any) => e?.code ?? e?.fullCode ?? null;
+    const idPedido = (e: any) => e?.orderId ?? e?.id;
+    const cfmNoLote = new Set(eventos.filter((e) => ehEvento(codigo(e), "CFM", "CONFIRMED")).map(idPedido));
+    await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
+    const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
+    await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
   } catch (e) {
     await logErro("webhook_processar_excecao", { message: String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });

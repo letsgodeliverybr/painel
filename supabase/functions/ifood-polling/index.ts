@@ -396,6 +396,53 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
   return true;
 }
 
+// Confirmação automática do pedido no iFood (2026-09-30). Sem ela o iFood
+// recusava verifyDeliveryCode com 422 ORDER_NOT_AVAILABLE_FOR_HANDSHAKE
+// ("Order didn't have confirmation from merchant") e cancelava o pedido
+// 8 minutos depois de criado (#6238, #8141, #1362) — nenhuma function
+// chamava /confirm. Só confirma se o pedido ainda não estiver confirmado:
+// ifood_confirmado_em vazio e nenhum CFM (aceite pelo Gestor de Pedidos)
+// no mesmo lote de eventos. Resposta sempre logada em logs_acoes.
+function ehEvento(code: string | null, curto: string, longo: string): boolean {
+  return code === curto || code === longo;
+}
+
+async function marcarConfirmado(orderId: string): Promise<boolean> {
+  const { error } = await supabase.from("pedidos")
+    .update({ ifood_confirmado_em: new Date().toISOString() })
+    .eq("ifood_order_id", orderId).is("ifood_confirmado_em", null);
+  if (error) { await logErro("marcar_confirmado", { orderId, message: error.message }); return false; }
+  return true;
+}
+
+// Retorna false só quando vale tentar de novo (429, 5xx, exceção) — o
+// chamador não dá ACK no PLC e o iFood devolve o evento no próximo polling.
+// 4xx é logado e não se repete (tentar de novo daria o mesmo erro).
+async function confirmarPedidoSeNecessario(orderId: string, token: string, cfmNoLote: boolean): Promise<boolean> {
+  if (cfmNoLote) return true;
+  const { data, error } = await supabase
+    .from("pedidos").select("id, status, ifood_confirmado_em").eq("ifood_order_id", orderId).limit(1);
+  if (error) { await logErro("confirmar_ler_pedido", { orderId, message: error.message }); return false; }
+  const pedido = data?.[0];
+  if (!pedido || pedido.ifood_confirmado_em || pedido.status === "cancelado") return true;
+
+  try {
+    const res = await ifoodFetch(`/order/v1.0/orders/${orderId}/confirm`, token, { method: "POST" });
+    if (await logSeRateLimited("confirmar_pedido", res)) return false;
+    const body = await res.text().catch(() => "");
+    const { error: logErr } = await supabase.from("logs_acoes").insert({
+      acao: res.ok ? "ifood_confirmar_pedido" : "ifood_erro_confirmar_pedido_http",
+      detalhes: { orderId, pedidoId: pedido.id, status: res.status, body, via: "polling" },
+    });
+    if (logErr) console.error("[ifood-polling] FALHA AO GRAVAR LOG DO /confirm:", logErr.message);
+    if (res.ok) return await marcarConfirmado(orderId);
+    return res.status < 500;
+  } catch (e) {
+    await logErro("confirmar_pedido_excecao", { orderId, message: String(e) });
+    return false;
+  }
+}
+
 // Item do checklist de homologação (confirmado com o suporte do iFood,
 // 2026-09-16): filtra o polling só pelos merchants que essa integração
 // realmente atende — sem isso a API devolve eventos de TODO merchant que
@@ -448,6 +495,11 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
   }
 
   const acks: string[] = [];
+  // Pedidos já aceitos no Gestor de Pedidos dentro deste mesmo lote — não
+  // chama /confirm pra eles mesmo que o PLC venha antes do CFM no array.
+  const cfmNoLote = new Set(
+    (eventos || []).filter((e) => ehEvento(e.code ?? e.fullCode ?? null, "CFM", "CONFIRMED")).map((e) => e.orderId ?? e.id),
+  );
 
   for (const evento of eventos || []) {
     const orderId = evento.orderId ?? evento.id;
@@ -460,6 +512,11 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
     try {
       const ok = await processarEventoPedido(orderId, code, evento.metadata, token);
       if (!ok) continue; // erro já logado; sem ACK, tenta de novo
+      if (ehEvento(code, "CFM", "CONFIRMED")) {
+        if (!(await marcarConfirmado(orderId))) continue;
+      } else if (ehEvento(code, "PLC", "PLACED")) {
+        if (!(await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId)))) continue;
+      }
       acks.push(evento.id ?? orderId);
     } catch (e) {
       await logErro("processar_evento_excecao", { orderId, message: String(e) });

@@ -92,6 +92,95 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
+// Envia na hora os eventos de logística ainda na fila deste pedido
+// (2026-09-30). O cron de ifood-status-sync só roda de minuto em minuto:
+// no #6238 a validação chegou às 21:40:33 e o dispatch/arrivedAtDestination
+// só foram enviados às 21:41:01 — o iFood recebia o código antes de saber
+// que o pedido tinha saído. Mesmo envio/atualização de fila do cron
+// (ifood-status-sync), duplicado aqui pelo padrão do projeto. Retorna o
+// primeiro evento que falhou, ou null se ficou tudo enviado.
+const MAX_TENTATIVAS_FILA = 5;
+
+function mapearVeiculoIfood(modal: string | null | undefined): string {
+  switch (modal) {
+    case "bicicleta": return "BICYCLE";
+    case "carro": return "CAR";
+    default: return "MOTORCYCLE";
+  }
+}
+
+async function montarCorpoAssignDriver(pedidoId: string): Promise<string | undefined> {
+  const { data: pedido } = await supabase.from("pedidos").select("motoboy_id, entregador_id").eq("id", pedidoId).maybeSingle();
+  const entregadorId = pedido?.motoboy_id ?? pedido?.entregador_id ?? null;
+  if (!entregadorId) return undefined;
+  const { data: entregador } = await supabase.from("entregadores").select("nome, telefone, modal_veiculo").eq("id", entregadorId).maybeSingle();
+  return JSON.stringify({
+    workerName: entregador?.nome || "Entregador",
+    workerPhone: (entregador?.telefone || "").replace(/\D/g, ""),
+    workerVehicleType: mapearVeiculoIfood(entregador?.modal_veiculo),
+  });
+}
+
+async function enviarFilaPendente(pedidoId: string, ifoodOrderId: string, token: string): Promise<{ evento: string; erro: string } | null> {
+  const { data: fila, error } = await supabase
+    .from("ifood_status_queue").select("id, evento, tentativas")
+    .eq("pedido_id", pedidoId).in("status", ["pendente", "erro"]).lt("tentativas", MAX_TENTATIVAS_FILA)
+    .order("criado_em", { ascending: true });
+  if (error) return { evento: "fila", erro: error.message };
+  for (const item of fila || []) {
+    try {
+      const corpo = item.evento === "assignDriver" ? await montarCorpoAssignDriver(pedidoId) : undefined;
+      const res = await fetch(`${IFOOD_BASE_URL}/logistics/v1.0/orders/${ifoodOrderId}/${item.evento}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        ...(corpo ? { body: corpo } : {}),
+      });
+      if (res.ok) {
+        // Só marca se o cron não enviou no meio tempo (evita sobrescrever).
+        await supabase.from("ifood_status_queue").update({ status: "enviado", enviado_em: new Date().toISOString() })
+          .eq("id", item.id).in("status", ["pendente", "erro"]);
+        continue;
+      }
+      const body = await res.text().catch(() => "");
+      await logErro("enviar_status_http", { queueId: item.id, ifoodOrderId, evento: item.evento, status: res.status, body, via: "validar_codigo" });
+      if (res.status !== 429) {
+        await supabase.from("ifood_status_queue").update({
+          status: "erro", tentativas: item.tentativas + 1, erro: `HTTP ${res.status}: ${body.slice(0, 500)}`,
+        }).eq("id", item.id).in("status", ["pendente", "erro"]);
+      }
+      return { evento: item.evento, erro: `HTTP ${res.status}: ${body.slice(0, 300)}` };
+    } catch (e) {
+      await logErro("enviar_status_excecao", { queueId: item.id, ifoodOrderId, evento: item.evento, message: String(e), via: "validar_codigo" });
+      return { evento: item.evento, erro: String(e) };
+    }
+  }
+  return null;
+}
+
+// Tradução da recusa do iFood pra mensagem que o entregador/painel entende
+// (2026-09-30). Antes toda resposta não-2xx virava "Código não confere ou
+// falha na validação" (502) — inclusive o 422 ORDER_NOT_AVAILABLE_FOR_HANDSHAKE
+// dos pedidos de teste, que não tinha nada a ver com o código digitado.
+// Recusa de regra de negócio sai como 422 (não 502); erro de autenticação
+// ou do iFood fora do ar continua 502.
+function traduzirErroIfood(status: number, bodyText: string): { http: number; error: string; ifoodCode: string | null } {
+  let ifoodCode: string | null = null;
+  try { ifoodCode = JSON.parse(bodyText)?.code ?? null; } catch { /* corpo não-JSON */ }
+  if (ifoodCode === "ORDER_NOT_AVAILABLE_FOR_HANDSHAKE") {
+    return { http: 422, ifoodCode, error: "Pedido ainda não confirmado pela loja no iFood. Avise o suporte." };
+  }
+  if (status === 401 || status === 403) return { http: 502, ifoodCode, error: "Falha de autenticação com o iFood. Avise o suporte." };
+  if (status === 404) return { http: 422, ifoodCode, error: "Pedido não encontrado no iFood. Avise o suporte." };
+  if (status >= 500) return { http: 502, ifoodCode, error: "iFood fora do ar no momento. Tente de novo em instantes." };
+  // Demais 4xx: o código exato de "código errado" do iFood ainda não foi
+  // visto em resposta real — mostra o code dele junto pra identificar.
+  return {
+    http: 422,
+    ifoodCode,
+    error: `Código recusado pelo iFood${ifoodCode ? ` (${ifoodCode})` : ""}. Confira o código com o cliente.`,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: CORS_HEADERS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -147,17 +236,31 @@ serve(async (req) => {
     const token = await getAccessToken();
     if (!token) return json({ error: "Sem token de acesso ao iFood" }, 502);
 
+    if (action === "entrega") {
+      const falha = await enviarFilaPendente(pedido.id, pedido.ifood_order_id, token);
+      if (falha) {
+        return json({
+          error: `O iFood ainda não recebeu a atualização da entrega (${falha.evento}). Tente de novo em instantes.`,
+          detail: falha.erro,
+        }, 409);
+      }
+    }
+
     const endpoint = action === "coleta" ? "validatePickupCode" : "verifyDeliveryCode";
+    const codeEnviado = String(code).trim();
     const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${pedido.ifood_order_id}/${endpoint}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code: codeEnviado }),
     });
     if (res.status === 429) return json({ error: "Rate limit do iFood — tenta de novo em instantes" }, 429);
     if (!res.ok) {
       const bodyText = await res.text().catch(() => "");
-      await logErro("validar_codigo_http", { pedidoId: pedido_id, action, status: res.status, body: bodyText });
-      return json({ error: `Código não confere ou falha na validação`, detail: bodyText }, 502);
+      const traduzido = traduzirErroIfood(res.status, bodyText);
+      await logErro("validar_codigo_http", {
+        pedidoId: pedido_id, action, status: res.status, body: bodyText, codeEnviado, tipoCode: typeof code,
+      });
+      return json({ error: traduzido.error, ifoodCode: traduzido.ifoodCode, detail: bodyText }, traduzido.http);
     }
 
     const campoValidado = action === "coleta" ? "ifood_pickup_validado_em" : "ifood_entrega_validada_em";
