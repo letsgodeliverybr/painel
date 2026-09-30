@@ -89,6 +89,9 @@ const ICONES_LUCIDE={
   'mail':'<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/>',
   'circle-alert':'<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
   'chef-hat':'<path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/>',
+  'badge-percent':'<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m15 9-6 6"/><path d="M9 9h.01"/><path d="M15 15h.01"/>',
+  'clock':'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  'qr-code':'<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
   'phone':'<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>',
   'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
   'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
@@ -3125,8 +3128,17 @@ async function _carregarSaldoTopbar(){
       let lojaAtualSaldo=allLojas.find(l=>l.id===currentUser?.loja_id);
       if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
       const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
+      // Loja de faturamento: mostra o saldo de crédito e abre a mesma tela de
+      // recarga (2026-09-29), mas NÃO entra na trava de criação de entregas
+      // (_lojaCreditoAtiva continua false).
       if(_tipoCobrancaSaldo!=='credito'){
-        el.style.display='none';_saldoLojaAtual=0;_lojaCreditoAtiva=false;el.style.cursor='default';
+        const _rf=await db('creditos_lojas','GET',null,`?loja_id=eq.${currentUser.loja_id}&select=tipo,valor`).catch(()=>[]);
+        const _af=Array.isArray(_rf)?_rf:[];
+        const _sf=_af.reduce((s,r)=>s+(r.tipo==='debito'?-1:1)*(parseFloat(r.valor)||0),0);
+        _saldoLojaAtual=_sf;_lojaCreditoAtiva=false;
+        val.textContent=Math.abs(_sf).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        val.style.color=_sf>=0?'#4ade80':'#f87171';
+        el.style.display='flex';el.style.cursor='pointer';
         const _ab=document.getElementById('saldo-alerta-banner');if(_ab)_ab.style.display='none';
         _atualizarBtnCriarEntrega();return;
       }
@@ -3148,10 +3160,11 @@ async function _carregarSaldoTopbar(){
         alertBanner.style.display='block';
       }else if(alertBanner){alertBanner.style.display='none';}
       _atualizarBtnCriarEntrega();
-    } else if(currentPerfil==='adm'||currentPerfil==='admin'){
+    } else if(['adm','admin','suporte'].includes(currentPerfil)){
+      // Equipe: botão clicável abre a tela de recarga na visão da equipe.
       val.textContent='0,00';
       el.style.display='flex';
-      _lojaCreditoAtiva=false;el.style.cursor='default';
+      _lojaCreditoAtiva=false;el.style.cursor='pointer';
     } else {
       el.style.display='none';
       _lojaCreditoAtiva=false;
@@ -3221,58 +3234,232 @@ function _gerarPixPayload(valor){
   payload+='6304';
   return payload+_pixCrc16(payload);
 }
-function _abrirModalRecargaPix(){
-  if(currentPerfil!=='loja'||!currentUser?.loja_id||!_lojaCreditoAtiva)return;
+// ── Recarga de saldo via Pix (loja pré-paga) — redesenho 2026-09-29 ──
+// Regras (valem no SERVIDOR — migrations/recarga_loja_primeira_e_bonus.sql;
+// a tela só exibe o que info_recarga_loja() devolve):
+//  • 1ª recarga (loja sem recarga anterior): mínimo R$ 300 — o pacote de
+//    R$ 100 some, com aviso.
+//  • Bônus dos pacotes só do 1º ao 7º dia útil do mês (feriados na tabela
+//    feriados). Fora da janela, sem etiqueta de bônus e com a próxima janela.
+// Sem a função no banco (migration não aplicada/erro de rede), a tela cai
+// no modo seguro: 1ª recarga calculada pelos créditos já carregados e
+// nenhum bônus prometido.
+const _RCG_MINIMO_PRIMEIRA=300;
+let _rcg={info:null,pacotes:[],sel:null,saldo:0,modo:'credito'};
+function _rcgFmt(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function _rcgFmtCurto(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});}
+function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
+function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
+// Informação de recarga (servidor) com modo seguro.
+async function _rcgCarregarInfo(lojaId){
+  const r=await dbRpc('info_recarga_loja',{p_loja_id:lojaId});
+  if(r&&!Array.isArray(r)&&r.janela)return r;
+  let primeira=true;
+  try{
+    const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${lojaId}&tipo=eq.credito&select=observacoes,origem`);
+    primeira=!(Array.isArray(rows)?rows:[]).some(c=>c.origem?c.origem==='recarga':!/^estorno #/i.test(c.observacoes||''));
+  }catch{}
+  return{primeira_recarga:primeira,minimo_primeira_recarga:_RCG_MINIMO_PRIMEIRA,janela:null,pacotes:null,_semServidor:true};
+}
+// Pacotes: os do servidor (pacotes_recarga) quando houver; senão os da tela.
+function _rcgPacotes(info){
+  const base=Array.isArray(info?.pacotes)&&info.pacotes.length?info.pacotes.map(p=>({pago:+p.pago,credito:+p.credito})):PACOTES_RECARGA_PIX.map(p=>({pago:p.pago,credito:p.credito}));
+  return base.map(p=>({...p,bonus:Math.max(0,+(p.credito-p.pago).toFixed(2)),pct:p.pago>0?Math.round((p.credito-p.pago)/p.pago*100):0,
+    recomendado:!!PACOTES_RECARGA_PIX.find(x=>x.pago===p.pago)?.destaque}));
+}
+function _rcgBonusAtivo(){return !!_rcg.info?.janela?.ativo;}
+function _rcgRecebe(p){return p.pago+(_rcgBonusAtivo()?p.bonus:0);}
+// % máximo de bônus lido dos pacotes (sem número fixo no código)
+function _rcgBonusMaxPct(pacotes){return Math.max(0,...(pacotes||[]).map(p=>p.pct||0));}
+
+function _rcgEstilos(){
+  if(document.getElementById('rcg-styles'))return;
+  const st=document.createElement('style');st.id='rcg-styles';
+  st.textContent=`
+  .rcg-modal{width:720px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;padding:0!important;overflow:hidden;border-radius:18px}
+  .rcg-head{padding:22px 24px 18px;border-bottom:1px solid var(--border)}
+  .rcg-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .rcg-titulo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+  .rcg-titulo .rcg-ico{width:36px;height:36px;border-radius:10px;background:rgba(26,86,219,.15);color:var(--accent);display:flex;align-items:center;justify-content:center}
+  .rcg-x{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .rcg-x:hover{color:var(--text);background:var(--surface2)}
+  .rcg-saldo{display:flex;gap:18px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .rcg-saldo-valor{flex-shrink:0}
+  .rcg-saldo-valor span{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3)}
+  .rcg-saldo-valor b{display:block;font-size:22px;font-weight:800;margin-top:2px}
+  .rcg-saldo p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text2);border-left:1px solid var(--border);padding-left:16px}
+  .rcg-body{padding:18px 24px;overflow-y:auto;flex:1}
+  .rcg-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.45;margin-bottom:12px;border:1px solid}
+  .rcg-aviso .icone{flex-shrink:0;margin-top:1px}
+  .rcg-aviso.info{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35);color:var(--text)}
+  .rcg-aviso.bonus{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.35);color:var(--text)}
+  .rcg-aviso.neutro{background:var(--surface2);border-color:var(--border);color:var(--text2)}
+  .rcg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+  .rcg-card{position:relative;text-align:left;font-family:inherit;cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:18px 16px 16px;min-height:132px;display:flex;flex-direction:column;gap:4px;color:var(--text);transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
+  .rcg-card:hover{border-color:rgba(79,126,247,.6);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .rcg-card:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.45)}
+  .rcg-card[aria-checked="true"]{border-color:var(--accent);background:rgba(26,86,219,.12);box-shadow:0 0 0 1px var(--accent) inset}
+  .rcg-card.recomendado{border-color:rgba(16,185,129,.55)}
+  .rcg-card.recomendado[aria-checked="true"]{border-color:var(--accent)}
+  .rcg-selo{position:absolute;top:-10px;left:14px;background:#10b981;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.3px;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .rcg-check{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;color:transparent}
+  .rcg-card[aria-checked="true"] .rcg-check{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rcg-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.14);color:#f59e0b;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;margin-bottom:4px}
+  .rcg-tag-vazia{height:22px;margin-bottom:4px}
+  .rcg-valor{font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
+  .rcg-recebe{font-size:12.5px;color:var(--text2)}
+  .rcg-recebe b{color:#10b981}
+  .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
+  .rcg-foot-info{font-size:12.5px;color:var(--text2)}
+  .rcg-foot-info b{color:var(--text)}
+  .rcg-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:12px;border:none;background:var(--accent);color:#fff;font:700 14.5px Inter,sans-serif;cursor:pointer;transition:background .15s,opacity .15s;white-space:nowrap}
+  .rcg-btn:hover:not([disabled]){background:#1646b5}
+  .rcg-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,86,219,.45)}
+  .rcg-btn[disabled]{opacity:.45;cursor:not-allowed}
+  .rcg-btn.sec{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .rcg-btn.whats{background:#16a34a}.rcg-btn.whats:hover{background:#15803d}
+  .rcg-voltar{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font:600 13px Inter,sans-serif;cursor:pointer;padding:0;margin-bottom:14px}
+  .rcg-pix{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
+  .rcg-qr{background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:232px}
+  .rcg-qr img{width:230px;height:230px;max-width:100%;object-fit:contain}
+  .rcg-resumo{border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px}
+  .rcg-resumo div{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;font-size:13.5px;color:var(--text2)}
+  .rcg-resumo div+div{border-top:1px solid var(--border)}
+  .rcg-resumo b{color:var(--text)}
+  .rcg-resumo .total b{color:#10b981;font-size:16px}
+  .rcg-chave{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+  .rcg-chave span{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)}
+  .rcg-chave b{font-size:16px;color:var(--text);word-break:break-all}
+  .rcg-acoes{display:flex;flex-direction:column;gap:10px}
+  .rcg-acoes .rcg-btn{width:100%}
+  @media (max-width:640px){
+    #modal-recarga-pix.modal-overlay{align-items:flex-end}
+    .rcg-modal{max-width:100vw;width:100vw;max-height:94vh;border-radius:18px 18px 0 0}
+    .rcg-head{padding:18px 16px 14px}.rcg-body{padding:14px 16px}.rcg-foot{padding:12px 16px;flex-direction:column;align-items:stretch}
+    .rcg-foot .rcg-btn{width:100%}
+    .rcg-saldo{flex-direction:column;align-items:flex-start;gap:8px}
+    .rcg-saldo p{border-left:none;padding-left:0}
+    .rcg-grid{grid-template-columns:1fr 1fr;gap:10px}
+    .rcg-card{min-height:118px;padding:16px 12px 12px}
+    .rcg-selo{position:static;align-self:flex-start;white-space:normal;line-height:1.3;margin:-2px 0 4px;max-width:calc(100% - 26px)}
+    .rcg-card.recomendado .rcg-tag-vazia{display:none}
+    .rcg-valor{font-size:22px}
+    .rcg-pix{grid-template-columns:1fr}
+    .rcg-qr{min-height:0}
+  }`;
+  document.head.appendChild(st);
+}
+
+// modo: 'credito' (loja pré-paga), 'faturamento' (loja que ainda fatura —
+// mesma tela, texto de convite) ou 'equipe' (adm/suporte: sem saldo de loja,
+// todos os pacotes, mesma janela de bônus).
+async function _abrirModalRecargaPix(){
+  const equipe=['adm','admin','suporte'].includes(currentPerfil);
+  if(!equipe&&(currentPerfil!=='loja'||!currentUser?.loja_id))return;
+  _rcgEstilos();
   let modal=document.getElementById('modal-recarga-pix');
   if(!modal){modal=document.createElement('div');modal.id='modal-recarga-pix';modal.className='modal-overlay';document.body.appendChild(modal);}
-  const cardHtml=(p,i)=>{
-    const bonus=p.credito-p.pago;
-    const borda=p.destaque?'border:2px solid #10b981;box-shadow:0 0 0 3px rgba(16,185,129,.15)':'border:1px solid var(--border)';
-    const badgeHtml=p.badge?`<div style="display:inline-block;background:${p.destaque?'#10b981':'#8b5cf6'};color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-bottom:6px">${p.badge}</div>`:'';
-    const recomendado=p.destaque?`<div style="position:absolute;top:-10px;right:12px;background:#10b981;color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px">RECOMENDADO</div>`:'';
-    return `<div onclick="_selecionarPacotePix(${i})" style="position:relative;cursor:pointer;border-radius:14px;padding:${p.discreto?'14px':'18px'} 16px;background:var(--surface2);${borda};${p.discreto?'opacity:.85':''};transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-      ${recomendado}${badgeHtml}
-      <div style="font-size:${p.discreto?'16px':'20px'};font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR')}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px">Crédito: <b style="color:#10b981">R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}</b></div>
-      ${bonus>0?`<div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:4px">+R$ ${bonus.toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus</div>`:''}
-    </div>`;
-  };
-  modal.innerHTML=`<div class="modal" style="width:640px;max-width:95vw">
-    <div class="modal-header"><span class="modal-title">${_icone('wallet',18)} Recarregar Saldo via Pix</span><button class="modal-close" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',16)}</button></div>
-    <div class="modal-body" id="mrp-body">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha um valor para recarregar seu saldo. Pacotes maiores têm bônus de crédito.</div>
-      <div class="pix-pacotes-grid">${PACOTES_RECARGA_PIX.map(cardHtml).join('')}</div>
-    </div>
-  </div>`;
+  const modo=equipe?'equipe':(await _liTipoCobrancaLoja(currentUser.loja_id))==='credito'?'credito':'faturamento';
+  _rcg={info:null,pacotes:[],sel:null,saldo:equipe?0:(_saldoLojaAtual||0),modo};
+  modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo"><div class="rcg-body" style="padding:48px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
   modal.classList.add('open');
+  if(equipe){
+    const j=await dbRpc('janela_bonus_recarga',{});
+    _rcg.info={primeira_recarga:false,minimo_primeira_recarga:_RCG_MINIMO_PRIMEIRA,janela:j&&!Array.isArray(j)&&'ativo' in j?j:null,pacotes:null};
+  }else _rcg.info=await _rcgCarregarInfo(currentUser.loja_id);
+  _rcg.pacotes=_rcgPacotes(_rcg.info);
+  _rcgRenderPacotes();
+}
+function _rcgCabecalho(){
+  const s=_rcg.saldo,m=_rcg.modo;
+  const frase=m==='equipe'
+    ?'Visão da equipe: esta é a tela de recarga que as lojas veem, com os pacotes e a janela de bônus de hoje. O Pix gerado aqui pode ser enviado para a loja.'
+    :m==='faturamento'
+    ?'No crédito pré-pago, cada entrega é descontada do saldo, sem fatura semanal. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.'
+    :'Sua loja usa o modelo pré-pago: cada entrega é descontada do saldo. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.';
+  return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-titulo" id="rcg-titulo"><div class="rcg-ico">${_icone('wallet',20)}</div>Recarregar saldo via Pix</div>
+      <button class="rcg-x" aria-label="Fechar" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',18)}</button></div>
+    <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
+      <p${m==='equipe'?' style="border-left:none;padding-left:0"':''}>${frase}</p></div></div>`;
+}
+function _rcgAvisos(){
+  const i=_rcg.info||{},j=i.janela,maxPct=_rcgBonusMaxPct(_rcg.pacotes);
+  let h='';
+  if(i.primeira_recarga)h+=`<div class="rcg-aviso info">${_icone('info',16)}<div><b>O primeiro depósito é de no mínimo ${_rcgFmtCurto(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)}.</b> Depois da primeira recarga, todos os pacotes ficam disponíveis.</div></div>`;
+  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus de até ${maxPct}% ativo.</b> Bônus válido até ${_rcgDM(j.fim)}.</div></div>`;
+  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus nos 7 primeiros dias úteis de ${_rcgMes(j.proximo_inicio)}, a partir de ${_rcgDM(j.proximo_inicio)}.</div></div>`;
+  return h;
+}
+function _rcgRenderPacotes(){
+  const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
+  const i=_rcg.info||{},bonus=_rcgBonusAtivo();
+  const visiveis=_rcg.pacotes.map((p,idx)=>({p,idx})).filter(({p})=>!(i.primeira_recarga&&p.pago<(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)));
+  if(_rcg.sel!=null&&!visiveis.some(v=>v.idx===_rcg.sel))_rcg.sel=null;
+  const card=({p,idx})=>{
+    const sel=_rcg.sel===idx;
+    return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
+      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal para começar</span>`:''}
+      <span class="rcg-check">${_icone('check',14)}</span>
+      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% de bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
+      <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
+      <span class="rcg-recebe">Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b></span>
+    </button>`;
+  };
+  const p=_rcg.sel!=null?_rcg.pacotes[_rcg.sel]:null;
+  modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
+    ${_rcgCabecalho()}
+    <div class="rcg-body">${_rcgAvisos()}
+      <div class="rcg-grid" role="radiogroup" aria-label="Valor da recarga">${visiveis.map(card).join('')}</div></div>
+    <div class="rcg-foot"><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha um valor para continuar'}</div>
+      <button class="rcg-btn" id="rcg-gerar" ${p?'':'disabled'} onclick="_selecionarPacotePix(${_rcg.sel})">${_icone('qr-code',18)}${p?`Gerar Pix de ${_rcgFmtCurto(p.pago)}`:'Gerar Pix'}</button></div>
+  </div>`;
+}
+function _rcgEscolher(idx){
+  _rcg.sel=idx;_rcgRenderPacotes();
+  document.querySelector(`#modal-recarga-pix .rcg-card[onclick="_rcgEscolher(${idx})"]`)?.focus();
+}
+// setas movem a seleção entre os cartões (padrão de radiogroup)
+function _rcgTeclado(e,idx){
+  if(!['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key))return;
+  e.preventDefault();
+  const cards=[...document.querySelectorAll('#modal-recarga-pix .rcg-card')];
+  const atual=cards.findIndex(c=>c.getAttribute('onclick')===`_rcgEscolher(${idx})`);
+  const prox=cards[(atual+(['ArrowRight','ArrowDown'].includes(e.key)?1:-1)+cards.length)%cards.length];
+  prox?.click();
 }
 function _selecionarPacotePix(i){
-  const p=PACOTES_RECARGA_PIX[i];if(!p)return;
+  const p=_rcg.pacotes[i];if(!p)return;
+  const info=_rcg.info||{};
+  if(info.primeira_recarga&&p.pago<(info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)){showNotif('Valor abaixo do mínimo','O primeiro depósito é de no mínimo R$ 300.','var(--yellow)');return;}
   _pixPayloadAtual=_gerarPixPayload(p.pago);
-  const body=document.getElementById('mrp-body');if(!body)return;
-  const lojaNome=allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha loja';
-  const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}\nCrédito a receber: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
+  const bonus=_rcgBonusAtivo()&&p.bonus>0?p.bonus:0,recebe=p.pago+bonus;
+  const lojaNome=_rcg.modo==='equipe'?'(informar a loja)':allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha loja';
+  const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: ${_rcgFmt(p.pago)}\nCrédito a receber: ${_rcgFmt(recebe)}${bonus?` (inclui ${_rcgFmt(bonus)} de bônus)`:''}`;
   const waLink=`https://wa.me/${PIX_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-  body.innerHTML=`
-    <button onclick="_abrirModalRecargaPix()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0">${_icone('arrow-left',16,'btn-ico')}Voltar aos pacotes</button>
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:13px;color:var(--text2)">Valor a pagar</div>
-      <div style="font-size:26px;font-weight:800;color:var(--text)">R$ ${p.pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-      <div style="font-size:12px;color:#10b981;font-weight:700;margin-top:2px">Crédito: R$ ${p.credito.toLocaleString('pt-BR',{minimumFractionDigits:2})}${p.credito>p.pago?` (+R$ ${(p.credito-p.pago).toLocaleString('pt-BR',{minimumFractionDigits:2})} de bônus)`:''}</div>
+  const j=info.janela;
+  modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
+    ${_rcgCabecalho()}
+    <div class="rcg-body">
+      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar aos pacotes</button>
+      <div class="rcg-pix">
+        <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR indisponível no momento — use o código copia e cola.</span></div>
+        <div>
+          <div class="rcg-resumo"><div><span>Valor do Pix</span><b>${_rcgFmt(p.pago)}</b></div>
+            ${bonus?`<div><span>Bônus</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`:''}
+            <div class="total"><span>Você recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
+          <div class="rcg-chave"><span>Chave Pix</span><b>${PIX_CONFIG.chave}</b></div>
+          <div class="rcg-acoes">
+            <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar código Pix (copia e cola)</button>
+            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar comprovante pelo WhatsApp</a>
+          </div>
+        </div>
+      </div>
+      <div class="rcg-aviso neutro" style="margin-top:16px;margin-bottom:0">${_icone('clock',16)}<div>O crédito é lançado em até 24h úteis após a confirmação do pagamento.${bonus&&j?.fim?` O bônus vale para recargas confirmadas até ${_rcgDM(j.fim)}.`:''}</div></div>
     </div>
-    <div style="display:flex;justify-content:center;margin-bottom:16px;background:#fff;padding:16px;border-radius:12px">
-      <img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix — R$ ${p.pago}" style="width:260px;height:260px;max-width:100%;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-      <span style="display:none;color:var(--red);font-size:12px;text-align:center">QR indisponível no momento — use o código copia e cola abaixo.</span>
-    </div>
-    <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
-      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Chave Pix</div>
-      <div style="font-size:20px;font-weight:800;color:var(--text)">${PIX_CONFIG.chave}</div>
-    </div>
-    <button onclick="_copiarCodigoPix()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:Inter,sans-serif">${_icone('copy',16,'btn-ico')}Copiar código Pix</button>
-    <a href="${waLink}" target="_blank" style="display:block;box-sizing:border-box;text-align:center;text-decoration:none;width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;font-family:Inter,sans-serif">📲 Enviar comprovante no WhatsApp</a>
-    <div style="background:#fef3c7;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;text-align:center">⏳ Crédito será adicionado em até 24h úteis após confirmação do pagamento</div>
-  `;
+  </div>`;
 }
+
 function _copiarCodigoPix(){
   navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix copiado!','Cole no app do seu banco'));
 }
@@ -9794,12 +9981,14 @@ function _renderCredito(){
     <div id="sc-tabela"><div style="padding:24px;text-align:center;color:var(--text3)">Buscando...</div></div>
 
     <div id="modal-sc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;padding:28px;width:100%;max-width:440px;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
+      <div style="background:var(--card,var(--surface));border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px" id="sc-modal-titulo">Cadastrar</div>
-        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('ENTIDADE')}<select id="sc-m-ent" style="${_scInput()}"></select></div>
-        <div style="margin-bottom:14px">${_scLabel('DATA')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
-        <div style="margin-bottom:14px">${_scLabel('TIPO')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
-        <div style="margin-bottom:14px">${_scLabel('VALOR')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" style="${_scInput()}"/></div>
+        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('ENTIDADE')}<select id="sc-m-ent" onchange="_scAtualizarPrevia(true)" style="${_scInput()}"></select></div>
+        <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('LANÇAMENTO')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (valor pago pela loja)</option><option value="ajuste">Ajuste manual (crédito ou débito)</option></select></div>
+        <div style="margin-bottom:14px" id="sc-m-data-wrap">${_scLabel('DATA')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
+        <div style="margin-bottom:14px" id="sc-m-tipo-wrap">${_scLabel('TIPO')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
+        <div style="margin-bottom:14px" id="sc-m-valor-wrap">${_scLabel('VALOR')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" oninput="_scAtualizarPrevia()" style="${_scInput()}"/></div>
+        <div id="sc-m-previa" style="display:none;margin-bottom:14px"></div>
         <div style="margin-bottom:22px">${_scLabel('OBSERVACOES')}<input type="text" id="sc-m-obs" placeholder="Observações..." style="${_scInput()}"/></div>
         <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('modal-sc').style.display='none'" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Cancelar</button>
@@ -9883,8 +10072,54 @@ async function _scAbrirModal(id){
   if(lblWrap){const lbl=lblWrap.querySelector('label');if(lbl)lbl.textContent=isLojas?'LOJA':'ENTREGADOR';}
   const titulo=document.getElementById('sc-modal-titulo');
   if(titulo)titulo.textContent=`Cadastrar Crédito / Débito — ${isLojas?'Loja':'Entregador'}`;
+  // Loja: recarga passa pela função do servidor (1ª recarga mínima e bônus
+  // calculados lá); bônus de loja não é mais lançado à mão.
+  const mw=document.getElementById('sc-m-motivo-wrap');if(mw)mw.style.display=isLojas?'block':'none';
+  const mo=document.getElementById('sc-m-motivo');if(mo)mo.value='recarga';
+  const tp=document.getElementById('sc-m-tipo');
+  if(tp)tp.innerHTML=isLojas?'<option value="credito">Credito</option><option value="debito">Debito</option>':'<option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option>';
+  const vl=document.getElementById('sc-m-valor');if(vl)vl.value='';
+  _scPreviaCache={};
+  _scAtualizarPrevia(true);
   const modal=document.getElementById('modal-sc');
   if(modal)modal.style.display='flex';
+}
+let _scPreviaCache={};
+async function _scAtualizarPrevia(recarregar){
+  const isLojas=_scSubAba==='lojas';
+  const recarga=isLojas&&document.getElementById('sc-m-motivo')?.value==='recarga';
+  const show=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'block':'none';};
+  show('sc-m-tipo-wrap',!recarga);show('sc-m-data-wrap',!recarga);
+  const lbl=document.querySelector('#sc-m-valor-wrap label');if(lbl)lbl.textContent=recarga?'VALOR PAGO PELA LOJA':'VALOR';
+  const box=document.getElementById('sc-m-previa');if(!box)return;
+  if(!recarga){box.style.display='none';return;}
+  const lojaId=document.getElementById('sc-m-ent')?.value;if(!lojaId){box.style.display='none';return;}
+  if(recarregar||!_scPreviaCache[lojaId]){box.style.display='block';box.innerHTML='<div style="font-size:12px;color:var(--text3)">Consultando regras da recarga...</div>';_scPreviaCache[lojaId]=await _rcgCarregarInfo(lojaId);}
+  const info=_scPreviaCache[lojaId];
+  if(document.getElementById('sc-m-ent')?.value!==lojaId)return;
+  const valor=parseFloat(document.getElementById('sc-m-valor')?.value)||0;
+  const caixa=(cor,icone,html)=>`<div style="display:flex;gap:8px;align-items:flex-start;border:1px solid ${cor}55;background:${cor}14;border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.45;color:var(--text);margin-bottom:8px">${_icone(icone,15)}<div>${html}</div></div>`;
+  let h='';
+  if(info._semServidor)h+=caixa('#ef4444','circle-alert','<b>Função de recarga indisponível no banco.</b> Aplique a migration da recarga antes de lançar recargas.');
+  const min=info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA;
+  if(info.primeira_recarga)h+=caixa(valor&&valor<min?'#ef4444':'#3b82f6','info',`<b>Primeira recarga: mínimo ${_rcgFmtCurto(min)}.</b>${valor&&valor<min?' O valor informado está abaixo do mínimo e será recusado.':''}`);
+  const j=info.janela,pac=_rcgPacotes(info).find(p=>Math.abs(p.pago-valor)<0.005);
+  if(j&&j.ativo){
+    h+=caixa('#10b981','badge-percent',`<b>Bônus ativo até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
+  }else if(j){
+    h+=caixa('#64748b','calendar',`<b>Bônus fora da janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
+  }
+  h+=`<div style="font-size:11.5px;color:var(--text3)">Data do crédito: hoje. O bônus é calculado pelo servidor no momento do lançamento.</div>`;
+  box.style.display='block';box.innerHTML=h;
+}
+// RPC com a mensagem de erro do servidor (dbRpc devolve [] em qualquer erro)
+async function _dbRpcDetalhe(fn,args){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify(args)});
+    const t=await r.text();let j=null;try{j=t?JSON.parse(t):null;}catch{}
+    if(!r.ok)return{ok:false,erro:j?.message||`Erro ${r.status}`,hint:j?.hint||null};
+    return{ok:true,data:j};
+  }catch{return{ok:false,erro:'Erro de conexão.'};}
 }
 
 async function _scSalvar(){
@@ -9894,6 +10129,17 @@ async function _scSalvar(){
   const tipo=document.getElementById('sc-m-tipo')?.value;
   const valor=parseFloat(document.getElementById('sc-m-valor')?.value||0);
   const observacoes=(document.getElementById('sc-m-obs')?.value||'').trim();
+  if(isLojas&&document.getElementById('sc-m-motivo')?.value==='recarga'){
+    if(!entId||!(valor>0)){showNotif('Atenção','Escolha a loja e informe o valor pago','var(--yellow)');return;}
+    const r=await _dbRpcDetalhe('creditar_recarga_loja',{p_loja_id:entId,p_valor_pago:valor,p_usuario:`${currentUser?.nome||''} (${currentUser?.email||currentPerfil||''})`,p_observacoes:observacoes||null});
+    if(!r.ok){showNotif('Recarga não lançada',r.erro,'var(--red)');return;}
+    const d=r.data||{};
+    await logAcao('recarga_loja',{loja_id:entId,valor_pago:valor,bonus:d.bonus,credito_total:d.credito_total,primeira:d.primeira_recarga});
+    showNotif('Recarga lançada',`${_rcgFmt(d.valor_pago)}${d.bonus>0?` + ${_rcgFmt(d.bonus)} de bônus = ${_rcgFmt(d.credito_total)}`:' (sem bônus)'}`);
+    document.getElementById('modal-sc').style.display='none';
+    _scBuscar();
+    return;
+  }
   if(!entId||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha todos os campos obrigatórios','var(--yellow)');return;}
   const agora=new Date().toISOString();
   const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
@@ -12760,6 +13006,12 @@ const _LOJA_INICIO_SLIDES=[
   // abaixo do botão.
   {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: seu produto na mão do cliente em até 10 minutos",texto:'Tem produto de marca própria? Deixe seu estoque na nossa base Turbo Fresh Ribeirão. Pedido aprovado, expedição em 1 minuto e entrega em até 10 minutos na região de Ribeirão Preto. A partir de R$ 49,90/mês + valor por entrega.',botao:'Quero o Turbo',linha:'Dúvidas sobre cadastro e aprovação? (11) 99170-2772'},
   {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
+  // Crédito pré-pago (2026-09-29): pra TODAS as lojas. % máximo lido dos
+  // pacotes reais; fora da janela de bônus o texto mostra a próxima (mesma
+  // função de dia útil do servidor). Botão depende do tipo de cobrança
+  // (_liPrepagoAcao / _liAtualizarSlidePrepago).
+  {id:'prepago',acao:'_liPrepagoAcao()',tag:'Promoção',icone:'badge-percent',titulo:'Você já conhece as vantagens do crédito pré-pago?',
+   texto:()=>`Recarregue seu saldo nos 7 primeiros dias úteis do mês e ganhe bônus de até ${_rcgBonusMaxPct(_rcgPacotes(null))}% em crédito. Quanto maior a recarga, maior o bônus.`,botao:'Recarregar agora'},
   {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
   {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
 ];
@@ -12827,6 +13079,23 @@ function _liIniciarTimer(){
   clearInterval(_liTimer);
   _liTimer=setInterval(()=>{if(!document.getElementById('li-trilho')){clearInterval(_liTimer);return;}if(!_liPausado)_liIrSlide(_liSlide+1);},8000);
 }
+// Slide do crédito pré-pago: toda loja (crédito ou faturamento) abre a
+// mesma tela de recarga (pedido do usuário, 2026-09-29).
+async function _liTipoCobrancaLoja(lojaId){
+  let l=allLojas.find(x=>x.id===lojaId);
+  if(!l?.tipo_cobranca){const r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,tipo_cobranca`).catch(()=>[]);l=Array.isArray(r)&&r[0]?r[0]:l;}
+  return l?.tipo_cobranca||'faturamento';
+}
+function _liPrepagoAcao(){_abrirModalRecargaPix();}
+async function _liAtualizarSlidePrepago(lojaId){
+  if(!lojaId)return;
+  const info=await _rcgCarregarInfo(lojaId);
+  const desc=document.getElementById('li-desc-prepago');if(!desc)return;
+  const pct=_rcgBonusMaxPct(_rcgPacotes(info)),j=info?.janela;
+  desc.textContent=j&&!j.ativo
+    ?`Bônus nos 7 primeiros dias úteis de ${_rcgMes(j.proximo_inicio)}, a partir de ${_rcgDM(j.proximo_inicio)}.`
+    :`Recarregue seu saldo nos 7 primeiros dias úteis do mês e ganhe bônus de até ${pct}% em crédito. Quanto maior a recarga, maior o bônus.`;
+}
 // Mesmo fluxo do botão "Novo Pedido" da barra do topo.
 function _liNovoPedido(){
   const b=document.getElementById('btn-novo-pedido');
@@ -12849,8 +13118,10 @@ async function renderLojaInicioPage(){
   _liSlide=0;_liPausado=false;
   const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
       <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} ${s.tag||'Novidade para sua loja'}</div>
-        <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc">${s.texto}</div>
-        ${s.url
+        <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc"${s.id?` id="li-desc-${s.id}"`:''}>${typeof s.texto==='function'?s.texto():s.texto}</div>
+        ${s.acao
+          ?`<button class="li-btn"${s.id?` id="li-btn-${s.id}"`:''} onclick="${s.acao}">${s.botao} ${_icone('arrow-right',16)}</button>`
+          :s.url
           ?`<a class="li-btn" href="${s.url}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',16,'btn-ico')}${s.botao}</a>`
           :`<button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button>`}
         ${s.linha?`<div class="li-slide-linha">${_icone('phone',13)}<span>${s.linha.replace(/(\(\d{2}\) [\d-]+)/,'<span style="white-space:nowrap">$1</span>')}</span></div>`:''}</div>
@@ -12875,6 +13146,7 @@ async function renderLojaInicioPage(){
     ${conteudos}
   </div></div>`;
   _liIniciarTimer();
+  _liAtualizarSlidePrepago(lojaId);
   // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
   // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
   const hoje=_dataHojeBrasilia();
