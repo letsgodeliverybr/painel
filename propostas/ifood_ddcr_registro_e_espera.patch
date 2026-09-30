@@ -1,0 +1,150 @@
+diff --git a/supabase/functions/ifood-polling/index.ts b/supabase/functions/ifood-polling/index.ts
+index d8d3330..43e4bc7 100644
+--- a/supabase/functions/ifood-polling/index.ts
++++ b/supabase/functions/ifood-polling/index.ts
+@@ -308,10 +308,10 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
+ // RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
+ // DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
+ // novo; lojista tem 15min corridos pra aceitar/rejeitar antes do iFood
+-// rejeitar automaticamente), DDCR=DELIVERY_DROP_CODE_REQUESTED (só
+-// disparado quando o código de confirmação de entrega é obrigatório —
+-// telefone do cliente informado; código vem em metadata.CODE, validado
+-// depois via POST .../verifyDeliveryCode).
++// rejeitar automaticamente), DDCR=DELIVERY_DROP_CODE_REQUESTED (o pedido
++// exige código de confirmação na entrega; o evento NÃO traz o código —
++// quem tem é o cliente, e o entregador valida via POST .../verifyDeliveryCode.
++// Tratado em registrarDdcr, mais abaixo).
+ //
+ // Bug real corrigido aqui: o upsert antigo usava `ignoreDuplicates:true`,
+ // que faz ON CONFLICT DO NOTHING — pra um ifood_order_id que já existe na
+@@ -357,12 +357,6 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
+         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
+       }).eq("id", atual.id);
+       if (error) { await logErro("registrar_troca_endereco", { orderId, message: error.message }); return false; }
+-    } else if (code === "DDCR") {
+-      const codigo = metadata?.CODE ?? metadata?.code ?? null;
+-      if (codigo) {
+-        const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
+-        if (error) { await logErro("registrar_codigo_entrega", { orderId, message: error.message }); return false; }
+-      }
+     } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
+       // Confirmação assíncrona do módulo Shipping (seletor "Sobre Demanda",
+       // ifood-shipping/index.ts action:"solicitar") — chega pelo mesmo
+@@ -415,6 +409,28 @@ async function marcarConfirmado(orderId: string): Promise<boolean> {
+   return true;
+ }
+ 
++// DDCR (DELIVERY_DROP_CODE_REQUESTED) — o iFood exige código de
++// confirmação na entrega (2026-09-30). O evento NÃO traz o código: nos
++// pedidos de teste #5952 e #7940 veio só com id/code/fullCode/createdAt/
++// orderId/merchantId/salesChannel, sem metadata, 0,3s depois do /confirm.
++// O código fica com o cliente, que informa ao entregador na porta, e é
++// validado em ifood-validar-codigo (verifyDeliveryCode). Aqui só marca que
++// o pedido exige código (ifood_codigo_entrega_exigido_em) e grava o evento
++// inteiro em logs_acoes — também quando é o primeiro evento visto do
++// pedido (antes só era tratado pra pedido já existente).
++async function registrarDdcr(orderId: string, evento: any, via: string): Promise<boolean> {
++  const { error: logErr } = await supabase.from("logs_acoes").insert({
++    acao: "ifood_evento_ddcr",
++    detalhes: { orderId, evento: evento ?? null, via },
++  });
++  if (logErr) console.error("[ifood-polling] FALHA AO GRAVAR LOG DO DDCR:", logErr.message);
++  const { error } = await supabase.from("pedidos")
++    .update({ ifood_codigo_entrega_exigido_em: new Date().toISOString() })
++    .eq("ifood_order_id", orderId).is("ifood_codigo_entrega_exigido_em", null);
++  if (error) { await logErro("marcar_codigo_entrega_exigido", { orderId, message: error.message }); return false; }
++  return true;
++}
++
+ // Retorna false só quando vale tentar de novo (429, 5xx, exceção) — o
+ // chamador não dá ACK no PLC e o iFood devolve o evento no próximo polling.
+ // 4xx é logado e não se repete (tentar de novo daria o mesmo erro).
+@@ -516,6 +532,8 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
+         if (!(await marcarConfirmado(orderId))) continue;
+       } else if (ehEvento(code, "PLC", "PLACED")) {
+         if (!(await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId)))) continue;
++      } else if (ehEvento(code, "DDCR", "DELIVERY_DROP_CODE_REQUESTED")) {
++        if (!(await registrarDdcr(orderId, evento, "polling"))) continue;
+       }
+       acks.push(evento.id ?? orderId);
+     } catch (e) {
+diff --git a/supabase/functions/ifood-status-sync/index.ts b/supabase/functions/ifood-status-sync/index.ts
+index d1977ea..1f5b080 100644
+--- a/supabase/functions/ifood-status-sync/index.ts
++++ b/supabase/functions/ifood-status-sync/index.ts
+@@ -355,9 +355,9 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
+ // RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
+ // DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
+ // novo; 15min corridos pra aceitar/rejeitar), DDCR=DELIVERY_DROP_CODE_
+-// REQUESTED (código de confirmação de entrega em metadata.CODE, só
+-// disparado quando obrigatório — telefone do cliente informado). Mesma
+-// lógica de ifood-polling, duplicada aqui.
++// REQUESTED (o pedido exige código de confirmação na entrega; o evento NÃO
++// traz o código, ver registrarDdcr). Mesma lógica de ifood-polling,
++// duplicada aqui.
+ //
+ // Bug real corrigido aqui: `ignoreDuplicates:true` fazia ON CONFLICT DO
+ // NOTHING — pra um ifood_order_id que já existe na tabela, cancelamento
+@@ -412,12 +412,6 @@ async function processarEventoWebhook(evento: any): Promise<void> {
+         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
+       }).eq("id", atual.id);
+       if (error) throw new Error(`falha ao registrar troca de endereço ${orderId}: ${error.message}`);
+-    } else if (code === "DDCR") {
+-      const codigo = metadata?.CODE ?? metadata?.code ?? null;
+-      if (codigo) {
+-        const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
+-        if (error) throw new Error(`falha ao registrar código de entrega ${orderId}: ${error.message}`);
+-      }
+     } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
+       // Mesmo tratamento de ifood-polling/index.ts (ver comentário lá) —
+       // confirmação assíncrona do módulo Shipping, chega pelo webhook aqui
+@@ -485,6 +479,22 @@ async function confirmarPedidoSeNecessario(orderId: string, cfmNoLote: boolean):
+   if (res.status >= 500) throw new Error(`HTTP ${res.status} ao confirmar ${orderId}`);
+ }
+ 
++// DDCR — só marca que o pedido exige código de entrega e loga o evento
++// inteiro; o evento não traz o código. Mesma regra de ifood-polling/index.ts
++// (ver comentário lá, 2026-09-30), duplicada aqui pelo mesmo motivo do
++// resto do arquivo.
++async function registrarDdcr(orderId: string, evento: any): Promise<void> {
++  const { error: logErr } = await supabase.from("logs_acoes").insert({
++    acao: "ifood_evento_ddcr",
++    detalhes: { orderId, evento: evento ?? null, via: "webhook" },
++  });
++  if (logErr) console.error("[ifood-status-sync] FALHA AO GRAVAR LOG DO DDCR:", logErr.message);
++  const { error } = await supabase.from("pedidos")
++    .update({ ifood_codigo_entrega_exigido_em: new Date().toISOString() })
++    .eq("ifood_order_id", orderId).is("ifood_codigo_entrega_exigido_em", null);
++  if (error) throw new Error(`falha ao marcar código de entrega exigido ${orderId}: ${error.message}`);
++}
++
+ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
+   const rawBody = new Uint8Array(await req.arrayBuffer());
+ 
+@@ -520,6 +530,8 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
+     await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
+     const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
+     await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
++    const ddcrs = eventos.filter((e) => ehEvento(codigo(e), "DDCR", "DELIVERY_DROP_CODE_REQUESTED") && idPedido(e));
++    await Promise.all(ddcrs.map((e) => registrarDdcr(idPedido(e), e)));
+   } catch (e) {
+     await logErro("webhook_processar_excecao", { message: String(e) });
+     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+diff --git a/supabase/functions/ifood-validar-codigo/index.ts b/supabase/functions/ifood-validar-codigo/index.ts
+index 705374a..0373c9a 100644
+--- a/supabase/functions/ifood-validar-codigo/index.ts
++++ b/supabase/functions/ifood-validar-codigo/index.ts
+@@ -3,9 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ 
+ // Fase 5 do checklist de homologação (achado ao investigar o item 9):
+ // pickupCode já vinha na resposta de /order/v1.0/orders/{id} e nunca era
+-// lido; o iFood também manda um código de confirmação de entrega via
+-// evento DDCR (metadata.CODE, ver ifood-polling/ifood-status-sync). Os
+-// dois precisam ser VALIDADOS de volta pro iFood — não basta exibir:
++// lido; o iFood também pode exigir um código de confirmação na entrega
++// (evento DDCR, que só avisa a exigência — o código não vem no evento, fica
++// com o cliente; ver ifood-polling/ifood-status-sync). Os dois precisam ser
++// VALIDADOS de volta pro iFood — não basta exibir:
+ //   POST /order/v1.0/orders/{id}/validatePickupCode {code} — código que o
+ //     motoboy informa na coleta, comparado contra pickupCode.
+ //   POST /order/v1.0/orders/{id}/verifyDeliveryCode {code} — código que o
