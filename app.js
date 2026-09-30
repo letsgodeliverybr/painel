@@ -12715,7 +12715,7 @@ const LOJA_INICIO_CONTEUDOS=[];
 const _LOJA_INICIO_SLIDES=[
   // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
   // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
-  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas a partir de R$ 8,00",texto:'Escolha como quer entregar: 100% demanda a partir de R$ 8,00 por entrega e sobre demanda a partir de R$ 10,45 por entrega.',botao:'Ver planos'},
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas para os seus pedidos próprios",texto:'Use nossos entregadores nos pedidos que você mesmo vende: WhatsApp, telefone, balcão e site próprio.',botao:'Ver planos'},
   // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
   // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
   // abaixo do botão.
