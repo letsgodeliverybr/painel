@@ -2442,6 +2442,9 @@ async function abrirModal(id){
     },80);
   }
   if(id==='modal-loja'){
+    // Loja nova nasce pré-paga: o <select> do HTML do Hostinger tem
+    // Faturamento como 1ª opção — pré-seleciona Crédito (continua editável).
+    const _tipoCob=document.getElementById('loja-tipo-cobranca');if(_tipoCob)_tipoCob.value='credito';
     // Bug real corrigido aqui: antes buscava TODAS as tabelas_preco (cobrança
     // + pagamento misturadas) e jogava a mesma lista nos dois <select>,
     // deixando escolher uma tabela de cobrança no campo de pagamento e
@@ -5738,7 +5741,7 @@ async function _confirmarImportarLojas(){
       nome:loja.nome,endereco:loja.endereco,telefone:loja.whatsapp,
       latitude:lat,longitude:lng,
       documento:'00000000000000', // placeholder — trigger do banco aceita, badge "Dados pendentes" cobre
-      ativo:true,ativo_app:true,tipo_cobranca:'faturamento',
+      ativo:true,ativo_app:true,tipo_cobranca:'credito', // loja nova nasce pré-paga
       created_at:agora,updated_at:agora,
     };
     const res=await db('lojas','POST',payload);
@@ -8929,7 +8932,7 @@ async function criarLoja(){
     ativo_app:document.getElementById('loja-ativo-app')?.checked||false,
     tabela_cobranca_id:g('loja-tabela-cobranca')||null,
     tabela_pagamento_id:g('loja-tabela-pagamento')||null,
-    tipo_cobranca:g('loja-tipo-cobranca')||'faturamento',
+    tipo_cobranca:g('loja-tipo-cobranca')||'credito',
     pontos_padrao:g('loja-pontos-padrao')!==''?parseInt(g('loja-pontos-padrao'))||4:4,
     limite_pedidos_simultaneos:g('loja-limite-pedidos-simultaneos')!==''?parseInt(g('loja-limite-pedidos-simultaneos'))||2:2,
     vendedor_id:g('loja-vendedor')||null,
@@ -9014,7 +9017,9 @@ async function _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,e
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
-  const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'faturamento',status_cadastro:'em_analise',latitude:lat||null,longitude:lng||null,created_at:_agoraBrasilia()};
+  // Loja nova nasce PRÉ-PAGA (crédito); o admin muda pra faturamento em
+  // Editar Loja se for o caso. Lojas existentes não mudam.
+  const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'credito',status_cadastro:'em_analise',latitude:lat||null,longitude:lng||null,created_at:_agoraBrasilia()};
   if(categoria)payload.categoria=categoria;
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0)return{ok:false,erro:'Erro ao enviar cadastro.'};
