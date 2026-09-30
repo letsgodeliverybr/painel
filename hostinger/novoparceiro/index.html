@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastre sua loja | Let's Go</title>
+<meta name="description" content="Cadastre sua loja na Let's Go Delivery e comece a vender com entregas rápidas.">
+<meta name="robots" content="index,follow">
+<link rel="icon" href="https://letsgodeliverybr.github.io/painel/img/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="https://letsgodeliverybr.github.io/painel/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://letsgodeliverybr.github.io/painel/img/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://letsgodeliverybr.github.io/painel/img/icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://letsgodeliverybr.github.io/painel/img/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<!--
+  Página de entrada do cadastro de parceiros (sistema.letsgodelivery.com.br/novoparceiro).
+  Só o essencial: sem a tela de login do sistema. O fluxo inteiro (cartões,
+  etapas e envio) vem do mesmo app.js do painel, que detecta o caminho
+  /novoparceiro e abre o cadastro direto (_clfIniciar). Manter o ?v= igual ao
+  do index.html principal do Hostinger quando atualizar.
+-->
+<style>
+  html,body{margin:0;min-height:100%;background:#0b0e14;color:#e8eaf0;font-family:Inter,system-ui,sans-serif}
+  #np-carregando{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-size:14px;color:#a4abba}
+  #np-carregando i{width:34px;height:34px;border-radius:50%;border:3px solid #262d3d;border-top-color:#4f7ef7;animation:np-gira .8s linear infinite}
+  @keyframes np-gira{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="np-carregando"><i></i>Carregando cadastro...</div>
+<noscript><p style="padding:24px;text-align:center">Ative o JavaScript do navegador para se cadastrar.</p></noscript>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8GqczdF6y70eVVlTWnKGNlrpKXpqyqqs&libraries=places&language=pt-BR"></script>
+<script src="https://letsgodeliverybr.github.io/painel/app.js?v=79a9907"></script>
+</body>
+</html>

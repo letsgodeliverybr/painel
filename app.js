@@ -9079,7 +9079,23 @@ function _clfLigarBotao(){
   b.dataset.clf='1';
   b.onclick=e=>{e.preventDefault();_clfAbrir();};
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_clfLigarBotao);else _clfLigarBotao();
+// Link direto de divulgação: sistema.letsgodelivery.com.br/novoparceiro (o
+// .htaccess do Hostinger já entrega o index.html pra qualquer caminho, e a
+// página dedicada hostinger/novoparceiro/index.html também cai aqui) ou
+// ?cadastro=1 em qualquer página. Abre direto nos cartões, por cima do login;
+// "Voltar ao login" leva pra raiz do sistema.
+function _clfAberturaDireta(){
+  const caminho=location.pathname.replace(/\/+$/,'').replace(/\/index\.html$/i,'').toLowerCase();
+  return caminho==='/novoparceiro'||new URLSearchParams(location.search).get('cadastro')==='1';
+}
+function _clfIniciar(){
+  _clfLigarBotao();
+  if(_clfAberturaDireta()&&!document.getElementById('clf')){
+    document.title="Cadastre sua loja | Let's Go";
+    _clfAbrir(true);
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_clfIniciar);else _clfIniciar();
 
 function _clfEstilos(){
   if(document.getElementById('clf-styles'))return;
@@ -9195,10 +9211,10 @@ function _clfCena(icone,chave,vis){
   </svg>`;
 }
 
-function _clfAbrir(){
+function _clfAbrir(direto=false){
   _clfEstilos();
   _clfFechar();
-  _clf={tipo:null,etapa:-1,d:{},senha:'',erros:{},erroGeral:'',enviando:false,timers:[]};
+  _clf={tipo:null,etapa:-1,d:{},senha:'',erros:{},erroGeral:'',enviando:false,timers:[],direto};
   const el=document.createElement('div');el.id='clf';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');
   document.body.appendChild(el);
   document.body.style.overflow='hidden';
@@ -9210,11 +9226,18 @@ function _clfFechar(){
   document.getElementById('clf')?.remove();
   document.body.style.overflow='';
 }
+// Botões "Voltar ao login": aberto pelo link direto → vai pra raiz do
+// sistema (tela de login limpa, sem ?cadastro/novoparceiro); aberto pelo
+// botão do login → só fecha a tela cheia.
+function _clfSair(){
+  if(_clf?.direto){_clf.senha='';location.assign(location.origin+'/');return;}
+  _clfFechar();
+}
 function _clfPararCenas(){if(_clf){_clf.timers.forEach(clearInterval);_clf.timers=[];}}
 
 function _clfTopo(){
   return`<div class="clf-top"><div class="clf-marca"><div class="clf-marca-ico">${_icone('bike',18)}</div><div>Let's Go<small>DELIVERY</small></div></div>
-    <button class="clf-link" onclick="_clfFechar()">${_icone('arrow-left',16)}<span>Voltar ao login</span></button></div>`;
+    <button class="clf-link" onclick="_clfSair()">${_icone('arrow-left',16)}<span>Voltar ao login</span></button></div>`;
 }
 
 function _clfRender(){
@@ -9444,7 +9467,7 @@ async function _clfEnviar(){
 function _clfFimHtml(){
   return`<div class="clf-box"><div class="clf-fim"><div class="clf-fim-ico">${_icone('circle-check',44)}</div>
     <h2>Cadastro enviado!</h2><p>Nossa equipe vai analisar e liberar seu acesso. Assim que for aprovado, é só entrar com o e-mail e a senha que você cadastrou.</p>
-    <button class="clf-btn clf-btn-pri" onclick="_clfFechar()">${_icone('arrow-left',18)}Voltar ao login</button></div></div>`;
+    <button class="clf-btn clf-btn-pri" onclick="_clfSair()">${_icone('arrow-left',18)}Voltar ao login</button></div></div>`;
 }
 
 async function renderUsuariosPage(){
