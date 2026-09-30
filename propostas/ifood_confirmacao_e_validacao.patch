@@ -1,0 +1,284 @@
+diff --git a/supabase/functions/ifood-polling/index.ts b/supabase/functions/ifood-polling/index.ts
+index dae36e4..d8d3330 100644
+--- a/supabase/functions/ifood-polling/index.ts
++++ b/supabase/functions/ifood-polling/index.ts
+@@ -396,6 +396,53 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
+   return true;
+ }
+ 
++// Confirmação automática do pedido no iFood (2026-09-30). Sem ela o iFood
++// recusava verifyDeliveryCode com 422 ORDER_NOT_AVAILABLE_FOR_HANDSHAKE
++// ("Order didn't have confirmation from merchant") e cancelava o pedido
++// 8 minutos depois de criado (#6238, #8141, #1362) — nenhuma function
++// chamava /confirm. Só confirma se o pedido ainda não estiver confirmado:
++// ifood_confirmado_em vazio e nenhum CFM (aceite pelo Gestor de Pedidos)
++// no mesmo lote de eventos. Resposta sempre logada em logs_acoes.
++function ehEvento(code: string | null, curto: string, longo: string): boolean {
++  return code === curto || code === longo;
++}
++
++async function marcarConfirmado(orderId: string): Promise<boolean> {
++  const { error } = await supabase.from("pedidos")
++    .update({ ifood_confirmado_em: new Date().toISOString() })
++    .eq("ifood_order_id", orderId).is("ifood_confirmado_em", null);
++  if (error) { await logErro("marcar_confirmado", { orderId, message: error.message }); return false; }
++  return true;
++}
++
++// Retorna false só quando vale tentar de novo (429, 5xx, exceção) — o
++// chamador não dá ACK no PLC e o iFood devolve o evento no próximo polling.
++// 4xx é logado e não se repete (tentar de novo daria o mesmo erro).
++async function confirmarPedidoSeNecessario(orderId: string, token: string, cfmNoLote: boolean): Promise<boolean> {
++  if (cfmNoLote) return true;
++  const { data, error } = await supabase
++    .from("pedidos").select("id, status, ifood_confirmado_em").eq("ifood_order_id", orderId).limit(1);
++  if (error) { await logErro("confirmar_ler_pedido", { orderId, message: error.message }); return false; }
++  const pedido = data?.[0];
++  if (!pedido || pedido.ifood_confirmado_em || pedido.status === "cancelado") return true;
++
++  try {
++    const res = await ifoodFetch(`/order/v1.0/orders/${orderId}/confirm`, token, { method: "POST" });
++    if (await logSeRateLimited("confirmar_pedido", res)) return false;
++    const body = await res.text().catch(() => "");
++    const { error: logErr } = await supabase.from("logs_acoes").insert({
++      acao: res.ok ? "ifood_confirmar_pedido" : "ifood_erro_confirmar_pedido_http",
++      detalhes: { orderId, pedidoId: pedido.id, status: res.status, body, via: "polling" },
++    });
++    if (logErr) console.error("[ifood-polling] FALHA AO GRAVAR LOG DO /confirm:", logErr.message);
++    if (res.ok) return await marcarConfirmado(orderId);
++    return res.status < 500;
++  } catch (e) {
++    await logErro("confirmar_pedido_excecao", { orderId, message: String(e) });
++    return false;
++  }
++}
++
+ // Item do checklist de homologação (confirmado com o suporte do iFood,
+ // 2026-09-16): filtra o polling só pelos merchants que essa integração
+ // realmente atende — sem isso a API devolve eventos de TODO merchant que
+@@ -448,6 +495,11 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
+   }
+ 
+   const acks: string[] = [];
++  // Pedidos já aceitos no Gestor de Pedidos dentro deste mesmo lote — não
++  // chama /confirm pra eles mesmo que o PLC venha antes do CFM no array.
++  const cfmNoLote = new Set(
++    (eventos || []).filter((e) => ehEvento(e.code ?? e.fullCode ?? null, "CFM", "CONFIRMED")).map((e) => e.orderId ?? e.id),
++  );
+ 
+   for (const evento of eventos || []) {
+     const orderId = evento.orderId ?? evento.id;
+@@ -460,6 +512,11 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
+     try {
+       const ok = await processarEventoPedido(orderId, code, evento.metadata, token);
+       if (!ok) continue; // erro já logado; sem ACK, tenta de novo
++      if (ehEvento(code, "CFM", "CONFIRMED")) {
++        if (!(await marcarConfirmado(orderId))) continue;
++      } else if (ehEvento(code, "PLC", "PLACED")) {
++        if (!(await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId)))) continue;
++      }
+       acks.push(evento.id ?? orderId);
+     } catch (e) {
+       await logErro("processar_evento_excecao", { orderId, message: String(e) });
+diff --git a/supabase/functions/ifood-status-sync/index.ts b/supabase/functions/ifood-status-sync/index.ts
+index 3316880..d1977ea 100644
+--- a/supabase/functions/ifood-status-sync/index.ts
++++ b/supabase/functions/ifood-status-sync/index.ts
+@@ -445,6 +445,46 @@ async function processarEventoWebhook(evento: any): Promise<void> {
+   }
+ }
+ 
++// Confirmação automática do pedido no iFood — mesma regra de
++// ifood-polling/index.ts (ver comentário lá, 2026-09-30), duplicada aqui
++// pelo mesmo motivo do resto do arquivo. Pelo webhook, falha que vale
++// tentar de novo (429, 5xx, exceção) vira exceção → 500 → o iFood reenvia.
++function ehEvento(code: string | null, curto: string, longo: string): boolean {
++  return code === curto || code === longo;
++}
++
++async function marcarConfirmado(orderId: string): Promise<void> {
++  const { error } = await supabase.from("pedidos")
++    .update({ ifood_confirmado_em: new Date().toISOString() })
++    .eq("ifood_order_id", orderId).is("ifood_confirmado_em", null);
++  if (error) throw new Error(`falha ao marcar pedido confirmado ${orderId}: ${error.message}`);
++}
++
++async function confirmarPedidoSeNecessario(orderId: string, cfmNoLote: boolean): Promise<void> {
++  if (cfmNoLote) return;
++  const { data, error } = await supabase
++    .from("pedidos").select("id, status, ifood_confirmado_em").eq("ifood_order_id", orderId).limit(1);
++  if (error) throw new Error(`falha ao ler pedido pra confirmar ${orderId}: ${error.message}`);
++  const pedido = data?.[0];
++  if (!pedido || pedido.ifood_confirmado_em || pedido.status === "cancelado") return;
++
++  const token = await getAccessToken();
++  if (!token) throw new Error("sem token de acesso pra confirmar o pedido");
++  const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${orderId}/confirm`, {
++    method: "POST",
++    headers: { Authorization: `Bearer ${token}` },
++  });
++  if (await logSeRateLimited("confirmar_pedido", res)) throw new Error(`rate limit ao confirmar ${orderId}`);
++  const body = await res.text().catch(() => "");
++  const { error: logErr } = await supabase.from("logs_acoes").insert({
++    acao: res.ok ? "ifood_confirmar_pedido" : "ifood_erro_confirmar_pedido_http",
++    detalhes: { orderId, pedidoId: pedido.id, status: res.status, body, via: "webhook" },
++  });
++  if (logErr) console.error("[ifood-status-sync] FALHA AO GRAVAR LOG DO /confirm:", logErr.message);
++  if (res.ok) { await marcarConfirmado(orderId); return; }
++  if (res.status >= 500) throw new Error(`HTTP ${res.status} ao confirmar ${orderId}`);
++}
++
+ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
+   const rawBody = new Uint8Array(await req.arrayBuffer());
+ 
+@@ -471,7 +511,15 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
+     // status pra 'cancelado'/'finalizado' de novo, ou upsert do mesmo
+     // pedido mapeado de novo, não duplica nem corrompe nada), então retry
+     // do iFood em 5xx é seguro.
++    // Confirmação roda depois de todos os eventos gravados (o PLC pode
++    // criar o pedido no mesmo Promise.all) e pula quem tem CFM no lote.
+     await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
++    const codigo = (e: any) => e?.code ?? e?.fullCode ?? null;
++    const idPedido = (e: any) => e?.orderId ?? e?.id;
++    const cfmNoLote = new Set(eventos.filter((e) => ehEvento(codigo(e), "CFM", "CONFIRMED")).map(idPedido));
++    await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
++    const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
++    await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
+   } catch (e) {
+     await logErro("webhook_processar_excecao", { message: String(e) });
+     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+diff --git a/supabase/functions/ifood-validar-codigo/index.ts b/supabase/functions/ifood-validar-codigo/index.ts
+index 2925a51..705374a 100644
+--- a/supabase/functions/ifood-validar-codigo/index.ts
++++ b/supabase/functions/ifood-validar-codigo/index.ts
+@@ -92,6 +92,95 @@ async function getAccessToken(): Promise<string | null> {
+   }
+ }
+ 
++// Envia na hora os eventos de logística ainda na fila deste pedido
++// (2026-09-30). O cron de ifood-status-sync só roda de minuto em minuto:
++// no #6238 a validação chegou às 21:40:33 e o dispatch/arrivedAtDestination
++// só foram enviados às 21:41:01 — o iFood recebia o código antes de saber
++// que o pedido tinha saído. Mesmo envio/atualização de fila do cron
++// (ifood-status-sync), duplicado aqui pelo padrão do projeto. Retorna o
++// primeiro evento que falhou, ou null se ficou tudo enviado.
++const MAX_TENTATIVAS_FILA = 5;
++
++function mapearVeiculoIfood(modal: string | null | undefined): string {
++  switch (modal) {
++    case "bicicleta": return "BICYCLE";
++    case "carro": return "CAR";
++    default: return "MOTORCYCLE";
++  }
++}
++
++async function montarCorpoAssignDriver(pedidoId: string): Promise<string | undefined> {
++  const { data: pedido } = await supabase.from("pedidos").select("motoboy_id, entregador_id").eq("id", pedidoId).maybeSingle();
++  const entregadorId = pedido?.motoboy_id ?? pedido?.entregador_id ?? null;
++  if (!entregadorId) return undefined;
++  const { data: entregador } = await supabase.from("entregadores").select("nome, telefone, modal_veiculo").eq("id", entregadorId).maybeSingle();
++  return JSON.stringify({
++    workerName: entregador?.nome || "Entregador",
++    workerPhone: (entregador?.telefone || "").replace(/\D/g, ""),
++    workerVehicleType: mapearVeiculoIfood(entregador?.modal_veiculo),
++  });
++}
++
++async function enviarFilaPendente(pedidoId: string, ifoodOrderId: string, token: string): Promise<{ evento: string; erro: string } | null> {
++  const { data: fila, error } = await supabase
++    .from("ifood_status_queue").select("id, evento, tentativas")
++    .eq("pedido_id", pedidoId).in("status", ["pendente", "erro"]).lt("tentativas", MAX_TENTATIVAS_FILA)
++    .order("criado_em", { ascending: true });
++  if (error) return { evento: "fila", erro: error.message };
++  for (const item of fila || []) {
++    try {
++      const corpo = item.evento === "assignDriver" ? await montarCorpoAssignDriver(pedidoId) : undefined;
++      const res = await fetch(`${IFOOD_BASE_URL}/logistics/v1.0/orders/${ifoodOrderId}/${item.evento}`, {
++        method: "POST",
++        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
++        ...(corpo ? { body: corpo } : {}),
++      });
++      if (res.ok) {
++        // Só marca se o cron não enviou no meio tempo (evita sobrescrever).
++        await supabase.from("ifood_status_queue").update({ status: "enviado", enviado_em: new Date().toISOString() })
++          .eq("id", item.id).in("status", ["pendente", "erro"]);
++        continue;
++      }
++      const body = await res.text().catch(() => "");
++      await logErro("enviar_status_http", { queueId: item.id, ifoodOrderId, evento: item.evento, status: res.status, body, via: "validar_codigo" });
++      if (res.status !== 429) {
++        await supabase.from("ifood_status_queue").update({
++          status: "erro", tentativas: item.tentativas + 1, erro: `HTTP ${res.status}: ${body.slice(0, 500)}`,
++        }).eq("id", item.id).in("status", ["pendente", "erro"]);
++      }
++      return { evento: item.evento, erro: `HTTP ${res.status}: ${body.slice(0, 300)}` };
++    } catch (e) {
++      await logErro("enviar_status_excecao", { queueId: item.id, ifoodOrderId, evento: item.evento, message: String(e), via: "validar_codigo" });
++      return { evento: item.evento, erro: String(e) };
++    }
++  }
++  return null;
++}
++
++// Tradução da recusa do iFood pra mensagem que o entregador/painel entende
++// (2026-09-30). Antes toda resposta não-2xx virava "Código não confere ou
++// falha na validação" (502) — inclusive o 422 ORDER_NOT_AVAILABLE_FOR_HANDSHAKE
++// dos pedidos de teste, que não tinha nada a ver com o código digitado.
++// Recusa de regra de negócio sai como 422 (não 502); erro de autenticação
++// ou do iFood fora do ar continua 502.
++function traduzirErroIfood(status: number, bodyText: string): { http: number; error: string; ifoodCode: string | null } {
++  let ifoodCode: string | null = null;
++  try { ifoodCode = JSON.parse(bodyText)?.code ?? null; } catch { /* corpo não-JSON */ }
++  if (ifoodCode === "ORDER_NOT_AVAILABLE_FOR_HANDSHAKE") {
++    return { http: 422, ifoodCode, error: "Pedido ainda não confirmado pela loja no iFood. Avise o suporte." };
++  }
++  if (status === 401 || status === 403) return { http: 502, ifoodCode, error: "Falha de autenticação com o iFood. Avise o suporte." };
++  if (status === 404) return { http: 422, ifoodCode, error: "Pedido não encontrado no iFood. Avise o suporte." };
++  if (status >= 500) return { http: 502, ifoodCode, error: "iFood fora do ar no momento. Tente de novo em instantes." };
++  // Demais 4xx: o código exato de "código errado" do iFood ainda não foi
++  // visto em resposta real — mostra o code dele junto pra identificar.
++  return {
++    http: 422,
++    ifoodCode,
++    error: `Código recusado pelo iFood${ifoodCode ? ` (${ifoodCode})` : ""}. Confira o código com o cliente.`,
++  };
++}
++
+ serve(async (req) => {
+   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: CORS_HEADERS });
+   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+@@ -147,17 +236,31 @@ serve(async (req) => {
+     const token = await getAccessToken();
+     if (!token) return json({ error: "Sem token de acesso ao iFood" }, 502);
+ 
++    if (action === "entrega") {
++      const falha = await enviarFilaPendente(pedido.id, pedido.ifood_order_id, token);
++      if (falha) {
++        return json({
++          error: `O iFood ainda não recebeu a atualização da entrega (${falha.evento}). Tente de novo em instantes.`,
++          detail: falha.erro,
++        }, 409);
++      }
++    }
++
+     const endpoint = action === "coleta" ? "validatePickupCode" : "verifyDeliveryCode";
++    const codeEnviado = String(code).trim();
+     const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${pedido.ifood_order_id}/${endpoint}`, {
+       method: "POST",
+       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+-      body: JSON.stringify({ code }),
++      body: JSON.stringify({ code: codeEnviado }),
+     });
+     if (res.status === 429) return json({ error: "Rate limit do iFood — tenta de novo em instantes" }, 429);
+     if (!res.ok) {
+       const bodyText = await res.text().catch(() => "");
+-      await logErro("validar_codigo_http", { pedidoId: pedido_id, action, status: res.status, body: bodyText });
+-      return json({ error: `Código não confere ou falha na validação`, detail: bodyText }, 502);
++      const traduzido = traduzirErroIfood(res.status, bodyText);
++      await logErro("validar_codigo_http", {
++        pedidoId: pedido_id, action, status: res.status, body: bodyText, codeEnviado, tipoCode: typeof code,
++      });
++      return json({ error: traduzido.error, ifoodCode: traduzido.ifoodCode, detail: bodyText }, traduzido.http);
+     }
+ 
+     const campoValidado = action === "coleta" ? "ifood_pickup_validado_em" : "ifood_entrega_validada_em";
