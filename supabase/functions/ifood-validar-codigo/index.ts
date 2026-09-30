@@ -3,9 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Fase 5 do checklist de homologação (achado ao investigar o item 9):
 // pickupCode já vinha na resposta de /order/v1.0/orders/{id} e nunca era
-// lido; o iFood também manda um código de confirmação de entrega via
-// evento DDCR (metadata.CODE, ver ifood-polling/ifood-status-sync). Os
-// dois precisam ser VALIDADOS de volta pro iFood — não basta exibir:
+// lido; o iFood também pode exigir um código de confirmação na entrega
+// (evento DDCR, que só avisa a exigência — o código não vem no evento, fica
+// com o cliente; ver ifood-polling/ifood-status-sync). Os dois precisam ser
+// VALIDADOS de volta pro iFood — não basta exibir:
 //   POST /order/v1.0/orders/{id}/validatePickupCode {code} — código que o
 //     motoboy informa na coleta, comparado contra pickupCode.
 //   POST /order/v1.0/orders/{id}/verifyDeliveryCode {code} — código que o

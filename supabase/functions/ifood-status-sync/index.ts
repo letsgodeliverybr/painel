@@ -355,9 +355,9 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
 // RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
 // DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
 // novo; 15min corridos pra aceitar/rejeitar), DDCR=DELIVERY_DROP_CODE_
-// REQUESTED (código de confirmação de entrega em metadata.CODE, só
-// disparado quando obrigatório — telefone do cliente informado). Mesma
-// lógica de ifood-polling, duplicada aqui.
+// REQUESTED (o pedido exige código de confirmação na entrega; o evento NÃO
+// traz o código, ver registrarDdcr). Mesma lógica de ifood-polling,
+// duplicada aqui.
 //
 // Bug real corrigido aqui: `ignoreDuplicates:true` fazia ON CONFLICT DO
 // NOTHING — pra um ifood_order_id que já existe na tabela, cancelamento
@@ -412,12 +412,6 @@ async function processarEventoWebhook(evento: any): Promise<void> {
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao registrar troca de endereço ${orderId}: ${error.message}`);
-    } else if (code === "DDCR") {
-      const codigo = metadata?.CODE ?? metadata?.code ?? null;
-      if (codigo) {
-        const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
-        if (error) throw new Error(`falha ao registrar código de entrega ${orderId}: ${error.message}`);
-      }
     } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
       // Mesmo tratamento de ifood-polling/index.ts (ver comentário lá) —
       // confirmação assíncrona do módulo Shipping, chega pelo webhook aqui
@@ -485,6 +479,22 @@ async function confirmarPedidoSeNecessario(orderId: string, cfmNoLote: boolean):
   if (res.status >= 500) throw new Error(`HTTP ${res.status} ao confirmar ${orderId}`);
 }
 
+// DDCR — só marca que o pedido exige código de entrega e loga o evento
+// inteiro; o evento não traz o código. Mesma regra de ifood-polling/index.ts
+// (ver comentário lá, 2026-09-30), duplicada aqui pelo mesmo motivo do
+// resto do arquivo.
+async function registrarDdcr(orderId: string, evento: any): Promise<void> {
+  const { error: logErr } = await supabase.from("logs_acoes").insert({
+    acao: "ifood_evento_ddcr",
+    detalhes: { orderId, evento: evento ?? null, via: "webhook" },
+  });
+  if (logErr) console.error("[ifood-status-sync] FALHA AO GRAVAR LOG DO DDCR:", logErr.message);
+  const { error } = await supabase.from("pedidos")
+    .update({ ifood_codigo_entrega_exigido_em: new Date().toISOString() })
+    .eq("ifood_order_id", orderId).is("ifood_codigo_entrega_exigido_em", null);
+  if (error) throw new Error(`falha ao marcar código de entrega exigido ${orderId}: ${error.message}`);
+}
+
 async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
   const rawBody = new Uint8Array(await req.arrayBuffer());
 
@@ -520,6 +530,8 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
     await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
     const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
     await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
+    const ddcrs = eventos.filter((e) => ehEvento(codigo(e), "DDCR", "DELIVERY_DROP_CODE_REQUESTED") && idPedido(e));
+    await Promise.all(ddcrs.map((e) => registrarDdcr(idPedido(e), e)));
   } catch (e) {
     await logErro("webhook_processar_excecao", { message: String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });

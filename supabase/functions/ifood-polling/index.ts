@@ -308,10 +308,10 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
 // RTP=READY_TO_PICKUP, DSP=DISPATCHED, CON=CONCLUDED, CAN=CANCELLED,
 // DAR=DELIVERY_ADDRESS_CHANGE_REQUESTED (metadata.address com o endereço
 // novo; lojista tem 15min corridos pra aceitar/rejeitar antes do iFood
-// rejeitar automaticamente), DDCR=DELIVERY_DROP_CODE_REQUESTED (só
-// disparado quando o código de confirmação de entrega é obrigatório —
-// telefone do cliente informado; código vem em metadata.CODE, validado
-// depois via POST .../verifyDeliveryCode).
+// rejeitar automaticamente), DDCR=DELIVERY_DROP_CODE_REQUESTED (o pedido
+// exige código de confirmação na entrega; o evento NÃO traz o código —
+// quem tem é o cliente, e o entregador valida via POST .../verifyDeliveryCode.
+// Tratado em registrarDdcr, mais abaixo).
 //
 // Bug real corrigido aqui: o upsert antigo usava `ignoreDuplicates:true`,
 // que faz ON CONFLICT DO NOTHING — pra um ifood_order_id que já existe na
@@ -357,12 +357,6 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
       }).eq("id", atual.id);
       if (error) { await logErro("registrar_troca_endereco", { orderId, message: error.message }); return false; }
-    } else if (code === "DDCR") {
-      const codigo = metadata?.CODE ?? metadata?.code ?? null;
-      if (codigo) {
-        const { error } = await supabase.from("pedidos").update({ ifood_delivery_code: codigo }).eq("id", atual.id);
-        if (error) { await logErro("registrar_codigo_entrega", { orderId, message: error.message }); return false; }
-      }
     } else if (code === "REQUEST_DRIVER_SUCCESS" || code === "REQUEST_DRIVER_FAILED") {
       // Confirmação assíncrona do módulo Shipping (seletor "Sobre Demanda",
       // ifood-shipping/index.ts action:"solicitar") — chega pelo mesmo
@@ -412,6 +406,28 @@ async function marcarConfirmado(orderId: string): Promise<boolean> {
     .update({ ifood_confirmado_em: new Date().toISOString() })
     .eq("ifood_order_id", orderId).is("ifood_confirmado_em", null);
   if (error) { await logErro("marcar_confirmado", { orderId, message: error.message }); return false; }
+  return true;
+}
+
+// DDCR (DELIVERY_DROP_CODE_REQUESTED) — o iFood exige código de
+// confirmação na entrega (2026-09-30). O evento NÃO traz o código: nos
+// pedidos de teste #5952 e #7940 veio só com id/code/fullCode/createdAt/
+// orderId/merchantId/salesChannel, sem metadata, 0,3s depois do /confirm.
+// O código fica com o cliente, que informa ao entregador na porta, e é
+// validado em ifood-validar-codigo (verifyDeliveryCode). Aqui só marca que
+// o pedido exige código (ifood_codigo_entrega_exigido_em) e grava o evento
+// inteiro em logs_acoes — também quando é o primeiro evento visto do
+// pedido (antes só era tratado pra pedido já existente).
+async function registrarDdcr(orderId: string, evento: any, via: string): Promise<boolean> {
+  const { error: logErr } = await supabase.from("logs_acoes").insert({
+    acao: "ifood_evento_ddcr",
+    detalhes: { orderId, evento: evento ?? null, via },
+  });
+  if (logErr) console.error("[ifood-polling] FALHA AO GRAVAR LOG DO DDCR:", logErr.message);
+  const { error } = await supabase.from("pedidos")
+    .update({ ifood_codigo_entrega_exigido_em: new Date().toISOString() })
+    .eq("ifood_order_id", orderId).is("ifood_codigo_entrega_exigido_em", null);
+  if (error) { await logErro("marcar_codigo_entrega_exigido", { orderId, message: error.message }); return false; }
   return true;
 }
 
@@ -516,6 +532,8 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
         if (!(await marcarConfirmado(orderId))) continue;
       } else if (ehEvento(code, "PLC", "PLACED")) {
         if (!(await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId)))) continue;
+      } else if (ehEvento(code, "DDCR", "DELIVERY_DROP_CODE_REQUESTED")) {
+        if (!(await registrarDdcr(orderId, evento, "polling"))) continue;
       }
       acks.push(evento.id ?? orderId);
     } catch (e) {
