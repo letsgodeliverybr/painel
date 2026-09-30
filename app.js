@@ -2658,7 +2658,7 @@ async function _criarEntregaRapida(){
   console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
     showNotif('✅ Entrega criada!',`#${numFinal}`);
-    if(currentPerfil==='loja'&&lojaId){
+    if(currentPerfil==='loja'&&lojaId&&await _deveDebitarSaldo(lojaId)){
       const _agora=new Date().toISOString();
       await db('creditos_lojas','POST',{loja_id:lojaId,tipo:'debito',valor:_taxaEntrega,observacoes:`Entrega #${numFinal}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
       _carregarSaldoTopbar();
@@ -2934,6 +2934,17 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   await atualizarTudo();
 }
 
+// Débito de entrega no saldo só pra loja de CRÉDITO (2026-09-30): loja de
+// faturamento paga pela fatura semanal — antes o débito era gravado pra
+// qualquer loja e virava "saldo" negativo falso (zerado em 30/09 com
+// migrations/zerar_saldo_lojas_faturamento.sql). Tipo desconhecido (falha
+// ao consultar) → debita, como antes, pra nunca deixar loja de crédito sem cobrança.
+async function _deveDebitarSaldo(lojaId){
+  if(!lojaId)return false;
+  let l=allLojas.find(x=>x.id===lojaId);
+  if(!l?.tipo_cobranca){const r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,tipo_cobranca`).catch(()=>null);l=Array.isArray(r)&&r[0]?r[0]:null;}
+  return !l?.tipo_cobranca||l.tipo_cobranca==='credito';
+}
 async function _estornarDebitoEntrega(pedido){
   if(!pedido?.loja_id||!pedido?.numero)return;
   const existing=await db('creditos_lojas','GET',null,`?loja_id=eq.${pedido.loja_id}&tipo=eq.debito&observacoes=ilike.*%23${pedido.numero}&limit=1`);
@@ -3477,7 +3488,7 @@ async function confirmarPagamento(pedidoId){
     patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p,_faixasPagCp.length?_faixasPagCp:undefined)??parseFloat(_p.taxa_entrega||0);
   }
   await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
-  if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)){
+  if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)&&await _deveDebitarSaldo(_p.loja_id)){
     const agora=new Date().toISOString();
     await db('creditos_lojas','POST',{loja_id:_p.loja_id,tipo:'debito',valor:parseFloat(_p.taxa_entrega)||0,observacoes:`Entrega #${_p.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
     _debitosRegistrados.add(pedidoId);
@@ -5541,7 +5552,7 @@ async function _criarPedidoInterno(){
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
     console.log('[DEBITO] perfil:', currentPerfil, 'loja:', finalLojaId, 'taxa:', taxa);
-    if(currentPerfil==='loja'&&finalLojaId&&taxa>0){
+    if(currentPerfil==='loja'&&finalLojaId&&taxa>0&&await _deveDebitarSaldo(finalLojaId)){
       const _agora=new Date().toISOString();
       await db('creditos_lojas','POST',{loja_id:finalLojaId,tipo:'debito',valor:taxa,observacoes:`Entrega #${numero}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
       _carregarSaldoTopbar();
