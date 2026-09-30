@@ -168,15 +168,15 @@ const NAV_ITEMS_LOJA_ADM=[{id:'loja-inicio',icon:'house',label:'Início'},{id:'p
 const NAV_ITEMS_LOJA_RODAPE=[
   {id:'mapa',icon:'clipboard-list',label:'Gestor de Pedidos'},
   {id:'loja-configuracoes',icon:'settings',label:'Configurações',submenu:[
-    {id:'loja-config-perfil',label:'Perfil da loja'},
+    {id:'loja-config-perfil',label:'Perfil da Loja'},
     {id:'loja-config-horarios',label:'Horários'},
     {id:'loja-config-entrega',label:'Entrega'},
     {id:'loja-config-usuarios',label:'Usuários'},
-    {id:'loja-config-pagamento',label:'Formas de pagamento'},
-    {id:'loja-config-bancarios',label:'Dados bancários'},
+    {id:'loja-config-pagamento',label:'Formas de Pagamento'},
+    {id:'loja-config-bancarios',label:'Dados Bancários'},
   ]},
   {id:'loja-perfil',icon:'user',label:'Perfil',submenu:[
-    {id:'loja-minha-conta',label:'Minha conta'},
+    {id:'loja-minha-conta',label:'Minha Conta'},
     {id:'logout',label:'Sair',perigo:true},
   ]},
 ];
@@ -2275,7 +2275,7 @@ function verificarNovosProtos(pedidos){
   pedidos.forEach(p=>{
     if((p.status_detalhado==='pronto'||p.status==='pronto')&&!idsProntoNotificados.has(p.id)){
       idsProntoNotificados.add(p.id);tocarSomPronto();
-      showNotif('🔔 Pedido Pronto!',`#${p.numero||p.id?.substring(0,6)} aguardando motoboy`,'var(--pink)');
+      showNotif('🔔 Pedido pronto!',`#${p.numero||p.id?.substring(0,6)} aguardando motoboy`,'var(--pink)');
     }
     if(p.status==='finalizado'||p.status==='entregue')idsProntoNotificados.delete(p.id);
   });
@@ -2355,17 +2355,17 @@ async function abrirModal(id){
         <div style="display:flex;gap:16px;height:100%;min-height:0">
         <div style="flex:1 1 400px;min-width:280px;height:100%;overflow-y:auto;padding-right:4px">
         ${blocoLoja}
-        <div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div>
+        <div class="form-row full"><div class="fi"><label>Plataforma de Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div>
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
-          <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome do cliente"/></div>
+          <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome do Cliente"/></div>
         </div>
         <div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div>
         <div class="form-row full">
-          <div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
+          <div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
         </div>
         <div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div>
-        <div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div>
+        <div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto de Referência"/></div></div>
         <div class="form-row">
           <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div>
           <div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
@@ -2384,25 +2384,25 @@ async function abrirModal(id){
         <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-coleta-toggle').click()">
           <input type="checkbox" id="np-coleta-toggle" onchange="_toggleColetaExterna()" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
-          <span style="font-size:13px;font-weight:600;color:var(--text2)">📦 Coleta em outro endereço</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">📦 Coleta em Outro Endereço</span>
         </div>
         <div id="np-coleta-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
           <div class="form-row full">
-            <div class="fi"><label>Endereço de coleta</label><input id="np-endereco-coleta" placeholder="Rua, número, bairro" autocomplete="off"/></div>
+            <div class="fi"><label>Endereço de Coleta</label><input id="np-endereco-coleta" placeholder="Rua, Número, Bairro" autocomplete="off"/></div>
           </div>
           <div id="np-coleta-feedback" style="font-size:11px;margin:2px 0 4px;min-height:14px"></div>
           <div class="form-row">
-            <div class="fi"><label>Contato na coleta</label><input id="np-contato-coleta" placeholder="Nome do contato"/></div>
-            <div class="fi"><label>Telefone da coleta</label><input id="np-telefone-coleta" placeholder="(16) 99999-9999"/></div>
+            <div class="fi"><label>Contato na Coleta</label><input id="np-contato-coleta" placeholder="Nome do Contato"/></div>
+            <div class="fi"><label>Telefone da Coleta</label><input id="np-telefone-coleta" placeholder="(16) 99999-9999"/></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-agendar-toggle').click()">
           <input type="checkbox" id="np-agendar-toggle" onchange="_toggleAgendamento()" style="width:16px;height:16px;cursor:pointer;accent-color:#f97316"/>
-          <span style="font-size:13px;font-weight:600;color:var(--text2)">⏰ Agendar pedido</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">⏰ Agendar Pedido</span>
         </div>
         <div id="np-agendar-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
           <div class="form-row full">
-            <div class="fi"><label>Data e hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
+            <div class="fi"><label>Data e Hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
           </div>
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
@@ -2510,7 +2510,7 @@ let _crRotaLayer=null,_crDestinoMarker=null;
 // fixo no mapa principal, um segundo pino ali seria redundante.
 function _iconeBadgeEntrega(){
   return L.divIcon({
-    html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#1A56DB;color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">ENTREGA</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #1A56DB"></div></div>`,
+    html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#1A56DB;color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;border:2px solid white">Entrega</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #1A56DB"></div></div>`,
     iconSize:[70,30],iconAnchor:[35,30],className:''
   });
 }
@@ -2715,7 +2715,7 @@ async function calcularTaxaAuto(forcado=false){
   if(!forcado&&!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
   if(!lojaHid?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
   const lojaLat=parseFloat(lojaHid.dataset.lat),lojaLng=parseFloat(lojaHid.dataset.lng);
-  if(!lojaLat||!lojaLng){if(fb)fb.innerHTML='<span style="color:#f59e0b">⚠️ Loja sem coordenadas GPS</span>';return;}
+  if(!lojaLat||!lojaLng){if(fb)fb.innerHTML='<span style="color:#f59e0b">⚠️ Loja Sem Coordenadas GPS</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">📍 Calculando distância...</span>';
   // Geocodifica endereço de entrega (usa autocomplete se já preenchido)
   let geo=null;
@@ -2769,9 +2769,9 @@ const TODOS_STATUS=[
   {key:'recebido',       label:'Recebido',           cor:'#ef4444'},
   {key:'pronto',         label:'Pronto',             cor:'#e91e8c'},
   {key:'aceito',         label:'Aceito',             cor:'#eab308'},
-  {key:'chegou_no_local',label:'Chegou no local',    cor:'#06b6d4'},
-  {key:'em_rota',        label:'Em rota',            cor:'#1A56DB'},
-  {key:'chegou_destino', label:'Chegou no destino',  cor:'#7c3aed'},
+  {key:'chegou_no_local',label:'Chegou no Local',    cor:'#06b6d4'},
+  {key:'em_rota',        label:'Em Rota',            cor:'#1A56DB'},
+  {key:'chegou_destino', label:'Chegou no Destino',  cor:'#7c3aed'},
   {key:'retornando',     label:'Retornando',         cor:'#16a34a'},
   {key:'finalizado',     label:'Finalizado',         cor:'#16a34a'},
   {key:'cancelado',      label:'Cancelado',          cor:'#ef4444'},
@@ -2867,7 +2867,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
     await atualizarTudo();
     return;
   }
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido pronto!','Motoboys serão notificados','var(--pink)');}
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
@@ -3377,9 +3377,9 @@ function _rcgCabecalho(){
     :m==='faturamento'
     ?'No crédito pré-pago, cada entrega é descontada do saldo, sem fatura semanal. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.'
     :'Sua loja usa o modelo pré-pago: cada entrega é descontada do saldo. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.';
-  return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-titulo" id="rcg-titulo"><div class="rcg-ico">${_icone('wallet',20)}</div>Recarregar saldo via Pix</div>
+  return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-titulo" id="rcg-titulo"><div class="rcg-ico">${_icone('wallet',20)}</div>Recarregar Saldo Via Pix</div>
       <button class="rcg-x" aria-label="Fechar" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',18)}</button></div>
-    <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
+    <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo Atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
       <p${m==='equipe'?' style="border-left:none;padding-left:0"':''}>${frase}</p></div></div>`;
 }
 function _rcgAvisos(){
@@ -3398,7 +3398,7 @@ function _rcgRenderPacotes(){
   const card=({p,idx})=>{
     const sel=_rcg.sel===idx;
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
-      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal para começar</span>`:''}
+      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal para Começar</span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
       ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% de bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
@@ -3409,7 +3409,7 @@ function _rcgRenderPacotes(){
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">${_rcgAvisos()}
-      <div class="rcg-grid" role="radiogroup" aria-label="Valor da recarga">${visiveis.map(card).join('')}</div></div>
+      <div class="rcg-grid" role="radiogroup" aria-label="Valor da Recarga">${visiveis.map(card).join('')}</div></div>
     <div class="rcg-foot"><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha um valor para continuar'}</div>
       <button class="rcg-btn" id="rcg-gerar" ${p?'':'disabled'} onclick="_selecionarPacotePix(${_rcg.sel})">${_icone('qr-code',18)}${p?`Gerar Pix de ${_rcgFmtCurto(p.pago)}`:'Gerar Pix'}</button></div>
   </div>`;
@@ -3574,7 +3574,7 @@ async function _abrirCancelamentoIfood(pedidoId){
   let modal=document.getElementById('modal-ifood-cancelar');
   if(!modal){modal=document.createElement('div');modal.id='modal-ifood-cancelar';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:420px;width:95%">
-    <div class="modal-header"><span class="modal-title">Cancelar pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-header"><span class="modal-title">Cancelar Pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="padding:16px">
       <div id="ifood-cancel-body" style="font-size:13px;color:var(--text2)">⏳ Buscando motivos de cancelamento...</div>
     </div>
@@ -3591,7 +3591,7 @@ async function _abrirCancelamentoIfood(pedidoId){
       ${motivos.length?motivos.map(m=>`<option value="${String(m.code||'').replace(/"/g,'&quot;')}">${String(m.description||m.code||'').replace(/</g,'&lt;')}</option>`).join(''):'<option value="">Nenhum motivo disponível</option>'}
     </select>
     <div id="ifood-cancel-fb" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
-    <button onclick="_confirmarCancelamentoIfood('${pedidoId}')" style="width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">Confirmar cancelamento</button>`;
+    <button onclick="_confirmarCancelamentoIfood('${pedidoId}')" style="width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">Confirmar Cancelamento</button>`;
 }
 async function _confirmarCancelamentoIfood(pedidoId){
   const sel=document.getElementById('ifood-cancel-motivo');
@@ -3606,7 +3606,7 @@ async function _confirmarCancelamentoIfood(pedidoId){
     document.getElementById('modal-ifood-cancelar')?.classList.remove('open');
     showNotif('Cancelamento solicitado','Aguardando confirmação do iFood','var(--yellow)');
   }catch(e){
-    if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão</span>';
+    if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de Conexão</span>';
   }
 }
 
@@ -3622,7 +3622,7 @@ function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
   return`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
     <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: <span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span></div>
     <div style="display:flex;gap:6px">
-      <input id="${inputId}" placeholder="Código informado pelo motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
+      <input id="${inputId}" placeholder="Código Informado pelo Motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
       <button onclick="event.stopPropagation();_ifoodValidarCodigo('${p.id}','${action}','${inputId}')" style="background:#1A56DB;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Validar</button>
     </div>
   </div>`;
@@ -3676,7 +3676,7 @@ function abrirInfoPedido(pedidoId){
     </div>
     <div class="modal-body" style="max-height:80vh;overflow-y:auto;padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:16px">
-        <div><div style="font-size:11px;color:var(--text3);font-weight:600">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);font-weight:600">Previsão de Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
         <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
       ${_blocoTrocaEndereco(p)}
@@ -3717,7 +3717,7 @@ function abrirInfoPedido(pedidoId){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento recebido</button>`:''}
         <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir comanda</button>
-        <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar link de rastreio</button>
+        <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar Link de Rastreio</button>
       </div>
     </div>
   </div>`;
@@ -3917,7 +3917,7 @@ function renderTabs(){
 // Tela provisória das páginas novas do rodapé da loja (Configurações /
 // Perfil) até o conteúdo de cada uma ser definido.
 function _renderLojaEmBrevePage(icon,titulo,texto){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em Breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
 }
 let _navUltimoLogin=null;
 function goTab(id){
@@ -4211,18 +4211,18 @@ function renderMapaPage(){
     </div>
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
       <div id="mapa-container-wrap" class="mapa-container" style="position:relative;height:30px;flex-shrink:0;overflow:hidden">
-        <div id="sb-toggle-tab" title="Abrir/fechar pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
+        <div id="sb-toggle-tab" title="Abrir/Fechar Pedidos" style="position:absolute;left:0;top:0;bottom:0;width:20px;z-index:200;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--sb-bg);border-right:1px solid var(--sb-border);transform:translateX(-100%);transition:transform 0.3s ease;touch-action:none;box-shadow:2px 0 8px rgba(0,0,0,.15)"><span id="sb-tab-arrow" style="font-size:11px;color:var(--sb-text3);user-select:none;pointer-events:none">►</span></div>
         <div class="mapa-stats" style="display:flex;flex-wrap:wrap;gap:0;padding:4px 8px;align-items:center">
-          <button onclick="toggleSidebar()" title="Mostrar/ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#1f2937 !important;display:flex;align-items:center;justify-content:center">${_icone('menu',16)}</button>
+          <button onclick="toggleSidebar()" title="Mostrar/Ocultar Pedidos" style="background:none;border:none;padding:4px 6px;margin-right:4px;cursor:pointer;font-size:18px;line-height:1;color:#1f2937 !important;display:flex;align-items:center;justify-content:center">${_icone('menu',16)}</button>
           <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Finalizados hoje</div></div></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">✅</span><div><div class="mapa-stat-val" id="ms-finalizados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Finalizados Hoje</div></div></div>
           <div style="width:1px;height:22px;background:#e5e7eb;margin:0 2px;flex-shrink:0"></div>
-          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Cancelados hoje</div></div></div>
+          <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Cancelados Hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
           <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">${_icone('message-circle',16)}<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
-          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar todos os motoboys" class="mapa-float-btn">${_icone('hard-hat',16)}</button>
-          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo lojas sem pedido" class="mapa-float-btn">${_icone('store',16)}</button>
+          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar Todos os Motoboys" class="mapa-float-btn">${_icone('hard-hat',16)}</button>
+          <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo Lojas Sem Pedido" class="mapa-float-btn">${_icone('store',16)}</button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
           <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go" style="flex-shrink:0;width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.style.display='none'"/>
@@ -4248,9 +4248,9 @@ function renderMapaPage(){
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
         <div class="cr-toolbar">
           <select id="cr-loja-id" class="cr-input" style="max-width:150px"><option value="">Selecione a loja...</option></select>
-          <input id="cr-numero-pedido" placeholder="Nº pedido" class="cr-input" style="width:70px"/>
+          <input id="cr-numero-pedido" placeholder="Nº Pedido" class="cr-input" style="width:70px"/>
           <div class="cr-divider"></div>
-          <input id="cr-cliente" placeholder="Nome do cliente" class="cr-input" style="width:140px"/>
+          <input id="cr-cliente" placeholder="Nome do Cliente" class="cr-input" style="width:140px"/>
           <input id="cr-telefone" placeholder="Telefone" type="tel" class="cr-input" style="width:120px"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" class="cr-input" style="width:210px"/>
           <input id="cr-complemento" placeholder="Complemento" class="cr-input" style="width:100px"/>
@@ -4366,9 +4366,9 @@ async function _preCarregarFaixasLojas(pedidos){
 
 function _iconsLogistica(p){
   const icons=[
-    p.com_retorno?`<span title="Com retorno">🔄</span>`:'',
-    parseFloat(p.gorjeta)>0?`<span title="Com gorjeta">🎁</span>`:'',
-    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção global">📅</span>`:`<span title="Taxa dinâmica (cidade)">🌧️</span>`):'',
+    p.com_retorno?`<span title="Com Retorno">🔄</span>`:'',
+    parseFloat(p.gorjeta)>0?`<span title="Com Gorjeta">🎁</span>`:'',
+    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção Global">📅</span>`:`<span title="Taxa Dinâmica (cidade)">🌧️</span>`):'',
   ].filter(Boolean);
   return icons.length?`<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px">${icons.join('')}</span>`:'—';
 }
@@ -4408,7 +4408,7 @@ function _buildTabelaRows(filtered,from){
 function _tabelaAnexarSentinela(){
   const el=document.getElementById('tabela-mapa-body');if(!el)return;
   if(_tabelaScrollOffset>=_tabelaScrollFiltered.length){
-    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:var(--text3);font-size:12px;background:var(--bg)">✓ Todos os pedidos carregados</td></tr>`);
+    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:var(--text3);font-size:12px;background:var(--bg)">✓ Todos os Pedidos Carregados</td></tr>`);
     return;
   }
   el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="padding:10px;text-align:center;background:var(--bg)"><div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
@@ -4698,9 +4698,9 @@ function renderPedidosLista(){
     {key:'recebido',color:'#EF4444',label:'Recebido'},
     {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
-    {key:'chegou_local',color:'#38BDF8',label:'Chegou no local'},
-    {key:'em_rota',color:'#1A56DB',label:'Em rota'},
-    {key:'chegou_destino',color:'#7C3AED',label:'Chegou no destino'},
+    {key:'chegou_local',color:'#38BDF8',label:'Chegou no Local'},
+    {key:'em_rota',color:'#1A56DB',label:'Em Rota'},
+    {key:'chegou_destino',color:'#7C3AED',label:'Chegou no Destino'},
     {key:'retornando',color:'#10B981',label:'Retornando'},
   ];
   const grupos={};
@@ -4757,7 +4757,7 @@ function renderPedidosLista(){
             ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}${p.bandeira_cartao?` (${p.bandeira_cartao})`:''}${p.troco_para?` — troco para R$ ${parseFloat(p.troco_para).toFixed(2)}`:''}</div>`:''}
             ${p.cupom_valor?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">🏷️ Cupom: R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
           </div>`:''}
-          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">CÓDIGO</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
+          ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">Código</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
           ${_blocoCodigoIfood(p,'coleta','📦 Código de coleta (iFood)',p.ifood_pickup_code,p.ifood_pickup_validado_em)}
           ${_blocoCodigoIfood(p,'entrega','🔑 Código de entrega (iFood)',p.ifood_delivery_code,p.ifood_entrega_validada_em)}
           ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
@@ -4774,7 +4774,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
             ${p.cliente_documento?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:3px">🪪 ${p.cliente_documento}</div>`:''}
             ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${telefone}</a></div>`:''}
-            ${p.retirada?`<div style="font-size:11px;margin-bottom:2px;font-weight:700;color:var(--sb-text2)">🏪 Retirada na loja</div>`:(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
+            ${p.retirada?`<div style="font-size:11px;margin-bottom:2px;font-weight:700;color:var(--sb-text2)">🏪 Retirada na Loja</div>`:(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
             ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
           </div>
           ${p.troca_endereco_novo&&p.troca_endereco_solicitada_em?_blocoTrocaEndereco(p):''}
@@ -4818,7 +4818,7 @@ function renderPedidosLista(){
             <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
               style="width:58px;height:58px;min-width:58px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;user-select:none;color:#fff;overflow:hidden">
               ${isSel?'<span style="font-size:20px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
-                p.origem==='ifood'?`<div title="Pedido da integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:12px 7px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
+                p.origem==='ifood'?`<div title="Pedido da Integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:12px 7px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
                 `<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;display:block;">`
               }
             </div>
@@ -4830,11 +4830,11 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">·</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaU}</span>
                 ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto (desaloca o entregador, se houver)" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #4a9eff) drop-shadow(0 0 3px #4a9eff)"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
-                <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar entregador sob demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
+                <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar Entregador Sob Demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
+                <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar Entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
                 <span id="badge-wrapper-${p.id}" style="position:relative;flex-shrink:0">
                   <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55;max-width:112px;overflow:hidden;box-sizing:border-box"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span style="font-size:10px;flex-shrink:0">▾</span></span>
                 </span>
@@ -4980,7 +4980,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
   <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
 </div>
-<div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div></div></div>
+<div class="form-row full"><div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div></div></div>
 <div class="form-row">
   <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
   <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
@@ -5006,10 +5006,10 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
     📦 Coleta em outro endereço
   </label>
   <div id="ep-coleta-campos" style="display:${temColeta?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
-    <div class="form-row full"><div class="fi"><label>Endereço de coleta</label><input id="ep-endereco-coleta" value="${esc(p.endereco_coleta)}" placeholder="Rua, número, bairro"/></div></div>
+    <div class="form-row full"><div class="fi"><label>Endereço de Coleta</label><input id="ep-endereco-coleta" value="${esc(p.endereco_coleta)}" placeholder="Rua, Número, Bairro"/></div></div>
     <div class="form-row">
-      <div class="fi"><label>Contato na coleta</label><input id="ep-contato-coleta" value="${esc(p.contato_coleta)}" placeholder="Nome"/></div>
-      <div class="fi"><label>Telefone da coleta</label><input id="ep-telefone-coleta" value="${esc(p.telefone_coleta)}" placeholder="(16) 99999-9999"/></div>
+      <div class="fi"><label>Contato na Coleta</label><input id="ep-contato-coleta" value="${esc(p.contato_coleta)}" placeholder="Nome"/></div>
+      <div class="fi"><label>Telefone da Coleta</label><input id="ep-telefone-coleta" value="${esc(p.telefone_coleta)}" placeholder="(16) 99999-9999"/></div>
     </div>
   </div>
 </div>
@@ -5019,7 +5019,7 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
     ⏰ Agendar pedido
   </label>
   <div id="ep-agendar-campos" style="display:${temAgend?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
-    <div class="form-row full"><div class="fi"><label>Data e hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
+    <div class="form-row full"><div class="fi"><label>Data e Hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
   </div>
 </div>
 <div id="ep-recalc-info" style="font-size:12px;color:var(--text2);min-height:14px;margin:2px 0 4px"></div>
@@ -5633,7 +5633,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes',_icone('hourglass',14,'btn-ico')+'Pendentes',_cPend)}
     ${btnFiltro('reprovadas',_icone('circle-x',14,'btn-ico')+'Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -5769,15 +5769,15 @@ async function _abrirModalImportarLojas(){
   modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
     <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ Dados pendentes" pra você completar individualmente depois em Editar Loja.</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ dados pendentes" pra você completar individualmente depois em editar loja.</div>
       <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">${_icone('download',16,'btn-ico')}Baixar modelo CSV</button>
       <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado padrão (pra geocodificar endereços sem cidade no texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
-      <div class="fi" style="margin-bottom:16px"><label>Planilha preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
+      <div class="fi" style="margin-bottom:16px"><label>Planilha Preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
       <div id="import-lojas-preview"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">Cancelar</button>
-      <button id="import-lojas-btn-confirmar" onclick="_confirmarImportarLojas()" disabled style="opacity:.4;cursor:not-allowed;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;font-family:Inter,sans-serif">Confirmar importação</button>
+      <button id="import-lojas-btn-confirmar" onclick="_confirmarImportarLojas()" disabled style="opacity:.4;cursor:not-allowed;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;font-family:Inter,sans-serif">Confirmar Importação</button>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -5857,7 +5857,7 @@ function _processarArquivoImportarLojas(inputEl){
               <td style="padding:6px 10px;font-size:12px;color:var(--text)">${(v.nome||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${(v.endereco||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${v.whatsapp||v.whatsappRaw||'—'}</td>
-              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:!v.whatsapp?'<span style="color:#10b981">✅ Ok</span> <span style="color:#f59e0b;font-size:11px" title="Vai entrar como Dados pendentes, complete depois em Editar Loja">(sem WhatsApp)</span>':'<span style="color:#10b981">✅ Ok</span>'}</td>
+              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:!v.whatsapp?'<span style="color:#10b981">✅ Ok</span> <span style="color:#f59e0b;font-size:11px" title="Vai entrar como dados pendentes, complete depois em editar loja">(Sem WhatsApp)</span>':'<span style="color:#10b981">✅ Ok</span>'}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>`;
@@ -5996,7 +5996,7 @@ function _renderTbodyEstabelecimentos(){
   tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
-    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':'';
+    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
     return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
   }).join('');
 }
@@ -6155,7 +6155,7 @@ function _renderTbodyEntregadores(){
   let theadHtml,tbodyHtml;
   const _fotoBtn=(url)=>url?`<button onclick="window.open('${url}','_blank')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
   if(_entFiltro==='em_analise'){
-    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>PIX</th><th>Data cadastro</th><th>Ações</th></tr>';
+    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>Pix</th><th>Data Cadastro</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
       ?'<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
       :filtered.map(e=>`<tr>
@@ -6415,7 +6415,7 @@ function _blocoDocumentosAdmin(entId,e){
       </div>
       ${motivo&&status==='reprovado'?`<div style="font-size:11px;color:var(--text3);margin-top:4px">Motivo: ${motivo.replace(/</g,'&lt;')}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:8px">
-        ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não enviado</span>`}
+        ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver Foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não enviado</span>`}
         <button type="button" onclick="_aprovarDocumento('${entId}','${campo}')" ${status==='aprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='aprovado'?'var(--border)':'#10b98122'};color:${status==='aprovado'?'var(--text3)':'#10b981'};font-size:12px;font-weight:700;cursor:${status==='aprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar</button>
         <button type="button" onclick="_reprovarDocumento('${entId}','${campo}','${label.replace(/'/g,"\\'")}')" ${status==='reprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='reprovado'?'var(--border)':'#ef444422'};color:${status==='reprovado'?'var(--text3)':'#ef4444'};font-size:12px;font-weight:700;cursor:${status==='reprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Reprovar</button>
       </div>
@@ -6495,10 +6495,10 @@ async function abrirEditarEntregador(entId){
   const fi=(label,content)=>`<div class="fi"><label>${label}</label>${content}</div>`;
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
-${row2(fi('Nome completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
+${row2(fi('Nome Completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
 ${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
-${row1(fi('Clã de Entregador',sel('ee-cla',claAtualId,[['','Sem clã'],...clasList.map(c=>[c.id,`${c.cidade.toUpperCase()} - ${c.uf}`])])))}
-${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
+${row1(fi('Clã de Entregador',sel('ee-cla',claAtualId,[['','Sem Clã'],...clasList.map(c=>[c.id,`${c.cidade.toUpperCase()} - ${c.uf}`])])))}
+${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de Nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
@@ -6510,9 +6510,9 @@ ${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carr
 ${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
 ${row2(fi('CNH',inp('ee-cnh',e.cnh)),fi('CNPJ',inp('ee-cnpj',e.cnpj,'00.000.000/0000-00')))}
 ${sec('💰 Dados de Pagamento')}
-${row2(fi('Tipo de pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
-${row2(fi('Tipo chave PIX',sel('ee-tipo-pix',e.tipo_chave_pix,[['cpf','CPF'],['cnpj','CNPJ'],['email','Email'],['telefone','Telefone'],['aleatoria','Aleatória']])),fi('Chave PIX',inp('ee-chave-pix',e.chave_pix)))}
-${row1(`<div class="fi"><label>Máquina de cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui máquina de cartão</span></label></div>`)}
+${row2(fi('Tipo de Pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
+${row2(fi('Tipo Chave Pix',sel('ee-tipo-pix',e.tipo_chave_pix,[['cpf','CPF'],['cnpj','CNPJ'],['email','Email'],['telefone','Telefone'],['aleatoria','Aleatória']])),fi('Chave Pix',inp('ee-chave-pix',e.chave_pix)))}
+${row1(`<div class="fi"><label>Máquina de Cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui Máquina de Cartão</span></label></div>`)}
 <div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
@@ -6586,7 +6586,7 @@ function abrirNovoEntregador(){
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
   let modal=document.getElementById('modal-novo-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-novo-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">${_icone('rocket',16,'btn-ico')}Criar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome Completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha Inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 Caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">${_icone('rocket',16,'btn-ico')}Criar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6666,12 +6666,12 @@ async function renderPrecoDinamicoPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('trending-up',22)} Preço Dinâmico</div></div>
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">GLOBAL (TODAS AS CIDADES)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Global (Todas as Cidades)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
         <div id="pd-wrap-cliente"></div>
         <div id="pd-wrap-entregador"></div>
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">POR CIDADE</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Por Cidade</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <select id="pd-cidade-select" onchange="_pdSelecionarCidade(this.value)" style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;cursor:pointer">
           <option value="">Selecionar cidade...</option>
@@ -6977,7 +6977,7 @@ async function salvarPrecoDinamico(tipo){
     showNotif('✅ Preço dinâmico salvo!','');
   }catch(e){
     console.error('[PD] exceção ao salvar tipo='+tipo,e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
   }
 }
 
@@ -7043,7 +7043,7 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
         <div class="fi" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <label style="margin:0">${entLabel}</label>
-            <span onclick="_pdSelecionarTodos('${multiId}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none" id="pd-cid-selall-${cidKey}">Selecionar todos</span>
+            <span onclick="_pdSelecionarTodos('${multiId}')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;user-select:none" id="pd-cid-selall-${cidKey}">Selecionar Todos</span>
           </div>
           <input type="text" id="${searchId}" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value,'${cidKey}')"
             style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
@@ -7145,7 +7145,7 @@ async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
     showNotif(`✅ Preço dinâmico ${cidade} salvo!`,'');
   }catch(e){
     console.error('[PD-cidade] exceção ao salvar tipo='+tipo+' cidade='+cidade,e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
   }
 }
 
@@ -7204,7 +7204,7 @@ async function renderNovoPedidoPage(){
   const seletorLoja=currentPerfil==='adm'
     ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, número, bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, ponto de referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto de Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
@@ -7302,7 +7302,7 @@ async function renderCacPage(){
   const N=n=>(n||0).toLocaleString('pt-BR');
   const [ano,mes]=_cacMes.split('-');
   const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}${c.meta_entregas_mes_teto!=null?` a ${N(c.meta_entregas_mes_teto)}`:''}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
-  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
+  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (Sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
   // Colunas numéricas (nas duas tabelas): número centralizado embaixo do
   // meio do cabeçalho — <th> e <td> com text-align:center.
   const resumoRows=resumo.filter(r=>r.lojas>0||r.vendedor.ativo).map(r=>`<tr>
@@ -7314,7 +7314,7 @@ async function renderCacPage(){
       <td style="text-align:center;white-space:nowrap;font-weight:700;color:var(--green)">${R(r.bonusMes)}</td>
       <td>${metaBadge(r)}</td>
       <td style="text-align:center;white-space:nowrap">${R(r.custoMes)}</td>
-    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum vendedor cadastrado — cadastre em Cadastros → Vendedores.</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum vendedor cadastrado — cadastre em cadastros → vendedores.</td></tr>';
   const lojasRows=linhas.map(x=>`<tr>
       <td style="font-weight:600;color:var(--text)">${_escHtml(x.vendedor.nome)}</td>
       <td>${_escHtml(x.cargo.nome||x.vendedor.cargo_id)}</td>
@@ -7325,13 +7325,13 @@ async function renderCacPage(){
       <td style="text-align:center;white-space:nowrap">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
       <td style="text-align:center;white-space:nowrap;font-weight:700">${R(x.bonus)}</td>
       <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do prazo':'Prazo encerrado'}</span></td>
-    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em Cadastros → Estabelecimentos → Editar Loja.</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em cadastros → estabelecimentos → editar loja.</td></tr>';
   el.innerHTML=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
     <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por vendedor — ${mes}/${ano}</div>
-    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas novas</th><th style="text-align:center">Pedidos na janela</th><th style="text-align:center">Bônus acumulado</th><th style="text-align:center">Bônus no mês</th><th>Meta/mês</th><th style="text-align:center">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas novas por vendedor</div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (total / janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas Novas</th><th style="text-align:center">Pedidos na Janela</th><th style="text-align:center">Bônus Acumulado</th><th style="text-align:center">Bônus no Mês</th><th>Meta/Mês</th><th style="text-align:center">Custo no mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas Novas por Vendedor</div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início Contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (total / janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
 }
 
 // ── Cadastros → Vendedores (equipe comercial do C.A.C.) ────────────────
@@ -7397,22 +7397,22 @@ async function renderPedidosPage(){
       </div>
     </div></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:10px">
-      <div class="stat-card"><div class="stat-label">TODOS OS PEDIDOS</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
-      <div class="stat-card"><div class="stat-label">FINALIZADOS</div><div class="stat-value" id="fp-card-finalizados" style="font-size:26px;color:var(--green)">—</div></div>
-      <div class="stat-card"><div class="stat-label">CANCELADOS</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">TOTAL KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Todos os Pedidos</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
+      <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" id="fp-card-finalizados" style="font-size:26px;color:var(--green)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
     </div>
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
-      <div class="stat-card"><div class="stat-label">FATURAMENTO</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
-      <div class="stat-card"><div class="stat-label">DESPESAS</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">CONTAS A PAGAR</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO LÍQUIDO</div><div class="stat-value" id="fp-card-lucro-liquido" style="font-size:22px">—</div></div>
-      <div class="stat-card"><div class="stat-label">FATURAMENTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-fat-medio" style="font-size:22px;color:var(--accent)">—</div></div>
-      <div class="stat-card"><div class="stat-label">CUSTO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO MÉDIO/ENTREGA</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
-      <div class="stat-card"><div class="stat-label">VALOR MERCADORIA</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Contas a Pagar</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="fp-card-lucro-liquido" style="font-size:22px">—</div></div>
+      <div class="stat-card"><div class="stat-label">Faturamento Médio/Entrega</div><div class="stat-value" id="fp-card-fat-medio" style="font-size:22px;color:var(--accent)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Custo Médio/Entrega</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Lucro Médio/Entrega</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
+      <div class="stat-card"><div class="stat-label">Valor Mercadoria</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de Entrega (Aceito → Chegada no Cliente)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de entrega (Aceito → chegada no cliente)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição de Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
@@ -7543,9 +7543,9 @@ async function _buscarPedidosAdmin(){
   if(_slaBars){
     const _comSla=finalizados.filter(p=>p.aceito_em&&p.chegou_destino_em);
     const _faixas=[
-      {label:'0 a 30 min',cor:'#16a34a',n:0},
-      {label:'30 a 35 min',cor:'#eab308',n:0},
-      {label:'35 a 40 min',cor:'#f97316',n:0},
+      {label:'0 A 30 min',cor:'#16a34a',n:0},
+      {label:'30 A 35 min',cor:'#eab308',n:0},
+      {label:'35 A 40 min',cor:'#f97316',n:0},
       {label:'Mais de 40 min',cor:'#ef4444',n:0},
     ];
     _comSla.forEach(p=>{
@@ -7856,8 +7856,8 @@ function _renderCeoLineChart(buckets){
   </div>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
     <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (eixo esquerdo)</span>
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos finalizados (eixo direito)</span>
-    <span style="color:var(--text3)">· passe o mouse no gráfico pra ver o valor exato</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos Finalizados (eixo direito)</span>
+    <span style="color:var(--text3)">· Passe o mouse no gráfico pra ver o valor exato</span>
   </div>`;
 }
 const _CEO_DIAS_SEMANA_EXTENSO=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -8349,12 +8349,12 @@ function renderCeoPage(){
 
     <div class="ceo-block">
       <div class="ceo-block-header">
-        <span class="ceo-block-title">📈 Crescimento da empresa</span>
+        <span class="ceo-block-title">📈 Crescimento da Empresa</span>
         <div class="ceo-periodo-toggle">
-          <button class="ceo-periodo-btn" data-p="7d" onclick="_ceoSetPeriodo('7d')">7 dias</button>
-          <button class="ceo-periodo-btn" data-p="30d" onclick="_ceoSetPeriodo('30d')">30 dias</button>
-          <button class="ceo-periodo-btn" data-p="6m" onclick="_ceoSetPeriodo('6m')">6 meses</button>
-          <button class="ceo-periodo-btn" data-p="12m" onclick="_ceoSetPeriodo('12m')">12 meses</button>
+          <button class="ceo-periodo-btn" data-p="7d" onclick="_ceoSetPeriodo('7d')">7 Dias</button>
+          <button class="ceo-periodo-btn" data-p="30d" onclick="_ceoSetPeriodo('30d')">30 Dias</button>
+          <button class="ceo-periodo-btn" data-p="6m" onclick="_ceoSetPeriodo('6m')">6 Meses</button>
+          <button class="ceo-periodo-btn" data-p="12m" onclick="_ceoSetPeriodo('12m')">12 Meses</button>
         </div>
       </div>
       <div class="ceo-block-body" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
@@ -8414,7 +8414,7 @@ async function _carregarDadosCeo(){
   if(pipeline.length){
     alertas.push(`<div class="ceo-alert" onclick="goTab('cadastros')"><span class="ceo-alert-dot" style="background:#eab308"></span><span class="ceo-alert-text">🟡 <b>${pipeline.length} loja${pipeline.length===1?'':'s'}</b> aguardando aprovação de cadastro</span></div>`);
   }
-  _set('ceo-alertas',alertas.length?alertas.join(''):'<div style="text-align:center;padding:16px;color:#22c55e;font-size:13px;font-weight:600">✓ Tudo sob controle</div>');
+  _set('ceo-alertas',alertas.length?alertas.join(''):'<div style="text-align:center;padding:16px;color:#22c55e;font-size:13px;font-weight:600">✓ Tudo Sob Controle</div>');
 
   _ceoUltimaAtualizacao=Date.now();
   _ceoSetPeriodo(_ceoPeriodoAtual);
@@ -8854,8 +8854,8 @@ function _abrirDrilldownCategoria(chartId,grupo){
 const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
   {key:'aceito',         label:'Aceito',            cor:'#eab308'},
-  {key:'em_rota',        label:'Em rota',           cor:'#1A56DB'},
-  {key:'chegou_destino', label:'Chegou no destino', cor:'#7c3aed'},
+  {key:'em_rota',        label:'Em Rota',           cor:'#1A56DB'},
+  {key:'chegou_destino', label:'Chegou no Destino', cor:'#7c3aed'},
   {key:'finalizado',     label:'Finalizado',        cor:'#16a34a'},
   {key:'cancelado',      label:'Cancelado',         cor:'#ef4444'},
 ];
@@ -8903,10 +8903,10 @@ async function renderMotoboyPage(){
 }
 
 async function renderLojasPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -8936,20 +8936,20 @@ async function abrirEditarLoja(lojaId){
 ${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r1(fi('Categoria',sel('el-categoria',l.categoria,[['','Selecione...'],...CATEGORIAS_LOJA.map(c=>[c,c])])))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
-${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig="${v(l.endereco)}" placeholder="Rua, número, bairro" autocomplete="off" style="${is}" onfocus="iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback')"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
+${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig="${v(l.endereco)}" placeholder="Rua, Número, Bairro" autocomplete="off" style="${is}" onfocus="iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback')"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
 <div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
-${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','COLETA FIXA'],['CLIENTE_FIXO','CLIENTE FIXO'],['CLIENTE_EVENTUAL','CLIENTE EVENTUAL']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
+${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','Coleta Fixa'],['CLIENTE_FIXO','Cliente Fixo'],['CLIENTE_EVENTUAL','Cliente Eventual']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
 ${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
-${r1(fi('CPF ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
+${r1(fi('CPF ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 Ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
 ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-original-email="${v(l.email)}" style="${is}"/>`),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
 ${sec('Tabelas de Preço')}
 ${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
-${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
-${r1(fi('Entregador bloqueado',_elBloqCampoHtml(is)))}
-<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no App Let's Go Cliente</label></div></div>
+${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
+${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
+<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no app Let's Go cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -9255,12 +9255,12 @@ const _CLF_TIPOS={
     segmentos:['Mercado','Conveniência','Adega','Empório','Pet Shop','Farmácia','Suplementos','Tabacarias','Auto Peças']},
 };
 const _CLF_ETAPAS=[
-  {id:'sobre',nome:'Sobre a loja',icone:'store',titulo:'Sobre a sua loja',sub:'Conte pra gente como sua loja se chama e o que ela vende.'},
-  {id:'endereco',nome:'Endereço',icone:'map-pin',titulo:'Onde fica a sua loja',sub:'É daqui que os entregadores vão retirar os pedidos.'},
+  {id:'sobre',nome:'Sobre a loja',icone:'store',titulo:'Sobre a Sua Loja',sub:'Conte pra gente como sua loja se chama e o que ela vende.'},
+  {id:'endereco',nome:'Endereço',icone:'map-pin',titulo:'Onde Fica a Sua Loja',sub:'É daqui que os entregadores vão retirar os pedidos.'},
   {id:'contato',nome:'Contato',icone:'phone',titulo:'Contato',sub:'Como nossa equipe fala com a loja e com o responsável.'},
-  {id:'documento',nome:'Documento',icone:'file-text',titulo:'Documento da loja',sub:'Informe o CPF ou o CNPJ do responsável pela loja.'},
-  {id:'acesso',nome:'Acesso',icone:'lock',titulo:'Dados de acesso',sub:'Você vai usar este e-mail e esta senha para entrar no sistema depois da aprovação.'},
-  {id:'revisao',nome:'Revisão',icone:'circle-check',titulo:'Revise seus dados',sub:'Confira tudo antes de enviar. Você pode alterar qualquer etapa.'},
+  {id:'documento',nome:'Documento',icone:'file-text',titulo:'Documento da Loja',sub:'Informe o CPF ou o CNPJ do responsável pela loja.'},
+  {id:'acesso',nome:'Acesso',icone:'lock',titulo:'Dados de Acesso',sub:'Você vai usar este e-mail e esta senha para entrar no sistema depois da aprovação.'},
+  {id:'revisao',nome:'Revisão',icone:'circle-check',titulo:'Revise Seus Dados',sub:'Confira tudo antes de enviar. Você pode alterar qualquer etapa.'},
 ];
 let _clf=null;
 const _clfEsc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -9429,7 +9429,7 @@ function _clfPararCenas(){if(_clf){_clf.timers.forEach(clearInterval);_clf.timer
 
 function _clfTopo(){
   return`<div class="clf-top"><div class="clf-marca"><div class="clf-marca-ico">${_icone('bike',18)}</div><div>Let's Go<small>DELIVERY</small></div></div>
-    <button class="clf-link" onclick="_clfSair()">${_icone('arrow-left',16)}<span>Voltar ao login</span></button></div>`;
+    <button class="clf-link" onclick="_clfSair()">${_icone('arrow-left',16)}<span>Voltar ao Login</span></button></div>`;
 }
 
 function _clfRender(){
@@ -9514,8 +9514,8 @@ function _clfEtapaHtml(){
     const err=_clf.erros.senha;
     campos=_clfCampo('email','E-mail',{valor:d.email,ph:'loja@email.com',tipo:'email',extra:'autocomplete="email" maxlength="160"'})
       +`<div class="clf-campo${err?' erro':''}"><label for="clf-senha">Senha</label><div class="clf-senha">
-        <input id="clf-senha" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();_clfContinuar();}"/>
-        <button type="button" class="clf-olho" aria-label="Mostrar senha" onclick="_clfOlho(this)">${_icone('eye',18)}</button></div>
+        <input id="clf-senha" type="password" placeholder="Mínimo 6 Caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();_clfContinuar();}"/>
+        <button type="button" class="clf-olho" aria-label="Mostrar Senha" onclick="_clfOlho(this)">${_icone('eye',18)}</button></div>
         ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:'<div class="clf-dica">Use pelo menos 6 caracteres.</div>'}</div>`;
   }else{
     const bloco=(i,linhas)=>`<div class="clf-rev"><div class="clf-rev-cab"><span>${_icone(_CLF_ETAPAS[i].icone,16)}${_CLF_ETAPAS[i].nome}</span><button onclick="_clfIr(${i})">${_icone('pencil',14)}Alterar</button></div>${linhas.map(([a,b])=>`<div class="clf-rev-lin"><span>${a}</span><span>${_clfEsc(b||'—')}</span></div>`).join('')}</div>`;
@@ -9692,7 +9692,7 @@ async function criarUsuario(){
 async function renderRelatoriosPage(){
   const hoje=_dataHojeBrasilia();
   const lojas=currentPerfil!=='loja'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
-  const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as Lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
   const inputStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text)';
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">${_icone('search',16,'btn-ico')}Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
@@ -9970,10 +9970,10 @@ function _renderCredito(){
     </div>
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div style="flex:2;min-width:140px">${_scLabel('NOME')}<input id="sc-f-nome" placeholder="Buscar por nome..." style="${_scInput()}"/></div>
-        <div>${_scLabel('DATA INICIO')}<input type="date" id="sc-f-ini" style="${_scInput()}"/></div>
-        <div>${_scLabel('DATA FIM')}<input type="date" id="sc-f-fim" style="${_scInput()}"/></div>
-        <div>${_scLabel('TIPO')}<select id="sc-f-tipo" style="${_scInput()}"><option value="">Todos</option><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
+        <div style="flex:2;min-width:140px">${_scLabel('Nome')}<input id="sc-f-nome" placeholder="Buscar por nome..." style="${_scInput()}"/></div>
+        <div>${_scLabel('Data Inicio')}<input type="date" id="sc-f-ini" style="${_scInput()}"/></div>
+        <div>${_scLabel('Data Fim')}<input type="date" id="sc-f-fim" style="${_scInput()}"/></div>
+        <div>${_scLabel('Tipo')}<select id="sc-f-tipo" style="${_scInput()}"><option value="">Todos</option><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
         <button onclick="_scBuscar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Buscar</button>
         <button onclick="_scAbrirModal(null)" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Cadastrar</button>
       </div>
@@ -9983,13 +9983,13 @@ function _renderCredito(){
     <div id="modal-sc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
       <div style="background:var(--card,var(--surface));border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px" id="sc-modal-titulo">Cadastrar</div>
-        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('ENTIDADE')}<select id="sc-m-ent" onchange="_scAtualizarPrevia(true)" style="${_scInput()}"></select></div>
-        <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('LANÇAMENTO')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (valor pago pela loja)</option><option value="ajuste">Ajuste manual (crédito ou débito)</option></select></div>
-        <div style="margin-bottom:14px" id="sc-m-data-wrap">${_scLabel('DATA')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
-        <div style="margin-bottom:14px" id="sc-m-tipo-wrap">${_scLabel('TIPO')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
-        <div style="margin-bottom:14px" id="sc-m-valor-wrap">${_scLabel('VALOR')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" oninput="_scAtualizarPrevia()" style="${_scInput()}"/></div>
+        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('Entidade')}<select id="sc-m-ent" onchange="_scAtualizarPrevia(true)" style="${_scInput()}"></select></div>
+        <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('Lançamento')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (valor pago pela loja)</option><option value="ajuste">Ajuste Manual (crédito ou débito)</option></select></div>
+        <div style="margin-bottom:14px" id="sc-m-data-wrap">${_scLabel('Data')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
+        <div style="margin-bottom:14px" id="sc-m-tipo-wrap">${_scLabel('Tipo')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
+        <div style="margin-bottom:14px" id="sc-m-valor-wrap">${_scLabel('Valor')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" oninput="_scAtualizarPrevia()" style="${_scInput()}"/></div>
         <div id="sc-m-previa" style="display:none;margin-bottom:14px"></div>
-        <div style="margin-bottom:22px">${_scLabel('OBSERVACOES')}<input type="text" id="sc-m-obs" placeholder="Observações..." style="${_scInput()}"/></div>
+        <div style="margin-bottom:22px">${_scLabel('Observacoes')}<input type="text" id="sc-m-obs" placeholder="Observações..." style="${_scInput()}"/></div>
         <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('modal-sc').style.display='none'" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Cancelar</button>
           <button onclick="_scSalvar()" style="flex:2;padding:10px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Salvar</button>
@@ -10107,7 +10107,7 @@ async function _scAtualizarPrevia(recarregar){
   if(j&&j.ativo){
     h+=caixa('#10b981','badge-percent',`<b>Bônus ativo até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
   }else if(j){
-    h+=caixa('#64748b','calendar',`<b>Bônus fora da janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
+    h+=caixa('#64748b','calendar',`<b>Bônus Fora da Janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
   }
   h+=`<div style="font-size:11.5px;color:var(--text3)">Data do crédito: hoje. O bônus é calculado pelo servidor no momento do lançamento.</div>`;
   box.style.display='block';box.innerHTML=h;
@@ -10164,23 +10164,23 @@ function _renderContasPagar(){
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
       <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px" id="cp-form-titulo">Cadastrar Conta a Pagar</div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-        <div>${_scLabel('MÊS/ANO')}<input type="month" id="cp-m-competencia" value="${mesAtual}" style="${_scInput()}"/></div>
-        <div style="flex:2;min-width:200px">${_scLabel('DESCRIÇÃO')}<input type="text" id="cp-m-descricao" placeholder="Ex: Aluguel escritório" style="${_scInput()}"/></div>
-        <div>${_scLabel('CATEGORIA')}<select id="cp-m-categoria" style="${_scInput()}">
+        <div>${_scLabel('Mês/Ano')}<input type="month" id="cp-m-competencia" value="${mesAtual}" style="${_scInput()}"/></div>
+        <div style="flex:2;min-width:200px">${_scLabel('Descrição')}<input type="text" id="cp-m-descricao" placeholder="Ex: Aluguel escritório" style="${_scInput()}"/></div>
+        <div>${_scLabel('Categoria')}<select id="cp-m-categoria" style="${_scInput()}">
           <option value="Aluguel">Aluguel</option><option value="Internet">Internet</option>
           <option value="Salário">Salário</option><option value="Contador">Contador</option>
           <option value="Marketing">Marketing</option><option value="Outros">Outros</option>
         </select></div>
-        <div>${_scLabel('VALOR')}<input type="number" id="cp-m-valor" min="0.01" step="0.01" placeholder="0.00" style="${_scInput()}"/></div>
-        <div>${_scLabel('STATUS')}<select id="cp-m-status" style="${_scInput()}"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
-        <div>${_scLabel('VENCIMENTO')}<input type="date" id="cp-m-vencimento" style="${_scInput()}"/></div>
+        <div>${_scLabel('Valor')}<input type="number" id="cp-m-valor" min="0.01" step="0.01" placeholder="0.00" style="${_scInput()}"/></div>
+        <div>${_scLabel('Status')}<select id="cp-m-status" style="${_scInput()}"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+        <div>${_scLabel('Vencimento')}<input type="date" id="cp-m-vencimento" style="${_scInput()}"/></div>
         <button id="cp-btn-salvar" onclick="_cpSalvar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Salvar</button>
         <button id="cp-btn-cancelar" onclick="_cpCancelarEdicao()" style="display:none;background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Cancelar</button>
       </div>
     </div></div>
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
       <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
-        <div>${_scLabel('FILTRAR POR MÊS')}<input type="month" id="cp-f-mes" style="${_scInput()}"/></div>
+        <div>${_scLabel('Filtrar por Mês')}<input type="month" id="cp-f-mes" style="${_scInput()}"/></div>
         <button onclick="_cpBuscar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Buscar</button>
         <button onclick="document.getElementById('cp-f-mes').value='';_cpBuscar()" style="background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Limpar</button>
       </div>
@@ -10244,8 +10244,8 @@ async function _cpEditar(id){
   if(g('cp-m-valor'))g('cp-m-valor').value=r.valor||'';
   if(g('cp-m-status'))g('cp-m-status').value=r.status||'pendente';
   if(g('cp-m-vencimento'))g('cp-m-vencimento').value=r.vencimento||'';
-  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Editar Conta a Pagar';
-  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar Edição';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Editar conta a pagar';
+  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar edição';
   if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='inline-block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -10258,7 +10258,7 @@ function _cpCancelarEdicao(){
   if(g('cp-m-valor'))g('cp-m-valor').value='';
   if(g('cp-m-status'))g('cp-m-status').value='pendente';
   if(g('cp-m-vencimento'))g('cp-m-vencimento').value='';
-  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Cadastrar Conta a Pagar';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Cadastrar conta a pagar';
   if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar';
   if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='none';
 }
@@ -10539,7 +10539,7 @@ async function renderVagasPage(){
       <div id="vagas-calendario"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:var(--text3)">
         <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span> Tem vaga disponível</div>
-        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block"></span> Só vagas preenchidas</div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block"></span> Só Vagas Preenchidas</div>
       </div>
     </div></div>
     <div class="card" id="vagas-dia-painel" style="margin-top:16px"></div>
@@ -10602,7 +10602,7 @@ function _vagasRenderCalendario(){
     const ehFeriado=_feriadosCache.some(f=>f.data===dataStr);
     const sel=dataStr===_vagasDiaAberto,ehHoje=dataStr===_dataHojeBrasilia();
     html+=`<div onclick="_vagasAbrirDia('${dataStr}')" data-dia="${dataStr}" style="cursor:pointer;border:${sel?'2px solid var(--accent)':'1px solid var(--border)'};border-radius:8px;padding:${sel?'7px 3px':'8px 4px'};min-height:56px;background:${sel?'rgba(26,86,219,.16)':'var(--surface2)'};position:relative;text-align:center">
-      <div style="font-size:13px;font-weight:${sel||ehHoje?800:600};color:${ehFeriado?'#f59e0b':sel?'var(--accent)':'var(--text)'}">${dia}${ehHoje?'<div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.3px">HOJE</div>':''}</div>
+      <div style="font-size:13px;font-weight:${sel||ehHoje?800:600};color:${ehFeriado?'#f59e0b':sel?'var(--accent)':'var(--text)'}">${dia}${ehHoje?'<div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.3px">Hoje</div>':''}</div>
       ${temAlguma?`<div style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${cor};display:inline-block"></span><span style="font-size:10px;color:var(--text3)">${vagasDoDia.length}</span></div>`:''}
     </div>`;
   }
@@ -10652,7 +10652,7 @@ function _vagasAbrirDia(dataStr,semRolar){
         <span style="color:var(--accent);display:inline-flex">${_icone('calendar-days',20)}</span>
         <div style="font-size:16px;font-weight:800;color:var(--text)">${dia}/${mes}/${ano}</div>
         <div style="font-size:12.5px;color:var(--text3)">${dow.replace(/^./,c=>c.toUpperCase())}</div>
-        ${passado?`<span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px">Dia já passou</span>`:''}
+        ${passado?`<span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px">Dia Já Passou</span>`:''}
       </div>
       <div class="vg-painel-grid">
         <div>
@@ -10766,7 +10766,7 @@ function _vagasAbrirAlocar(vagaId){
   modal.innerHTML=`<div class="modal" style="max-width:420px">
     <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <div class="fi" style="margin-bottom:12px"><label>CPF do motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
+      <div class="fi" style="margin-bottom:12px"><label>CPF do Motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
       <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">${_icone('search',16,'btn-ico')}Buscar</button>
       <div id="va-resultado" style="margin-top:14px"></div>
     </div>
@@ -10917,12 +10917,12 @@ function _renderGerarPagamento(){
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Início</label>
           <div style="display:flex;gap:6px">
             <input type="date" id="gp-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gp-hora-inicio" value="00:00" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
           </div></div>
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Fim</label>
           <div style="display:flex;gap:6px">
             <input type="date" id="gp-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gp-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
@@ -10961,12 +10961,12 @@ async function _carregarHistoricoSaques(append){
       <thead><tr><th>Entregador</th><th>Pedidos</th><th>Valor</th><th>Período</th><th>Status</th></tr></thead>
       <tbody>${html}</tbody>
     </table></div>
-    ${rows.length===_gpHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
+    ${rows.length===_gpHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar Mais</button></div>`:''}`;
   }
   _gpHistoricoOffset+=rows.length;
   if(append&&rows.length===_gpHistoricoPageSize){
     const btn=el.querySelector('button[onclick="_gpCarregarMais()"]');
-    if(!btn){el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>');}
+    if(!btn){el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gpCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar Mais</button></div>');}
   } else if(append){
     el.querySelector('button[onclick="_gpCarregarMais()"]')?.parentElement?.remove();
   }
@@ -10982,7 +10982,7 @@ function _gpAtualizarResumo(rows){
   const totalMotoboy=rows.reduce((s,r)=>s+r.total,0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-      <div class="stat-card"><div class="stat-label">TOTAL PAGAMENTO AOS MOTOBOYS</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Pagamento aos Motoboys</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
     </div>`;
 }
 
@@ -11045,11 +11045,11 @@ async function _calcularPagamentos(){
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com saldo a pagar</div></div>`;return;}
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todos</label>
       <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('credit-card',16,'btn-ico')}Gerar Pagamento</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total a Pagar</th><th>Chave PIX</th><th>Tipo PIX</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total a Pagar</th><th>Chave Pix</th><th>Tipo Pix</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gp-cb" value="${r.entregador.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.entregador.nome||'—'}</td>
@@ -11076,11 +11076,11 @@ async function _buscarPagamentos(){
   }
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todos</label>
       <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionados</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave Pix</th><th>Tipo Pix</th><th>Banco</th><th>Ações</th></tr></thead>
       <tbody>${saques.map(s=>{const ent=s.entregadores||{};
         const bruto=parseFloat(s.valor_bruto||s.valor||0);
         const taxa=parseFloat(s.taxa||0);
@@ -11135,7 +11135,7 @@ function _renderAprovarSaques(){
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        <div style="font-size:14px;font-weight:700;color:var(--text)">Saques pendentes de aprovação</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Saques Pendentes de Aprovação</div>
         <button onclick="_buscarPagamentos()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
       </div>
       <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
@@ -11233,23 +11233,23 @@ function renderSaqueRapidoPage(){
     <div class="page-header"><div class="page-title">${_icone('zap',22)} Saque Rápido</div><button class="btn-sm btn-primary-sm" onclick="_buscarSaquesRapidos();_srAplicarPeriodo();">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div>
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">CAIXA <span onclick="_srEditarCaixaToggle()" style="cursor:pointer" title="Definir caixa">✏️</span></div>
+        <div class="stat-label">Caixa <span onclick="_srEditarCaixaToggle()" style="cursor:pointer" title="Definir Caixa">✏️</span></div>
         <div class="stat-value" id="sr-card-caixa" style="font-size:22px;color:var(--accent)">—</div>
         <div id="sr-caixa-edit" style="display:none;margin-top:10px;gap:6px">
           <input type="number" id="sr-caixa-input" step="0.01" min="0" style="width:110px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:Inter,sans-serif;font-size:13px"/>
           <button onclick="_srSalvarCaixa()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16)}</button>
         </div>
       </div>
-      <div class="stat-card"><div class="stat-label">PAGO NO PERÍODO</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
-      <div class="stat-card"><div class="stat-label">LUCRO NO PERÍODO</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pago no Período</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
+      <div class="stat-card"><div class="stat-label">Lucro no Período</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
     </div>
     <div class="card" style="margin-bottom:20px"><div style="padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA INÍCIO</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
-      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">DATA FIM</label><input type="date" id="sr-data-fim" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
+      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">Data Início</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
+      <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">Data Fim</label><input type="date" id="sr-data-fim" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
       <button onclick="_srAplicarPeriodo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Filtrar</button>
     </div></div>
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques rápidos pendentes de aprovação</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques Rápidos Pendentes de Aprovação</div>
       <div id="sr-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
     <div id="sr-historico-wrap"></div>
@@ -11312,11 +11312,11 @@ async function _buscarSaquesRapidos(){
   }
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="sr-sel-all" onchange="_srToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todos</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="sr-sel-all" onchange="_srToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todos</label>
       <button onclick="_aprovarSaquesRapidosSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionados</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave PIX</th><th>Tipo PIX</th><th>Banco</th><th>Ações</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Chave Pix</th><th>Tipo Pix</th><th>Banco</th><th>Ações</th></tr></thead>
       <tbody>${saques.map(s=>{const ent=s.entregadores||{};
         const bruto=parseFloat(s.valor_bruto||s.valor||0);
         const taxa=parseFloat(s.taxa||0);
@@ -11413,12 +11413,12 @@ function _renderGerarCobranca(){
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Início</label>
           <div style="display:flex;gap:6px">
             <input type="date" id="gc-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gc-hora-inicio" value="00:00" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
           </div></div>
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Fim</label>
           <div style="display:flex;gap:6px">
             <input type="date" id="gc-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <input type="time" id="gc-hora-fim" value="23:59" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif;width:90px"/>
@@ -11458,12 +11458,12 @@ async function _carregarHistoricoCobrancas(append){
       <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Status / Ações</th></tr></thead>
       <tbody>${html}</tbody>
     </table></div>
-    ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>`:''}`;
+    ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar Mais</button></div>`:''}`;
   }
   _gcHistoricoOffset+=data.length;
   if(append){
     if(data.length===_gcHistoricoPageSize&&!el.querySelector('button[onclick="_gcCarregarMais()"]'))
-      el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar mais</button></div>');
+      el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar Mais</button></div>');
     else if(data.length<_gcHistoricoPageSize)
       el.querySelector('button[onclick="_gcCarregarMais()"]')?.parentElement?.remove();
   }
@@ -11492,7 +11492,7 @@ function _gcAtualizarResumo(rowsCobranca){
   const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total,0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-      <div class="stat-card"><div class="stat-label">TOTAL A COBRAR DAS LOJAS</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total a Cobrar das Lojas</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
     </div>`;
 }
 
@@ -11529,7 +11529,7 @@ async function _buscarCobrancas(){
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma loja com pedidos finalizados no período</div></div>`;return;}
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gc-sel-all" onchange="_gcToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gc-sel-all" onchange="_gcToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todas</label>
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('store',16,'btn-ico')}Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
@@ -11570,9 +11570,9 @@ function _renderAprovarCobrancas(){
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data início</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Início</label>
           <input type="date" id="ac-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
-        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data fim</label>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Fim</label>
           <input type="date" id="ac-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
         <button onclick="_buscarAprovarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
@@ -11605,7 +11605,7 @@ async function _buscarCobrancasPendentes(){
   }
   pendWrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar todas</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todas</label>
       <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionadas</button>
     </div>
     <div style="overflow-x:auto"><table>
@@ -11706,7 +11706,7 @@ async function verFaturaCobranca(cobId){
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
   const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`);
   const c=Array.isArray(cobRes)?cobRes[0]:null;
-  if(!c){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Cobrança não encontrada</div>';return;}
+  if(!c){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Cobrança Não Encontrada</div>';return;}
   const loja=c.lojas||{};
   const lojaNome=loja.nome||'—';
   const lojaEndereco=loja.endereco||'';
@@ -11761,7 +11761,7 @@ async function verFaturaCobranca(cobId){
   const invoice=`<div id="fatura-doc" style="background:#ffffff;color:#111111;color-scheme:light;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
     <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
       <img src="https://raw.githubusercontent.com/letsgodeliverybr/painel/main/logo.jpeg" height="120" style="width:auto;max-width:300px;object-fit:contain;display:block;border-radius:8px;background:#fff;padding:4px"/>
-      <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">FATURA</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
+      <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">Fatura</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
     </div>
     <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitida em:</span> ${dataEmissao}</div>
@@ -11782,10 +11782,10 @@ async function verFaturaCobranca(cobId){
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções de pagamento</div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções de Pagamento</div>
       <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px">
         <span style="font-size:18px">💠</span>
-        <div><div style="font-size:11px;font-weight:600;color:#0369a1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">PIX</div><div style="font-size:15px;font-weight:800;color:#0c4a6e;letter-spacing:.3px">CNPJ: 54.039.529/0001-48</div></div>
+        <div><div style="font-size:11px;font-weight:600;color:#0369a1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Pix</div><div style="font-size:15px;font-weight:800;color:#0c4a6e;letter-spacing:.3px">CNPJ: 54.039.529/0001-48</div></div>
       </div>
     </div>
     <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb">
@@ -11797,15 +11797,15 @@ async function verFaturaCobranca(cobId){
           <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">2</td><td style="${tdS}">Esperas</td><td style="${tdQ}">0</td><td style="${tdV};color:#9ca3af">R$ 0,00</td></tr>
           <tr><td style="${tdN}">3</td><td style="${tdS}">Gorjetas</td><td style="${tdQ}">${pedidosData.filter(p=>parseFloat(p.gorjeta)>0).length}</td><td style="${tdV};color:${totalGorjetas>0?'#059669':'#9ca3af'}">R$ ${totalGorjetas.toFixed(2)}</td></tr>
         </tbody>
-        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">TOTAL</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</td></tr></tfoot>
+        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">Total</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
     ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
       <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — ${taxaFixa>0?'taxa mínima aplicada':'juros e multa aplicados'}</div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor Original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
       ${taxaFixa>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Taxa mínima (fatura &lt; R$100)</span><span>R$ ${taxaFixa.toFixed(2)}</span></div>`:`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (2% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>`}
-      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total Atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
     </div>`:''}
     <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
       <div style="color:#111111;font-weight:700;font-size:12px;letter-spacing:.3px">#LetsGoDelivery &nbsp;&nbsp; #CadaKmUmSonho &nbsp;&nbsp; #ObrigadoPelaParceria</div>
@@ -11862,7 +11862,7 @@ function _imprimirComanda(pedidoId){
     .codigo .num{font-size:25px;font-weight:700;letter-spacing:6px}
   </style></head><body>
     <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 RETIRADA NA LOJA':'🛵 ENTREGA'}</div></div>
-    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">CÓDIGO DE COLETA (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
+    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">Código de Coleta (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
     <div class="secao">
       <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
       ${p.cliente_documento?`<div class="linha"><span>CPF/CNPJ:</span><span>${_escHtml(p.cliente_documento)}</span></div>`:''}
@@ -11874,7 +11874,7 @@ function _imprimirComanda(pedidoId){
       ${p.troco_para?`<div class="linha"><span>Troco para:</span><span>R$ ${parseFloat(p.troco_para).toFixed(2)}</span></div>`:''}
       ${p.cupom_valor?`<div class="linha"><span>Cupom:</span><span>R$ ${parseFloat(p.cupom_valor).toFixed(2)}${patrocinadores?` (${patrocinadores})`:''}</span></div>`:''}
     </div>
-    <div class="total linha"><span>TOTAL</span><span>R$ ${parseFloat(p.total_pedido||p.valor||0).toFixed(2)}</span></div>
+    <div class="total linha"><span>Total</span><span>R$ ${parseFloat(p.total_pedido||p.valor||0).toFixed(2)}</span></div>
   </body></html>`);
   w.document.close();w.focus();setTimeout(()=>w.print(),400);
 }
@@ -11956,7 +11956,7 @@ async function _dispararWhatsappFinanceiro(manual=true){
   }
   const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
   const alvo=lojas.filter(l=>l.celular);
-  if(!alvo.length){if(manual)showNotif('ℹ️ Sem lojas com WhatsApp Financeiro','','var(--text2)');return;}
+  if(!alvo.length){if(manual)showNotif('ℹ️ Sem lojas com WhatsApp financeiro','','var(--text2)');return;}
   if(manual){const conf=confirm(`Disparar mensagem financeira para ${alvo.length} loja(s)?`);if(!conf)return;}
   let ok=0,err=0;
   for(const l of alvo){
@@ -11996,7 +11996,7 @@ async function _salvarMsgWhatsapp(tipo){
   const fbId=isEmRota?'wa-emrota-fb':'wa-fin-fb';
   const msg=(document.getElementById(elId)?.value||'').trim();
   const fb=document.getElementById(fbId);
-  if(!msg){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Mensagem não pode ser vazia</span>';return;}
+  if(!msg){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Mensagem Não Pode Ser Vazia</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await _upsertConfigWa(chave,msg);
   _evolutionInvalidateCache();
@@ -12082,7 +12082,7 @@ async function _waGoAba(aba){
     const msg=(msgR&&msgR[0]?.valor)||'Olá, {loja}! 👋\n\nSegue a fatura do período de cobrança.\nEm caso de dúvidas entre em contato conosco.\n\nLet\'s Go Delivery';
     el.innerHTML=`<div class="card" style="max-width:560px">
       <div style="font-size:15px;font-weight:700;margin-bottom:4px">💵 Disparo Financeiro</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviado automaticamente toda <strong>segunda-feira às 08:01</strong> ao campo <strong>"WhatsApp Financeiro"</strong> de cada loja ativa. O painel precisa estar aberto neste horário.</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviado Automaticamente Toda <strong>segunda-feira às 08:01</strong> ao campo <strong>"WhatsApp Financeiro"</strong> de cada loja ativa. O painel precisa estar aberto neste horário.</div>
       <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-fin" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{loja}</code> nome da loja</div>
       <div id="wa-fin-fb" style="min-height:18px;margin-bottom:12px"></div>
@@ -12148,7 +12148,7 @@ async function renderDisparoNotificacoesPage(){
     </div>
 
     <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por dia da semana</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 Brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 Disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
     ${await _npRenderPeriodicos()}`;
 }
 
@@ -12250,7 +12250,7 @@ async function _npSalvarTexto(tipo){
     if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo! Já vale pro próximo disparo automático e pro botão "Enviar agora".</span>';
   }catch(e){
     console.error('[np] erro ao salvar texto:',e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
   }
 }
 
@@ -12296,7 +12296,7 @@ async function _npEnviarTodos(tipo){
     if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Enviado pra ${(res&&res.sent)||0} entregadores às ${hora}</span>`;
   }catch(e){
     console.error('[np] erro ao enviar pra todos:',e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao enviar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Enviar</span>';
   }
 }
 
@@ -12326,7 +12326,7 @@ function renderConfiguracaoPage(aba){
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
       <div style="font-size:56px;margin-bottom:16px">${abaInfo.icone}</div>
       <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:10px">${abaInfo.label}</div>
-      <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em breve</div>
+      <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:700;margin-bottom:16px">Em Breve</div>
       <div style="color:var(--text2);font-size:14px;line-height:1.6">${abaInfo.desc}</div>
     </div>`;
 }
@@ -12356,7 +12356,7 @@ function _renderConfigCliente(){
           </div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de agrupamento</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de Agrupamento</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
@@ -12365,13 +12365,13 @@ function _renderConfigCliente(){
           </div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de pedidos por rota</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de Pedidos por Rota</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
             <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
           </div>
 
           <div style="margin-bottom:28px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de espera para agrupar</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Espera para Agrupar</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
@@ -12432,7 +12432,7 @@ async function _salvarConfigCliente(){
     updated_at:new Date().toISOString()
   };
   const res=await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao salvar</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao Salvar</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
@@ -12459,8 +12459,8 @@ const _PLATAFORMAS_STATUS={'Anota AI':'em_andamento','Goomer':'em_andamento','Ca
 function _cardPlataforma(nome){
   const status=_PLATAFORMAS_STATUS[nome]||'nao_iniciado';
   const statusInfo={
-    nao_iniciado:{label:'Não iniciado',emoji:'⏳',cor:'var(--text3)'},
-    em_andamento:{label:'Em andamento',emoji:'🚧',cor:'#f59e0b'},
+    nao_iniciado:{label:'Não Iniciado',emoji:'⏳',cor:'var(--text3)'},
+    em_andamento:{label:'Em Andamento',emoji:'🚧',cor:'#f59e0b'},
     concluido:{label:'Concluído',emoji:'✅',cor:'#10b981'},
   }[status];
   return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
@@ -12473,7 +12473,7 @@ function _cardPlataforma(nome){
 function _htmlOutrasPlataformas(){
   return `<div class="card" style="max-width:720px;margin:20px auto 0">
     <div style="padding:24px 28px">
-      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">🧩 Outras plataformas</div>
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">🧩 Outras Plataformas</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Integrações planejadas — cada card muda de status conforme a gente for implementando, uma por uma.</div>
 
       <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Marketplaces</div>
@@ -12509,10 +12509,10 @@ async function _renderConfigIntegracao(){
     <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
-          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de lojas — iFood</div>
           <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('plus',16,'btn-ico')}Adicionar integração</button>
         </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao Merchant ID do app do iFood (Portal do Desenvolvedor → seu app → Merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao merchant ID do app do iFood (Portal do desenvolvedor → seu app → merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
         <div id="ifood-merchant-contador" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Carregando...</div>
         <div style="max-height:420px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px">
           <table style="width:100%;min-width:520px;border-collapse:collapse">
@@ -12560,7 +12560,7 @@ async function _carregarIfoodErros(){
     ?`Mostrando histórico completo (${logs.length} registro${logs.length===1?'':'s'}).`
     :`Mostrando os ${Math.min(_IFOOD_ERROS_LIMITE_PADRAO,logs.length)} mais recentes.`;
   if(btnWrap)btnWrap.innerHTML=_ifoodErrosCompleto
-    ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar só recentes</button>`
+    ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar Só Recentes</button>`
     :`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('scroll-text',16,'btn-ico')}Ver histórico completo</button>`;
 }
 function _toggleIfoodErrosCompleto(){
@@ -12574,13 +12574,13 @@ async function _carregarIfoodMerchantLojas(){
   if(!el)return;
   const lojas=await db('lojas','GET',null,'?select=id,nome,ifood_merchant_id&ifood_merchant_id=not.is.null&order=nome.asc');
   if(!Array.isArray(lojas)){
-    el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao carregar lojas</td></tr>';
+    el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao Carregar Lojas</td></tr>';
     if(contador)contador.textContent='—';
     return;
   }
   if(contador)contador.innerHTML=`🔗 <b>${lojas.length}</b> loja${lojas.length===1?'':'s'} vinculada${lojas.length===1?'':'s'} ao iFood`;
   if(!lojas.length){
-    el.innerHTML='<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text3)">Nenhuma loja vinculada ainda. Clique em "➕ Adicionar integração" pra vincular a primeira.</td></tr>';
+    el.innerHTML='<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text3)">Nenhuma loja vinculada ainda. Clique em "➕ adicionar integração" pra vincular a primeira.</td></tr>';
     return;
   }
   el.innerHTML=lojas.map(l=>{
@@ -12619,7 +12619,7 @@ async function _salvarIfoodMerchantId(lojaId){
   }
   const res=await dbPatch('lojas',{ifood_merchant_id:valor||null,updated_at:new Date().toISOString()},`?id=eq.${lojaId}`);
   if(res===null){
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado a outra loja</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse merchant ID já está vinculado a outra loja</span>';
     return;
   }
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
@@ -12644,7 +12644,7 @@ async function _abrirModalAdicionarIntegracaoIfood(){
     <div class="modal-header"><span class="modal-title">${_icone('plus',18)} Adicionar Integração iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-add-loja').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="padding:28px !important;max-height:75vh;overflow-y:auto">
       <div class="fi ifood-busca-wrap" style="position:relative;gap:8px">
-        <label>🏪 Buscar loja</label>
+        <label>🏪 Buscar Loja</label>
         <span class="ifood-busca-icone">🔍</span>
         <input type="text" id="ifood-add-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)"/>
       </div>
@@ -12693,13 +12693,13 @@ async function _salvarNovaIntegracaoIfood(){
   const fb=document.getElementById('ifood-add-feedback');
   if(!_ifoodAddLojaSelecionadaId){if(fb)fb.innerHTML='<span style="color:var(--red)">Selecione uma loja primeiro</span>';return;}
   const valor=(document.getElementById('ifood-add-merchant-input')?.value||'').trim();
-  if(!valor){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe o Merchant ID</span>';return;}
+  if(!valor){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe o merchant ID</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const conflito=await db('lojas','GET',null,`?ifood_merchant_id=eq.${encodeURIComponent(valor)}&select=id,nome`);
   const outraLoja=Array.isArray(conflito)?conflito.find(l=>l.id!==_ifoodAddLojaSelecionadaId):null;
   if(outraLoja){if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado à loja "${outraLoja.nome}"</span>`;return;}
   const res=await dbPatch('lojas',{ifood_merchant_id:valor,updated_at:new Date().toISOString()},`?id=eq.${_ifoodAddLojaSelecionadaId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado a outra loja</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse merchant ID já está vinculado a outra loja</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Vinculado!</span>';
   setTimeout(()=>{
     document.getElementById('modal-ifood-add-loja')?.classList.remove('open');
@@ -12732,7 +12732,7 @@ function _renderConfigOperacao(){
           <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px">Configuração de Propagação</div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de exibição por entregador</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Exibição por Entregador</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o pedido fica visível para cada entregador antes de passar ao próximo.</div>
             <div style="display:flex;align-items:center;gap:8px">
               ${_inp('op-tempo-exib','29',5,300,1,'90px')}
@@ -12766,7 +12766,7 @@ function _renderConfigOperacao(){
           </div>
 
           <div>
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de reset</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Reset</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após esse tempo sem aceite, reseta a busca e recomeça do início. Padrão: 10 min.</div>
             <div style="display:flex;align-items:center;gap:8px">
               ${_inp('op-tempo-reset','12',1,120,1,'90px')}
@@ -12785,7 +12785,7 @@ function _renderConfigOperacao(){
         </div>
 
         <div style="margin-bottom:32px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio Limite de Despacho (por cidade)</label>
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio limite de despacho (por cidade)</label>
           <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Entregadores além deste raio não recebem o pedido, evitando despacho para outra cidade. Padrão: 32 km.</div>
           <div style="display:flex;align-items:center;gap:10px">
             <input type="number" id="op-raio-limite" min="1" max="500" step="0.5" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
@@ -12874,7 +12874,7 @@ async function carregarTabelasPreco(){
   if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
   _tabelasPrecoCache=tabelas;
   tabelas.forEach(t=>console.log('[FAIXAS] tabela id:',t.id,'nome:',t.nome));
-  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar Tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 function verFaixasTabela(id){const t=_tabelasPrecoCache.find(x=>x.id===id);if(t)verFaixas(t.id,t.nome,t.tipo||'cobranca');}
 async function verFaixas(tabelaId,tabelaNome,tipo){
@@ -12884,7 +12884,7 @@ async function verFaixas(tabelaId,tabelaNome,tipo){
   ]);
   const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com Retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/Km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
@@ -12909,7 +12909,7 @@ async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
 }
 function abrirModalNovaTabela(tipo){
   _faixaCount=1;const isPag=tipo==='pagamento',cor=isPag?'#10b981':'var(--accent)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">${_icone('plus',16,'btn-ico')}Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">${_icone('check',16,'btn-ico')}Cadastrar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km Até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">${_icone('plus',16,'btn-ico')}Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/Km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">${_icone('check',16,'btn-ico')}Cadastrar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 let _faixaCount=1;
@@ -12930,7 +12930,7 @@ async function salvarNovaTabela(tipo){
 async function adicionarFaixa(tabelaId,tabelaNome,tipo){fecharModal('modal-tabela-preco');const de=prompt('Km de:','0'),ate=prompt('Km até:',''),sem=prompt('Sem retorno (R$):','0.0000'),com=prompt('Com retorno (R$):','0.0000');if(!ate)return;await db('tabelas_preco_faixas','POST',{tabela_id:tabelaId,km_de:parseFloat(de)||0,km_ate:parseFloat(ate)||0,valor_sem_retorno:parseFloat(sem)||0,valor_com_retorno:parseFloat(com)||0});showNotif('✅ Faixa adicionada!','');verFaixas(tabelaId,tabelaNome,tipo);}
 function editarFaixa(faixaId,tabelaId,tabelaNome,tipo,de,ate,sem,com){
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km de</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km de</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km Até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
@@ -13126,7 +13126,7 @@ async function renderLojaInicioPage(){
           :`<button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button>`}
         ${s.linha?`<div class="li-slide-linha">${_icone('phone',13)}<span>${s.linha.replace(/(\(\d{2}\) [\d-]+)/,'<span style="white-space:nowrap">$1</span>')}</span></div>`:''}</div>
       <div class="li-slide-arte">${_liArte(s.icone,i)}</div></div>`).join('');
-  const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos para você</div>
+  const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos para Você</div>
     <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
   body.innerHTML=`<div class="alt-page"><div class="li-wrap">
     ${cab}
@@ -13136,12 +13136,12 @@ async function renderLojaInicioPage(){
       <button class="li-seta" style="right:12px" onclick="_liIrSlide(_liSlide+1);_liIniciarTimer()" aria-label="Próximo">${_icone('chevron-right',18)}</button>
       <div class="li-pontos">${_LOJA_INICIO_SLIDES.map((_,i)=>`<button class="li-ponto${i===0?' ativo':''}" onclick="_liIrSlide(${i});_liIniciarTimer()" aria-label="Destaque ${i+1}"></button>`).join('')}</div>
     </div>
-    <div class="li-secao-titulo">Comece por aqui</div>
+    <div class="li-secao-titulo">Comece por Aqui</div>
     <div class="li-grid2">
       <div class="card li-card"><div class="li-card-icone">${_icone('clipboard-list',22)}</div><div><div class="li-card-titulo">Acesse o Gestor de Pedidos</div><div class="li-card-texto">Acompanhe seus pedidos em tempo real no mapa, com o status de cada entrega.</div><button class="li-btn" onclick="goTab('mapa')">Acessar Gestor de Pedidos</button></div></div>
-      <div class="card li-card"><div class="li-card-icone">${_icone('plus',22)}</div><div><div class="li-card-titulo">Crie uma entrega</div><div class="li-card-texto">Chame um entregador para uma nova entrega em poucos cliques.</div><button class="li-btn" onclick="_liNovoPedido()">${_icone('plus',16,'btn-ico')}Novo Pedido</button></div></div>
+      <div class="card li-card"><div class="li-card-icone">${_icone('plus',22)}</div><div><div class="li-card-titulo">Crie uma Entrega</div><div class="li-card-texto">Chame um entregador para uma nova entrega em poucos cliques.</div><button class="li-btn" onclick="_liNovoPedido()">${_icone('plus',16,'btn-ico')}Novo Pedido</button></div></div>
     </div>
-    <div class="li-secao-titulo">Resumo de hoje</div>
+    <div class="li-secao-titulo">Resumo de Hoje</div>
     <div id="li-resumo"><div class="card" style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
     ${conteudos}
   </div></div>`;
@@ -13161,8 +13161,8 @@ async function renderLojaInicioPage(){
   res.innerHTML=!lista.length
     ?`<div class="card" style="padding:28px 24px;text-align:center"><div style="color:var(--text3);margin-bottom:8px">${_icone('package',30)}</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Nenhum pedido hoje ainda</div><div style="font-size:12.5px;color:var(--text2)">Assim que os pedidos de hoje chegarem, o resumo aparece aqui.</div></div>`
     :`<div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Pedidos hoje</div><div class="stat-value">${lista.length}</div></div>
-      <div class="stat-card"><div class="stat-label">Faturamento hoje</div><div class="stat-value">${comValor.length?R(fat):'—'}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${comValor.length?`soma do valor de ${comValor.length} pedido(s) não cancelado(s)`:'valor não informado nos pedidos de hoje'}</div></div>
+      <div class="stat-card"><div class="stat-label">Pedidos Hoje</div><div class="stat-value">${lista.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Faturamento Hoje</div><div class="stat-value">${comValor.length?R(fat):'—'}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${comValor.length?`soma do valor de ${comValor.length} pedido(s) não cancelado(s)`:'valor não informado nos pedidos de hoje'}</div></div>
       <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" style="color:#22c55e!important">${fin}</div></div>
       <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" style="color:#ef4444!important">${canc}</div></div>
     </div>`;
@@ -13258,29 +13258,29 @@ async function renderLojaClientesPage(){
       <div style="font-size:9px;color:var(--text3);white-space:nowrap;overflow:visible;width:0;display:flex;justify-content:center">${i%2===0?_cliDiaMes(s.ini):'&nbsp;'}</div></div>`;}).join('');
   const maxDow=Math.max(...m.dow),diaTop=m.dow.indexOf(maxDow);
   const cardsHabitos=[
-    m.pedidosComValor>=5?`<div class="stat-card"><div class="stat-label">Ticket médio</div><div class="stat-value">${R(m.ticket)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">com base em ${N(m.pedidosComValor)} de ${N(m.pedidos90)} pedidos com valor informado (90 dias)</div></div>`:'',
-    `<div class="stat-card"><div class="stat-label">Dia com mais pedidos</div><div class="stat-value" style="font-size:22px!important">${_CLI_DIAS[diaTop].replace(/^./,c=>c.toUpperCase())}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(maxDow)} pedido(s) nos últimos 90 dias</div></div>`,
-    m.topItem?`<div class="stat-card"><div class="stat-label">Item mais pedido</div><div class="stat-value" style="font-size:20px!important">${_escHtml(m.topItem[0])}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.topItem[1])} unidade(s) nos últimos 90 dias</div></div>`:'',
+    m.pedidosComValor>=5?`<div class="stat-card"><div class="stat-label">Ticket Médio</div><div class="stat-value">${R(m.ticket)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">com base em ${N(m.pedidosComValor)} de ${N(m.pedidos90)} pedidos com valor informado (90 dias)</div></div>`:'',
+    `<div class="stat-card"><div class="stat-label">Dia com Mais Pedidos</div><div class="stat-value" style="font-size:22px!important">${_CLI_DIAS[diaTop].replace(/^./,c=>c.toUpperCase())}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(maxDow)} pedido(s) nos últimos 90 dias</div></div>`,
+    m.topItem?`<div class="stat-card"><div class="stat-label">Item Mais Pedido</div><div class="stat-value" style="font-size:20px!important">${_escHtml(m.topItem[0])}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.topItem[1])} unidade(s) nos últimos 90 dias</div></div>`:'',
   ].filter(Boolean).join('');
   body.innerHTML=`<div class="alt-page">${cab}
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Clientes identificados pelo telefone (ou nome + endereço quando não há telefone), contando só pedidos finalizados da sua loja.</div>
     <div class="stats-grid" style="margin-bottom:16px">
       <div class="stat-card"><div class="stat-label">Clientes (90 dias)</div><div class="stat-value">${N(m.total90)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.pedidos90)} pedidos finalizados</div></div>
-      <div class="stat-card"><div class="stat-label">Clientes novos (30 dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">fizeram o primeiro pedido nesse período</div></div>
+      <div class="stat-card"><div class="stat-label">Clientes Novos (30 dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">fizeram o primeiro pedido nesse período</div></div>
       <div class="stat-card"><div class="stat-label">Pediram 2x ou mais (30 dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
     </div>
     <div class="card" style="padding:16px 18px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução de clientes por semana</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução de Clientes por Semana</div>
         <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span>novos</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.45"></span>que já compravam</span></div></div>
       <div style="display:flex;align-items:flex-end;gap:6px;overflow-x:auto;padding:0 14px 2px">${barras}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:8px">Últimas 13 semanas · cada barra é uma semana (clientes diferentes que pediram)</div>
     </div>
-    <div style="font-size:14px;font-weight:700;color:var(--text);margin:4px 0 8px">Hábitos de compra</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin:4px 0 8px">Hábitos de Compra</div>
     <div class="stats-grid" style="margin-bottom:16px">${cardsHabitos}</div>
     <div class="card" style="padding:16px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text)">Clientes mais frequentes (90 dias)</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text)">Clientes Mais Frequentes (90 dias)</div>
         <input type="text" id="cli-busca" placeholder="Buscar por nome ou final do telefone..." oninput="_cliRenderLista(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:220px;outline:none"/></div>
-      <div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Telefone</th><th style="text-align:center">Pedidos</th><th>Último pedido</th><th style="text-align:center">Ticket médio</th></tr></thead><tbody id="cli-tbody"></tbody></table></div>
+      <div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Telefone</th><th style="text-align:center">Pedidos</th><th>Último Pedido</th><th style="text-align:center">Ticket Médio</th></tr></thead><tbody id="cli-tbody"></tbody></table></div>
       <div id="cli-rodape" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
     </div>
   </div>`;
@@ -13364,7 +13364,7 @@ async function _mcCarregarProdutos(catId){
   const el=document.getElementById('mc-prod-lista');if(!el)return;
   el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Carregando...</div>';
   _mcProdutos=await db('cardapio_produtos','GET',null,`?categoria_id=eq.${catId}&order=ordem.asc,created_at.asc`)||[];
-  if(!_mcProdutos.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum produto nesta categoria.<br>Clique em "+ Novo Produto".</div>';return;}
+  if(!_mcProdutos.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum produto nesta categoria.<br>Clique em "+ novo produto".</div>';return;}
   el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:4px">
     ${_mcProdutos.map(p=>`
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
@@ -13601,7 +13601,7 @@ function _rastreioPrevisaoHtml(p){
   const _prazo=_indicadorPrazoPedido(p);
   const previsaoMs=_prazo.previsaoMs,corTxt=_prazo.cor,texto=_prazo.texto;
   return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:8px 12px;margin-bottom:10px">
-    <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">PREVISÃO DE ENTREGA</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+    <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">Previsão de Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
     <div style="font-size:16px;font-weight:800;color:${corTxt}">${texto}</div>
   </div>`;
 }
@@ -13630,12 +13630,12 @@ function _rastreioRenderCard(el,p,motoboy,sk){
       ${RASTREIO_ETAPAS.map((e,i)=>(i===0?'':stepLine(i-1))+step(i,e.label)).join('')}
     </div>
     ${_rastreioPrevisaoHtml(p)}
-    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:2px">CÓDIGO PRA ENTREGA</div><div style="font-size:20px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
+    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:2px">Código pra Entrega</div><div style="font-size:20px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
     ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:8px;margin-bottom:10px">
       <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa De Suporte Com Sua Entrega?<br>Qualquer Dúvida, Nossa Equipe Está À Disposição.<br>Suporte Operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br>Qualquer dúvida, nossa equipe está À disposição.<br>Suporte Operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
       </div>
     </div>`:''}
     ${itens.length?`<div style="margin-bottom:10px">
@@ -13677,12 +13677,12 @@ function _rastreioTelaEntregue(numero,nomeLoja){
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px;font-family:'Inter',sans-serif">
       <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:64px;height:64px;border-radius:16px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.15)"/>
       <div style="font-size:44px">✅</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido Entregue!</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido entregue!</div>
       <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado Por Escolher <span id="rastreio-entregue-loja"></span> E Entregas Let's Go Delivery.</div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;width:100%;max-width:280px">
-        <div style="font-size:13px;color:var(--text2);font-weight:600">Avalie Nosso App Na Play Store</div>
+        <div style="font-size:13px;color:var(--text2);font-weight:600">Avalie nosso app na Play Store</div>
         <div style="font-size:22px;color:#eab308;letter-spacing:2px">★★★★★</div>
-        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;width:100%">⭐ Avaliar Na Play Store</a>
+        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;width:100%">⭐ Avaliar na Play Store</a>
       </div>
     </div>
   `;
@@ -13700,7 +13700,7 @@ async function _iniciarRastreioPublico(pedidoId){
     const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em,aceito_em,agendado_para`);
     const p=pedidos?.[0];
     if(!p){
-      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido Não Encontrado.</div>`;
+      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido não encontrado.</div>`;
       pararPolling=true;
       return;
     }
