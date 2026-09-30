@@ -10934,19 +10934,25 @@ async function _atualizarSaldoEntregador(entregador_id,valor){
 async function _aprovarSaquesSelecionados(){
   const ids=[...document.querySelectorAll('.as-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
-  const agora=new Date().toISOString();let ok=0;
+  // Clique duplo / duas abas: só grava 'pago' se o saque AINDA estiver
+  // pendente (filtro status=eq.pendente) e só desconta saldo quando o banco
+  // devolve a linha alterada — antes o 2º clique aprovava e descontava de novo.
+  const agora=new Date().toISOString();let ok=0,jaProcessados=0;
   for(const id of ids){
-    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}`);
-    if(res!==null){
+    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
+    if(Array.isArray(res)&&res.length){
       document.getElementById(`saque-row-${id}`)?.remove();
       ok++;
       const s=_saquesPendentesMap[id];
       if(s)await _atualizarSaldoEntregador(s.entregador_id,s.valor);
+    }else if(Array.isArray(res)){
+      document.getElementById(`saque-row-${id}`)?.remove();
+      jaProcessados++;
     }
   }
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-ok);
   renderNavSidebar(_navAtivo);
-  showNotif(`✅ ${ok} saque(s) aprovado(s)!`,'');
+  showNotif(`✅ ${ok} saque(s) aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
   _carregarResumoFinanceiro();
   _buscarPagamentos();
 }
@@ -10954,9 +10960,10 @@ async function _aprovarSaquesSelecionados(){
 async function recusarSaque(id){
   const agora=new Date().toISOString();
   const s=_saquesPendentesMap[id];
-  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}`);
+  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
   if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
   document.getElementById(`saque-row-${id}`)?.remove();
+  if(!res.length){showNotif('Saque já processado','Esse saque não estava mais pendente — nada foi alterado.','var(--yellow)');_buscarPagamentos();return;}
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
   renderNavSidebar(_navAtivo);
   console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
@@ -11082,10 +11089,13 @@ function _srToggleAll(checked){document.querySelectorAll('.sr-cb').forEach(cb=>c
 async function _aprovarSaquesRapidosSelecionados(){
   const ids=[...document.querySelectorAll('.sr-cb:checked')].map(cb=>cb.value);
   if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
-  const agora=new Date().toISOString();let ok=0,decrementoCaixa=0;
+  // Mesma trava do repasse: só aprova (e só desconta saldo/caixa) se o saque
+  // ainda estava pendente — clique duplo ou outra aba não paga duas vezes.
+  const agora=new Date().toISOString();let ok=0,decrementoCaixa=0,jaProcessados=0;
   for(const id of ids){
-    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}`);
-    if(res!==null){
+    const res=await dbPatch('saques',{status:'pago',aprovado_em:agora,updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
+    if(Array.isArray(res)&&!res.length){document.getElementById(`saque-rapido-row-${id}`)?.remove();jaProcessados++;continue;}
+    if(Array.isArray(res)&&res.length){
       document.getElementById(`saque-rapido-row-${id}`)?.remove();
       ok++;
       const s=_saquesRapidosPendentesMap[id];
@@ -11099,16 +11109,17 @@ async function _aprovarSaquesRapidosSelecionados(){
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
   if(decrementoCaixa>0)await _srPersistirCaixa(Math.max(0,_srCaixaAtual-decrementoCaixa));
-  showNotif(`✅ ${ok} saque(s) rápido(s) aprovado(s)!`,'');
+  showNotif(`✅ ${ok} saque(s) rápido(s) aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
   _buscarSaquesRapidos();
   _srAplicarPeriodo();
 }
 async function recusarSaqueRapido(id){
   const agora=new Date().toISOString();
   const s=_saquesRapidosPendentesMap[id];
-  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}`);
+  const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
   if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
   document.getElementById(`saque-rapido-row-${id}`)?.remove();
+  if(!res.length){showNotif('Saque já processado','Esse saque não estava mais pendente — nada foi alterado.','var(--yellow)');_buscarSaquesRapidos();return;}
   _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-1);
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
