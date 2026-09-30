@@ -12715,7 +12715,7 @@ const LOJA_INICIO_CONTEUDOS=[];
 const _LOJA_INICIO_SLIDES=[
   // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
   // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
-  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas para os seus pedidos próprios",texto:'Use nossos entregadores nos pedidos que você mesmo vende: WhatsApp, telefone, balcão e site próprio.',botao:'Ver planos'},
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas para os seus pedidos próprios",texto:'Use nossos entregadores nos pedidos que você mesmo vende: <br class="li-br-desk">WhatsApp, telefone, balcão e site próprio.',botao:'Ver planos'},
   // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
   // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
   // abaixo do botão.
@@ -12733,7 +12733,10 @@ function _liEstilos(){
     .li-carrossel{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--border);background:linear-gradient(135deg,#0f1b3d 0%,#101522 55%,#0d1117 100%)}
     .li-trilho{display:flex;transition:transform .5s ease}
     .li-slide{min-width:100%;display:flex;align-items:center;gap:28px;padding:32px 64px;box-sizing:border-box;min-height:230px}
-    .li-slide-texto{flex:1;min-width:0}
+    .li-slide-texto{flex:1;min-width:0;container-type:inline-size}
+    /* quebra de linha manual de um texto (<br class="li-br-desk">): só vale
+       quando a 1ª linha cabe inteira (~406px); abaixo disso o texto flui */
+    @container (max-width:419px){.li-br-desk{display:none}}
     .li-slide-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#93b4ff;margin-bottom:10px}
     .li-slide-titulo{font-size:22px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:10px}
     .li-slide-desc{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px;max-width:520px}
@@ -12755,6 +12758,7 @@ function _liEstilos(){
     .li-btn .icone.btn-ico{margin-right:0}
     @media (max-width:760px){
       .li-slide{flex-direction:column;align-items:flex-start;padding:24px 22px 40px;min-height:0}
+      .li-slide-texto{width:100%}
       .li-slide-arte{width:150px;height:110px;order:-1}
       .li-slide-titulo{font-size:18px}
       .li-seta{display:none}
