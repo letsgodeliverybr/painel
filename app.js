@@ -92,6 +92,8 @@ const ICONES_LUCIDE={
   'badge-percent':'<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m15 9-6 6"/><path d="M9 9h.01"/><path d="M15 15h.01"/>',
   'clock':'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   'qr-code':'<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
+  'chevron-up':'<path d="m18 15-6-6-6 6"/>',
+  'chevron-down':'<path d="m6 9 6 6 6-6"/>',
   'phone':'<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>',
   'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
   'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
@@ -5997,7 +5999,7 @@ function _renderTbodyEstabelecimentos(){
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da loja" aria-label="Financeiro da loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -8906,7 +8908,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da loja" aria-label="Financeiro da loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -10276,24 +10278,191 @@ async function _cpExcluir(id){
 // do painel (db() sempre usa a chave anon estática, nunca o JWT da sessão) —
 // não é uma garantia de RLS a nível de banco. Ver conversa/memória sobre a
 // auditoria de RLS/anon-vs-JWT pendente.
-async function renderFaturasLojaPage(){
-  if(!currentUser?.loja_id){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Financeiro</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
-  document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('receipt',22)} Financeiro</div></div>
-    <div id="fl-atual"></div>
-    <div class="card"><div class="card-header"><span class="card-title">📜 Histórico</span></div><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
-  </div>`;
-  _flBuscar();
+// ── Financeiro da loja (2026-09-30) ──
+// Loja de CRÉDITO: saldo + Recarregar no topo, "Extrato do Crédito"
+// (creditos_lojas: recarga, bônus, débito de entrega agrupado por dia,
+// estorno, ajuste; saldo após cada lançamento; filtro por período e tipo;
+// paginação) e "Faturas Anteriores" (histórico de quando a loja faturava).
+// Loja de FATURAMENTO: tela de sempre (só faturas), sem mudança.
+// Só leitura. Admin/suporte abrem pela lista de Lojas (abrirFinanceiroLoja).
+// Saldo = mesma conta do botão de saldo (soma de creditos_lojas); se a loja
+// tiver credito_desde (migration da troca, ainda não aplicada), conta só a
+// partir dela.
+const _FIN_POR_PAGINA=15;
+let _fin={lojaId:null,loja:null,equipe:false,linhas:[],grupos:[],pagina:0,filtro:{ini:'',fim:'',tipo:''},abertos:new Set()};
+const _FIN_TIPOS=[['','Todos os Tipos'],['recarga','Recarga Pix'],['bonus','Bônus'],['entrega','Débito de Entrega'],['estorno','Estorno de Entrega'],['ajuste','Ajuste']];
+function _finTipo(r){
+  if(r.tipo==='bonus')return'bonus';
+  const o=r.origem||'';
+  if(o==='recarga')return'recarga';
+  if(o==='entrega'||(r.tipo==='debito'&&/^entrega #/i.test(r.observacoes||'')))return'entrega';
+  if(o==='estorno'||(r.tipo==='credito'&&/^estorno #/i.test(r.observacoes||'')))return'estorno';
+  if(!o&&r.tipo==='credito')return'recarga';
+  return'ajuste';
 }
+function _finRotulo(t){return(_FIN_TIPOS.find(x=>x[0]===t)||['','Ajuste'])[1];}
+function _finSinal(r){return r.tipo==='debito'?-1:1;}
+function _finEstilos(){
+  if(document.getElementById('fin-styles'))return;
+  const st=document.createElement('style');st.id='fin-styles';
+  st.textContent=`
+  .fin-topo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 22px}
+  .fin-saldo span{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3)}
+  .fin-saldo b{display:block;font-size:30px;font-weight:800;margin-top:2px;letter-spacing:-.5px}
+  .fin-saldo small{display:block;font-size:12.5px;color:var(--text2);margin-top:4px}
+  .fin-btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:none;border-radius:10px;background:var(--accent);color:#fff;font:700 14px Inter,sans-serif;cursor:pointer}
+  .fin-btn:hover{background:#1646b5}.fin-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,86,219,.45)}
+  .fin-filtros{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--border)}
+  .fin-filtros label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.3px}
+  .fin-filtros input,.fin-filtros select{height:38px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0 10px;font:13px Inter,sans-serif}
+  .fin-lista{display:flex;flex-direction:column}
+  .fin-linha{display:grid;grid-template-columns:96px 150px 1fr 120px 120px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);font-size:13px}
+  .fin-linha.cab{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text3);padding-top:10px;padding-bottom:10px}
+  .fin-linha .v{text-align:right;font-weight:700}.fin-linha .s{text-align:right;color:var(--text2)}
+  .fin-tag{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--text)}
+  .fin-tag i{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .fin-desc{color:var(--text2);min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .fin-exp{background:none;border:none;color:var(--accent);font:600 12.5px Inter,sans-serif;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:4px}
+  .fin-sub{background:var(--surface2);padding:4px 18px 8px 126px;border-bottom:1px solid var(--border)}
+  .fin-sub div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);padding:4px 0}
+  .fin-pag{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;font-size:12.5px;color:var(--text2)}
+  .fin-pag button{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font:600 12.5px Inter,sans-serif;cursor:pointer}
+  .fin-pag button[disabled]{opacity:.4;cursor:default}
+  .fin-vazio{padding:48px 20px;text-align:center}
+  .fin-vazio .ic{width:56px;height:56px;border-radius:16px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:rgba(26,86,219,.14);color:var(--accent)}
+  .fin-vazio b{display:block;font-size:15px;color:var(--text);margin-bottom:6px}
+  .fin-vazio p{margin:0 auto 16px;max-width:380px;font-size:13px;color:var(--text2);line-height:1.5}
+  @media (max-width:760px){
+    .fin-linha{grid-template-columns:1fr auto;grid-template-areas:"tipo valor" "desc saldo" "data data";gap:4px 10px;padding:12px 14px}
+    .fin-linha.cab{display:none}
+    .fin-linha .d{grid-area:data;font-size:11.5px;color:var(--text3)}
+    .fin-linha .t{grid-area:tipo}.fin-linha .fin-desc{grid-area:desc;font-size:12.5px}
+    .fin-linha .v{grid-area:valor}.fin-linha .s{grid-area:saldo;font-size:12px}
+    .fin-sub{padding:4px 14px 8px 14px}
+    .fin-saldo b{font-size:26px}
+    .fin-topo .fin-btn{width:100%;justify-content:center}
+  }`;
+  document.head.appendChild(st);
+}
+// Admin/suporte: abre o Financeiro de uma loja específica.
+let _finVoltarPara='lojas';
+function abrirFinanceiroLoja(lojaId){_finVoltarPara=_navAtivo||'lojas';renderFaturasLojaPage(lojaId);}
+async function renderFaturasLojaPage(lojaIdEquipe){
+  const lojaId=(typeof lojaIdEquipe==='string'&&lojaIdEquipe)||currentUser?.loja_id;
+  const body=document.getElementById('app-body');
+  if(!lojaId){body.innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Financeiro</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  const equipe=lojaId!==currentUser?.loja_id;
+  const lr=await db('lojas','GET',null,`?id=eq.${lojaId}&select=*`);
+  const loja=Array.isArray(lr)&&lr[0]?lr[0]:{id:lojaId,tipo_cobranca:'faturamento'};
+  const cab=`<div class="page-header"><div class="page-title">${_icone('receipt',22)} Financeiro${equipe?` — ${_escHtml(loja.nome||'')}`:''}</div>${equipe?`<button class="btn-sm" onclick="goTab(_finVoltarPara)" style="display:inline-flex;align-items:center;gap:6px">${_icone('arrow-left',16)}Voltar</button>`:''}</div>`;
+  if(loja.tipo_cobranca!=='credito'){
+    // Faturamento: tela de sempre
+    body.innerHTML=`<div class="alt-page">
+      ${cab}
+      <div id="fl-atual"></div>
+      <div class="card"><div class="card-header"><span class="card-title">📜 Histórico</span></div><div id="fl-tabela"><div style="padding:32px;text-align:center;color:var(--text3)">Buscando...</div></div></div>
+    </div>`;
+    _flBuscar(lojaId);
+    return;
+  }
+  _finEstilos();
+  _fin={lojaId,loja,equipe,linhas:[],grupos:[],pagina:0,filtro:{ini:'',fim:'',tipo:''},abertos:new Set()};
+  body.innerHTML=`<div class="alt-page">
+    ${cab}
+    <div class="card" style="margin-bottom:16px"><div class="fin-topo" id="fin-topo"><div class="fin-saldo"><span>Saldo do Crédito</span><b>—</b><small>Carregando...</small></div></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">${_icone('wallet',18)} Extrato do Crédito</span></div>
+      <div class="fin-filtros">
+        <div><label for="fin-ini">Data Início</label><input type="date" id="fin-ini" onchange="_finFiltrar()"/></div>
+        <div><label for="fin-fim">Data Fim</label><input type="date" id="fin-fim" onchange="_finFiltrar()"/></div>
+        <div><label for="fin-tipo">Tipo</label><select id="fin-tipo" onchange="_finFiltrar()">${_FIN_TIPOS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
+      </div>
+      <div id="fin-extrato"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
+    </div>
+    <div id="fin-faturas-wrap" style="display:none">
+      <div id="fl-atual"></div>
+      <div class="card"><div class="card-header"><span class="card-title">📜 Faturas Anteriores</span></div><div id="fl-tabela"></div></div>
+    </div>
+  </div>`;
+  // extrato (todas as linhas da loja; saldo após = acumulado cronológico)
+  let rows=await _dbTodasLinhas('creditos_lojas',`?loja_id=eq.${lojaId}&select=id,tipo,valor,observacoes,data,created_at,origem&order=created_at.asc,id.asc`);
+  if(!Array.isArray(rows))rows=[];
+  if(loja.credito_desde)rows=rows.filter(r=>r.created_at>=loja.credito_desde);
+  let acc=0;
+  _fin.linhas=rows.map(r=>{acc=Math.round((acc+_finSinal(r)*(parseFloat(r.valor)||0))*100)/100;return{...r,_t:_finTipo(r),_saldo:acc};});
+  _finRenderTopo(acc);
+  _finFiltrar();
+  // faturas antigas (lojas que já faturaram)
+  const fw=document.getElementById('fin-faturas-wrap');
+  const fat=await db('cobrancas_lojas','GET',null,`?select=id&loja_id=eq.${lojaId}&limit=1`);
+  if(fw&&Array.isArray(fat)&&fat.length){fw.style.display='block';_flBuscar(lojaId);}
+}
+function _finRenderTopo(saldo){
+  const el=document.getElementById('fin-topo');if(!el)return;
+  const cor=saldo>=0?'#10b981':'#ef4444';
+  el.innerHTML=`<div class="fin-saldo"><span>Saldo do Crédito</span><b style="color:${cor}">${saldo<0?'-':''}${_rcgFmt(Math.abs(saldo))}</b>
+      <small>${saldo<=0?'Recarregue para continuar pedindo entregas.':'Cada entrega é descontada deste saldo.'}</small></div>
+    <button class="fin-btn" onclick="_abrirModalRecargaPix()">${_icone('wallet',18)}Recarregar</button>`;
+}
+// agrupa: débitos de entrega do mesmo dia viram uma linha (expansível)
+function _finAgrupar(linhas){
+  const grupos=[];
+  for(const r of linhas){ // linhas em ordem cronológica
+    const ult=grupos[grupos.length-1];
+    if(r._t==='entrega'&&ult&&ult.entrega&&ult.data===r.data){ult.itens.push(r);ult.valor+=parseFloat(r.valor)||0;ult._saldo=r._saldo;continue;}
+    grupos.push(r._t==='entrega'?{entrega:true,data:r.data,itens:[r],valor:parseFloat(r.valor)||0,_saldo:r._saldo,id:'g'+r.id}:{...r,itens:null});
+  }
+  return grupos.reverse(); // mais recente primeiro
+}
+function _finFiltrar(){
+  _fin.filtro={ini:document.getElementById('fin-ini')?.value||'',fim:document.getElementById('fin-fim')?.value||'',tipo:document.getElementById('fin-tipo')?.value||''};
+  const f=_fin.filtro;
+  const linhas=_fin.linhas.filter(r=>(!f.ini||String(r.data)>=f.ini)&&(!f.fim||String(r.data)<=f.fim)&&(!f.tipo||r._t===f.tipo));
+  _fin.grupos=_finAgrupar(linhas);_fin.pagina=0;_finRenderExtrato();
+}
+function _finPagina(d){_fin.pagina+=d;_finRenderExtrato();document.getElementById('fin-extrato')?.scrollIntoView({block:'start',behavior:'smooth'});}
+function _finToggle(id){_fin.abertos.has(id)?_fin.abertos.delete(id):_fin.abertos.add(id);_finRenderExtrato();}
+function _finRenderExtrato(){
+  const el=document.getElementById('fin-extrato');if(!el)return;
+  if(!_fin.linhas.length){
+    el.innerHTML=`<div class="fin-vazio"><div class="ic">${_icone('wallet',26)}</div><b>Nenhuma movimentação ainda</b>
+      <p>${_fin.equipe?'Esta loja ainda não tem lançamentos de crédito.':'Faça sua primeira recarga via Pix: o valor entra como crédito e cada entrega é descontada dele.'}</p>
+      <button class="fin-btn" onclick="_abrirModalRecargaPix()">${_icone('wallet',18)}Recarregar</button></div>`;return;
+  }
+  if(!_fin.grupos.length){el.innerHTML='<div class="fin-vazio"><b>Nenhum lançamento nesse filtro</b><p>Ajuste o período ou o tipo para ver outros lançamentos.</p></div>';return;}
+  const tot=_fin.grupos.length,pags=Math.ceil(tot/_FIN_POR_PAGINA);
+  if(_fin.pagina>=pags)_fin.pagina=pags-1;
+  const ini=_fin.pagina*_FIN_POR_PAGINA,pag=_fin.grupos.slice(ini,ini+_FIN_POR_PAGINA);
+  const cor={recarga:'#10b981',bonus:'#f59e0b',entrega:'#ef4444',estorno:'#3b82f6',ajuste:'#94a3b8'};
+  const sal=v=>v<0?`<span style="color:#ef4444">-${_rcgFmt(-v)}</span>`:_rcgFmt(v);
+  const val=(v,sinal)=>`<span style="color:${sinal<0?'#ef4444':'#10b981'}">${sinal<0?'−':'+'} ${_rcgFmt(Math.abs(v))}</span>`;
+  const linha=g=>{
+    if(g.entrega){
+      const aberto=_fin.abertos.has(g.id),n=g.itens.length;
+      return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor.entrega}"></i>Débito de Entrega</span>
+        <span class="fin-desc">${n} entrega${n>1?'s':''} no dia <button class="fin-exp" aria-expanded="${aberto}" onclick="_finToggle('${g.id}')">${aberto?'Ocultar':'Ver pedidos'} ${_icone(aberto?'chevron-up':'chevron-down',14)}</button></span>
+        <span class="v">${val(g.valor,-1)}</span><span class="s">${sal(g._saldo)}</span></div>
+        ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
+    }
+    return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor[g._t]}"></i>${_finRotulo(g._t)}</span>
+      <span class="fin-desc" title="${_escHtml(g.observacoes||'').replace(/"/g,'&quot;')}">${_escHtml(g.observacoes||'—')}</span>
+      <span class="v">${val(g.valor,_finSinal(g))}</span><span class="s">${sal(g._saldo)}</span></div>`;
+  };
+  el.innerHTML=`<div class="fin-lista"><div class="fin-linha cab"><span>Data</span><span>Tipo</span><span>Descrição</span><span class="v">Valor</span><span class="s">Saldo Após</span></div>${pag.map(linha).join('')}</div>
+    <div class="fin-pag"><span>${ini+1}–${Math.min(ini+_FIN_POR_PAGINA,tot)} de ${tot}</span><div style="display:flex;gap:8px">
+      <button onclick="_finPagina(-1)" ${_fin.pagina===0?'disabled':''}>${_icone('chevron-left',14)} Mais Recentes</button>
+      <button onclick="_finPagina(1)" ${_fin.pagina>=pags-1?'disabled':''}>Mais Antigos ${_icone('chevron-right',14)}</button></div></div>`;
+}
+
 // Fatura Atual = cobrança pendente mais urgente (maior atraso) da loja —
 // normalmente só existe 0 ou 1 (Gerar Cobrança não deixa gerar duas pro
 // mesmo período/loja), mas se houver mais de uma pendente por algum motivo,
 // as demais continuam aparecendo no Histórico (só saem de "pendente" quando
 // pagas/recusadas, igual antes).
-async function _flBuscar(){
+async function _flBuscar(lojaId){
+  lojaId=lojaId||currentUser?.loja_id;
   const atualWrap=document.getElementById('fl-atual');
   const histWrap=document.getElementById('fl-tabela');if(!histWrap)return;
-  const qs=`?select=*&loja_id=eq.${currentUser.loja_id}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
+  const qs=`?select=*&loja_id=eq.${lojaId}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
   const rows=await db('cobrancas_lojas','GET',null,qs);
   const todas=Array.isArray(rows)?rows:[];
   const pendentes=todas.filter(c=>c.status==='pendente');
