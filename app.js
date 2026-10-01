@@ -151,7 +151,7 @@ function _icone(nome,tam=18,classe=''){
 // menu (a tela continua, pelo botão do topo, que fica destacado quando ela
 // está aberta — ver renderNavSidebar); nomes iguais aos da loja (Pedidos,
 // Desempenho, Entrega Dedicada). Só o texto mudou: ids/rotas iguais.
-const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança e Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança E Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
 // Nomes da visão loja (2026-09-29) — só o texto exibido muda; ids/rotas
 // continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
 // Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
@@ -168,13 +168,13 @@ const NAV_ITEMS_LOJA_ADM=[{id:'loja-inicio',icon:'house',label:'Início'},{id:'p
 // cada vez. Ver regra de CNPJ/e-mail somente leitura pra loja antes de
 // construir Perfil da loja / Minha conta.
 const NAV_ITEMS_LOJA_RODAPE=[
-  {id:'mapa',icon:'clipboard-list',label:'Gestor de Pedidos'},
+  {id:'mapa',icon:'clipboard-list',label:'Gestor De Pedidos'},
   {id:'loja-configuracoes',icon:'settings',label:'Configurações',submenu:[
-    {id:'loja-config-perfil',label:'Perfil da Loja'},
+    {id:'loja-config-perfil',label:'Perfil Da Loja'},
     {id:'loja-config-horarios',label:'Horários'},
     {id:'loja-config-entrega',label:'Entrega'},
     {id:'loja-config-usuarios',label:'Usuários'},
-    {id:'loja-config-pagamento',label:'Formas de Pagamento'},
+    {id:'loja-config-pagamento',label:'Formas De Pagamento'},
     {id:'loja-config-bancarios',label:'Dados Bancários'},
   ]},
   {id:'loja-perfil',icon:'user',label:'Perfil',submenu:[
@@ -183,11 +183,11 @@ const NAV_ITEMS_LOJA_RODAPE=[
   ]},
 ];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa ao Vivo'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'}];
-const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
-const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'}];
+const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
+const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
+const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
 let _sidebarBusca='';
 const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
@@ -568,7 +568,7 @@ function _tickFaturaBanner(){
     ?'🚫 Fatura vencida! Regularize o pagamento para continuar criando entregas.'
     :_faturaAtualLoja._diasAtraso===0
     ?'⏰ Sua fatura vence hoje 18:00. Evite atrasos no pagamento.'
-    :'🧾 Fatura em aberto. Clique para ver a fatura.';
+    :'🧾 Fatura Em Aberto. Clique Para Ver A Fatura.';
   // Botão de fechar só no estado "aberta" (ainda não venceu) — "vence hoje"
   // e "vencida" não podem ser dispensados pela loja, só desaparecem quando
   // a fatura é paga/aprovada.
@@ -654,7 +654,7 @@ function _bolhaChatHtml(m){
 function _renderMensagensChat(){
   const el=document.getElementById('chat-loja-mensagens')||document.getElementById('chat-admin-mensagens');
   if(!el)return;
-  if(!_chatMensagensCache.length){el.innerHTML='<div style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Nenhuma mensagem ainda. Envie a primeira!</div>';return;}
+  if(!_chatMensagensCache.length){el.innerHTML='<div style="text-align:center;color:var(--text3);font-size:13px;margin-top:20px">Nenhuma Mensagem Ainda. Envie A Primeira!</div>';return;}
   el.innerHTML=_chatMensagensCache.map(_bolhaChatHtml).join('');
   el.scrollTop=el.scrollHeight;
 }
@@ -690,7 +690,7 @@ async function _enviarMensagemChat(){
   const payload={remetente_perfil:currentPerfil,remetente_usuario_id:currentUser?.id||null,remetente_nome:currentUser?.nome||null,texto,lida:false};
   if(_chatLojaAtual)payload.loja_id=_chatLojaAtual;else payload.entregador_id=_chatEntregadorAtual;
   const res=await db('mensagens_chat','POST',payload);
-  if(!res||res.length===0){showNotif('❌ Erro ao enviar','Não foi possível enviar a mensagem','var(--red)');input.value=texto;return;}
+  if(!res||res.length===0){showNotif('❌ Erro Ao Enviar','Não Foi Possível Enviar A Mensagem','var(--red)');input.value=texto;return;}
   await _carregarMensagensChat();
   if(currentPerfil!=='loja')await _carregarListaConversasAdmin();
 }
@@ -701,10 +701,10 @@ function _abrirChatLoja(){
   let modal=document.getElementById('modal-chat-loja');
   if(!modal){modal=document.createElement('div');modal.id='modal-chat-loja';modal.className='modal-overlay';document.body.appendChild(modal);}
   modal.innerHTML=`<div class="modal" style="max-width:480px;height:70vh;display:flex;flex-direction:column">
-    <div class="modal-header"><span class="modal-title">${_icone('message-circle',18)} Chat com o Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">${_icone('x',16)}</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('message-circle',18)} Chat Com O Suporte</span><button class="modal-close" onclick="_fecharChatLoja()">${_icone('x',16)}</button></div>
     <div id="chat-loja-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
-      <input id="chat-loja-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
+      <input id="chat-loja-input" placeholder="Digite Sua Mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
       <button onclick="_enviarMensagemChat()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Enviar</button>
     </div>
   </div>`;
@@ -732,7 +732,7 @@ async function _abrirChatAdmin(){
     <div class="chat-admin-layout" style="flex:1;display:flex;gap:14px;min-height:0;padding:0 16px 16px">
       <div style="width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:10px" id="chat-lista-conversas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="chat-painel-conversa">
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione uma conversa</div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Selecione Uma Conversa</div>
       </div>
     </div>
   </div>`;
@@ -778,7 +778,7 @@ async function _carregarListaConversasAdmin(){
   _chatConversasCache=[...porConversa.values()].sort((a,b)=>new Date(b.ultima.created_at)-new Date(a.ultima.created_at));
   _chatNaoLidasAdminCount=_chatConversasCache.reduce((s,c)=>s+c.naoLidas,0);
   renderNavSidebar(_navAtivo);
-  if(!_chatConversasCache.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma conversa ainda</div>';return;}
+  if(!_chatConversasCache.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma Conversa Ainda</div>';return;}
   el.innerHTML=_chatConversasCache.map(c=>{
     const selecionada=(c.tipo==='loja'?_chatLojaAtual===c.id:_chatEntregadorAtual===c.id);
     return`<div onclick="_abrirConversaAdmin('${c.tipo}','${c.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:${selecionada?'var(--surface2)':'transparent'};${c.urgente?'border-left:3px solid #ef4444':''}">
@@ -786,7 +786,7 @@ async function _carregarListaConversasAdmin(){
       <span style="font-weight:600;font-size:13px;color:var(--text)">${c.tipo==='loja'?'🏪':'🛵'} ${c.nome}</span>
       ${c.naoLidas>0?`<span style="background:${c.urgente?'#ef4444':'var(--accent)'};color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${c.naoLidas}</span>`:''}
     </div>
-    ${c.urgente?`<div style="font-size:10px;color:#ef4444;font-weight:700;margin-top:3px">🚨 QUER SAIR DO PEDIDO — responder rápido</div>`:''}
+    ${c.urgente?`<div style="font-size:10px;color:#ef4444;font-weight:700;margin-top:3px">🚨 Quer Sair Do Pedido — Responder Rápido</div>`:''}
     <div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(c.ultima.texto||'').substring(0,60)}</div>
   </div>`;
   }).join('');
@@ -802,7 +802,7 @@ function _abrirConversaAdmin(tipo,id){
     <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);flex-shrink:0">${tipo==='loja'?'🏪':'🛵'} ${conversa?.nome||''}</div>
     <div id="chat-admin-mensagens" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface2)"><div style="text-align:center;color:var(--text3);font-size:13px">Carregando...</div></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
-      <input id="chat-admin-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
+      <input id="chat-admin-input" placeholder="Digite Sua Mensagem..." onkeydown="if(event.key==='Enter')_enviarMensagemChat()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;outline:none"/>
       <button onclick="_enviarMensagemChat()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Enviar</button>
     </div>`;
   _carregarMensagensChat();
@@ -878,7 +878,7 @@ function _atualizarRelogioTopbar(){
   const ceoAt=document.getElementById('ceo-atualizado-ha');
   if(ceoAt&&_ceoUltimaAtualizacao){
     const min=Math.floor((Date.now()-_ceoUltimaAtualizacao)/60000);
-    ceoAt.textContent=min<1?'Atualizado agora mesmo':`Atualizado há ${min} min`;
+    ceoAt.textContent=min<1?'Atualizado Agora Mesmo':`Atualizado Há ${min} min`;
   }
 }
 _atualizarRelogioTopbar();
@@ -2153,9 +2153,9 @@ async function _criarContaAuth(email,senha){
   try{
     const r=await fetch(`${SB_URL}/auth/v1/signup`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
     const data=await r.json();
-    if(!r.ok||!data.user?.id)return{ok:false,error:data.error_description||data.msg||'Verifique o e-mail.'};
+    if(!r.ok||!data.user?.id)return{ok:false,error:data.error_description||data.msg||'Verifique O E-mail.'};
     return{ok:true,userId:data.user.id};
-  }catch{return{ok:false,error:'Erro de conexão.'};}
+  }catch{return{ok:false,error:'Erro De Conexão.'};}
 }
 
 // Redefine a senha de uma conta direto no Supabase Auth (Admin API, via
@@ -2169,7 +2169,7 @@ function _toggleSenhaVisivel(inputId,btn){
 async function _redefinirSenhaAuth(email,novaSenha){
   let sessao=null;
   try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
-  if(!sessao?.access_token)return{ok:false,error:'Sessão expirada — faça login novamente.'};
+  if(!sessao?.access_token)return{ok:false,error:'Sessão Expirada — Faça Login Novamente.'};
   try{
     const r=await fetch(`${SB_URL}/functions/v1/admin-reset-senha`,{
       method:'POST',
@@ -2179,7 +2179,7 @@ async function _redefinirSenhaAuth(email,novaSenha){
     const data=await r.json().catch(()=>({}));
     if(!r.ok)return{ok:false,error:data.error||`Erro ${r.status}`};
     return{ok:true};
-  }catch{return{ok:false,error:'Erro de conexão.'};}
+  }catch{return{ok:false,error:'Erro De Conexão.'};}
 }
 
 async function logAcao(acao,detalhes={}){
@@ -2274,7 +2274,7 @@ function verificarNovosProtos(pedidos){
   pedidos.forEach(p=>{
     if((p.status_detalhado==='pronto'||p.status==='pronto')&&!idsProntoNotificados.has(p.id)){
       idsProntoNotificados.add(p.id);tocarSomPronto();
-      showNotif('🔔 Pedido pronto!',`#${p.numero||p.id?.substring(0,6)} aguardando motoboy`,'var(--pink)');
+      showNotif('🔔 Pedido Pronto!',`#${p.numero||p.id?.substring(0,6)} aguardando motoboy`,'var(--pink)');
     }
     if(p.status==='finalizado'||p.status==='entregue')idsProntoNotificados.delete(p.id);
   });
@@ -2348,23 +2348,23 @@ async function abrirModal(id){
       _npLojasData=lojas;
       const lojaNome=!isAdm?(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||'Minha Loja'):'';
       const blocoLoja=isAdm
-        ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
+        ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
         <div style="display:flex;gap:16px;height:100%;min-height:0">
         <div style="flex:1 1 400px;min-width:280px;height:100%;overflow-y:auto;padding-right:4px">
         ${blocoLoja}
-        <div class="form-row full"><div class="fi"><label>Plataforma de Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div>
+        <div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div>
         <div class="form-row">
           <div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div>
-          <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome do Cliente"/></div>
+          <div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome Do Cliente"/></div>
         </div>
         <div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div>
         <div class="form-row full">
-          <div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
+          <div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div>
         </div>
         <div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div>
-        <div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto de Referência"/></div></div>
+        <div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div>
         <div class="form-row">
           <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div>
           <div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
@@ -2376,23 +2376,23 @@ async function abrirModal(id){
         <div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div>
         <div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div>
         <div class="form-row">
-          <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div>
+          <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div>
           <div class="fi"></div>
         </div>
-                <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div>
+                <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div>
         <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-coleta-toggle').click()">
           <input type="checkbox" id="np-coleta-toggle" onchange="_toggleColetaExterna()" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
-          <span style="font-size:13px;font-weight:600;color:var(--text2)">📦 Coleta em Outro Endereço</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">📦 Coleta Em Outro Endereço</span>
         </div>
         <div id="np-coleta-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
           <div class="form-row full">
-            <div class="fi"><label>Endereço de Coleta</label><input id="np-endereco-coleta" placeholder="Rua, Número, Bairro" autocomplete="off"/></div>
+            <div class="fi"><label>Endereço De Coleta</label><input id="np-endereco-coleta" placeholder="Rua, Número, Bairro" autocomplete="off"/></div>
           </div>
           <div id="np-coleta-feedback" style="font-size:11px;margin:2px 0 4px;min-height:14px"></div>
           <div class="form-row">
-            <div class="fi"><label>Contato na Coleta</label><input id="np-contato-coleta" placeholder="Nome do Contato"/></div>
-            <div class="fi"><label>Telefone da Coleta</label><input id="np-telefone-coleta" placeholder="(16) 99999-9999"/></div>
+            <div class="fi"><label>Contato Na Coleta</label><input id="np-contato-coleta" placeholder="Nome Do Contato"/></div>
+            <div class="fi"><label>Telefone Da Coleta</label><input id="np-telefone-coleta" placeholder="(16) 99999-9999"/></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('np-agendar-toggle').click()">
@@ -2401,7 +2401,7 @@ async function abrirModal(id){
         </div>
         <div id="np-agendar-campos" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
           <div class="form-row full">
-            <div class="fi"><label>Data e Hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
+            <div class="fi"><label>Data E Hora</label><input type="datetime-local" id="np-agendado-para" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div>
           </div>
         </div>
         <div id="np-feedback" style="margin-top:4px"></div>
@@ -2552,7 +2552,7 @@ async function _criarEntregaRapidaToggle(){
   const lbl=document.getElementById('cr-retorno-lbl');
   if(track){track.style.background=_crRetornoAtivo?'#1A56DB':'#3a3a3a';track.style.border=_crRetornoAtivo?'1px solid #1A56DB':'1px solid #555';}
   if(thumb){thumb.style.left=_crRetornoAtivo?'19px':'1px';thumb.style.background=_crRetornoAtivo?'#fff':'#666';}
-  if(lbl){lbl.textContent=_crRetornoAtivo?'Com Ret':'Sem ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
+  if(lbl){lbl.textContent=_crRetornoAtivo?'Com Ret':'Sem Ret';lbl.style.color=_crRetornoAtivo?'#1A56DB':'#888';}
   if(_crLastDistKm!==null){
     const selCrEl=document.getElementById('cr-loja-id');
     const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
@@ -2581,28 +2581,28 @@ async function _criarEntregaRapida(){
   const lojaId=selCrEl?.value||selCrEl?.options?.[selCrEl?.selectedIndex]?.value||currentUser?.loja_id||null;
   console.log('[CR] loja_id:', lojaId, '| el.value:', selCrEl?.value, '| disabled:', selCrEl?.disabled, '| currentUser.loja_id:', currentUser?.loja_id, '| perfil:', currentPerfil);
   console.log('[CR] endereco:', endereco, '| complemento:', complemento, '| retorno:', _crRetornoAtivo);
-  if(!lojaId){showNotif('Erro','Selecione uma loja!','var(--red)');return;}
-  if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');document.getElementById('cr-endereco')?.focus();return;}
+  if(!lojaId){showNotif('Erro','Selecione Uma Loja!','var(--red)');return;}
+  if(!endereco){showNotif('Erro','Endereço Obrigatório','var(--red)');document.getElementById('cr-endereco')?.focus();return;}
   if(!/\d/.test(endereco)){
-    showNotif('Número obrigatório','Digite o número da residência junto ao endereço (ex: Rua das Flores, 101)','var(--yellow)');
+    showNotif('Número Obrigatório','Digite o número da residência junto ao endereço (ex: Rua das Flores, 101)','var(--yellow)');
     const _crEl=document.getElementById('cr-endereco');
     if(_crEl){_crEl.focus();_crEl.style.borderColor='#ef4444';setTimeout(()=>{_crEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
   if(!cliente){
-    showNotif('Nome obrigatório','Preencha o nome do cliente','var(--yellow)');
+    showNotif('Nome Obrigatório','Preencha O Nome Do Cliente','var(--yellow)');
     const _clEl=document.getElementById('cr-cliente');
     if(_clEl){_clEl.focus();_clEl.style.borderColor='#ef4444';setTimeout(()=>{_clEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
   if(!telefone){
-    showNotif('Telefone obrigatório','Preencha o telefone do cliente','var(--yellow)');
+    showNotif('Telefone Obrigatório','Preencha O Telefone Do Cliente','var(--yellow)');
     const _tfEl=document.getElementById('cr-telefone');
     if(_tfEl){_tfEl.focus();_tfEl.style.borderColor='#ef4444';setTimeout(()=>{_tfEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
   if(!complemento){
-    showNotif('Complemento obrigatório','Preencha o complemento (ex: apto, bloco, ponto de referência)','var(--yellow)');
+    showNotif('Complemento Obrigatório','Preencha O Complemento (Ex: Apto, Bloco, Ponto De Referência)','var(--yellow)');
     const _cpEl=document.getElementById('cr-complemento');
     if(_cpEl){_cpEl.focus();_cpEl.style.borderColor='#ef4444';setTimeout(()=>{_cpEl.style.borderColor='#3A3A3A';},2500);}
     return;
@@ -2611,13 +2611,13 @@ async function _criarEntregaRapida(){
   // >=0, não >0 — 0 é um valor válido (pedido já pago, nada a cobrar na
   // entrega). Só bloqueia vazio/inválido (NaN) ou negativo.
   if(!(valorPedido>=0)){
-    showNotif('Valor obrigatório','Preencha o valor do pedido que o motoboy deve cobrar do cliente (0 se já estiver pago)','var(--yellow)');
+    showNotif('Valor Obrigatório','Preencha O Valor Do Pedido Que O Motoboy Deve Cobrar Do Cliente (0 Se Já Estiver Pago)','var(--yellow)');
     const _vlEl=document.getElementById('cr-valor');
     if(_vlEl){_vlEl.focus();_vlEl.style.borderColor='#ef4444';setTimeout(()=>{_vlEl.style.borderColor='#3A3A3A';},2500);}
     return;
   }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
-  if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo insuficiente','Recarregue seu saldo para criar entregas.','#f59e0b');return;}
+  if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo Insuficiente','Recarregue Seu Saldo Para Criar Entregas.','#f59e0b');return;}
   // Fatura vencida NÃO bloqueia mais a criação de entregas — só o aviso
   // visual (banner fixo + rótulo do botão) continua, ver
   // _atualizarBtnCriarEntrega(). Só saldo insuficiente (crédito) bloqueia
@@ -2629,7 +2629,7 @@ async function _criarEntregaRapida(){
   console.log('[CR] geo resultado:', geo);
   if(!geo)console.warn('[CR] geocodificação falhou — pedido será criado sem lat/lng');
   const _dupCr=await _checarEnderecoDuplicadoRecente(lojaId,geo,endereco);
-  if(_dupCr&&!confirm(`Você acabou de criar uma entrega (#${_dupCr.numero}) para este mesmo endereço há poucos minutos.\nDeseja criar outra entrega mesmo assim?`))return;
+  if(_dupCr&&!confirm(`Você Acabou De Criar Uma Entrega (#${_dupCr.numero}) Para Este Mesmo Endereço Há Poucos Minutos.\nDeseja Criar Outra Entrega Mesmo Assim?`))return;
   if((!_crLastDistKm)&&geo){
     const _lojaParaDist=allLojas.find(l=>l.id===lojaId);
     if(_lojaParaDist?.latitude&&_lojaParaDist?.longitude){
@@ -2638,7 +2638,7 @@ async function _criarEntregaRapida(){
     }
   }
   const _distKm=_crLastDistKm||0;
-  if(_distKm>32){showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
+  if(_distKm>32){showNotif('Distância Excedida','Para Distâncias Maiores Que 32km, Procure O Expansão Responsável Da Região.','var(--yellow)');return;}
   const [_faixasCr,_faixasPagCr,{cliente:_pdCliente,entregador:_pdEntregador,origemCliente:_pdOrigemCr}]=await Promise.all([_getFaixasCobranca(lojaId),_getFaixasPagamento(lojaId),_fetchPdAtual(lojaId)]);
   const _taxaEntrega=_calcTaxaLoja({distancia_km:_distKm,com_retorno:_crRetornoAtivo,taxa_entrega:0,preco_dinamico:_pdCliente,loja_id:lojaId},_faixasCr);
   const _taxaMotoboy=_calcTaxaMotoboy({distancia_km:_distKm,com_retorno:_crRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdEntregador,loja_id:lojaId},_faixasPagCr)||_taxaEntrega||null;
@@ -2651,10 +2651,10 @@ async function _criarEntregaRapida(){
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,taxa_entrega_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
-  try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha ao criar entrega','var(--red)');return;}
+  try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha Ao Criar Entrega','var(--red)');return;}
   console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
-    showNotif('✅ Entrega criada!',`#${numFinal}`);
+    showNotif('✅ Entrega Criada!',`#${numFinal}`);
     if(currentPerfil==='loja'&&lojaId&&await _deveDebitarSaldo(lojaId)){
       const _agora=new Date().toISOString();
       await db('creditos_lojas','POST',{loja_id:lojaId,tipo:'debito',valor:_taxaEntrega,observacoes:`Entrega #${numFinal}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
@@ -2670,11 +2670,11 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-gorjeta').value='';
     _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;_crDesenharRota(null);
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
-    if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem ret';lbl.style.color='#888';}
+    if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem Ret';lbl.style.color='#888';}
     atualizarTudo();
   }else{
     console.error('[CR] falha ao criar entrega — result:', result, '| pedido:', pedido);
-    showNotif('Erro','Falha ao criar entrega','var(--red)');
+    showNotif('Erro','Falha Ao Criar Entrega','var(--red)');
   }
 }
 function onChangeLoja(){calcularTaxaAuto();}
@@ -2712,10 +2712,10 @@ async function calcularTaxaAuto(forcado=false){
   // endereços reais sem número visível na rua (ex: condomínios/rodovias)
   // que só encontram via geocodificação forçada.
   if(!forcado&&!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
-  if(!lojaHid?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione uma loja primeiro</span>';return;}
+  if(!lojaHid?.value){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Selecione Uma Loja Primeiro</span>';return;}
   const lojaLat=parseFloat(lojaHid.dataset.lat),lojaLng=parseFloat(lojaHid.dataset.lng);
   if(!lojaLat||!lojaLng){if(fb)fb.innerHTML='<span style="color:#f59e0b">⚠️ Loja Sem Coordenadas GPS</span>';return;}
-  if(fb)fb.innerHTML='<span style="color:var(--text2)">📍 Calculando distância...</span>';
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">📍 Calculando Distância...</span>';
   // Geocodifica endereço de entrega (usa autocomplete se já preenchido)
   let geo=null;
   const _lat=parseFloat(document.getElementById('np-lat')?.value);
@@ -2748,7 +2748,7 @@ async function calcularTaxaAuto(forcado=false){
   if(_npBadge)_npBadge.style.display='none';
   const _gorjetaDisplay=parseFloat(document.getElementById('np-gorjeta')?.value)||0;
   const _totalDisplay=valorTaxa+_gorjetaDisplay;
-  if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada}) → taxa: R$ ${_totalDisplay.toFixed(2)}</span>`;
+  if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${distKm.toFixed(2)} km (${origemUsada}) → Taxa: R$ ${_totalDisplay.toFixed(2)}</span>`;
 }
 // Botão "📍 Recalcular" do Novo Pedido — mesmo papel do botão equivalente
 // em Editar Pedido (_epRecalcularTaxas): força uma nova tentativa de
@@ -2768,9 +2768,9 @@ const TODOS_STATUS=[
   {key:'recebido',       label:'Recebido',           cor:'#ef4444'},
   {key:'pronto',         label:'Pronto',             cor:'#e91e8c'},
   {key:'aceito',         label:'Aceito',             cor:'#eab308'},
-  {key:'chegou_no_local',label:'Chegou no Local',    cor:'#06b6d4'},
+  {key:'chegou_no_local',label:'Chegou No Local',    cor:'#06b6d4'},
   {key:'em_rota',        label:'Em Rota',            cor:'#1A56DB'},
-  {key:'chegou_destino', label:'Chegou no Destino',  cor:'#7c3aed'},
+  {key:'chegou_destino', label:'Chegou No Destino',  cor:'#7c3aed'},
   {key:'retornando',     label:'Retornando',         cor:'#16a34a'},
   {key:'finalizado',     label:'Finalizado',         cor:'#16a34a'},
   {key:'cancelado',      label:'Cancelado',          cor:'#ef4444'},
@@ -2822,7 +2822,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='pronto'){
     const _pChk=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
     if(_pChk?.motoboy_id||_pChk?.entregador_id){
-      showNotif('Pedido já tem entregador','Remova o motoboy alocado antes de marcar como pronto de novo.','var(--yellow)');
+      showNotif('Pedido Já Tem Entregador','Remova O Motoboy Alocado Antes De Marcar Como Pronto De Novo.','var(--yellow)');
       return;
     }
   }
@@ -2855,18 +2855,18 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
+  if(novoStatus==='cancelado'){showNotif('❌ Pedido Cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
   // Backend: só aplica o PATCH pra 'pronto' se ainda não tiver motoboy —
   // cobre a corrida entre abas que a checagem acima (dado em memória) não
   // pega sozinha.
   const filtro=novoStatus==='pronto'?`?id=eq.${pedidoId}&motoboy_id=is.null&entregador_id=is.null`:`?id=eq.${pedidoId}`;
   const resultPatch=await db('pedidos','PATCH',update,filtro);
   if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
-    showNotif('Pedido já tem entregador','Outra pessoa já alocou/alterou esse pedido.','var(--yellow)');
+    showNotif('Pedido Já Tem Entregador','Outra Pessoa Já Alocou/Alterou Esse Pedido.','var(--yellow)');
     await atualizarTudo();
     return;
   }
-  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido pronto!','Motoboys serão notificados','var(--pink)');}
+  if(novoStatus==='pronto'){idsProntoNotificados.delete(pedidoId);tocarSomPronto();showNotif('🔔 Pedido Pronto!','Motoboys Serão Notificados','var(--pink)');}
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const ti=_tabelaPedidosDia.findIndex(p=>p.id===pedidoId);
   if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
@@ -2921,7 +2921,7 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='cancelado'){showNotif('❌ Pedido cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
+  if(novoStatus==='cancelado'){showNotif('❌ Pedido Cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
   const resultPatch=await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
   // Trava o status local por 5s para o Realtime não sobrescrever
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
@@ -2967,16 +2967,16 @@ const _NOMES_PARCEIRO={uber:'Uber Direct',ifood:'iFood Sobre Demanda'};
 // (developer.ifood.com.br/docs/food/guides/modules/shipping/inside) pra
 // texto explicativo em português no aviso de indisponibilidade.
 const _MOTIVOS_INDISPONIVEL={
-  HighDemand:'Logística saturada no momento',
-  OffOpeningHours:'Fora do horário de funcionamento',
-  DeliveryDistanceTooHigh:'Endereço fora do raio de entrega',
-  OriginNotFound:'Loja não encontrada no iFood',
-  ServiceAreaMismatch:'Fora da área de cobertura',
-  BadRequestMerchant:'Loja temporariamente indisponível',
-  MerchantStatusAvailability:'Conta com pendências no iFood',
-  InvalidPaymentMethods:'Forma de pagamento não suportada',
-  SaturatedOfflinePayment:'Indisponível para pagamento em dinheiro',
-  NRELimitExceeded:'Limite de entregadores simultâneos atingido',
+  HighDemand:'Logística Saturada No Momento',
+  OffOpeningHours:'Fora Do Horário De Funcionamento',
+  DeliveryDistanceTooHigh:'Endereço Fora Do Raio De Entrega',
+  OriginNotFound:'Loja Não Encontrada No iFood',
+  ServiceAreaMismatch:'Fora Da Área De Cobertura',
+  BadRequestMerchant:'Loja Temporariamente Indisponível',
+  MerchantStatusAvailability:'Conta Com Pendências No iFood',
+  InvalidPaymentMethods:'Forma De Pagamento Não Suportada',
+  SaturatedOfflinePayment:'Indisponível Para Pagamento Em Dinheiro',
+  NRELimitExceeded:'Limite De Entregadores Simultâneos Atingido',
 };
 // Ícone de cada parceiro — mesmo padrão visual já usado no card pro
 // logo do iFood (quadrado colorido + imagem invertida pra branco).
@@ -3009,7 +3009,7 @@ function _htmlSobDemandaInline(p){
   const estado=_sobDemandaCotacoes[pedidoId]||{};
   const mostrarIfood=p.origem==='ifood'&&!!p.ifood_order_id;
   return `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #3A3A3A" onclick="event.stopPropagation()">
-    <div style="font-size:11px;font-weight:700;color:#ddd;margin-bottom:6px;font-family:Inter,sans-serif">Selecione uma opção de entrega parceira para este pedido</div>
+    <div style="font-size:11px;font-weight:700;color:#ddd;margin-bottom:6px;font-family:Inter,sans-serif">Selecione Uma Opção De Entrega Parceira Para Este Pedido</div>
     <div style="display:flex;flex-direction:column;gap:4px">
       ${mostrarIfood?_htmlLinhaParceiro('ifood',pedidoId,estado.ifood||{tipo:'cotando'}):''}
       ${_htmlLinhaParceiro('uber',pedidoId,estado.uber||{tipo:'cotando'})}
@@ -3021,7 +3021,7 @@ function _htmlLinhaParceiro(parceiro,pedidoId,estado){
   const icone=_htmlIconeParceiro(parceiro);
   if(estado.tipo==='cotando')return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,.03)"><div style="display:flex;align-items:center;gap:8px">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div><span style="color:#888;font-size:12px;font-family:Inter,sans-serif">Cotando…</span></div>`;
   if(estado.tipo==='indisponivel'){
-    const motivo=_MOTIVOS_INDISPONIVEL[estado.motivo]||'Indisponível no momento';
+    const motivo=_MOTIVOS_INDISPONIVEL[estado.motivo]||'Indisponível No Momento';
     return `<div style="padding:8px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25)">
       <div style="display:flex;align-items:center;gap:8px;opacity:.7">${icone}<span style="color:#ddd;font-size:13px;font-weight:600;font-family:Inter,sans-serif">${nome}</span></div>
       <div style="font-size:11px;color:#f59e0b;padding-left:32px;margin-top:2px;font-family:Inter,sans-serif">${motivo}</div>
@@ -3051,20 +3051,20 @@ async function _cotarParceiro(parceiro,pedidoId){
 async function _confirmarEntregaParceira(parceiro,pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   const nome=_NOMES_PARCEIRO[parceiro];
-  if(!confirm(`Solicitar um entregador sob demanda (${nome}) pro pedido #${p?.numero||pedidoId.substring(0,6)}? Isso cria uma entrega de verdade e pode gerar custo.`))return;
-  showNotif(`⏳ Solicitando na ${nome}…`,'','var(--text3)');
+  if(!confirm(`Solicitar Um Entregador Sob Demanda (${nome}) Pro Pedido #${p?.numero||pedidoId.substring(0,6)}? Isso Cria Uma Entrega De Verdade E Pode Gerar Custo.`))return;
+  showNotif(`⏳ Solicitando Na ${nome}…`,'','var(--text3)');
   try{
     const url=parceiro==='uber'?`${SB_URL}/functions/v1/uber-solicitar-entrega`:`${SB_URL}/functions/v1/ifood-shipping`;
     const body=parceiro==='uber'?{pedido_id:pedidoId}:{pedido_id:pedidoId,action:'solicitar'};
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.ok){showNotif(`❌ Falha ao solicitar ${nome}`,j.error||`Erro ${r.status}`,'var(--red)');return;}
-    showNotif(`✅ ${nome} solicitada!`,'Entregador sob demanda acionado.','var(--green)');
+    if(!r.ok||!j.ok){showNotif(`❌ Falha Ao Solicitar ${nome}`,j.error||`Erro ${r.status}`,'var(--red)');return;}
+    showNotif(`✅ ${nome} Solicitada!`,'Entregador Sob Demanda Acionado.','var(--green)');
     _sobDemandaExpandidoId=null;
     delete _sobDemandaCotacoes[pedidoId];
     await atualizarTudo();
   }catch(e){
-    showNotif('❌ Erro de conexão',`Falha ao solicitar ${nome}.`,'var(--red)');
+    showNotif('❌ Erro De Conexão',`Falha ao solicitar ${nome}.`,'var(--red)');
   }
 }
 async function marcarPedidoPronto(pedidoId, statusAtual){
@@ -3080,7 +3080,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   // desabilitado nesse status (ver renderPedidosLista), isso aqui cobre
   // qualquer outro caminho que chame essa função diretamente.
   if(statusAtual==='aguardando_pagamento'){
-    showNotif('⏳ Pagamento pendente','Esse pedido ainda está aguardando pagamento — não pode ser marcado como pronto.','var(--yellow)');
+    showNotif('⏳ Pagamento Pendente','Esse Pedido Ainda Está Aguardando Pagamento — Não Pode Ser Marcado Como Pronto.','var(--yellow)');
     return;
   }
   // Trava de agendamento REMOVIDA por pedido explícito do usuário
@@ -3091,7 +3091,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   // trava, esse risco volta a existir — marcar pronto manualmente num
   // agendado futuro agora dispara despacho na hora, não na hora agendada.
   const tinhaMotoboy=!!(p?.motoboy_id||p?.entregador_id);
-  if(tinhaMotoboy&&!confirm(`Desalocar o motoboy do pedido #${p?.numero||pedidoId.substring(0,6)} e voltar a ficar disponível para novo aceite?`))return;
+  if(tinhaMotoboy&&!confirm(`Desalocar O Motoboy Do Pedido #${p?.numero||pedidoId.substring(0,6)} E Voltar A Ficar Disponível Para Novo Aceite?`))return;
   const btn=document.getElementById('btn-pronto-'+pedidoId);
   if(btn){btn.style.background='#94a3b8';btn.style.cursor='default';btn.onclick=null;}
   const agora=_agoraBrasilia();
@@ -3108,7 +3108,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const filtroPatch=tinhaMotoboy?`?id=eq.${pedidoId}`:`?id=eq.${pedidoId}&status=neq.pronto`;
   const resultPatch=await db('pedidos','PATCH',update,filtroPatch);
   if(!tinhaMotoboy&&(!resultPatch||resultPatch.length===0)){
-    showNotif('Já estava pronto','Outra pessoa já marcou esse pedido como pronto.','var(--yellow)');
+    showNotif('Já Estava Pronto','Outra Pessoa Já Marcou Esse Pedido Como Pronto.','var(--yellow)');
     await atualizarTudo();
     return;
   }
@@ -3126,7 +3126,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   await logAcao('alterar_status_manual',{pedido_id:pedidoId,novo_status:'pronto',via:'botao_rapido',desalocou_motoboy:tinhaMotoboy});
   idsProntoNotificados.delete(pedidoId);
   tocarSomPronto();
-  showNotif(tinhaMotoboy?'🔓 Motoboy desalocado':'🔔 Pedido pronto!','Motoboys serão notificados','var(--pink)');
+  showNotif(tinhaMotoboy?'🔓 Motoboy Desalocado':'🔔 Pedido Pronto!','Motoboys Serão Notificados','var(--pink)');
   await atualizarTudo();
 }
 
@@ -3166,7 +3166,7 @@ async function _carregarSaldoTopbar(){
       let alertBanner=document.getElementById('saldo-alerta-banner');
       if(saldo<100){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
-        alertBanner.textContent='⚠️ Saldo baixo! Recarregue seu saldo para continuar criando entregas.';
+        alertBanner.textContent='⚠️ Saldo Baixo! Recarregue Seu Saldo Para Continuar Criando Entregas.';
         alertBanner.style.display='block';
       }else if(alertBanner){alertBanner.style.display='none';}
       _atualizarBtnCriarEntrega();
@@ -3386,7 +3386,7 @@ function _rcgCabecalho(){
     ?'Visão da equipe: esta é a tela de recarga que as lojas veem, com os pacotes e a janela de bônus de hoje. O Pix gerado aqui pode ser enviado para a loja.'
     :m==='faturamento'
     ?'No crédito pré-pago, cada entrega é descontada do saldo, sem fatura semanal. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.'
-    :'Sua loja usa o modelo pré-pago: cada entrega é descontada do saldo. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.';
+    :'Sua Loja Usa O Modelo Pré-Pago: Cada Entrega É Descontada Do Saldo. Recarregue Via Pix E O Valor Entra Como Crédito Assim Que O Pagamento É Confirmado.';
   return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-titulo" id="rcg-titulo"><div class="rcg-ico">${_icone('wallet',20)}</div>Recarregar Saldo Via Pix</div>
       <button class="rcg-x" aria-label="Fechar" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',18)}</button></div>
     <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo Atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
@@ -3395,9 +3395,9 @@ function _rcgCabecalho(){
 function _rcgAvisos(){
   const i=_rcg.info||{},j=i.janela,maxPct=_rcgBonusMaxPct(_rcg.pacotes);
   let h='';
-  if(i.primeira_recarga)h+=`<div class="rcg-aviso info">${_icone('info',16)}<div><b>O primeiro depósito é de no mínimo ${_rcgFmtCurto(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)}.</b> Depois da primeira recarga, todos os pacotes ficam disponíveis.</div></div>`;
-  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus de até ${maxPct}% ativo.</b> Bônus válido até ${_rcgDM(j.fim)}.</div></div>`;
-  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus nos 7 primeiros dias úteis de ${_rcgMes(j.proximo_inicio)}, a partir de ${_rcgDM(j.proximo_inicio)}.</div></div>`;
+  if(i.primeira_recarga)h+=`<div class="rcg-aviso info">${_icone('info',16)}<div><b>O Primeiro Depósito É De No Mínimo ${_rcgFmtCurto(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)}.</b> Depois Da Primeira Recarga, Todos Os Pacotes Ficam Disponíveis.</div></div>`;
+  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus De Até ${maxPct}% Ativo.</b> Bônus Válido Até ${_rcgDM(j.fim)}.</div></div>`;
+  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus Nos 7 Primeiros Dias Úteis De ${_rcgMes(j.proximo_inicio)}, A Partir De ${_rcgDM(j.proximo_inicio)}.</div></div>`;
   return h;
 }
 function _rcgRenderPacotes(){
@@ -3408,19 +3408,19 @@ function _rcgRenderPacotes(){
   const card=({p,idx})=>{
     const sel=_rcg.sel===idx;
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
-      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal para Começar</span>`:''}
+      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal Para Começar</span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
-      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% de Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
+      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% De Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
-      <span class="rcg-recebe">Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b></span>
+      <span class="rcg-recebe">Você Recebe <b>${_rcgFmt(_rcgRecebe(p))}</b></span>
     </button>`;
   };
   const p=_rcg.sel!=null?_rcg.pacotes[_rcg.sel]:null;
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">${_rcgAvisos()}
-      <div class="rcg-grid" role="radiogroup" aria-label="Valor da Recarga">${visiveis.map(card).join('')}</div></div>
-    <div class="rcg-foot"><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha um valor para continuar'}</div>
+      <div class="rcg-grid" role="radiogroup" aria-label="Valor Da Recarga">${visiveis.map(card).join('')}</div></div>
+    <div class="rcg-foot"><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha Um Valor Para Continuar'}</div>
       <button class="rcg-btn" id="rcg-gerar" ${p?'':'disabled'} onclick="_selecionarPacotePix(${_rcg.sel})">${_icone('qr-code',18)}${p?`Gerar Pix de ${_rcgFmtCurto(p.pago)}`:'Gerar Pix'}</button></div>
   </div>`;
 }
@@ -3440,28 +3440,28 @@ function _rcgTeclado(e,idx){
 function _selecionarPacotePix(i){
   const p=_rcg.pacotes[i];if(!p)return;
   const info=_rcg.info||{};
-  if(info.primeira_recarga&&p.pago<(info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)){showNotif('Valor abaixo do mínimo','O primeiro depósito é de no mínimo R$ 300.','var(--yellow)');return;}
+  if(info.primeira_recarga&&p.pago<(info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)){showNotif('Valor Abaixo Do Mínimo','O Primeiro Depósito É De No Mínimo R$ 300.','var(--yellow)');return;}
   _pixPayloadAtual=_gerarPixPayload(p.pago);
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
   const bonus=_rcgBonusAtivo()&&p.bonus>0?p.bonus:0,recebe=p.pago+bonus;
-  const lojaNome=_rcg.modo==='equipe'?'(informar a loja)':allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha loja';
+  const lojaNome=_rcg.modo==='equipe'?'(informar a loja)':allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha Loja';
   const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: ${_rcgFmt(p.pago)}\nCrédito a receber: ${_rcgFmt(recebe)}${bonus?` (inclui ${_rcgFmt(bonus)} de bônus)`:''}`;
   const waLink=`https://wa.me/${PIX_WHATSAPP}?text=${encodeURIComponent(msg)}`;
   const j=info.janela;
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">
-      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar aos Pacotes</button>
+      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar Aos Pacotes</button>
       <div class="rcg-pix">
-        <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR indisponível no momento — use o código copia e cola.</span></div>
+        <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR Indisponível No Momento — Use O Código Copia E Cola.</span></div>
         <div>
-          <div class="rcg-resumo"><div><span>Valor do Pix</span><b>${_rcgFmt(p.pago)}</b></div>
+          <div class="rcg-resumo"><div><span>Valor Do Pix</span><b>${_rcgFmt(p.pago)}</b></div>
             ${bonus?`<div><span>Bônus</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`:''}
-            <div class="total"><span>Você recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
+            <div class="total"><span>Você Recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
           <div class="rcg-chave"><span>Chave Pix</span><b>${PIX_CONFIG.chave}</b></div>
           <div class="rcg-acoes">
-            <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar código Pix (copia e cola)</button>
-            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar Comprovante pelo WhatsApp</a>
+            <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar Código Pix (Copia E Cola)</button>
+            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar Comprovante Pelo WhatsApp</a>
           </div>
         </div>
       </div>
@@ -3471,7 +3471,7 @@ function _selecionarPacotePix(i){
 }
 
 function _copiarCodigoPix(){
-  navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix copiado!','Cole no app do seu banco'));
+  navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix Copiado!','Cole No App Do Seu Banco'));
 }
 
 async function confirmarPagamento(pedidoId){
@@ -3491,10 +3491,10 @@ async function confirmarPagamento(pedidoId){
     _debitosRegistrados.add(pedidoId);
   }
   await logAcao('pagamento_confirmado',{pedido_id:pedidoId});
-  showNotif('✅ Pagamento confirmado!','Entrega finalizada para o motoboy');await atualizarTudo();
+  showNotif('✅ Pagamento Confirmado!','Entrega Finalizada Para O Motoboy');await atualizarTudo();
 }
 
-const STATUS_LABEL={aguardando_pagamento:'Aguardando Pagamento',recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou no local',em_rota:'Em rota',chegou_destino:'Chegou no destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na fila',agendado:'Agendado'};
+const STATUS_LABEL={aguardando_pagamento:'Aguardando Pagamento',recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou No Local',em_rota:'Em Rota',chegou_destino:'Chegou No Destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na Fila',agendado:'Agendado'};
 const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',no_local:'#38BDF8',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
@@ -3537,7 +3537,7 @@ function _indicadorPrazoPedido(p){
   // recebido/pronto ainda sem entregador aceito — espera por entregador,
   // não atraso de entrega (isso só existe depois do aceite).
   const previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
-  return{previsaoMs,cor:'#6b7280',texto:'Aguardando aceite',neutro:true};
+  return{previsaoMs,cor:'#6b7280',texto:'Aguardando Aceite',neutro:true};
 }
 
 // Item 14 do checklist de homologação iFood — banner de troca de endereço
@@ -3556,7 +3556,7 @@ function _blocoTrocaEndereco(p){
   const end=p.troca_endereco_novo;
   const enderecoTxt=[end.streetName&&end.streetNumber?`${end.streetName}, ${end.streetNumber}`:end.streetName,end.complement,end.neighborhood,end.city,end.state].filter(Boolean).join(', ');
   return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:16px">
-    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📍 Cliente Pediu Troca de Endereço</div>
+    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📍 Cliente Pediu Troca De Endereço</div>
     <div style="font-size:13px;color:#78350f;margin-bottom:8px">${enderecoTxt||'—'}</div>
     <div style="font-size:11px;color:#92400e;margin-bottom:10px">${expirado?'Prazo de 15min expirado — o iFood já rejeitou automaticamente':`Prazo: ${restanteMin}min restantes`}</div>
     <div style="display:flex;gap:8px">
@@ -3569,11 +3569,11 @@ async function _ifoodResponderTroca(pedidoId,action){
   try{
     const r=await fetch(`${SB_URL}/functions/v1/ifood-troca-endereco`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action,pedido_id:pedidoId})});
     const j=await r.json();
-    if(!r.ok||!j.ok){showNotif('Erro',j.error||'Falha ao responder troca de endereço','var(--red)');return;}
-    showNotif(action==='aceitar'?'✅ Endereço atualizado':'Troca de endereço rejeitada','','var(--green)');
+    if(!r.ok||!j.ok){showNotif('Erro',j.error||'Falha Ao Responder Troca De Endereço','var(--red)');return;}
+    showNotif(action==='aceitar'?'✅ Endereço Atualizado':'Troca De Endereço Rejeitada','','var(--green)');
     await atualizarTudo();
   }catch(e){
-    showNotif('Erro','Falha ao responder troca de endereço','var(--red)');
+    showNotif('Erro','Falha Ao Responder Troca De Endereço','var(--red)');
   }
 }
 
@@ -3586,7 +3586,7 @@ async function _abrirCancelamentoIfood(pedidoId){
   modal.innerHTML=`<div class="modal" style="max-width:420px;width:95%">
     <div class="modal-header"><span class="modal-title">Cancelar Pedido iFood</span><button class="modal-close" onclick="document.getElementById('modal-ifood-cancelar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="padding:16px">
-      <div id="ifood-cancel-body" style="font-size:13px;color:var(--text2)">⏳ Buscando motivos de cancelamento...</div>
+      <div id="ifood-cancel-body" style="font-size:13px;color:var(--text2)">⏳ Buscando Motivos De Cancelamento...</div>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -3594,11 +3594,11 @@ async function _abrirCancelamentoIfood(pedidoId){
   const j=await r.json();
   const corpo=document.getElementById('ifood-cancel-body');
   if(!corpo)return; // modal fechado enquanto buscava
-  if(!r.ok||!j.ok){corpo.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha ao buscar motivos de cancelamento').replace(/</g,'&lt;')}</span>`;return;}
+  if(!r.ok||!j.ok){corpo.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha Ao Buscar Motivos De Cancelamento').replace(/</g,'&lt;')}</span>`;return;}
   const motivos=j.motivos||[];
-  corpo.innerHTML=`<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Selecione o motivo do cancelamento pro iFood:</div>
+  corpo.innerHTML=`<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Selecione O Motivo Do Cancelamento Pro iFood:</div>
     <select id="ifood-cancel-motivo" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;margin-bottom:16px">
-      ${motivos.length?motivos.map(m=>`<option value="${String(m.code||'').replace(/"/g,'&quot;')}">${String(m.description||m.code||'').replace(/</g,'&lt;')}</option>`).join(''):'<option value="">Nenhum motivo disponível</option>'}
+      ${motivos.length?motivos.map(m=>`<option value="${String(m.code||'').replace(/"/g,'&quot;')}">${String(m.description||m.code||'').replace(/</g,'&lt;')}</option>`).join(''):'<option value="">Nenhum Motivo Disponível</option>'}
     </select>
     <div id="ifood-cancel-fb" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
     <button onclick="_confirmarCancelamentoIfood('${pedidoId}')" style="width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">Confirmar Cancelamento</button>`;
@@ -3607,16 +3607,16 @@ async function _confirmarCancelamentoIfood(pedidoId){
   const sel=document.getElementById('ifood-cancel-motivo');
   const reason=sel?.value;
   const fb=document.getElementById('ifood-cancel-fb');
-  if(!reason){if(fb)fb.innerHTML='<span style="color:#ef4444">Selecione um motivo</span>';return;}
+  if(!reason){if(fb)fb.innerHTML='<span style="color:#ef4444">Selecione Um Motivo</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">⏳ Enviando...</span>';
   try{
     const r=await fetch(`${SB_URL}/functions/v1/ifood-cancelamento`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action:'cancelar',pedido_id:pedidoId,reason})});
     const j=await r.json();
-    if(!r.ok||!j.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha ao cancelar').replace(/</g,'&lt;')}</span>`;return;}
+    if(!r.ok||!j.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">${(j.error||'Falha Ao Cancelar').replace(/</g,'&lt;')}</span>`;return;}
     document.getElementById('modal-ifood-cancelar')?.classList.remove('open');
-    showNotif('Cancelamento solicitado','Aguardando confirmação do iFood','var(--yellow)');
+    showNotif('Cancelamento Solicitado','Aguardando Confirmação Do iFood','var(--yellow)');
   }catch(e){
-    if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de Conexão</span>';
+    if(fb)fb.innerHTML='<span style="color:#ef4444">Erro De Conexão</span>';
   }
 }
 
@@ -3632,7 +3632,7 @@ function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
   return`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
     <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: <span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span></div>
     <div style="display:flex;gap:6px">
-      <input id="${inputId}" placeholder="Código Informado pelo Motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
+      <input id="${inputId}" placeholder="Código Informado Pelo Motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
       <button onclick="event.stopPropagation();_ifoodValidarCodigo('${p.id}','${action}','${inputId}')" style="background:#1A56DB;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Validar</button>
     </div>
   </div>`;
@@ -3640,15 +3640,15 @@ function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
 async function _ifoodValidarCodigo(pedidoId,action,inputId){
   const el=document.getElementById(inputId);
   const code=(el?.value||'').trim();
-  if(!code){showNotif('Digite o código','','var(--yellow)');return;}
+  if(!code){showNotif('Digite O Código','','var(--yellow)');return;}
   try{
     const r=await fetch(`${SB_URL}/functions/v1/ifood-validar-codigo`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action,pedido_id:pedidoId,code})});
     const j=await r.json();
-    if(!r.ok||!j.ok){showNotif('Código não validado',j.error||'Confere o código com o motoboy','var(--red)');return;}
-    showNotif('✅ Código validado','','var(--green)');
+    if(!r.ok||!j.ok){showNotif('Código Não Validado',j.error||'Confere O Código Com O Motoboy','var(--red)');return;}
+    showNotif('✅ Código Validado','','var(--green)');
     await atualizarTudo();
   }catch(e){
-    showNotif('Erro','Falha ao validar código','var(--red)');
+    showNotif('Erro','Falha Ao Validar Código','var(--red)');
   }
 }
 
@@ -3686,14 +3686,14 @@ function abrirInfoPedido(pedidoId){
     </div>
     <div class="modal-body" style="max-height:80vh;overflow-y:auto;padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:16px">
-        <div><div style="font-size:11px;color:var(--text3);font-weight:600">Previsão de Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);font-weight:600">Previsão De Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
         <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
       ${_blocoTrocaEndereco(p)}
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
         ${step(true,'Em Preparo')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
       </div>
-      ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens do Pedido</div>
+      ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens Do Pedido</div>
         <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
           ${itens.map(it=>`<div style="padding:8px 12px;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span></div>${it.observations?`<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${it.observations}</div>`:''}</div>`).join('')}
           ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:8px 12px;font-weight:700"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
@@ -3727,7 +3727,7 @@ function abrirInfoPedido(pedidoId){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${['retornando','chegou_destino'].includes(sk)?`<button onclick="confirmarPagamento('${p.id}');document.getElementById('modal-info-pedido').classList.remove('open')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento Recebido</button>`:''}
         <button onclick="_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir Comanda</button>
-        <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar Link de Rastreio</button>
+        <button onclick="navigator.clipboard.writeText('${linkRastreio}').then(()=>showNotif('✅ Link Copiado!',''))" style="flex:1;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">🔗 Copiar Link De Rastreio</button>
       </div>
     </div>
   </div>`;
@@ -3874,17 +3874,17 @@ async function fazerLogin(){
   const email=document.getElementById('login-email').value.trim(),senha=document.getElementById('login-senha').value,perfil=document.getElementById('login-perfil').value;
   const errEl=document.getElementById('login-error'),btn=document.getElementById('login-btn');
   errEl.style.display='none';
-  if(!email||!senha){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
+  if(!email||!senha){errEl.textContent='Preencha E-mail E Senha.';errEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Verificando...';
   let session=null;
   try{
     const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:senha})});
     if(r.ok)session=await r.json();
   }catch{}
-  if(!session?.access_token){btn.disabled=false;btn.textContent='Entrar →';errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
+  if(!session?.access_token){btn.disabled=false;btn.textContent='Entrar →';errEl.textContent='E-mail, Senha Ou Perfil Incorretos.';errEl.style.display='block';return;}
   const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true`,session.access_token);
   btn.disabled=false;btn.textContent='Entrar →';
-  if(!usuarios||usuarios.length===0){errEl.textContent='E-mail, senha ou perfil incorretos.';errEl.style.display='block';return;}
+  if(!usuarios||usuarios.length===0){errEl.textContent='E-mail, Senha Ou Perfil Incorretos.';errEl.style.display='block';return;}
   currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
   sessionStorage.setItem('lg_session',JSON.stringify({access_token:session.access_token,refresh_token:session.refresh_token,expires_at:session.expires_at}));
@@ -3954,7 +3954,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui você vai poder ver os dados da sua conta e trocar sua senha.':'Essa seção das configurações da loja ainda está sendo construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
 }
 
@@ -4030,7 +4030,7 @@ function _lojaCurvaSuave(pts){
 // _ceoAttachChartTooltip, só que num componente bem menor).
 let _lojaChartGeom=null;
 function _renderLojaChartCrescimento(buckets){
-  if(!buckets.length||!buckets.some(b=>b.faturamento>0)){_lojaChartGeom=null;return'<div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Sem dados suficientes no período</div>';}
+  if(!buckets.length||!buckets.some(b=>b.faturamento>0)){_lojaChartGeom=null;return'<div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Sem Dados Suficientes No Período</div>';}
   const W=380,H=112,padX=4,padY=10;
   const max=Math.max(1,...buckets.map(b=>b.faturamento));
   const n=buckets.length;
@@ -4116,9 +4116,9 @@ function _lojaSetPeriodoCrescimento(periodo){
       const pct=((totalFat-fatAnterior)/fatAnterior*100);
       const sinal=pct>=0?'↑':'↓';
       const cor=pct>=0?'#22c55e':'#ef4444';
-      deltaEl.innerHTML=`<span style="color:${cor};font-weight:700">${sinal} ${Math.abs(pct).toFixed(1)}%</span> <span style="color:rgba(255,255,255,.45)">vs. período anterior</span>`;
+      deltaEl.innerHTML=`<span style="color:${cor};font-weight:700">${sinal} ${Math.abs(pct).toFixed(1)}%</span> <span style="color:rgba(255,255,255,.45)">Vs. Período Anterior</span>`;
     }else{
-      deltaEl.innerHTML=`<span style="color:rgba(255,255,255,.35)">Sem período anterior pra comparar</span>`;
+      deltaEl.innerHTML=`<span style="color:rgba(255,255,255,.35)">Sem Período Anterior Pra Comparar</span>`;
     }
   }
   const chartEl=document.getElementById('loja-cresc-chart');
@@ -4173,11 +4173,11 @@ function _renderLojaBannerBoasVindas(){
       </div>
       <div style="width:min(420px,90vw);background:#12151A;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px 24px;box-shadow:0 10px 28px rgba(0,0,0,.3);animation:lojaFadeInUp .9s ease .5s both">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-          <span style="font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px">↗ Crescimento da loja</span>
+          <span style="font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px">↗ Crescimento Da Loja</span>
           <div class="loja-cresc-periodo-group">
-            <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 dias</button>
-            <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 dias</button>
-            <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 meses</button>
+            <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 Dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 Dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 Meses</button>
           </div>
         </div>
         <div style="display:flex;gap:32px;margin-bottom:8px">
@@ -4212,11 +4212,11 @@ function renderMapaPage(){
           <span class="sb-title-dark">Pedidos</span>
           <div id="sb-status-bubbles" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center"></div>
         </div>
-        <input class="sb-search-dark" id="sb-busca" placeholder="Buscar número, loja ou endereço..." oninput="filtrarSidebar(this.value)">
+        <input class="sb-search-dark" id="sb-busca" placeholder="Buscar Número, Loja Ou Endereço..." oninput="filtrarSidebar(this.value)">
       </div>
       <div class="pedidos-lista" id="pedidos-lista"><div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Carregando...</p></div></div>
       <div id="sidebar-disparar-footer" style="display:none;padding:10px 8px;border-top:1px solid var(--sb-border);background:var(--sb-bg)">
-        <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">${_icone('bike',16,'btn-ico')}Disparar Rota (0 pedidos) ++</button>
+        <button onclick="dispararRota()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#3b82f6);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(26,86,219,.4)">${_icone('bike',16,'btn-ico')}Disparar Rota (0 Pedidos) ++</button>
       </div>
     </div>
     <div id="mapa-tabela-col" style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%;min-width:0">
@@ -4230,8 +4230,8 @@ function renderMapaPage(){
           <div class="mapa-stat" style="display:flex;align-items:center;gap:5px;padding:3px 8px"><span style="font-size:13px">❌</span><div><div class="mapa-stat-val" id="ms-cancelados" style="font-size:14px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:700 !important;letter-spacing:.2px">0</div><div class="mapa-stat-label" style="font-size:9px;color:#000 !important;font-family:'Poppins',sans-serif !important;font-weight:500 !important;letter-spacing:.2px">Cancelados Hoje</div></div></div>
         </div>
         <div style="position:absolute;bottom:32px;left:12px;z-index:1000;display:flex;gap:6px">
-          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat com o Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">${_icone('message-circle',16)}<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
-          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar Todos os Motoboys" class="mapa-float-btn">${_icone('hard-hat',16)}</button>
+          <button id="${currentPerfil==='loja'?'btn-chat-loja':'btn-chat-admin'}" onclick="${currentPerfil==='loja'?'_abrirChatLoja()':'_abrirChatAdmin()'}" title="${currentPerfil==='loja'?'Chat Com O Suporte':'Chat'}" class="mapa-float-btn" style="position:relative">${_icone('message-circle',16)}<span id="${currentPerfil==='loja'?'chat-badge-loja':'chat-badge-admin'}" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;align-items:center;justify-content:center;padding:0 4px"></span></button>
+          <button id="btn-filtro-motoboys" onclick="toggleFiltroMotoboys()" title="Mostrar Todos Os Motoboys" class="mapa-float-btn">${_icone('hard-hat',16)}</button>
           <button id="btn-filtro-lojas" onclick="toggleFiltroLojas()" title="Escondendo Lojas Sem Pedido" class="mapa-float-btn">${_icone('store',16)}</button>
         </div>
         ${currentPerfil==='adm'?`<div id="alerta-saque-rapido" onclick="navGoTab('saque-rapido')" style="display:none;position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:1001;min-width:300px;max-width:420px;padding:14px 18px;background:#1e180a;border:1px solid #eab30833;border-left:4px solid #eab308;border-radius:12px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,.65);font-family:Inter,sans-serif;cursor:pointer">
@@ -4239,7 +4239,7 @@ function renderMapaPage(){
           <div style="flex:1;min-width:0;overflow:hidden">
             <div style="font-size:14px;font-weight:600;color:#fbbf24;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
             <div id="alerta-saque-rapido-titulo" style="font-size:13px;font-weight:600;color:#fbbf24;margin-bottom:3px"></div>
-            <div style="font-size:12px;color:#fbbf24;opacity:.75">Clique para ver os detalhes</div>
+            <div style="font-size:12px;color:#fbbf24;opacity:.75">Clique Para Ver Os Detalhes</div>
           </div>
           <button onclick="event.stopPropagation();document.getElementById('alerta-saque-rapido').style.display='none'" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
@@ -4248,7 +4248,7 @@ function renderMapaPage(){
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;color:#fbbf24;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Let's Go Delivery</div>
             <div id="alerta-fatura-loja-titulo" style="font-size:12px;font-weight:600;color:#fbbf24;line-height:1.5;text-wrap:balance"></div>
-            <div style="font-size:11px;color:#fbbf24;opacity:.7;margin-top:2px;white-space:nowrap">Clique para ver a fatura</div>
+            <div style="font-size:11px;color:#fbbf24;opacity:.7;margin-top:2px;white-space:nowrap">Clique Para Ver A Fatura</div>
           </div>
           <button id="alerta-fatura-loja-fechar" onclick="event.stopPropagation();_fecharAlertaFaturaLoja()" style="display:none;flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;color:#64748b;line-height:1;align-self:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>`:''}
@@ -4257,16 +4257,16 @@ function renderMapaPage(){
       <div id="mapa-resize-handle" class="mapa-resize-handle"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
         <div class="cr-toolbar">
-          <select id="cr-loja-id" class="cr-input" style="max-width:150px"><option value="">Selecione a loja...</option></select>
+          <select id="cr-loja-id" class="cr-input" style="max-width:150px"><option value="">Selecione A Loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº Pedido" class="cr-input" style="width:70px"/>
           <div class="cr-divider"></div>
-          <input id="cr-cliente" placeholder="Nome do Cliente" class="cr-input" style="width:140px"/>
+          <input id="cr-cliente" placeholder="Nome Do Cliente" class="cr-input" style="width:140px"/>
           <input id="cr-telefone" placeholder="Telefone" type="tel" class="cr-input" style="width:120px"/>
           <input id="cr-endereco" placeholder="Endereço + Nº" oninput="_crCalcularTaxaDebounce()" onblur="_crCalcularTaxa()" onfocus="iniciarAutocompleteEndereco('cr-endereco','','','')" class="cr-input" style="width:210px"/>
           <input id="cr-complemento" placeholder="Complemento" class="cr-input" style="width:100px"/>
           <input id="cr-valor" placeholder="Valor R$" type="number" step="0.01" min="0" value="" class="cr-input" style="width:80px"/>
           <input id="cr-gorjeta" placeholder="Gorjeta R$" type="number" step="0.50" min="0" value="" class="cr-input" style="width:80px"/>
-          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:var(--surface2);border-radius:11px;position:relative;transition:background .2s;border:1px solid var(--border);flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:var(--text3);border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:var(--text3);font-size:11px;font-weight:600;white-space:nowrap">Sem ret</span></div>
+          <div id="cr-retorno-btn" onclick="_criarEntregaRapidaToggle()" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0"><div id="cr-retorno-track" style="width:40px;height:22px;background:var(--surface2);border-radius:11px;position:relative;transition:background .2s;border:1px solid var(--border);flex-shrink:0"><div id="cr-retorno-thumb" style="width:18px;height:18px;background:var(--text3);border-radius:50%;position:absolute;top:1px;left:1px;transition:left .2s,background .2s"></div></div><span id="cr-retorno-lbl" style="color:var(--text3);font-size:11px;font-weight:600;white-space:nowrap">Sem Ret</span></div>
           <span id="cr-dist-km" style="font-size:11px;color:#60a5fa;font-weight:700;white-space:nowrap;min-width:40px"></span>
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
@@ -4329,7 +4329,7 @@ function renderMapaPage(){
         selCr.style.opacity='0.7';selCr.style.cursor='default';
       }
     } else {
-      db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione a loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
+      db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione A Loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
     }
     setInterval(_verificarAgendados,60000);
     setInterval(processarPontosAutomaticos,60000);
@@ -4347,7 +4347,7 @@ async function _verificarAgendados(){
     await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`);
     idsProntoNotificados.delete(p.id);
     tocarSomPronto();
-    showNotif(`🔔 Pedido #${p.numero||p.id.substring(0,6)} — Agendamento ativado!`,'','var(--pink)');
+    showNotif(`🔔 Pedido #${p.numero||p.id.substring(0,6)} — Agendamento Ativado!`,'','var(--pink)');
   }
   if(vencidos.length) atualizarTudo();
 }
@@ -4378,7 +4378,7 @@ function _iconsLogistica(p){
   const icons=[
     p.com_retorno?`<span title="Com Retorno">🔄</span>`:'',
     parseFloat(p.gorjeta)>0?`<span title="Com Gorjeta">🎁</span>`:'',
-    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção Global">📅</span>`:`<span title="Taxa Dinâmica (cidade)">🌧️</span>`):'',
+    parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção Global">📅</span>`:`<span title="Taxa Dinâmica (Cidade)">🌧️</span>`):'',
   ].filter(Boolean);
   return icons.length?`<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px">${icons.join('')}</span>`:'—';
 }
@@ -4418,7 +4418,7 @@ function _buildTabelaRows(filtered,from){
 function _tabelaAnexarSentinela(){
   const el=document.getElementById('tabela-mapa-body');if(!el)return;
   if(_tabelaScrollOffset>=_tabelaScrollFiltered.length){
-    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:var(--text3);font-size:12px;background:var(--bg)">✓ Todos os Pedidos Carregados</td></tr>`);
+    el.insertAdjacentHTML('beforeend',`<tr><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="text-align:center;padding:12px;color:var(--text3);font-size:12px;background:var(--bg)">✓ Todos Os Pedidos Carregados</td></tr>`);
     return;
   }
   el.insertAdjacentHTML('beforeend',`<tr id="tabela-sentinel"><td colspan="${currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13}" style="padding:10px;text-align:center;background:var(--bg)"><div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div></td></tr>`);
@@ -4446,7 +4446,7 @@ async function renderTabelaMapa(){
   });
   _tabelaScrollFiltered=filtered;_tabelaScrollOffset=0;
   const _cols=currentPerfil==='loja'?11:currentPerfil==='suporte'?9:13;
-  if(!filtered.length){el.innerHTML=`<tr><td colspan="${_cols}" style="text-align:center;padding:32px 20px;color:var(--text3)"><div style="font-size:22px;margin-bottom:6px;opacity:.5">📭</div>Nenhum pedido encontrado</td></tr>`;return;}
+  if(!filtered.length){el.innerHTML=`<tr><td colspan="${_cols}" style="text-align:center;padding:32px 20px;color:var(--text3)"><div style="font-size:22px;margin-bottom:6px;opacity:.5">📭</div>Nenhum Pedido Encontrado</td></tr>`;return;}
   await _preCarregarFaixasLojas(filtered);
   el.innerHTML=_buildTabelaRows(filtered,0);
   _tabelaScrollOffset=Math.min(_TABELA_PAGE,filtered.length);
@@ -4561,7 +4561,7 @@ function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'
 // mesma coisa de sempre (índice em _LOJAS_TITLES/_LOJAS_CORES) — só o
 // valor inicial e a ordem do ciclo mudaram, não o que cada estado faz.
 let _estadoLojas=1;
-const _LOJAS_TITLES=['Mostrar todas as lojas','Escondendo lojas sem pedido','Lojas ocultas'];
+const _LOJAS_TITLES=['Mostrar todas as lojas','Escondendo Lojas Sem Pedido','Lojas Ocultas'];
 // Cor também invertida entre os índices 0 e 1 (achado visual, 2026-09-03):
 // a lógica virou mas o estilo continuava marcando o estado 0 (mostrar
 // todas, agora o não-padrão/ativado por clique) como neutro — o destaque
@@ -4592,7 +4592,7 @@ function toggleFiltroLojas(){
 let _estadoMotoboys=0;
 let _detalheColapsado=new Set();
 function toggleDetalheCard(id){if(_detalheColapsado.has(id))_detalheColapsado.delete(id);else _detalheColapsado.add(id);renderPedidosLista();}
-const _MOTO_TITLES=['Mostrar todos os motoboys','Só disponíveis sem pedido','Só com entrega em andamento','Motoboys ocultos'];
+const _MOTO_TITLES=['Mostrar todos os motoboys','Só Disponíveis Sem Pedido','Só Com Entrega Em Andamento','Motoboys Ocultos'];
 const _MOTO_CORES=['transparent','#eab308','#3b82f6','#ef4444'];
 function toggleFiltroMotoboys(){
   _estadoMotoboys=(_estadoMotoboys+1)%4;
@@ -4602,7 +4602,7 @@ function toggleFiltroMotoboys(){
 }
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
-function _copiarRastreio(id){const url=window.location.origin+window.location.pathname+'?rastrear='+id;navigator.clipboard.writeText(url).then(()=>showNotif('✅ Link copiado!',''));}
+function _copiarRastreio(id){const url=window.location.origin+window.location.pathname+'?rastrear='+id;navigator.clipboard.writeText(url).then(()=>showNotif('✅ Link Copiado!',''));}
 
 function _aplicarLockStatus(lista){
   for(const [id,lock] of _pedidoStatusLock){
@@ -4703,20 +4703,20 @@ function renderPedidosLista(){
       return n?`<span style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
     }).join('');
   }
-  if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum pedido</p></div>';return;}
+  if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum Pedido</p></div>';return;}
   const STATUS_BUBBLES=[
     {key:'recebido',color:'#EF4444',label:'Recebido'},
     {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
-    {key:'chegou_local',color:'#38BDF8',label:'Chegou no Local'},
+    {key:'chegou_local',color:'#38BDF8',label:'Chegou No Local'},
     {key:'em_rota',color:'#1A56DB',label:'Em Rota'},
-    {key:'chegou_destino',color:'#7C3AED',label:'Chegou no Destino'},
+    {key:'chegou_destino',color:'#7C3AED',label:'Chegou No Destino'},
     {key:'retornando',color:'#10B981',label:'Retornando'},
   ];
   const grupos={};
   filtered.forEach(p=>{
     const key=p.loja_id||'__sem__';
-    if(!grupos[key]){const loja=allLojas.find(l=>l.id===p.loja_id);grupos[key]={nome:loja?.nome||'Sem loja',pedidos:[]};}
+    if(!grupos[key]){const loja=allLojas.find(l=>l.id===p.loja_id);grupos[key]={nome:loja?.nome||'Sem Loja',pedidos:[]};}
     grupos[key].pedidos.push(p);
   });
   lista.innerHTML=Object.entries(grupos).map(([key,grupo])=>{
@@ -4761,15 +4761,15 @@ function renderPedidosLista(){
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
       const expandido=isExpanded?`
         <div style="margin-top:10px;border-top:1px solid var(--sb-border);padding-top:10px">
-          ${itens.length?`<div style="margin-bottom:12px">${_sec('📦 Itens do Pedido')}
+          ${itens.length?`<div style="margin-bottom:12px">${_sec('📦 Itens Do Pedido')}
             ${itens.map(it=>`<div style="padding:3px 0;border-bottom:1px solid var(--sb-border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>${it.observations?`<div style="font-size:10px;color:var(--sb-text3);margin-top:1px">💬 ${it.observations}</div>`:''}</div>`).join('')}
             ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
             ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}${p.bandeira_cartao?` (${p.bandeira_cartao})`:''}${p.troco_para?` — troco para R$ ${parseFloat(p.troco_para).toFixed(2)}`:''}</div>`:''}
             ${p.cupom_valor?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">🏷️ Cupom: R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
           </div>`:''}
           ${p.codigo_confirmacao?`<div style="background:var(--surface2);border:1px solid var(--sb-border);border-radius:8px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:9px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:3px">Código</div><div style="font-size:22px;font-weight:800;letter-spacing:8px;color:var(--sb-text)">${p.codigo_confirmacao}</div></div>`:''}
-          ${_blocoCodigoIfood(p,'coleta','📦 Código de coleta (iFood)',p.ifood_pickup_code,p.ifood_pickup_validado_em)}
-          ${_blocoCodigoIfood(p,'entrega','🔑 Código de entrega (iFood)',p.ifood_delivery_code,p.ifood_entrega_validada_em)}
+          ${_blocoCodigoIfood(p,'coleta','📦 Código De Coleta (iFood)',p.ifood_pickup_code,p.ifood_pickup_validado_em)}
+          ${_blocoCodigoIfood(p,'entrega','🔑 Código De Entrega (iFood)',p.ifood_delivery_code,p.ifood_entrega_validada_em)}
           ${loja?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">${_sec('🏪 Loja')}
             <div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${loja.nome||'—'}</div>
             ${loja.telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${loja.telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">📞 ${loja.telefone}</a></div>`:''}
@@ -4784,7 +4784,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:13px;font-weight:600;color:var(--sb-text);margin-bottom:3px">${clienteNome}</div>`:''}
             ${p.cliente_documento?`<div style="font-size:11px;color:var(--sb-text3);margin-bottom:3px">🪪 ${p.cliente_documento}</div>`:''}
             ${telefone?`<div style="font-size:12px;margin-bottom:3px"><a href="https://wa.me/55${telefone.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:#25D366;font-weight:600;text-decoration:none">${telefone}</a></div>`:''}
-            ${p.retirada?`<div style="font-size:11px;margin-bottom:2px;font-weight:700;color:var(--sb-text2)">🏪 Retirada na Loja</div>`:(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
+            ${p.retirada?`<div style="font-size:11px;margin-bottom:2px;font-weight:700;color:var(--sb-text2)">🏪 Retirada Na Loja</div>`:(p.endereco_entrega||p.endereco)?`<div style="font-size:11px;margin-bottom:2px">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco_entrega||p.endereco)}" target="_blank" onclick="event.stopPropagation()" style="color:#60a5fa;text-decoration:none">${p.endereco_entrega||p.endereco}</a></div>`:''}
             ${p.observacoes?`<div style="font-size:11px;color:var(--sb-text3);margin-top:4px;background:var(--surface);border-radius:5px;padding:4px 6px">💬 ${p.observacoes}</div>`:''}
           </div>
           ${p.troca_endereco_novo&&p.troca_endereco_solicitada_em?_blocoTrocaEndereco(p):''}
@@ -4806,7 +4806,7 @@ function renderPedidosLista(){
             ${indicadorAtrasoHtml}
           </div>
           ${p.agendado_para?`<div style="background:#fff7ed;border:1px solid #fed7aa;color:#f97316;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">⏰ Agendado ${formatarAgendado(p.agendado_para)}</div>`:''}
-          ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido Já Classificado Como Pronto</div>`:''}
+          ${(p.motoboy_id||p.entregador_id)?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Aguardando Entregador</div>`:sk==='pronto'?`<div style="background:#eef2ff;border:1px solid #c7d2fe;color:#1A56DB;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;margin-bottom:8px;display:inline-block">🔒 Pedido Já Classificado Como Pronto</div>`:''}
           <div style="display:flex;gap:6px;margin-bottom:8px">
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento Recebido</button>`:''}
             <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Comanda</button>
@@ -4828,7 +4828,7 @@ function renderPedidosLista(){
             <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
               style="width:58px;height:58px;min-width:58px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;user-select:none;color:#fff;overflow:hidden">
               ${isSel?'<span style="font-size:20px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
-                p.origem==='ifood'?`<div title="Pedido da Integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:12px 7px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
+                p.origem==='ifood'?`<div title="Pedido Da Integração iFood" style="width:100%;height:100%;background:#EA1D2C;display:flex;align-items:center;justify-content:center;padding:12px 7px"><img src="https://letsgodeliverybr.github.io/painel/img/ifood-logo.svg" alt="iFood" style="width:100%;height:100%;object-fit:contain;display:block;filter:brightness(0) invert(1)"></div>`:
                 `<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;display:block;">`
               }
             </div>
@@ -4839,7 +4839,7 @@ function renderPedidosLista(){
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaC}</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">·</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaU}</span>
-                ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar como pronto (desaloca o entregador, se houver)" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #4a9eff) drop-shadow(0 0 3px #4a9eff)"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
+                ${sk!=='finalizado'&&sk!=='cancelado'?`<span onclick="event.stopPropagation();marcarPedidoPronto('${p.id}','${sk}')" title="Marcar Como Pronto (Desaloca O Entregador, Se Houver)" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #4a9eff) drop-shadow(0 0 3px #4a9eff)"><polyline points="20 6 9 17 4 12"/></svg>Pedido Pronto</span>`:''}
                 <span onclick="event.stopPropagation();_abrirSobDemanda('${p.id}')" title="Solicitar Entregador Sob Demanda" style="display:inline-flex;align-items:center;gap:4px;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4a9eff" stroke="none" style="filter:drop-shadow(0 0 4px #4a9eff)"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Sobre Demanda</span>
               </div>
               <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
@@ -4853,7 +4853,7 @@ function renderPedidosLista(){
             ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
               <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
-              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} para Evitar Atraso</div>`:''}
+              ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} Para Evitar Atraso</div>`:''}
             </div>
             ${_sobDemandaExpandidoId===p.id?_htmlSobDemandaInline(p):''}
           </div>
@@ -4951,7 +4951,7 @@ const _clienteEndereco=p.endereco_entrega||p.endereco||'';
 const _clienteTel=p.telefone||'';
 pedidoMarkers[p.id]=L.marker([p.latitude,p.longitude],{icon}).addTo(map).bindPopup(`<div style="font-family:Inter,sans-serif;min-width:180px;max-width:240px"><b style="font-size:13px">#${num}</b>${_lojaPopupNome?` <span style="font-size:11px;color:#6b7280">· ${_lojaPopupNome}</span>`:''}
 ${_clienteNome?`<div style="font-size:13px;font-weight:700;color:#111827;margin-top:6px">👤 ${_clienteNome}</div>`:''}${_clienteEndereco?`<div style="font-size:11px;color:#374151;margin-top:2px">📍 ${_clienteEndereco}</div>`:''}${_clienteTel?`<div style="font-size:11px;margin-top:2px">📞 <a href="https://wa.me/55${_clienteTel.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${_clienteTel}</a></div>`:''}
-<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb">${_motoboyPopup?`<div style="font-size:12px;font-weight:700;color:#111827">🛵 ${_motoboyPopup.nome||'—'}</div>${_motoboyPopup.telefone&&(currentPerfil==='adm'||currentPerfil==='suporte')?`<div style="font-size:11px;margin-top:2px">📞 <a href="https://wa.me/55${_motoboyPopup.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${_motoboyPopup.telefone}</a></div>`:''}`:`<div style="font-size:11px;color:#f59e0b;font-weight:700">⏳ Aguardando aceite</div>`}</div>`);
+<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb">${_motoboyPopup?`<div style="font-size:12px;font-weight:700;color:#111827">🛵 ${_motoboyPopup.nome||'—'}</div>${_motoboyPopup.telefone&&(currentPerfil==='adm'||currentPerfil==='suporte')?`<div style="font-size:11px;margin-top:2px">📞 <a href="https://wa.me/55${_motoboyPopup.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${_motoboyPopup.telefone}</a></div>`:''}`:`<div style="font-size:11px;color:#f59e0b;font-weight:700">⏳ Aguardando Aceite</div>`}</div>`);
 const _endColetaNorm=(p.endereco_coleta||'').trim().toLowerCase();const _lojaColeta=allLojas.find(l=>l.id===p.loja_id);const _endLojaNorm=(_lojaColeta?.endereco||'').trim().toLowerCase();console.log('[COLETA] #'+num,{endereco_coleta:p.endereco_coleta,latitude_coleta:p.latitude_coleta,longitude_coleta:p.longitude_coleta,endColetaNorm:_endColetaNorm,endLojaNorm:_endLojaNorm,condicao:!!(_endColetaNorm&&_endColetaNorm!==_endLojaNorm)});if(_endColetaNorm&&_endColetaNorm!==_endLojaNorm){const _addColetaMarker=(lat,lng)=>{if(!map)return;console.log('[COLETA] adicionando pin preto #'+num,'em',lat,lng);const iconColeta=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#111827;color:white;font-size:11px;font-weight:800;padding:4px 7px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.7);white-space:nowrap;border:2px solid white">#${num}</div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #111827"></div></div>`,iconSize:[50,30],iconAnchor:[25,30],className:''});coletaMarkers[p.id]=L.marker([lat,lng],{icon:iconColeta}).addTo(map).bindPopup(`<div style="font-family:Inter,sans-serif;min-width:160px"><b style="font-size:13px">#${num}</b> <span style="font-size:10px;background:#111827;color:white;padding:1px 5px;border-radius:3px;margin-left:4px">Coleta</span><br><span style="font-size:11px;color:#374151">${p.endereco_coleta}</span></div>`);};if(p.latitude_coleta&&p.longitude_coleta){_addColetaMarker(p.latitude_coleta,p.longitude_coleta);}else{const _mapSnap=map;geocodificarEndereco(p.endereco_coleta).then(geo=>{if(geo&&map===_mapSnap)_addColetaMarker(geo.lat,geo.lng);else console.warn('[COLETA] sem resultado geocoding para:',p.endereco_coleta);}).catch(e=>console.error('[COLETA] geocodificação falhou:',e));}}
 });
 }
@@ -4990,7 +4990,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Telefone</label><input id="ep-telefone" value="${esc(p.telefone)}"/></div>
   <div class="fi"><label>Distância (km)</label><input id="ep-km" value="${p.distancia_km||''}" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div>
 </div>
-<div class="form-row full"><div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div></div></div>
+<div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="ep-endereco" value="${esc(p.endereco)}" autocomplete="off" oninput="_epOnChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('ep-endereco','','','ep-recalc-info')" style="flex:1"/><button type="button" onclick="_epRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div></div></div>
 <div class="form-row">
   <div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="ep-valor" value="${p.valor||0}" step="0.01"/></div>
   <div class="fi"><label>Taxa entrega (R$)</label><input type="number" id="ep-taxa" value="${p.taxa_entrega||0}" step="0.01"/></div>
@@ -5000,7 +5000,7 @@ function abrirEditarPedido(pedidoId){
   <div class="fi"><label>Retorno</label>
     <div id="ep-retorno-btn" onclick="_epToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:${p.com_retorno?'#1A56DB':'#3a3a3a'};transition:background .15s;user-select:none">
       <span style="font-size:16px">${p.com_retorno?'↩':'—'}</span>
-      <span id="ep-retorno-lbl" style="font-size:13px;font-weight:600;color:${p.com_retorno?'#ffffff':'#888888'}">${p.com_retorno?'Com Retorno':'Sem retorno'}</span>
+      <span id="ep-retorno-lbl" style="font-size:13px;font-weight:600;color:${p.com_retorno?'#ffffff':'#888888'}">${p.com_retorno?'Com Retorno':'Sem Retorno'}</span>
     </div>
   </div>
 </div>
@@ -5016,10 +5016,10 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
     📦 Coleta em outro endereço
   </label>
   <div id="ep-coleta-campos" style="display:${temColeta?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
-    <div class="form-row full"><div class="fi"><label>Endereço de Coleta</label><input id="ep-endereco-coleta" value="${esc(p.endereco_coleta)}" placeholder="Rua, Número, Bairro"/></div></div>
+    <div class="form-row full"><div class="fi"><label>Endereço De Coleta</label><input id="ep-endereco-coleta" value="${esc(p.endereco_coleta)}" placeholder="Rua, Número, Bairro"/></div></div>
     <div class="form-row">
-      <div class="fi"><label>Contato na Coleta</label><input id="ep-contato-coleta" value="${esc(p.contato_coleta)}" placeholder="Nome"/></div>
-      <div class="fi"><label>Telefone da Coleta</label><input id="ep-telefone-coleta" value="${esc(p.telefone_coleta)}" placeholder="(16) 99999-9999"/></div>
+      <div class="fi"><label>Contato Na Coleta</label><input id="ep-contato-coleta" value="${esc(p.contato_coleta)}" placeholder="Nome"/></div>
+      <div class="fi"><label>Telefone Da Coleta</label><input id="ep-telefone-coleta" value="${esc(p.telefone_coleta)}" placeholder="(16) 99999-9999"/></div>
     </div>
   </div>
 </div>
@@ -5029,7 +5029,7 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
     ⏰ Agendar pedido
   </label>
   <div id="ep-agendar-campos" style="display:${temAgend?'block':'none'};margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px">
-    <div class="form-row full"><div class="fi"><label>Data e Hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
+    <div class="form-row full"><div class="fi"><label>Data E Hora</label><input type="datetime-local" id="ep-agendado-para" value="${agendVal}" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px"/></div></div>
   </div>
 </div>
 <div id="ep-recalc-info" style="font-size:12px;color:var(--text2);min-height:14px;margin:2px 0 4px"></div>
@@ -5044,7 +5044,7 @@ function _npToggleRetorno(){
   const btn=document.getElementById('np-retorno-btn');
   const lbl=document.getElementById('np-retorno-lbl');
   if(btn)btn.style.background=_npRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_npRetornoAtivo?'Com Retorno':'Sem retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
+  if(lbl){lbl.textContent=_npRetornoAtivo?'Com Retorno':'Sem Retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
   calcularTaxaAuto();
 }
 let _epRetornoAtivo=false;
@@ -5054,7 +5054,7 @@ function _epToggleRetorno(){
   const btn=document.getElementById('ep-retorno-btn');
   const lbl=document.getElementById('ep-retorno-lbl');
   if(btn)btn.style.background=_epRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_epRetornoAtivo?'Com Retorno':'Sem retorno';lbl.style.color=_epRetornoAtivo?'#fff':'#888888';}
+  if(lbl){lbl.textContent=_epRetornoAtivo?'Com Retorno':'Sem Retorno';lbl.style.color=_epRetornoAtivo?'#fff':'#888888';}
 }
 function _epToggleColeta(){
   const on=document.getElementById('ep-coleta-toggle')?.checked;
@@ -5078,7 +5078,7 @@ async function _epRecalcularTaxas(){
   const info=document.getElementById('ep-recalc-info');
   if(info)info.textContent='📍 Geocodificando...';
   const geo=await geocodificarEndereco(endereco);
-  if(!geo){if(info)info.textContent='❌ Endereço não encontrado';return;}
+  if(!geo){if(info)info.textContent='❌ Endereço Não Encontrado';return;}
   _epGeo=geo;
   const p=_epPedidoAtual||{};
   const lojaId=p.loja_id||null;
@@ -5105,7 +5105,7 @@ async function salvarEdicaoPedido(pedidoId){
   const agendarOn=document.getElementById('ep-agendar-toggle')?.checked;
   const agendadoParaVal=agendarOn?document.getElementById('ep-agendado-para')?.value:null;
   if(agendarOn&&!_agendamentoNoFuturo(agendadoParaVal)){
-    if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">O horário do agendamento já passou — confira a data e hora.</span>';
+    if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">O Horário Do Agendamento Já Passou — Confira A Data E Hora.</span>';
     return;
   }
   const _epTaxaMotoEl=document.getElementById('ep-taxa-motoboy');
@@ -5149,7 +5149,7 @@ async function salvarEdicaoPedido(pedidoId){
   if(_epGeo?.distKm){update.latitude=_epGeo.lat;update.longitude=_epGeo.lng;update.distancia_km=_epGeo.distKm;}
   if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
-  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao salvar.</div>';showNotif('❌ Erro ao salvar pedido','','var(--red)');return;}
+  if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro Ao Salvar.</div>';showNotif('❌ Erro Ao Salvar Pedido','','var(--red)');return;}
   await logAcao('editar_pedido',{pedido_id:pedidoId});
   // Recalcular taxa_entrega localmente usando _calcTaxaLoja
   const pedidoAtual=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
@@ -5170,7 +5170,7 @@ async function salvarEdicaoPedido(pedidoId){
   const ai=allPedidos.findIndex(x=>x.id===pedidoId);if(ai>=0)Object.assign(allPedidos[ai],update);
   const ti=_tabelaPedidosDia.findIndex(x=>x.id===pedidoId);if(ti>=0)Object.assign(_tabelaPedidosDia[ti],update);
   renderPedidosLista();renderTabelaMapa();
-  if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido atualizado!','');
+  if(fb)fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Salvo!</div>';showNotif('✅ Pedido Atualizado!','');
   setTimeout(()=>{document.getElementById('modal-editar-pedido')?.classList.remove('open');atualizarTudo();},1500);
 }
 
@@ -5178,7 +5178,7 @@ async function abrirAlocarMotoboy(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId);if(!p)return;
   const _lojaAloc=allLojas.find(l=>l.id===p.loja_id);
   if(!_lojaAloc?.tabela_cobranca_id||!_lojaAloc?.tabela_pagamento_id){
-    showNotif('Loja sem tabela','Configure a tabela de cobrança/pagamento em Cadastros → Lojas antes de alocar.','var(--yellow)');
+    showNotif('Loja Sem Tabela','Configure A Tabela De Cobrança/Pagamento Em Cadastros → Lojas Antes De Alocar.','var(--yellow)');
     return;
   }
   const motoboys=await db('entregadores','GET',null,'?disponivel=eq.true&order=nome.asc');
@@ -5212,9 +5212,9 @@ async function abrirAlocarMotoboy(pedidoId){
   // um pouco desatualizada) fica em alocarMotoboy(), com dado fresco do banco.
   const _contarAtivos=id=>_pedidosAtivosGlobal.filter(p=>(p.motoboy_id===id||p.entregador_id===id)&&STATUS_ATIVOS_ENTREGA.includes(p.status_detalhado||p.status)).length;
   const listaMotoboys=motoboys.length===0
-    ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🛵</div>Nenhum motoboy online</div>`
+    ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🛵</div>Nenhum Motoboy Online</div>`
     :motoboysNoRaio.length===0
-    ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📍</div>Nenhum entregador disponível dentro de ${raioKm}km</div>`
+    ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📍</div>Nenhum Entregador Disponível Dentro De ${raioKm}km</div>`
     :motoboysNoRaio.map(m=>{const _ativos=_contarAtivos(m.id);const _lotado=_ativos>=LIMITE_PEDIDOS_ALOCACAO_MANUAL;return`<div ${_lotado?'':`onclick="alocarMotoboy('${pedidoId}','${m.id}','${(m.nome||'').replace(/'/g,"\\'")}',this)"`} style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:${_lotado?'not-allowed':'pointer'};border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);opacity:${_lotado?0.5:1}" ${_lotado?'':`onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"`}><div style="width:36px;height:36px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🛵</div><div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px">${m.nome||'—'}</div><div style="font-size:11px;color:var(--text2)">${m.telefone||'Online'}</div></div>${m._dist!=null?`<div style="font-size:12px;color:var(--text2);font-weight:600;white-space:nowrap">📍 ${m._dist.toFixed(1)} km</div>`:''}<div style="background:${_lotado?'#ef444420':'#22c55e20'};color:${_lotado?'#ef4444':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">${_lotado?`🔴 Lotado (${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL})`:`${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL} ativos`}</div></div>`;}).join('');
   // Aviso de realocação (2026-09-10, bug real corrigido): pedido já tem um
   // entregador ATIVO (status != 'pronto') — escolher alguém aqui vai
@@ -5226,7 +5226,7 @@ async function abrirAlocarMotoboy(pedidoId){
   // verdade) fica em alocarMotoboy(), esse banner é só contexto visual.
   const temEntregadorAtivo=(p.motoboy_id||p.entregador_id)&&p.status!=='pronto';
   const avisoRealocacao=temEntregadorAtivo
-    ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse pedido já tem um entregador em andamento.</b> Escolher outro abaixo vai desalocar o entregador atual (ele será avisado por notificação) e reabrir o pedido como disponível pro novo.</div>`
+    ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse Pedido Já Tem Um Entregador Em Andamento.</b> Escolher Outro Abaixo Vai Desalocar O Entregador Atual (Ele Será Avisado Por Notificação) E Reabrir O Pedido Como Disponível Pro Novo.</div>`
     :'';
   modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys Disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
   modal.classList.add('open');
@@ -5243,12 +5243,12 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   // o pedido de quem já está em rota.
   const jaTinha=_p?.motoboy_id||_p?.entregador_id;
   if(_p&&jaTinha&&jaTinha!==motoboyId&&_p.status!=='pronto'){
-    if(!confirm(`Esse pedido já está com um entregador em andamento (status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} agora vai DESALOCAR o entregador atual e reabrir o pedido como disponível. O entregador atual será avisado por notificação, mas o pedido sai da rota dele imediatamente.\n\nConfirma a realocação?`))return;
+    if(!confirm(`Esse Pedido Já Está Com Um Entregador Em Andamento (Status: ${STATUS_LABEL[_p.status]||_p.status}).\n\nAlocar ${motoboyNome} Agora Vai DESALOCAR O Entregador Atual E Reabrir O Pedido Como Disponível. O Entregador Atual Será Avisado Por Notificação, Mas O Pedido Sai Da Rota Dele Imediatamente.\n\nConfirma A Realocação?`))return;
   }
   // Bloqueio por loja (migrations/bloqueio_entregador_por_loja.sql): o banco
   // recusa a alocação de qualquer jeito; aqui é pra dar a mensagem certa.
   if(_p?.loja_id&&(await dbRpc('entregador_bloqueado_na_loja',{p_entregador_id:motoboyId,p_loja_id:_p.loja_id}))===true){
-    showNotif('Entregador bloqueado nesta loja',`${motoboyNome} foi bloqueado por esta loja e não pode receber pedidos dela.`,'var(--red)');
+    showNotif('Entregador Bloqueado Nesta Loja',`${motoboyNome} foi bloqueado por esta loja e não pode receber pedidos dela.`,'var(--red)');
     return;
   }
   // Limite de simultaneidade na alocação manual (2026-09-24): trava real,
@@ -5259,7 +5259,7 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   if(!(jaTinha===motoboyId&&_p.status!=='pronto')){
     const _ativosAgora=await db('pedidos','GET',null,`?or=(motoboy_id.eq.${motoboyId},entregador_id.eq.${motoboyId})&status=in.(${STATUS_ATIVOS_ENTREGA.join(',')})&select=id`);
     if(Array.isArray(_ativosAgora)&&_ativosAgora.length>=LIMITE_PEDIDOS_ALOCACAO_MANUAL){
-      showNotif('❌ Limite de entregas simultâneas',`${motoboyNome} já está com ${_ativosAgora.length} entregas ativas (limite: ${LIMITE_PEDIDOS_ALOCACAO_MANUAL}).`,'var(--red)');
+      showNotif('❌ Limite De Entregas Simultâneas',`${motoboyNome} já está com ${_ativosAgora.length} entregas ativas (limite: ${LIMITE_PEDIDOS_ALOCACAO_MANUAL}).`,'var(--red)');
       return;
     }
   }
@@ -5273,7 +5273,7 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const _resAloc=await db('pedidos','PATCH',_patch,`?id=eq.${pedidoId}`);
   if(!Array.isArray(_resAloc)||!_resAloc.length){
     // db() devolve [] em erro — ex: gatilho de bloqueio por loja recusou.
-    showNotif('Não foi possível alocar','O pedido não foi alterado. Veja o console.','var(--red)');
+    showNotif('Não Foi Possível Alocar','O Pedido Não Foi Alterado. Veja O Console.','var(--red)');
     return;
   }
   await logAcao('alocar_motoboy',{pedido_id:pedidoId,motoboy_id:motoboyId,motoboy_nome:motoboyNome,taxa_motoboy:taxaMotoboy});
@@ -5292,7 +5292,7 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
       body:JSON.stringify({entregador_id:motoboyId,pedido_id:pedidoId,tipo:'novo_pedido'}),
     });
   }catch(e){console.error('[alocarMotoboy] falha ao notificar entregador:',e);}
-  showNotif('✅ Motoboy alocado!',`${motoboyNome} foi designado`);
+  showNotif('✅ Motoboy Alocado!',`${motoboyNome} foi designado`);
   document.getElementById('modal-alocar-motoboy')?.classList.remove('open');await atualizarTudo();
 }
 
@@ -5361,7 +5361,7 @@ async function calcularDistanciaRota(lat1,lon1,lat2,lon2,retornarPolyline=false)
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':GMAPS_KEY,
-        'X-Goog-FieldMask':retornarPolyline?'routes.distanceMeters,routes.polyline.encodedPolyline':'routes.distanceMeters',
+        'X-Goog-FieldMask':retornarPolyline?'Routes.distanceMeters,routes.polyline.encodedPolyline':'Routes.distanceMeters',
       },
       body:JSON.stringify({
         origin:{location:{latLng:{latitude:lat1,longitude:lon1}}},
@@ -5485,22 +5485,22 @@ async function _criarPedidoInterno(){
   const telefoneColeta=coletaOn?(document.getElementById('np-telefone-coleta')?.value||''):'';
   const agendarOn=document.getElementById('np-agendar-toggle')?.checked;
   const agendadoParaVal=agendarOn?document.getElementById('np-agendado-para')?.value:null;
-  if(!endereco){showNotif('Erro','Endereço obrigatório','var(--red)');return;}
-  if(!cliente.trim()){showNotif('Erro','Nome do cliente obrigatório','var(--red)');return;}
-  if(!complemento){showNotif('Erro','Complemento obrigatório','var(--red)');return;}
-  if(currentPerfil==='adm'&&!lojaIdSel){showNotif('Erro','Selecione a loja','var(--red)');return;}
-  if(agendarOn&&!agendadoParaVal){showNotif('Erro','Informe data/hora do agendamento','var(--red)');return;}
-  if(agendarOn&&!_agendamentoNoFuturo(agendadoParaVal)){showNotif('Erro','O horário do agendamento já passou — confira a data e hora','var(--red)');return;}
+  if(!endereco){showNotif('Erro','Endereço Obrigatório','var(--red)');return;}
+  if(!cliente.trim()){showNotif('Erro','Nome Do Cliente Obrigatório','var(--red)');return;}
+  if(!complemento){showNotif('Erro','Complemento Obrigatório','var(--red)');return;}
+  if(currentPerfil==='adm'&&!lojaIdSel){showNotif('Erro','Selecione A Loja','var(--red)');return;}
+  if(agendarOn&&!agendadoParaVal){showNotif('Erro','Informe Data/Hora Do Agendamento','var(--red)');return;}
+  if(agendarOn&&!_agendamentoNoFuturo(agendadoParaVal)){showNotif('Erro','O Horário Do Agendamento Já Passou — Confira A Data E Hora','var(--red)');return;}
   const fb=document.getElementById('np-feedback');
-  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando endereço...</div>';
+  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Localizando Endereço...</div>';
   const geo=await geocodificarEndereco(endereco);
-  if(!geo){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Endereço não encontrado. Verifique e tente novamente.</div>';return;}
+  if(!geo){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Endereço Não Encontrado. Verifique E Tente Novamente.</div>';return;}
   const agora=_agoraBrasilia();
   const finalLojaId=lojaIdSel;
   const _dupNp=await _checarEnderecoDuplicadoRecente(finalLojaId,geo,endereco);
   if(_dupNp){
     if(fb)fb.innerHTML='';
-    if(!confirm(`Você acabou de criar uma entrega (#${_dupNp.numero}) para este mesmo endereço há poucos minutos.\nDeseja criar outra entrega mesmo assim?`))return;
+    if(!confirm(`Você Acabou De Criar Uma Entrega (#${_dupNp.numero}) Para Este Mesmo Endereço Há Poucos Minutos.\nDeseja Criar Outra Entrega Mesmo Assim?`))return;
   }
   let latLoja=-21.1775,lngLoja=-47.8103,pontosPadrao=4;
   if(finalLojaId){
@@ -5516,7 +5516,7 @@ async function _criarPedidoInterno(){
   if(enderecoColeta){geoColeta=await geocodificarEndereco(enderecoColeta);if(geoColeta){latOrigem=geoColeta.lat;lngOrigem=geoColeta.lng;origemUsada='coleta';}}
   const distKm=parseFloat((await calcularDistanciaRota(latOrigem,lngOrigem,geo.lat,geo.lng)).toFixed(2));
   console.log('[criarPedido] origem_usada='+origemUsada,'lat_origem='+latOrigem,'lng_origem='+lngOrigem,'lat_destino='+geo.lat,'lng_destino='+geo.lng,'distancia_km='+distKm);
-  if(distKm>32){if(fb)fb.innerHTML='';showNotif('Distância excedida','Para distâncias maiores que 32km, procure o Expansão responsável da região.','var(--yellow)');return;}
+  if(distKm>32){if(fb)fb.innerHTML='';showNotif('Distância Excedida','Para Distâncias Maiores Que 32km, Procure O Expansão Responsável Da Região.','var(--yellow)');return;}
   const [_faixasLojaPed,_faixasPagNp,{cliente:_pdC,entregador:_pdE,origemCliente:_pdOrigemNp}]=await Promise.all([_getFaixasCobranca(finalLojaId),_getFaixasPagamento(finalLojaId),_fetchPdAtual(finalLojaId)]);
   const taxaCalculada=_faixasLojaPed.length?_calcTaxaLoja({distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,loja_id:finalLojaId},_faixasLojaPed):Math.round((_pdC||0)*100)/100;
   // se há coleta, sempre recalcula (preview pode ter usado distância da loja por engano)
@@ -5524,7 +5524,7 @@ async function _criarPedidoInterno(){
   const taxaMotoboy=_calcTaxaMotoboy({distancia_km:distKm,com_retorno:_npRetornoAtivo,gorjeta:gorjeta,preco_dinamico:_pdE,loja_id:finalLojaId},_faixasPagNp)||taxa||null;
   const _faixaAplicadaNp=_faixasLojaPed.find(f=>distKm<=parseFloat(f.km_ate))||_faixasLojaPed[_faixasLojaPed.length-1];
   console.log(`[criarPedido] origem_usada=${origemUsada} distancia_km=${distKm} faixa_aplicada=km_ate:${_faixaAplicadaNp?.km_ate||'?'} pd_cliente=${_pdC}(${_pdOrigemNp}) taxa_entrega=${taxa} taxa_motoboy=${taxaMotoboy}`);
-  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando pedido...</div>';
+  if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Criando Pedido...</div>';
   const statusInicial=agendarOn?'agendado':'recebido';
   const enderecoFinal=complemento?`${endereco} - ${complemento}`:endereco;
   // taxa_entrega_motoboy: grava o mesmo valor de taxaMotoboy aqui na criação
@@ -5554,10 +5554,10 @@ async function _criarPedidoInterno(){
       await db('creditos_lojas','POST',{loja_id:finalLojaId,tipo:'debito',valor:taxa,observacoes:`Entrega #${numero}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
       _carregarSaldoTopbar();
     }
-    const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto em 60s';
-    if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
-    showNotif('Pedido criado!',agendarOn?'Agendado':'Ficará pronto em 60s');_npDesenharRota(null);setTimeout(()=>fecharModal('modal-pedido'),2500);
-  }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao criar pedido.</div>';}
+    const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto Em 60s';
+    if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} Criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
+    showNotif('Pedido Criado!',agendarOn?'Agendado':'Ficará Pronto Em 60s');_npDesenharRota(null);setTimeout(()=>fecharModal('modal-pedido'),2500);
+  }else{if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro Ao Criar Pedido.</div>';}
 }
 
 
@@ -5643,7 +5643,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes',_icone('hourglass',14,'btn-ico')+'Pendentes',_cPend)}
     ${btnFiltro('reprovadas',_icone('circle-x',14,'btn-ico')+'Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede de Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar Loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede De Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços Em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -5777,12 +5777,12 @@ async function _abrirModalImportarLojas(){
     _importLojasExistentesCache=(r||[]).map(l=>({nome:l.nome,nomeNorm:_normalizarTextoDup(l.nome),nucleoEnd:_nucleoEnderecoDup(l.endereco)}));
   }).catch(()=>{_importLojasExistentesCache=[];});
   modal.innerHTML=`<div class="modal" style="max-width:720px;width:92vw">
-    <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede de Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('upload',18)} Importar Rede De Lojas</span><button class="modal-close" onclick="document.getElementById('modal-importar-lojas').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
       <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Importa várias lojas de uma vez (ex: rede/franquia). Só 3 colunas: <b>nome_loja</b>, <b>endereco</b>, <b>whatsapp</b>. CPF/CNPJ, e-mail e senha ficam pendentes — cada loja importada aparece com o selo "⚠️ dados pendentes" pra você completar individualmente depois em editar loja.</div>
       <button onclick="_baixarModeloCsvLojas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:16px">${_icone('download',16,'btn-ico')}Baixar Modelo CSV</button>
-      <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado padrão (pra geocodificar endereços sem cidade no texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
-      <div class="fi" style="margin-bottom:16px"><label>Planilha Preenchida (.csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
+      <div class="fi" style="margin-bottom:16px"><label>Cidade/Estado Padrão (Pra Geocodificar Endereços Sem Cidade No Texto)</label><input type="text" id="import-lojas-cidade-padrao" value="Ribeirão Preto - SP" placeholder="Ex: Ribeirão Preto - SP"/></div>
+      <div class="fi" style="margin-bottom:16px"><label>Planilha Preenchida (.Csv)</label><input type="file" id="import-lojas-arquivo" accept=".csv,text/csv" onchange="_processarArquivoImportarLojas(this)"/></div>
       <div id="import-lojas-preview"></div>
     </div>
     <div class="modal-footer">
@@ -5802,7 +5802,7 @@ function _processarArquivoImportarLojas(inputEl){
   reader.onload=e=>{
     const linhas=_parseCsvLinhas(e.target.result);
     if(!linhas.length){
-      if(preview)preview.innerHTML='<div style="color:var(--red);font-size:13px">Arquivo vazio ou ilegível.</div>';
+      if(preview)preview.innerHTML='<div style="color:var(--red);font-size:13px">Arquivo Vazio Ou Ilegível.</div>';
       return;
     }
     // Cabeçalho flexível: aceita ordem diferente, exige as 3 colunas por nome.
@@ -5820,8 +5820,8 @@ function _processarArquivoImportarLojas(inputEl){
       const endereco=(linha[idxEnd]||'').trim();
       const whatsappRaw=(linha[idxWhats]||'').trim();
       const numeroLinha=i+2; // +2: pula o cabeçalho e volta pra base 1
-      if(!nome)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Nome da loja obrigatório'};
-      if(!endereco)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Endereço obrigatório'};
+      if(!nome)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Nome Da Loja Obrigatório'};
+      if(!endereco)return {numeroLinha,nome,endereco,whatsappRaw,erro:'Endereço Obrigatório'};
       // WhatsApp não é mais obrigatório — linha em branco entra como
       // válida, sem telefone (fica "Dados pendentes" igual já fazemos com
       // CPF/CNPJ, pra completar depois em Editar Loja). Só bloqueia se
@@ -5830,7 +5830,7 @@ function _processarArquivoImportarLojas(inputEl){
       let whatsapp=null;
       if(whatsappRaw){
         whatsapp=_normalizarWhatsapp(whatsappRaw);
-        if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp inválido — precisa de DDD + 8 ou 9 dígitos (ou deixe em branco)'};
+        if(!whatsapp)return {numeroLinha,nome,endereco,whatsappRaw,erro:'WhatsApp Inválido — Precisa De DDD + 8 Ou 9 Dígitos (Ou Deixe Em Branco)'};
       }
       return {numeroLinha,nome,endereco,whatsapp,whatsappRaw,erro:null};
     });
@@ -5848,11 +5848,11 @@ function _processarArquivoImportarLojas(inputEl){
     if(preview){
       preview.innerHTML=`
         <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:700;color:#10b981">✅ ${_importLojasValidadas.length} válida${_importLojasValidadas.length===1?'':'s'}</div>
-          <div style="font-size:13px;font-weight:700;color:${comErro.length?'#ef4444':'var(--text3)'}">❌ ${comErro.length} com erro</div>
-          <div style="font-size:13px;font-weight:700;color:${comDuplicata.length?'#f59e0b':'var(--text3)'}">⚠️ ${comDuplicata.length} possível duplicata</div>
+          <div style="font-size:13px;font-weight:700;color:#10b981">✅ ${_importLojasValidadas.length} Válida${_importLojasValidadas.length===1?'':'s'}</div>
+          <div style="font-size:13px;font-weight:700;color:${comErro.length?'#ef4444':'var(--text3)'}">❌ ${comErro.length} Com Erro</div>
+          <div style="font-size:13px;font-weight:700;color:${comDuplicata.length?'#f59e0b':'var(--text3)'}">⚠️ ${comDuplicata.length} Possível Duplicata</div>
         </div>
-        ${comDuplicata.length?'<div style="font-size:12px;color:#f59e0b;margin-bottom:10px">Linhas marcadas em amarelo parecem já existir no sistema (mesmo endereço ou nome parecido) — confira antes de confirmar. Isso não bloqueia a importação, é só um aviso.</div>':''}
+        ${comDuplicata.length?'<div style="font-size:12px;color:#f59e0b;margin-bottom:10px">Linhas Marcadas Em Amarelo Parecem Já Existir No Sistema (Mesmo Endereço Ou Nome Parecido) — Confira Antes De Confirmar. Isso Não Bloqueia A Importação, É Só Um Aviso.</div>':''}
         <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
           <table style="width:100%;min-width:560px;border-collapse:collapse">
             <thead style="position:sticky;top:0;background:var(--surface2)"><tr>
@@ -5867,14 +5867,14 @@ function _processarArquivoImportarLojas(inputEl){
               <td style="padding:6px 10px;font-size:12px;color:var(--text)">${(v.nome||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${(v.endereco||'—').replace(/</g,'&lt;')}</td>
               <td style="padding:6px 10px;font-size:12px;color:var(--text2)">${v.whatsapp||v.whatsappRaw||'—'}</td>
-              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece com uma loja já cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:!v.whatsapp?'<span style="color:#10b981">✅ Ok</span> <span style="color:#f59e0b;font-size:11px" title="Vai entrar como dados pendentes, complete depois em editar loja">(Sem WhatsApp)</span>':'<span style="color:#10b981">✅ Ok</span>'}</td>
+              <td style="padding:6px 10px;font-size:12px">${v.erro?`<span style="color:#ef4444">❌ ${v.erro}</span>`:v.possivelDuplicataDe?`<span style="color:#f59e0b" title="Parece Com Uma Loja Já Cadastrada">⚠️ Parece com "${v.possivelDuplicataDe.replace(/"/g,'&quot;')}"</span>`:!v.whatsapp?'<span style="color:#10b981">✅ Ok</span> <span style="color:#f59e0b;font-size:11px" title="Vai Entrar Como Dados Pendentes, Complete Depois Em Editar Loja">(Sem WhatsApp)</span>':'<span style="color:#10b981">✅ Ok</span>'}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>`;
     }
     if(btnConfirmar){
       const n=_importLojasValidadas.length;
-      btnConfirmar.textContent=n>0?`Confirmar importação de ${n} loja${n===1?'':'s'}`:'Confirmar importação';
+      btnConfirmar.textContent=n>0?`Confirmar importação de ${n} Loja${n===1?'':'s'}`:'Confirmar Importação';
       btnConfirmar.disabled=n===0;
       btnConfirmar.style.opacity=n===0?'.4':'1';
       btnConfirmar.style.cursor=n===0?'not-allowed':'pointer';
@@ -5947,8 +5947,8 @@ async function _confirmarImportarLojas(){
   document.getElementById('modal-importar-lojas')?.classList.remove('open');
   const semGeoTotal=semGeo+suspeitas;
   const avisoGeo=semGeoTotal>0?` (${semGeoTotal} sem geocodificação${suspeitas?` — ${suspeitas} resultado(s) suspeito(s) descartado(s), veja o console`:''} — corrija manualmente)`:'';
-  if(falhas>0)showNotif('⚠️ Importação parcial',`${sucesso} importadas, ${falhas} falharam${avisoGeo} — confira o console`,'var(--yellow)');
-  else showNotif('✅ Importação concluída!',`${sucesso} loja${sucesso===1?'':'s'} importada${sucesso===1?'':'s'}, marcada${sucesso===1?'':'s'} como "Dados pendentes"${avisoGeo}`);
+  if(falhas>0)showNotif('⚠️ Importação Parcial',`${sucesso} importadas, ${falhas} falharam${avisoGeo} — confira o console`,'var(--yellow)');
+  else showNotif('✅ Importação Concluída!',`${sucesso} Loja${sucesso===1?'':'s'} Importada${sucesso===1?'':'s'}, Marcada${sucesso===1?'':'s'} como "Dados pendentes"${avisoGeo}`);
   await logAcao('importar_rede_lojas',{total,sucesso,falhas,semGeo,suspeitas});
   _importLojasValidadas=[];
   // _renderTbodyEstabelecimentos() sozinho só re-renderizaria o cache
@@ -5971,8 +5971,8 @@ async function _confirmarImportarLojas(){
 // apaga uma coordenada que já funcionava só porque a nova tentativa falhou.
 async function _recalcularEnderecosDadosPendentes(){
   const lojas=(_estabelecimentosDataCache||[]).filter(l=>l.ativo&&_lojaDadosPendentes(l)&&l.endereco);
-  if(!lojas.length){showNotif('ℹ️ Nada pra recalcular','Nenhuma loja "Dados pendentes" com endereço cadastrado no momento','var(--text3)');return;}
-  if(!confirm(`Recalcular endereço de ${lojas.length} loja${lojas.length===1?'':'s'} marcada${lojas.length===1?'':'s'} "Dados pendentes"? Isso busca a coordenada de novo a partir do endereço cadastrado hoje.`))return;
+  if(!lojas.length){showNotif('ℹ️ Nada Pra Recalcular','Nenhuma Loja "Dados Pendentes" Com Endereço Cadastrado No Momento','var(--text3)');return;}
+  if(!confirm(`Recalcular Endereço De ${lojas.length} Loja${lojas.length===1?'':'s'} Marcada${lojas.length===1?'':'s'} "Dados Pendentes"? Isso Busca A Coordenada De Novo A Partir Do Endereço Cadastrado Hoje.`))return;
   let sucesso=0,semGeo=0,falhas=0;
   const btn=document.querySelector('button[onclick="_recalcularEnderecosDadosPendentes()"]');
   for(let i=0;i<lojas.length;i++){
@@ -5986,9 +5986,9 @@ async function _recalcularEnderecosDadosPendentes(){
       sucesso++;
     }catch(e){falhas++;console.error(`[recalcular-enderecos] erro pra "${loja.nome}":`,e);}
   }
-  if(btn){btn.innerHTML=_icone('refresh-cw',16,'btn-ico')+'Recalcular Endereços em Massa';}
+  if(btn){btn.innerHTML=_icone('refresh-cw',16,'btn-ico')+'Recalcular Endereços Em Massa';}
   const avisoFalha=(semGeo+falhas)>0?` (${semGeo+falhas} sem sucesso — veja o console)`:'';
-  showNotif(sucesso>0?'✅ Recálculo concluído':'⚠️ Nenhuma coordenada atualizada',`${sucesso} de ${lojas.length} loja${lojas.length===1?'':'s'} recalculada${sucesso===1?'':'s'}${avisoFalha}`,sucesso>0?'var(--green)':'var(--yellow)');
+  showNotif(sucesso>0?'✅ Recálculo Concluído':'⚠️ Nenhuma Coordenada Atualizada',`${sucesso} de ${lojas.length} Loja${lojas.length===1?'':'s'} Recalculada${sucesso===1?'':'s'}${avisoFalha}`,sucesso>0?'var(--green)':'var(--yellow)');
   await logAcao('recalcular_enderecos_dados_pendentes',{total:lojas.length,sucesso,semGeo,falhas});
   _renderCadastrosConteudo('estabelecimentos');
 }
@@ -6003,11 +6003,11 @@ function _renderTbodyEstabelecimentos(){
   if(termo)filtered=filtered.filter(l=>(l.nome||'').toLowerCase().includes(termo));
   const tbody=document.getElementById('tbody-estabelecimentos');if(!tbody)return;
   const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'em_rota');
-  tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':filtered.map(l=>{
+  tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>':filtered.map(l=>{
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
-    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da Loja" aria-label="Financeiro da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
+    const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -6018,7 +6018,7 @@ function _abrirDropdownCadastroLoja(event,lojaId){
     {key:'aprovado',label:'✅ Aprovado',color:'#10b981'},
     {key:'em_analise',label:'🔍 Em Análise',color:'#3b82f6'},
     {key:'pendente',label:'⏳ Pendente',color:'#6b7280'},
-    {key:'reprovado_com_motivo',label:'❌ Reprovado (com motivo)',color:'#ef4444'},
+    {key:'reprovado_com_motivo',label:'❌ Reprovado (Com Motivo)',color:'#ef4444'},
   ];
   const dd=document.createElement('div');
   dd.id='dd-cadastro-loja';
@@ -6040,7 +6040,7 @@ async function _setCadastroStatusLoja(lojaId,novoStatus){
   if(novoStatus==='aprovado')patch.ativo=true;
   await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
   await dbPatch('usuarios_painel',{ativo:novoStatus==='aprovado'},`?loja_id=eq.${lojaId}`);
-  showNotif(`Status atualizado: ${novoStatus}`,'');
+  showNotif(`Status Atualizado: ${novoStatus}`,'');
   renderCadastrosPage('estabelecimentos');
 }
 function _reprovarLoja(id,nome){
@@ -6049,7 +6049,7 @@ function _reprovarLoja(id,nome){
   modal.innerHTML=`<div class="modal" style="max-width:420px">
     <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Loja</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-loja').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe O Motivo Da Reprovação De <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-loja-motivo" placeholder="Ex: Dados incompletos, endereço inválido..." style="min-height:80px;resize:vertical"></textarea></div>
       <div id="rep-loja-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
     </div>
@@ -6063,13 +6063,13 @@ function _reprovarLoja(id,nome){
 async function _confirmarReprovacaoLoja(id){
   const motivo=document.getElementById('rep-loja-motivo')?.value?.trim()||'';
   const fb=document.getElementById('rep-loja-feedback');
-  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe Um Motivo.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('lojas',{status_cadastro:'reprovado',motivo_reprovacao:motivo,ativo:false,updated_at:new Date().toISOString()},`?id=eq.${id}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro Ao Salvar.</span>';return;}
   await dbPatch('usuarios_painel',{ativo:false},`?loja_id=eq.${id}`);
   document.getElementById('modal-reprovar-loja')?.classList.remove('open');
-  showNotif('❌ Loja reprovada',motivo.substring(0,50),'var(--red)');
+  showNotif('❌ Loja Reprovada',motivo.substring(0,50),'var(--red)');
   renderCadastrosPage('estabelecimentos');
 }
 
@@ -6085,14 +6085,14 @@ async function _renderClientesAppTab(el){
   const busca=_clientesAppBusca.trim().toLowerCase();
   const filtered=!busca?data:data.filter(c=>(c.nome||'').toLowerCase().includes(busca)||(c.telefone||'').includes(busca)||(c.email||'').toLowerCase().includes(busca)||(c.cpf||'').includes(busca));
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
-      <input id="clientes-app-busca" type="text" placeholder="🔎 Buscar por nome, telefone, e-mail ou CPF" value="${_clientesAppBusca.replace(/"/g,'&quot;')}"
+      <input id="clientes-app-busca" type="text" placeholder="🔎 Buscar Por Nome, Telefone, E-mail Ou CPF" value="${_clientesAppBusca.replace(/"/g,'&quot;')}"
         style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:13px;flex:1;min-width:240px"
         oninput="_clientesAppSetBusca(this.value)"/>
       <span style="font-size:12px;color:var(--text3);white-space:nowrap">${filtered.length} de ${data.length}</span>
     </div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>CPF</th><th>Cadastrado em</th></tr></thead><tbody id="tbody-clientes-app"></tbody></table></div></div>`;
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>CPF</th><th>Cadastrado Em</th></tr></thead><tbody id="tbody-clientes-app"></tbody></table></div></div>`;
   const tbody=document.getElementById('tbody-clientes-app');if(!tbody)return;
-  tbody.innerHTML=filtered.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum cliente encontrado</td></tr>':filtered.map(c=>`<tr><td style="font-weight:600;color:var(--text)">👤 ${c.nome||'—'}</td><td>${c.telefone||'—'}</td><td style="font-size:12px;color:var(--text3)">${c.email||'—'}</td><td style="font-size:12px;color:var(--text2)">${c.cpf||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td></tr>`).join('');
+  tbody.innerHTML=filtered.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Cliente Encontrado</td></tr>':filtered.map(c=>`<tr><td style="font-weight:600;color:var(--text)">👤 ${c.nome||'—'}</td><td>${c.telefone||'—'}</td><td style="font-size:12px;color:var(--text3)">${c.email||'—'}</td><td style="font-size:12px;color:var(--text2)">${c.cpf||'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarData(c.created_at)}</td></tr>`).join('');
 }
 
 async function _renderEntregadoresTab(el){
@@ -6120,7 +6120,7 @@ async function _renderEntregadoresTab(el){
   const _buscaEsc=(_entBusca||'').replace(/"/g,'&quot;');
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar nome ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="ent-busca" placeholder="Buscar Nome Ou CPF..." value="${_buscaEsc}" oninput="_entSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div>
       <div style="display:flex;gap:8px">
         <button class="btn-sm btn-primary-sm" onclick="abrirNovoEntregador()">${_icone('plus',16,'btn-ico')}Novo</button>
         <button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('entregadores')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
@@ -6167,7 +6167,7 @@ function _renderTbodyEntregadores(){
   if(_entFiltro==='em_analise'){
     theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>Pix</th><th>Data Cadastro</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
-      ?'<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador em análise</td></tr>'
+      ?'<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Entregador Em Análise</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_perfil||e.foto||e.avatar||e.imagem)}</td>
@@ -6190,14 +6190,14 @@ function _renderTbodyEntregadores(){
     const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'fila');
     theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>Atualizado</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
-      ?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum entregador</td></tr>'
+      ?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Entregador</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_perfil||e.foto||e.avatar||e.imagem)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_cnh||e.cnh)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_crlv||e.crlv)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_comprovante_residencia||e.comprovante_residencia)}</td>
-        <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?(_entBloqPlat.has(e.id)?_escHtml(`${_entBloqPlat.get(e.id).motivo} (${(_entBloqPlat.get(e.id).lojas_nomes||[]).join(', ')}) em ${new Date(_entBloqPlat.get(e.id).criado_em).toLocaleDateString('pt-BR')}. Clique para desbloquear`).replace(/"/g,'&quot;'):'Clique para desbloquear'):'Clique para bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
+        <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?(_entBloqPlat.has(e.id)?_escHtml(`${_entBloqPlat.get(e.id).motivo} (${(_entBloqPlat.get(e.id).lojas_nomes||[]).join(', ')}) em ${new Date(_entBloqPlat.get(e.id).criado_em).toLocaleDateString('pt-BR')}. Clique para desbloquear`).replace(/"/g,'&quot;'):'Clique Para Desbloquear'):'Clique Para Bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
@@ -6218,7 +6218,7 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
   if(badge){badge.textContent='…';badge.style.background='#94a3b8';badge.style.cursor='default';badge.onclick=null;}
   const res=await dbPatch('entregadores',{disponivel:novoValor,updated_at:_agoraBrasilia()},`?id=eq.${id}`);
   if(res===null){
-    showNotif('❌ Erro ao atualizar disponibilidade','','var(--red)');
+    showNotif('❌ Erro Ao Atualizar Disponibilidade','','var(--red)');
     if(badge){badge.textContent=atualDisponivel?'Online':'Offline';badge.style.background=atualDisponivel?'#10B981':'#6B7280';badge.style.cursor='pointer';badge.onclick=()=>_toggleDisponivelEntregador(id,atualDisponivel);}
     return;
   }
@@ -6240,9 +6240,9 @@ async function _toggleDisponivelEntregador(id,atualDisponivel){
   const _entTog=allMotoboys.find(e=>e.id===id);
   const _semGpsAoLigar=novoValor&&_entTog&&(_entTog.status==='offline'||!_entTog.lat||!_entTog.lng);
   if(_semGpsAoLigar){
-    showNotif('⚠️ Ligado, mas sem GPS','Esse entregador só volta a aparecer no mapa depois que ele mesmo abrir o app — esse botão não reinicia o GPS pelo celular dele.','#f59e0b');
+    showNotif('⚠️ Ligado, Mas Sem GPS','Esse Entregador Só Volta A Aparecer No Mapa Depois Que Ele Mesmo Abrir O App — Esse Botão Não Reinicia O GPS Pelo Celular Dele.','#f59e0b');
   }else{
-    showNotif(novoValor?'🟢 Entregador online':'⚫ Entregador offline','','var(--green)');
+    showNotif(novoValor?'🟢 Entregador Online':'⚫ Entregador Offline','','var(--green)');
   }
 }
 
@@ -6256,11 +6256,11 @@ async function _toggleStatusEntregador(id, statusAtual){
     :{status:'ativo',aprovado:true,disponivel:false,updated_at:new Date().toISOString()};
   const res=await dbPatch('entregadores',payload,`?id=eq.${id}`);
   if(res===null){
-    showNotif('❌ Erro ao atualizar status','','var(--red)');
+    showNotif('❌ Erro Ao Atualizar Status','','var(--red)');
     if(badge){badge.textContent=statusAtual==='bloqueado'?'🚫 Bloqueado':'✅ Disponível';badge.style.background=statusAtual==='bloqueado'?'#EF4444':'#10B981';badge.style.cursor='pointer';badge.onclick=()=>_toggleStatusEntregador(id,statusAtual);}
     return;
   }
-  showNotif(bloqueando?'🚫 Entregador bloqueado':'✅ Entregador desbloqueado','','var(--green)');
+  showNotif(bloqueando?'🚫 Entregador Bloqueado':'✅ Entregador Desbloqueado','','var(--green)');
   setTimeout(()=>renderCadastrosPage('entregadores'),600);
 }
 
@@ -6275,8 +6275,8 @@ async function _aprovarEntregador(id){
     foto_comprovante_residencia_status:'aprovado',foto_placa_status:'aprovado',
     updated_at:_agoraBrasilia(),
   },`?id=eq.${id}`);
-  if(res===null){showNotif('❌ Erro ao aprovar','','var(--red)');return;}
-  showNotif('✅ Entregador aprovado!','','var(--green)');
+  if(res===null){showNotif('❌ Erro Ao Aprovar','','var(--red)');return;}
+  showNotif('✅ Entregador Aprovado!','','var(--green)');
   renderCadastrosPage('entregadores');
 }
 
@@ -6286,7 +6286,7 @@ function _reprovarEntregador(id,nome){
   modal.innerHTML=`<div class="modal" style="max-width:420px">
     <div class="modal-header"><span class="modal-title">${_icone('circle-x',18)} Reprovar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-reprovar-ent').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe o motivo da reprovação de <strong style="color:var(--text)">${nome}</strong>:</p>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:14px">Informe O Motivo Da Reprovação De <strong style="color:var(--text)">${nome}</strong>:</p>
       <div class="fi"><label>Motivo</label><textarea id="rep-motivo" placeholder="Ex: Documentação incompleta, CNH inválida..." style="min-height:80px;resize:vertical"></textarea></div>
       <div id="rep-feedback" style="min-height:16px;margin-top:8px;font-size:13px"></div>
     </div>
@@ -6301,7 +6301,7 @@ function _reprovarEntregador(id,nome){
 async function _confirmarReprovacao(id){
   const motivo=document.getElementById('rep-motivo')?.value?.trim()||'';
   const fb=document.getElementById('rep-feedback');
-  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe Um Motivo.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   // Mesmo motivo do _aprovarEntregador: reprova os 5 documentos junto,
   // pra ficar consistente com o que o gate do app do entregador vai
@@ -6317,9 +6317,9 @@ async function _confirmarReprovacao(id){
     foto_placa_status:'reprovado',foto_placa_motivo:motivo,
     updated_at:_agoraBrasilia(),
   },`?id=eq.${id}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro Ao Salvar.</span>';return;}
   document.getElementById('modal-reprovar-ent')?.classList.remove('open');
-  showNotif('❌ Entregador reprovado',motivo.substring(0,50),'var(--red)');
+  showNotif('❌ Entregador Reprovado',motivo.substring(0,50),'var(--red)');
   renderCadastrosPage('entregadores');
 }
 
@@ -6360,27 +6360,27 @@ async function _setCadastroStatus(entId,novoStatus){
     patch.foto_comprovante_residencia_status='reprovado';patch.foto_placa_status='reprovado';
   }else if(novoStatus==='em_analise'||novoStatus==='pendente'){patch.aprovado=false;}
   await dbPatch('entregadores',patch,`?id=eq.${entId}`);
-  showNotif(`Status atualizado: ${novoStatus}`,'');
+  showNotif(`Status Atualizado: ${novoStatus}`,'');
   renderCadastrosPage('entregadores');
 }
 
 async function excluirEntregador(id,nome){
-  if(!confirm(`Excluir permanentemente?\nO histórico de pedidos será mantido.`))return;
+  if(!confirm(`Excluir Permanentemente?\nO Histórico De Pedidos Será Mantido.`))return;
   // Nulifica saques antes de deletar para evitar FK constraint
   await db('saques','PATCH',{entregador_id:null},`?entregador_id=eq.${id}`).catch(()=>{});
   await db('entregadores','DELETE',null,`?id=eq.${id}`);
   // Deleta auth user via Edge Function (requer service role key)
   await fetch(`${SB_URL}/functions/v1/delete-entregador`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({entregador_id:id})}).catch(()=>{});
-  showNotif('🗑️ Entregador excluído','','var(--red)');
+  showNotif('🗑️ Entregador Excluído','','var(--red)');
   renderCadastrosPage('entregadores');
 }
 
 async function excluirLoja(id,nome){
-  if(!confirm(`Tem certeza que deseja excluir a loja "${nome}"?\nEsta ação não pode ser desfeita.`))return;
+  if(!confirm(`Tem Certeza Que Deseja Excluir A Loja "${nome}"?\nEsta Ação Não Pode Ser Desfeita.`))return;
   try{await db('logs_acoes','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: logs_acoes skip',e);}
   try{await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: usuarios_painel skip',e);}
   await db('lojas','DELETE',null,`?id=eq.${id}`);
-  showNotif('🗑️ Loja excluída','','var(--red)');
+  showNotif('🗑️ Loja Excluída','','var(--red)');
   _recarregarListaLojas();
 }
 // Depois de editar/excluir loja: atualiza SÓ a lista de onde o usuário
@@ -6404,15 +6404,15 @@ function _recarregarListaLojas(){
 // enviado". Corrigido de passagem. foto_placa também nunca aparecia
 // aqui, mesmo já existindo na tabela — adicionado.
 const _DOCUMENTOS_ENTREGADOR=[
-  ['foto_perfil','Foto de Perfil'],
+  ['foto_perfil','Foto De Perfil'],
   ['foto_cnh','CNH'],
   ['foto_crlv','CRLV'],
-  ['foto_comprovante_residencia','Comprovante de Residência'],
-  ['foto_placa','Foto da Placa'],
+  ['foto_comprovante_residencia','Comprovante De Residência'],
+  ['foto_placa','Foto Da Placa'],
 ];
 function _blocoDocumentosAdmin(entId,e){
   const cores={aprovado:'#10b981',reprovado:'#ef4444',em_analise:'#eab308'};
-  const labels={aprovado:'✅ Aprovado',reprovado:'❌ Reprovado',em_analise:'🔍 Em análise'};
+  const labels={aprovado:'✅ Aprovado',reprovado:'❌ Reprovado',em_analise:'🔍 Em Análise'};
   return _DOCUMENTOS_ENTREGADOR.map(([campo,label])=>{
     const url=e[campo]||'';
     const status=e[campo+'_status']||'em_analise';
@@ -6425,7 +6425,7 @@ function _blocoDocumentosAdmin(entId,e){
       </div>
       ${motivo&&status==='reprovado'?`<div style="font-size:11px;color:var(--text3);margin-top:4px">Motivo: ${motivo.replace(/</g,'&lt;')}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:8px">
-        ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver Foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não enviado</span>`}
+        ${url?`<button type="button" data-url="${url.replace(/"/g,'&quot;')}" onclick="window.open(this.getAttribute('data-url'),'_blank')" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver Foto</button>`:`<span style="flex:1;color:var(--text3);font-size:12px;padding:6px 0">Não Enviado</span>`}
         <button type="button" onclick="_aprovarDocumento('${entId}','${campo}')" ${status==='aprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='aprovado'?'var(--border)':'#10b98122'};color:${status==='aprovado'?'var(--text3)':'#10b981'};font-size:12px;font-weight:700;cursor:${status==='aprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar</button>
         <button type="button" onclick="_reprovarDocumento('${entId}','${campo}','${label.replace(/'/g,"\\'")}')" ${status==='reprovado'?'disabled':''} style="padding:6px 10px;border:none;border-radius:6px;background:${status==='reprovado'?'var(--border)':'#ef444422'};color:${status==='reprovado'?'var(--text3)':'#ef4444'};font-size:12px;font-weight:700;cursor:${status==='reprovado'?'default':'pointer'};font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Reprovar</button>
       </div>
@@ -6434,9 +6434,9 @@ function _blocoDocumentosAdmin(entId,e){
 }
 async function _aprovarDocumento(entId,campo){
   const res=await dbPatch('entregadores',{[campo+'_status']:'aprovado',[campo+'_motivo']:null,updated_at:_agoraBrasilia()},`?id=eq.${entId}`);
-  if(res===null){showNotif('❌ Erro ao aprovar documento','','var(--red)');return;}
+  if(res===null){showNotif('❌ Erro Ao Aprovar Documento','','var(--red)');return;}
   await _recalcularStatusCadastro(entId);
-  showNotif('✅ Documento aprovado','','var(--green)');
+  showNotif('✅ Documento Aprovado','','var(--green)');
   abrirEditarEntregador(entId);
 }
 function _reprovarDocumento(entId,campo,label){
@@ -6458,13 +6458,13 @@ function _reprovarDocumento(entId,campo,label){
 async function _confirmarReprovacaoDocumento(entId,campo){
   const motivo=document.getElementById('repdoc-motivo')?.value?.trim()||'';
   const fb=document.getElementById('repdoc-feedback');
-  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe um motivo.</span>';return;}
+  if(!motivo){if(fb)fb.innerHTML='<span style="color:#ef4444">Informe Um Motivo.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',{[campo+'_status']:'reprovado',[campo+'_motivo']:motivo,updated_at:_agoraBrasilia()},`?id=eq.${entId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro ao salvar.</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro Ao Salvar.</span>';return;}
   await _recalcularStatusCadastro(entId);
   document.getElementById('modal-reprovar-doc')?.classList.remove('open');
-  showNotif('❌ Documento reprovado',motivo.substring(0,50),'var(--red)');
+  showNotif('❌ Documento Reprovado',motivo.substring(0,50),'var(--red)');
   abrirEditarEntregador(entId);
 }
 // Espelha status_cadastro/aprovado a partir da verdade granular (os 5
@@ -6505,24 +6505,24 @@ async function abrirEditarEntregador(entId){
   const fi=(label,content)=>`<div class="fi"><label>${label}</label>${content}</div>`;
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
 ${sec('👤 Dados Pessoais')}
-${row2(fi('Nome Completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme o nome real do entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
-${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar requer confirmação — o entregador receberá um novo link de acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
-${row1(fi('Clã de Entregador',sel('ee-cla',claAtualId,[['','Sem Clã'],...clasList.map(c=>[c.id,`${c.cidade.toUpperCase()} - ${c.uf}`])])))}
-${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data de Nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
+${row2(fi('Nome Completo',inp('ee-nome',(e.nome||'').includes('@')?e.nome.split('@')[0]:e.nome)+((e.nome||'').includes('@')?'<span style="font-size:11px;color:#f59e0b;display:block;margin-top:4px">⚠️ Confirme O Nome Real Do Entregador</span>':'')),fi('Telefone',inp('ee-telefone',e.telefone,'(16) 99999-9999')))}
+${row2(fi('E-mail',`<input id="ee-email" type="text" value="${(e.email||'').replace(/"/g,'&quot;')}" data-original-email="${(e.email||'').replace(/"/g,'&quot;')}" autocomplete="off" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Alterar Requer Confirmação — O Entregador Receberá Um Novo Link De Acesso</span>`),fi('CPF',inp('ee-cpf',e.cpf,'000.000.000-00')))}
+${row1(fi('Clã De Entregador',sel('ee-cla',claAtualId,[['','Sem Clã'],...clasList.map(c=>[c.id,`${c.cidade.toUpperCase()} - ${c.uf}`])])))}
+${row2(fi('RG',inp('ee-rg',e.rg)),fi('Data De Nascimento',inp('ee-nascimento',e.data_nascimento,'','date')))}
 ${row2(fi('CEP',inp('ee-cep',e.cep,'00000-000')),fi('Bairro',inp('ee-bairro',e.bairro)))}
 ${row1(fi('Logradouro',inp('ee-logradouro',e.logradouro,'Rua, Av...')))}
 ${row2(fi('Número',inp('ee-end-numero',e.numero_endereco,'123')),fi('Complemento',inp('ee-complemento',e.complemento_end,'Apto, Bloco...')))}
-${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
+${row2(fi('Disponibilidade',sel('ee-disponivel',e.status==='bloqueado'?'bloqueado':e.disponivel===true?'true':'false',[['true','Disponível'],['false','Indisponível'],['bloqueado','🚫 Bloqueado']])),fi('Nova Senha',`<div style="position:relative"><input id="ee-nova-senha" type="password" placeholder="Deixe Em Branco Para Não Alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('ee-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
 ${sec('📎 Documentos')}
 ${_blocoDocumentosAdmin(entId,e)}
-${sec('🛵 Dados do Veículo')}
+${sec('🛵 Dados Do Veículo')}
 ${row2(fi('Modal',sel('ee-modal',e.modal_veiculo,[['moto','Moto'],['carro','Carro'],['bicicleta','Bicicleta'],['van','Van']])),fi('Placa',inp('ee-placa',e.placa_veiculo,'ABC-1234')))}
 ${row2(fi('Modelo',inp('ee-modelo-veiculo',e.modelo_veiculo,'Honda CG 160...')),fi('Cor',inp('ee-cor-veiculo',e.cor_veiculo,'Preta')))}
 ${row2(fi('CNH',inp('ee-cnh',e.cnh)),fi('CNPJ',inp('ee-cnpj',e.cnpj,'00.000.000/0000-00')))}
-${sec('💰 Dados de Pagamento')}
-${row2(fi('Tipo de Pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
+${sec('💰 Dados De Pagamento')}
+${row2(fi('Tipo De Pagamento',sel('ee-tipo-pagamento',e.tipo_pagamento,[['por_tabela','Por Tabela'],['percentual','Percentual'],['fixo','Fixo']])),fi('Banco',inp('ee-banco',e.banco,'Nubank, Bradesco...')))}
 ${row2(fi('Tipo Chave Pix',sel('ee-tipo-pix',e.tipo_chave_pix,[['cpf','CPF'],['cnpj','CNPJ'],['email','Email'],['telefone','Telefone'],['aleatoria','Aleatória']])),fi('Chave Pix',inp('ee-chave-pix',e.chave_pix)))}
-${row1(`<div class="fi"><label>Máquina de Cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui Máquina de Cartão</span></label></div>`)}
+${row1(`<div class="fi"><label>Máquina De Cartão</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0"><input id="ee-maquina-cartao" type="checkbox" ${e.maquina_cartao?'checked':''} style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/><span style="font-size:14px;color:var(--text)">Possui Máquina De Cartão</span></label></div>`)}
 <div id="ee-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoEntregador('${entId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
@@ -6538,9 +6538,9 @@ async function salvarEdicaoEntregador(entId){
 
   if(emailMudou){
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(novoEmail)){
-      if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail inválido.</span>';return;
+      if(fb)fb.innerHTML='<span style="color:#ef4444">E-mail Inválido.</span>';return;
     }
-    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando e-mail…</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando E-mail…</span>';
     try{
       const r=await fetch(`${SB_URL}/functions/v1/update-entregador-email`,{
         method:'POST',
@@ -6549,20 +6549,20 @@ async function salvarEdicaoEntregador(entId){
       });
       const data=await r.json().catch(()=>({}));
       if(!r.ok){
-        if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao atualizar e-mail: ${data.error||r.status}</span>`;
-        showNotif('❌ Falha ao atualizar e-mail','','var(--red)');return;
+        if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro Ao Atualizar E-mail: ${data.error||r.status}</span>`;
+        showNotif('❌ Falha Ao Atualizar E-mail','','var(--red)');return;
       }
     }catch(e){
-      if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro de conexão ao atualizar e-mail.</span>';return;
+      if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro De Conexão Ao Atualizar E-mail.</span>';return;
     }
   }
 
   const novaSenha=g('ee-nova-senha');
   if(novaSenha){
-    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova senha precisa ter no mínimo 6 caracteres.</span>';return;}
-    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando senha…</span>';
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova Senha Precisa Ter No Mínimo 6 Caracteres.</span>';return;}
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando Senha…</span>';
     const resSenha=await _redefinirSenhaAuth(novoEmail||emailOriginal,novaSenha);
-    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao redefinir senha: ${resSenha.error}</span>`;return;}
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro Ao Redefinir Senha: ${resSenha.error}</span>`;return;}
   }
 
   const update={
@@ -6584,11 +6584,11 @@ async function salvarEdicaoEntregador(entId){
   console.log('[salvarEdicaoEntregador] campos enviados ao banco:', update);
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('entregadores',update,`?id=eq.${entId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar entregador','','var(--red)');return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro Ao Salvar Entregador','','var(--red)');return;}
   const claId=g('ee-cla');
   await db('clas_entregadores','DELETE',null,`?entregador_id=eq.${entId}`);
   if(claId)await db('clas_entregadores','POST',{cla_id:claId,entregador_id:entId});
-  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Entregador atualizado com sucesso!','','var(--green)');
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo Com Sucesso!</span>';showNotif('✅ Entregador Atualizado Com Sucesso!','','var(--green)');
   setTimeout(()=>{document.getElementById('modal-editar-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
 }
 
@@ -6596,7 +6596,7 @@ function abrirNovoEntregador(){
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
   let modal=document.getElementById('modal-novo-entregador');
   if(!modal){modal=document.createElement('div');modal.id='modal-novo-entregador';modal.className='modal-overlay';document.body.appendChild(modal);}
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome Completo</label><input id="ne-nome" placeholder="João da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha Inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 Caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">${_icone('rocket',16,'btn-ico')}Criar</button></div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('plus',18)} Novo Entregador</span><button class="modal-close" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome Completo</label><input id="ne-nome" placeholder="João Da Silva"/></div><div class="fi"><label>CPF</label><input id="ne-cpf" placeholder="000.000.000-00"/></div></div><div class="form-row"><div class="fi"><label>E-mail</label><input id="ne-email" type="email" placeholder="joao@email.com"/></div><div class="fi"><label>Telefone</label><input id="ne-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row"><div class="fi"><label>Senha Inicial</label><input id="ne-senha" type="password" placeholder="Mínimo 6 Caracteres"/></div><div class="fi"><label>Disponibilidade</label><select id="ne-disponivel" style="${sel}"><option value="true">Disponível</option><option value="false">Indisponível</option></select></div></div><div id="ne-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-novo-entregador').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="criarNovoEntregador()">${_icone('rocket',16,'btn-ico')}Criar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6604,30 +6604,30 @@ async function criarNovoEntregador(){
   const fb=document.getElementById('ne-feedback');
   const nome=document.getElementById('ne-nome')?.value?.trim(),email=document.getElementById('ne-email')?.value?.trim(),senha=document.getElementById('ne-senha')?.value;
   const cpf=document.getElementById('ne-cpf')?.value?.trim(),telefone=document.getElementById('ne-telefone')?.value?.trim(),disponivel=document.getElementById('ne-disponivel')?.value==='true';
-  if(!nome||!email||!senha){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha nome, e-mail e senha.</span>';return;}
-  if(senha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Senha mínima de 6 caracteres.</span>';return;}
-  if(cpf&&!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF inválido. Use o formato 000.000.000-00.</span>';return;}
+  if(!nome||!email||!senha){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha Nome, E-mail E Senha.</span>';return;}
+  if(senha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Senha Mínima De 6 Caracteres.</span>';return;}
+  if(cpf&&!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF Inválido. Use O Formato 000.000.000-00.</span>';return;}
   if(cpf){
     const cpfExiste=await db('entregadores','GET',null,`?cpf=eq.${encodeURIComponent(cpf)}&limit=1`);
-    if(cpfExiste.length>0){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF já cadastrado no sistema.</span>';return;}
+    if(cpfExiste.length>0){if(fb)fb.innerHTML='<span style="color:#ef4444">CPF Já Cadastrado No Sistema.</span>';return;}
   }
-  if(fb)fb.innerHTML='<span style="color:var(--text3)">Criando conta…</span>';
+  if(fb)fb.innerHTML='<span style="color:var(--text3)">Criando Conta…</span>';
   try{
     const auth=await _criarContaAuth(email,senha);
     if(!auth.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">Erro Auth: ${auth.error}</span>`;return;}
     const criado=await db('entregadores','POST',{id:auth.userId,nome,email,cpf,telefone,disponivel,status:'livre',created_at:_agoraBrasilia(),updated_at:_agoraBrasilia()});
     if(!criado||criado.length===0){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Conta criada no Auth mas falhou ao salvar em entregadores. Veja o console.</span>';return;}
-    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador criado!</span>';
+    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Entregador Criado!</span>';
     setTimeout(()=>{document.getElementById('modal-novo-entregador')?.classList.remove('open');renderCadastrosPage('entregadores');},1200);
-  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro de conexão.</span>';}
+  }catch{if(fb)fb.innerHTML='<span style="color:#ef4444">Erro De Conexão.</span>';}
 }
 
 async function _renderUsuariosTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado Em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;}).join('');
 }
 
 async function abrirEditarUsuario(userId){
@@ -6637,8 +6637,8 @@ async function abrirEditarUsuario(userId){
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
   let modal=document.getElementById('modal-editar-usuario');
   if(!modal){modal=document.createElement('div');modal.id='modal-editar-usuario';modal.className='modal-overlay';document.body.appendChild(modal);}
-  const lojaOpts='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
+  const lojaOpts='<option value="">Selecione A Loja</option>'+lojas.map(l=>`<option value="${l.id}" ${u.loja_id===l.id?'selected':''}>${l.nome}</option>`).join('');
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Usuário</span><button class="modal-close" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div class="form-row"><div class="fi"><label>Nome</label><input id="eu-nome" value="${(u.nome||'').replace(/"/g,'&quot;')}"/></div><div class="fi"><label>E-mail</label><input id="eu-email" type="text" value="${(u.email||'').replace(/"/g,'&quot;')}" data-original-email="${(u.email||'').replace(/"/g,'&quot;')}"/></div></div><div class="form-row"><div class="fi"><label>Perfil</label><select id="eu-perfil" style="${sel}" onchange="document.getElementById('eu-loja-row').style.display=this.value==='loja'?'grid':'none'"><option value="adm" ${u.perfil==='adm'?'selected':''}>Administrador</option><option value="loja" ${u.perfil==='loja'?'selected':''}>Loja</option><option value="suporte" ${u.perfil==='suporte'?'selected':''}>Suporte</option></select></div><div class="fi"><label>Status</label><select id="eu-ativo" style="${sel}"><option value="true" ${u.ativo?'selected':''}>Ativo</option><option value="false" ${!u.ativo?'selected':''}>Inativo</option></select></div></div><div class="form-row" id="eu-loja-row" style="display:${u.perfil==='loja'?'grid':'none'}"><div class="fi" style="grid-column:1/-1"><label>Loja</label><select id="eu-loja-id" style="${sel}">${lojaOpts}</select></div></div><div class="form-row"><div class="fi" style="grid-column:1/-1"><label>Nova Senha</label><div style="position:relative"><input id="eu-nova-senha" type="password" placeholder="Deixe Em Branco Para Não Alterar" autocomplete="new-password" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 40px 9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/><button type="button" onclick="_toggleSenhaVisivel('eu-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div></div></div><div id="eu-feedback" style="margin-top:10px;font-size:13px;min-height:20px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-usuario').classList.remove('open')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoUsuario('${userId}')">${_icone('save',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
 
@@ -6648,16 +6648,16 @@ async function salvarEdicaoUsuario(userId){
   const emailOriginal=(emailEl?.getAttribute('data-original-email')||'').trim().toLowerCase();
   const novaSenha=document.getElementById('eu-nova-senha')?.value||'';
   if(novaSenha){
-    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova senha precisa ter no mínimo 6 caracteres.</span>';return;}
-    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando senha…</span>';
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova Senha Precisa Ter No Mínimo 6 Caracteres.</span>';return;}
+    if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando Senha…</span>';
     const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
-    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro ao redefinir senha: ${resSenha.error}</span>`;return;}
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro Ao Redefinir Senha: ${resSenha.error}</span>`;return;}
   }
   const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar usuário','','var(--red)');return;}
-  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo com sucesso!</span>';showNotif('✅ Usuário atualizado!',update.nome);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro Ao Salvar Usuário','','var(--red)');return;}
+  if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo Com Sucesso!</span>';showNotif('✅ Usuário Atualizado!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-usuario')?.classList.remove('open');renderCadastrosPage('usuarios');},1200);
 }
 
@@ -6676,7 +6676,7 @@ async function renderPrecoDinamicoPage(){
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('trending-up',22)} Preço Dinâmico</div></div>
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Global (Todas as Cidades)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Global (Todas As Cidades)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
         <div id="pd-wrap-cliente"></div>
         <div id="pd-wrap-entregador"></div>
@@ -6684,7 +6684,7 @@ async function renderPrecoDinamicoPage(){
       <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Por Cidade</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <select id="pd-cidade-select" onchange="_pdSelecionarCidade(this.value)" style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;cursor:pointer">
-          <option value="">Selecionar cidade...</option>
+          <option value="">Selecionar Cidade...</option>
         </select>
       </div>
       <div id="pd-cidade-content" style="display:grid;grid-template-columns:1fr 1fr;gap:20px"></div>
@@ -6777,12 +6777,12 @@ async function _fetchPdAtual(lojaId){
       const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
       const aplicavel=aplicaveisC.length===0||aplicaveisC.includes(lojaId);
       console.log(`[PD fetch] cidade=${cidade} cfgC.valor=${cfgC.valor} aplicaveisC=${JSON.stringify(aplicaveisC)} lojaId=${lojaId} aplicavel=${aplicavel} pd_global=${pdGlobalC} → ${aplicavel?'soma cidade '+cfgC.valor+' ao global':'mantém global='+pdGlobalC}`);
-      if(aplicavel){pdC=pdGlobalC+cfgC.valor;origemC=pdGlobalC>0?'global+cidade':'cidade';}
+      if(aplicavel){pdC=pdGlobalC+cfgC.valor;origemC=pdGlobalC>0?'Global+cidade':'cidade';}
     }else{
       console.log(`[PD fetch] cidade=${cidade} PD cidade inativo (cfgC.valor=${cfgC?.valor||0}) → mantém pd_global=${pdGlobalC}`);
     }
     const cfgE=_pdCidadesEnt[cidade];
-    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=pdGlobalE+cfgE.valor;origemE=pdGlobalE>0?'global+cidade':'cidade';}
+    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=pdGlobalE+cfgE.valor;origemE=pdGlobalE>0?'Global+cidade':'cidade';}
   }else{
     console.log(`[PD fetch] lojaId=${lojaId} sem cidade (migration pendente?) → aplica pd_global=${pdGlobalC}`);
   }
@@ -6831,14 +6831,14 @@ function _getPdEntregador(lojaId){
 }
 
 function _renderPrecoDinamicoTab(el,tipo){
-  const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
+  const label=tipo==='cliente'?'Cobrança Da Loja':'Pagamento Do Entregador';
   const _valorMemoria=_precoDinValores[tipo]||0;
   el.innerHTML=`
     <div class="card" style="max-width:520px">
       <div class="card-header"><span class="card-title">📈 Preço Dinâmico — ${label}</span></div>
       <div style="padding:20px">
         <p style="color:var(--text2);font-size:13px;margin-bottom:16px">
-          ${tipo==='cliente'?'Valor fixo extra somado à taxa cobrada da loja em todos os pedidos.':'Valor fixo extra somado ao pagamento do entregador em todos os pedidos.'}
+          ${tipo==='cliente'?'Valor Fixo Extra Somado À Taxa Cobrada Da Loja Em Todos Os Pedidos.':'Valor Fixo Extra Somado Ao Pagamento Do Entregador Em Todos Os Pedidos.'}
           <br><span style="font-size:12px;color:var(--text3)">Após salvar com valor &gt; 0, o preço dinâmico é desativado automaticamente em 120 minutos.</span>
         </p>
         <div class="fi" style="margin-bottom:8px">
@@ -6936,7 +6936,7 @@ async function _desativarPrecoDinamico(tipo){
     existingVal&&existingVal.length>0?db('configuracoes','PATCH',{valor:'0',updated_at:agora},`?chave=eq.${_pdChave(tipo)}`):Promise.resolve(),
     existingTs&&existingTs.length>0?db('configuracoes','PATCH',{valor:'',updated_at:agora},`?chave=eq.${_pdChaveTs(tipo)}`):Promise.resolve(),
   ]);
-  showNotif('⏰ Preço dinâmico desativado automaticamente','','var(--text2)');
+  showNotif('⏰ Preço Dinâmico Desativado Automaticamente','','var(--text2)');
 }
 
 async function salvarPrecoDinamico(tipo){
@@ -6984,10 +6984,10 @@ async function salvarPrecoDinamico(tipo){
       if(wrap)wrap.style.display='none';
     }
     if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
-    showNotif('✅ Preço dinâmico salvo!','');
+    showNotif('✅ Preço Dinâmico Salvo!','');
   }catch(e){
     console.error('[PD] exceção ao salvar tipo='+tipo,e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Salvar</span>';
   }
 }
 
@@ -7025,7 +7025,7 @@ async function _pdSelecionarCidade(cidade){
 }
 
 function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
-  const label=tipo==='cliente'?'Cobrança da Loja':'Pagamento do Entregador';
+  const label=tipo==='cliente'?'Cobrança Da Loja':'Pagamento Do Entregador';
   const entLabel=tipo==='cliente'?'Aplicar em (vazio = todas as lojas)':'Aplicar em (vazio = todos os entregadores)';
   const cidSafe=cidade.replace(/[^a-z0-9]/gi,'_');
   const cidKey=`${tipo}_${cidSafe}`;
@@ -7058,7 +7058,7 @@ function _renderPdCidadeCard(el,tipo,cidade,entidades,cfg,aplicaveis){
           <input type="text" id="${searchId}" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value,'${cidKey}')"
             style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
           <div id="${multiId}" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
-            ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum encontrado</div>'}
+            ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum Encontrado</div>'}
           </div>
         </div>
         <div id="pd-cid-feedback-${cidKey}" style="margin-bottom:10px;font-size:12px"></div>
@@ -7152,10 +7152,10 @@ async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
       if(ww)ww.style.display='none';
     }
     if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
-    showNotif(`✅ Preço dinâmico ${cidade} salvo!`,'');
+    showNotif(`✅ Preço Dinâmico ${cidade} Salvo!`,'');
   }catch(e){
     console.error('[PD-cidade] exceção ao salvar tipo='+tipo+' cidade='+cidade,e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Salvar</span>';
   }
 }
 
@@ -7204,7 +7204,7 @@ async function _desativarPdCidade(tipo,cidade){
   const inp=document.getElementById(`pd-cid-valor-${tipo}_${cidSafe}`);
   if(inp)inp.value='0';
   await db('configuracoes','PATCH',{valor:JSON.stringify(mem),updated_at:agora},`?chave=eq.${chave}`);
-  showNotif(`⏰ Preço dinâmico ${cidade} desativado automaticamente`,'','var(--text2)');
+  showNotif(`⏰ Preço Dinâmico ${cidade} Desativado Automaticamente`,'','var(--text2)');
 }
 
 async function renderNovoPedidoPage(){
@@ -7212,9 +7212,9 @@ async function renderNovoPedidoPage(){
   const lojas=currentPerfil==='adm'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
   _npLojasData=lojas;
   const seletorLoja=currentPerfil==='adm'
-    ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
+    ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma de Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (loja não integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço de Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto de Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens do pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
@@ -7294,7 +7294,7 @@ async function renderCacPage(){
   const hoje=_dataHojeBrasilia();
   _cacMes=_cacMes||hoje.slice(0,7);
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('target',22)} C.A.C. — Custo de Aquisição de Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div></div>
+    <div class="page-header"><div class="page-title">${_icone('target',22)} C.A.C. — Custo De Aquisição De Cliente</div><div style="display:flex;gap:8px;align-items:center"><input type="month" id="cac-mes" value="${_cacMes}" onchange="_cacMes=this.value;renderCacPage()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif"/><button class="btn-sm btn-primary-sm" onclick="renderCacPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div></div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Bônus de R$0,50 por pedido finalizado de loja nova nos primeiros 90 dias a partir da data em que o vendedor foi ligado à loja (trocar o vendedor reinicia a contagem). Meta mensal por cargo (Vendedor 880 a 2.500, Expansão 2.500 a 8.000 entregas): bate ao atingir o mínimo, somando as entregas finalizadas no mês de todas as lojas novas dele, contando só a partir da atribuição. Vendedores são cadastrados em Cadastros → Vendedores e ligados à loja em Editar Loja.</div>
     <div id="cac-conteudo"><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
@@ -7311,12 +7311,12 @@ async function renderCacPage(){
   const R=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const N=n=>(n||0).toLocaleString('pt-BR');
   const [ano,mes]=_cacMes.split('-');
-  const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/pedido nos primeiros ${c.janela_bonus_dias} dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}${c.meta_entregas_mes_teto!=null?` a ${N(c.meta_entregas_mes_teto)}`:''}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
-  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (Sem meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
+  const cargosHtml=cargos.map(c=>`<div class="card" style="padding:14px 16px;flex:1;min-width:220px"><div style="font-weight:700;color:var(--text);margin-bottom:6px">${_escHtml(c.nome)}</div><div style="font-size:12px;color:var(--text2);line-height:1.7">Fixo: <b>${R(parseFloat(c.salario_fixo))}</b>/mês${c.vagas!=null?` · ${c.vagas} vagas`:''}<br>Bônus: <b>${R(parseFloat(c.bonus_por_pedido))}</b>/Pedido Nos Primeiros ${c.janela_bonus_dias} Dias<br>Meta: ${c.meta_entregas_mes!=null?`<b>${N(c.meta_entregas_mes)}${c.meta_entregas_mes_teto!=null?` a ${N(c.meta_entregas_mes_teto)}`:''}</b> entregas/mês`:'—'} · Ativos: ${vendedores.filter(v=>v.cargo_id===c.id&&v.ativo).length}</div></div>`).join('');
+  const metaBadge=r=>r.meta==null?'<span style="color:var(--text3)">— (Sem Meta)</span>':`<span style="font-weight:700;color:${r.bateuMeta?'#22c55e':'#ef4444'}">${r.bateuMeta?'✅ Bateu':'❌ Não Bateu'}</span> <span style="font-size:11px;color:var(--text3)">(${N(r.entregasMes)} de ${N(r.meta)}${r.metaTeto!=null?` a ${N(r.metaTeto)}`:''})</span>`;
   // Colunas numéricas (nas duas tabelas): número centralizado embaixo do
   // meio do cabeçalho — <th> e <td> com text-align:center.
   const resumoRows=resumo.filter(r=>r.lojas>0||r.vendedor.ativo).map(r=>`<tr>
-      <td style="font-weight:600;color:var(--text)">${_escHtml(r.vendedor.nome)}${r.vendedor.ativo?'':' <span style="font-size:10px;color:var(--text3)">(inativo)</span>'}</td>
+      <td style="font-weight:600;color:var(--text)">${_escHtml(r.vendedor.nome)}${r.vendedor.ativo?'':' <span style="font-size:10px;color:var(--text3)">(Inativo)</span>'}</td>
       <td>${_escHtml(r.cargo.nome||r.vendedor.cargo_id)}</td>
       <td style="text-align:center;white-space:nowrap">${N(r.lojas)}</td>
       <td style="text-align:center;white-space:nowrap">${N(r.pedidosJanela)}</td>
@@ -7324,7 +7324,7 @@ async function renderCacPage(){
       <td style="text-align:center;white-space:nowrap;font-weight:700;color:var(--green)">${R(r.bonusMes)}</td>
       <td>${metaBadge(r)}</td>
       <td style="text-align:center;white-space:nowrap">${R(r.custoMes)}</td>
-    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum vendedor cadastrado — cadastre em cadastros → vendedores.</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">Nenhum Vendedor Cadastrado — Cadastre Em Cadastros → Vendedores.</td></tr>';
   const lojasRows=linhas.map(x=>`<tr>
       <td style="font-weight:600;color:var(--text)">${_escHtml(x.vendedor.nome)}</td>
       <td>${_escHtml(x.cargo.nome||x.vendedor.cargo_id)}</td>
@@ -7332,28 +7332,28 @@ async function renderCacPage(){
       <td style="font-size:12px">${formatarData(x.dataCadastro)}</td>
       <td style="font-size:12px">${formatarData(x.inicioJanela)}</td>
       <td style="text-align:center">${x.dias??'—'}</td>
-      <td style="text-align:center;white-space:nowrap">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} na janela</span></td>
+      <td style="text-align:center;white-space:nowrap">${N(x.pedidosTotal)} <span style="font-size:11px;color:var(--text3)">/ ${N(x.pedidosJanela)} Na Janela</span></td>
       <td style="text-align:center;white-space:nowrap;font-weight:700">${R(x.bonus)}</td>
-      <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro do Prazo':'Prazo Encerrado'}</span></td>
-    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma loja com vendedor responsável ainda — atribua em cadastros → estabelecimentos → editar loja.</td></tr>';
+      <td><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:${x.dentroPrazo?'#22c55e22':'var(--surface2)'};color:${x.dentroPrazo?'#22c55e':'var(--text3)'}">${x.dentroPrazo?'Dentro Do Prazo':'Prazo Encerrado'}</span></td>
+    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma Loja Com Vendedor Responsável Ainda — Atribua Em Cadastros → Estabelecimentos → Editar Loja.</td></tr>';
   el.innerHTML=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">${cargosHtml}</div>
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo por Vendedor — ${mes}/${ano}</div>
-    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas Novas</th><th style="text-align:center">Pedidos na Janela</th><th style="text-align:center">Bônus Acumulado</th><th style="text-align:center">Bônus no Mês</th><th>Meta/Mês</th><th style="text-align:center">Custo no Mês (fixo + bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas Novas por Vendedor</div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início Contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (total / janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Resumo Por Vendedor — ${mes}/${ano}</div>
+    <div class="card" style="margin-bottom:18px"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th style="text-align:center">Lojas Novas</th><th style="text-align:center">Pedidos Na Janela</th><th style="text-align:center">Bônus Acumulado</th><th style="text-align:center">Bônus No Mês</th><th>Meta/Mês</th><th style="text-align:center">Custo No Mês (Fixo + Bônus)</th></tr></thead><tbody>${resumoRows}</tbody></table></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin:4px 0 8px">Lojas Novas Por Vendedor</div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Vendedor</th><th>Cargo</th><th>Loja</th><th>Cadastro</th><th>Início Contagem</th><th style="text-align:center">Dias</th><th style="text-align:center">Pedidos (Total / Janela 90d)</th><th style="text-align:center">Bônus</th><th>Status</th></tr></thead><tbody>${lojasRows}</tbody></table></div></div>`;
 }
 
 // ── Cadastros → Vendedores (equipe comercial do C.A.C.) ────────────────
 async function _renderVendedoresTab(el){
-  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalVendedor()">${_icone('plus',16,'btn-ico')}Novo Vendedor</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('vendedores')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Lojas</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-vendedores"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalVendedor()">${_icone('plus',16,'btn-ico')}Novo Vendedor</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('vendedores')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Lojas</th><th>Status</th><th>Criado Em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-vendedores"></tbody></table></div></div>`;
   const [data,cargos,lojas]=await Promise.all([
     db('vendedores','GET',null,'?order=nome.asc'),
     db('cargos_comerciais','GET',null,''),
     db('lojas','GET',null,'?vendedor_id=not.is.null&select=id,vendedor_id'),
   ]);
   const tbody=document.getElementById('tbody-cad-vendedores');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum vendedor cadastrado</td></tr>':data.map(v=>{
+  tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Vendedor Cadastrado</td></tr>':data.map(v=>{
     const c=cargos.find(x=>x.id===v.cargo_id);
     return`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(v.nome)}</td><td>${_escHtml(c?c.nome:v.cargo_id)}</td><td style="font-size:12px">${_escHtml(v.telefone||'—')}</td><td>${lojas.filter(l=>l.vendedor_id===v.id).length}</td><td><span class="p-badge b-${v.ativo?'em_rota':'fila'}">${v.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(v.criado_em)}</td><td><button onclick="abrirModalVendedor('${v.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;
   }).join('');
@@ -7375,12 +7375,12 @@ async function salvarVendedor(id){
   const fb=document.getElementById('vd-feedback');
   const g=k=>document.getElementById(k)?.value||'';
   const body={nome:g('vd-nome').trim(),telefone:g('vd-telefone').trim()||null,cargo_id:g('vd-cargo'),ativo:g('vd-ativo')==='true'};
-  if(!body.nome){if(fb)fb.innerHTML='<span style="color:#ef4444">Nome obrigatório.</span>';return;}
+  if(!body.nome){if(fb)fb.innerHTML='<span style="color:#ef4444">Nome Obrigatório.</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=id?await dbPatch('vendedores',body,`?id=eq.${id}`):await db('vendedores','POST',{...body,criado_em:_agoraBrasilia()});
   if(res===null||(Array.isArray(res)&&res.length===0)){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';return;}
   await logAcao(id?'editar_vendedor':'criar_vendedor',{vendedor_id:id||res[0]?.id,nome:body.nome,cargo:body.cargo_id});
-  showNotif('✅ Vendedor salvo!',body.nome);
+  showNotif('✅ Vendedor Salvo!',body.nome);
   document.getElementById('modal-vendedor')?.classList.remove('open');
   renderCadastrosPage('vendedores');
 }
@@ -7398,16 +7398,16 @@ async function renderPedidosPage(){
     <div class="page-header"><div class="page-title">${_icone('package',22)} Pedidos</div><div style="display:flex;gap:8px">${currentPerfil!=='suporte'?`<button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-pedido')">${_icone('plus',16,'btn-ico')}Novo Pedido</button>`:''}<button class="btn-sm btn-primary-sm" onclick="renderPedidosPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div></div>
     <div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div>${_lbl('DATA INÍCIO')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
-        <div>${_lbl('DATA FIM')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-fim" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-fim" value="23:59" style="${_is};width:86px"/></div></div>
+        <div>${_lbl('Data Início')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
+        <div>${_lbl('Data Fim')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-fim" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-fim" value="23:59" style="${_is};width:86px"/></div></div>
         <div>${_lbl('LOJA')}<select id="fp-loja" style="${_is};min-width:130px"><option value="">Todas</option></select></div>
         <div>${_lbl('ENTREGADOR')}<select id="fp-entregador" style="${_is};min-width:130px"><option value="">Todos</option></select></div>
-        <div>${_lbl('BUSCAR PEDIDO')}<input type="text" id="fp-numero" placeholder="Nº pedido..." style="${_is};min-width:110px"/></div>
+        <div>${_lbl('Buscar Pedido')}<input type="text" id="fp-numero" placeholder="Nº Pedido..." style="${_is};min-width:110px"/></div>
         <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
     </div></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:10px">
-      <div class="stat-card"><div class="stat-label">Todos os Pedidos</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
+      <div class="stat-card"><div class="stat-label">Todos Os Pedidos</div><div class="stat-value" id="fp-card-total" style="font-size:26px">—</div></div>
       <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" id="fp-card-finalizados" style="font-size:26px;color:var(--green)">—</div></div>
       <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">Total KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
@@ -7415,16 +7415,16 @@ async function renderPedidosPage(){
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
-      <div class="stat-card"><div class="stat-label">Contas a Pagar</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Contas A Pagar</div><div class="stat-value" id="fp-card-contas-pagar" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="fp-card-lucro-liquido" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">Faturamento Médio/Entrega</div><div class="stat-value" id="fp-card-fat-medio" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">Custo Médio/Entrega</div><div class="stat-value" id="fp-card-custo-medio" style="font-size:22px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">Lucro Médio/Entrega</div><div class="stat-value" id="fp-card-lucro-medio" style="font-size:22px">—</div></div>
       <div class="stat-card"><div class="stat-label">Valor Mercadoria</div><div class="stat-value" id="fp-card-merc" style="font-size:22px;color:var(--accent)">—</div></div>
     </div>`:''}
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA de entrega (Aceito → chegada no cliente)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição de Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
-    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">⏱️ SLA De Entrega (Aceito → Chegada No Cliente)</span></div><div style="padding:16px 20px" id="fp-sla-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição De Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha Do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
   const fpLoja=document.getElementById('fp-loja');
@@ -7556,7 +7556,7 @@ async function _buscarPedidosAdmin(){
       {label:'0 A 30 min',cor:'#16a34a',n:0},
       {label:'30 A 35 min',cor:'#eab308',n:0},
       {label:'35 A 40 min',cor:'#f97316',n:0},
-      {label:'Mais de 40 min',cor:'#ef4444',n:0},
+      {label:'Mais De 40 min',cor:'#ef4444',n:0},
     ];
     _comSla.forEach(p=>{
       // _parseUtc (não new Date() puro) porque chegou_destino_em é
@@ -7571,7 +7571,7 @@ async function _buscarPedidosAdmin(){
     });
     const _totalSla=_faixas.reduce((s,f)=>s+f.n,0);
     _slaBars.innerHTML=_totalSla===0
-      ?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com dados de SLA no período</div>'
+      ?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum Pedido Finalizado Com Dados De SLA No Período</div>'
       :_faixas.map(f=>{const pct=(f.n/_totalSla*100).toFixed(1);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${f.label}</span><span style="font-weight:700">${f.n} (${pct}%)</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${f.cor};height:100%;width:${pct}%;border-radius:4px"></div></div></div>`;}).join('');
   }
   // Distribuição de KM: faixas fixas de 1km, dinâmicas até a maior distância
@@ -7581,7 +7581,7 @@ async function _buscarPedidosAdmin(){
   if(_kmBars){
     const _comKm=finalizados.filter(p=>parseFloat(p.distancia_km)>0);
     if(!_comKm.length){
-      _kmBars.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido finalizado com KM no período</div>';
+      _kmBars.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">Nenhum Pedido Finalizado Com KM No Período</div>';
     }else{
       const _maxKm=Math.max(...(_comKm.map(p=>parseFloat(p.distancia_km))));
       const _numFaixas=Math.max(1,Math.ceil(_maxKm));
@@ -7600,7 +7600,7 @@ async function _buscarPedidosAdmin(){
   const _fpCols=currentPerfil==='adm'?14:currentPerfil==='suporte'?10:12;
   _fpPedidos=arr;
   const _segundaIni=_inicioSemanaAtualBrasilia();
-  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique para alterar o status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não é possível alterar pedidos de semanas anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td><td style="text-align:center"><button onclick="event.stopPropagation();_verLinhaTempoPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif;white-space:nowrap">${_icone('history',16,'btn-ico')}Ver</button></td></tr>`;}).join('');
+  const _pedidosRows=arr.map(p=>{const sk=getStatusKey(p);const ent=_fpEntregadores.find(e=>e.id===(p.motoboy_id||p.entregador_id));const loja=_fpLojas.find(l=>l.id===p.loja_id);const km=p.distancia_km>0?parseFloat(p.distancia_km).toFixed(1)+'km':'—';const cobradoNum=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);const pagoNum=parseFloat(p.taxa_motoboy)||0;const cobrado=cobradoNum>0?'R$ '+cobradoNum.toFixed(2):'—';const pago=pagoNum>0?'R$ '+pagoNum.toFixed(2):'—';const lucroLiq=cobradoNum-pagoNum;const lucroStr=cobradoNum>0?`<span style="font-weight:700;color:${lucroLiq>=0?'#22c55e':'#ef4444'}">R$ ${lucroLiq.toFixed(2)}</span>`:'—';const cobranca=loja?.tipo_cobranca==='credito'?'💳 Crédito':loja?.tipo_cobranca==='faturamento'?'📄 Faturamento':'—';return`<tr><td style="font-weight:700;color:var(--text)">#${p.numero||p.id?.substring(0,6)}</td><td style="font-size:12px;color:var(--text2)">${loja?loja.nome:'—'}</td><td>${p.endereco||'—'}</td>${_isSup?'':`<td style="font-weight:700;color:var(--green)">R$ ${(p.valor||0).toFixed(2)}</td>`}<td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="font-size:12px;color:var(--text2)">${km}</td>${_showFin?`<td style="font-size:12px;color:var(--text2)">${pago}</td>`:''}${_isSup?'':`<td style="font-size:12px;color:var(--text2)">${cobrado}</td>`}${_showFin?`<td style="font-size:12px;text-align:right">${lucroStr}</td>`:''}<td style="font-size:12px;text-align:center">${_iconsLogistica(p)}</td><td>${(currentPerfil==='adm'||currentPerfil==='admin')?(_normDataLocal(p.created_at)>=_segundaIni?`<span class="p-badge b-${sk}" onclick="event.stopPropagation();abrirDropdownStatusRelatorio(event,'${p.id}')" style="cursor:pointer;user-select:none" title="Clique Para Alterar O Status">${getStatusLabel(p)} <span style="font-size:8px">▾</span></span>`:`<span class="p-badge b-${sk}" style="opacity:.85;cursor:not-allowed" title="Não É Possível Alterar Pedidos De Semanas Anteriores">${getStatusLabel(p)}</span>`):`<span class="p-badge b-${sk}">${getStatusLabel(p)}</span>`}</td><td style="font-size:12px;color:var(--text2)">${cobranca}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(p.created_at)}</td><td style="text-align:center"><button onclick="event.stopPropagation();_verLinhaTempoPedido('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif;white-space:nowrap">${_icone('history',16,'btn-ico')}Ver</button></td></tr>`;}).join('');
   // Linhas extras de crédito/débito manual de entregador — só quando adm e
   // sem filtro de loja/número (não fazem sentido pra esses filtros). Usa o
   // mesmo formato de 13 colunas do adm; não participam de nenhum card de
@@ -7612,7 +7612,7 @@ async function _buscarPedidosAdmin(){
     const valorStr=`<span style="font-weight:700;color:${isCredito?'#10b981':'#ef4444'}">${isCredito?'+':'-'}R$ ${(parseFloat(c.valor)||0).toFixed(2)}</span>`;
     return`<tr><td style="font-weight:700;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${c.observacoes||(isCredito?'Crédito Manual':'Débito Manual')}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text2)">${ent?ent.nome:'—'}</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="font-size:12px">${valorStr}</td><td style="color:var(--text3)">—</td><td style="text-align:center;color:var(--text3)">—</td><td>${badge}</td><td style="color:var(--text3)">—</td><td style="font-size:12px;color:var(--text3)">${c.data?formatarDataBR(c.data):'—'}</td><td style="text-align:center;color:var(--text3)">—</td></tr>`;
   }).join('');
-  tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
+  tbody.innerHTML=(arr.length===0&&!_creditosEntRows)?`<tr><td colspan="${_fpCols}" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Pedido Encontrado</td></tr>`:_pedidosRows+_creditosEntRows;
 }
 // Linha do Tempo — 5 marcos reais do pedido, em ordem cronológica, cada um
 // com o horário exato gravado no banco (created_at/aceito_em/
@@ -7630,8 +7630,8 @@ async function _buscarPedidosAdmin(){
 const LINHA_TEMPO_MARCOS=[
   {campo:'created_at',label:'Pedido Criado',icone:'📝'},
   {campo:'aceito_em',label:'Pedido Aceito',icone:'🙋'},
-  {campo:'chegou_local_em',label:'Chegou no Estabelecimento',icone:'🏪'},
-  {campo:'em_rota_em',label:'Saiu em Rota',icone:'🛵'},
+  {campo:'chegou_local_em',label:'Chegou No Estabelecimento',icone:'🏪'},
+  {campo:'em_rota_em',label:'Saiu Em Rota',icone:'🛵'},
   {campo:'finalizado_em',label:'Finalizado (Entregue)',icone:'✅'},
 ];
 function _fmtDuracaoMs(ms){
@@ -7642,7 +7642,7 @@ function _fmtDuracaoMs(ms){
 }
 function _verLinhaTempoPedido(pedidoId){
   const p=_fpPedidos.find(x=>x.id===pedidoId);
-  if(!p){showNotif('❌ Erro','Pedido não encontrado na lista atual','var(--red)');return;}
+  if(!p){showNotif('❌ Erro','Pedido Não Encontrado Na Lista Atual','var(--red)');return;}
   const sk=getStatusKey(p);
   // Só cobra "faltou dado" de pedido já concluído — marco futuro vazio num
   // pedido ainda em andamento é esperado, não é falha de registro.
@@ -7667,17 +7667,17 @@ function _verLinhaTempoPedido(pedidoId){
       </div>
       <div style="padding-bottom:${ehUltimo?2:20}px;flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:${m.done?'var(--text)':'var(--text3)'}">${m.icone} ${m.label}</div>
-        <div style="font-size:12px;color:${m.done?'var(--text2)':'var(--text3)'};margin-top:2px">${m.done?formatarDataHora(m.tsRaw):'— ainda não aconteceu'}</div>
-        ${m.duracao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">⏱️ ${m.duracao} Depois do Marco Anterior</div>`:''}
+        <div style="font-size:12px;color:${m.done?'var(--text2)':'var(--text3)'};margin-top:2px">${m.done?formatarDataHora(m.tsRaw):'— Ainda Não Aconteceu'}</div>
+        ${m.duracao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">⏱️ ${m.duracao} Depois Do Marco Anterior</div>`:''}
       </div>
     </div>`;
   };
   modal.innerHTML=`<div class="modal" style="max-width:440px">
-    <div class="modal-header"><span class="modal-title">${_icone('history',18)} Linha do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-header"><span class="modal-title">${_icone('history',18)} Linha Do Tempo — #${p.numero||p.id.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-linha-tempo').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
       ${passos.map(linhaMarco).join('')}
-      ${faltouDadoNoMeio?`<div style="margin-top:6px;font-size:12px;color:var(--text3)">⚠️ Um ou mais marcos não foram registrados pra esse pedido (comum em pedidos antigos — anteriores ao marco existir no sistema —, cancelados no meio do fluxo, ou com status alterado manualmente pulando etapas).</div>`:''}
-      <div style="margin-top:14px;font-size:11px;color:var(--text3)">Rota real (GPS) ainda não é registrada pelo sistema — só o horário de cada marco acima.</div>
+      ${faltouDadoNoMeio?`<div style="margin-top:6px;font-size:12px;color:var(--text3)">⚠️ Um Ou Mais Marcos Não Foram Registrados Pra Esse Pedido (Comum Em Pedidos Antigos — Anteriores Ao Marco Existir No Sistema —, Cancelados No Meio Do Fluxo, Ou Com Status Alterado Manualmente Pulando Etapas).</div>`:''}
+      <div style="margin-top:14px;font-size:11px;color:var(--text3)">Rota Real (GPS) Ainda Não É Registrada Pelo Sistema — Só O Horário De Cada Marco Acima.</div>
     </div>
   </div>`;
   modal.classList.add('open');
@@ -7822,7 +7822,7 @@ function _ceoFmtEixoReal(v){
 // converter posição do mouse em índice de bucket sem reparsear o SVG.
 let _ceoChartGeom=null;
 function _renderCeoLineChart(buckets){
-  if(!buckets.length){_ceoChartGeom=null;return'<div style="color:var(--text3);text-align:center;padding:40px">Sem dados no período</div>';}
+  if(!buckets.length){_ceoChartGeom=null;return'<div style="color:var(--text3);text-align:center;padding:40px">Sem Dados No Período</div>';}
   const W=960,H=240,padL=50,padR=44,padT=16,padB=32;
   const plotW=W-padL-padR,plotH=H-padT-padB;
   const maxFat=_ceoNiceMax(Math.max(0,...buckets.map(b=>b.faturamento)));
@@ -7865,12 +7865,12 @@ function _renderCeoLineChart(buckets){
   <div id="ceo-chart-tip" style="display:none;position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--text);line-height:1.6;pointer-events:none;white-space:nowrap;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.45)"></div>
   </div>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (eixo esquerdo)</span>
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos Finalizados (eixo direito)</span>
-    <span style="color:var(--text3)">· Passe o mouse no gráfico pra ver o valor exato</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (Eixo Esquerdo)</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos Finalizados (Eixo Direito)</span>
+    <span style="color:var(--text3)">· Passe O Mouse No Gráfico Pra Ver O Valor Exato</span>
   </div>`;
 }
-const _CEO_DIAS_SEMANA_EXTENSO=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const _CEO_DIAS_SEMANA_EXTENSO=['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
 // Título do tooltip: buckets diários (chave YYYY-MM-DD, 10 chars, dos
 // períodos 7d/30d) ganham o dia da semana por extenso na frente — dia
 // calculado em meio-dia local pra não virar de dia por fuso. Buckets
@@ -7905,7 +7905,7 @@ function _ceoAttachChartTooltip(){
     guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.style.opacity='1';
     dotFat.setAttribute('cx',cx);dotFat.setAttribute('cy',cyFat);dotFat.style.opacity='1';
     dotPed.setAttribute('cx',cx);dotPed.setAttribute('cy',cyPed);dotPed.style.opacity='1';
-    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${_ceoFmtTooltipTitulo(b)}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} finalizado${b.pedidos===1?'':'s'}</div>`;
+    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${_ceoFmtTooltipTitulo(b)}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} Finalizado${b.pedidos===1?'':'s'}</div>`;
     const wrapRect=wrap.getBoundingClientRect();
     let left=e.clientX-wrapRect.left+14;
     const top=Math.max(0,e.clientY-wrapRect.top-52);
@@ -7934,9 +7934,9 @@ function _ceoSetPeriodo(p){
 function _ceoSaudacao(){
   let hora=parseInt(new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',hour12:false}),10);
   if(hora===24)hora=0;
-  if(hora<12)return{texto:'Bom dia',icone:'☀️'};
-  if(hora<18)return{texto:'Boa tarde',icone:'🌤️'};
-  return{texto:'Boa noite',icone:'🌙'};
+  if(hora<12)return{texto:'Bom Dia',icone:'☀️'};
+  if(hora<18)return{texto:'Boa Tarde',icone:'🌤️'};
+  return{texto:'Boa Noite',icone:'🌙'};
 }
 // Banco de 360 frases executivas (tom sério, foco em resultado/dados/ação/
 // crescimento) — uma por dia, escolhida por dia-do-ano em Brasília, sem
@@ -7944,365 +7944,365 @@ function _ceoSaudacao(){
 // então já nasce trocando à meia-noite E valendo pro primeiro login do dia.
 const _CEO_FRASES=[
 "Grandes resultados não acontecem por acaso. Eles são construídos com foco, dados e ação.",
-"Crescimento sustentável é a soma de mil decisões certas tomadas em sequência.",
-"O mercado recompensa quem executa rápido e corrige mais rápido ainda.",
-"Escala não é sorte — é processo repetido com disciplina até virar sistema.",
-"Toda meta grande começa como um número pequeno que alguém decidiu levar a sério.",
-"Empresas que vencem não têm mais sorte, têm mais repetição do que funciona.",
-"O dado não mente, mas só serve se alguém tiver coragem de agir sobre ele.",
-"Ritmo é vantagem competitiva: quem decide rápido aprende rápido.",
-"Consistência bate intensidade quando o jogo é de longo prazo.",
-"Cada operação bem executada hoje é um degrau pra escala de amanhã.",
-"Foco é dizer não pra cem coisas boas em nome de uma coisa essencial.",
-"O que não é medido não é gerenciado — e o que não é gerenciado não cresce.",
-"Disciplina operacional é o que separa uma boa ideia de um negócio de verdade.",
-"Resultado é a única linguagem que o mercado entende sem tradução.",
-"Toda vantagem competitiva começa como uma vantagem de execução.",
-"Crescer é fácil de falar e difícil de sustentar — por isso poucos chegam lá.",
-"Uma empresa séria se mede pelo que entrega, não pelo que promete.",
-"Dados sem decisão são só números bonitos guardados numa planilha.",
-"A diferença entre visão e alucinação é um plano de execução.",
-"Quem constrói pensando em escala não comemora o pico, comemora a consistência.",
+"Crescimento Sustentável É A Soma De Mil Decisões Certas Tomadas Em Sequência.",
+"O Mercado Recompensa Quem Executa Rápido E Corrige Mais Rápido Ainda.",
+"Escala Não É Sorte — É Processo Repetido Com Disciplina Até Virar Sistema.",
+"Toda Meta Grande Começa Como Um Número Pequeno Que Alguém Decidiu Levar A Sério.",
+"Empresas Que Vencem Não Têm Mais Sorte, Têm Mais Repetição Do Que Funciona.",
+"O Dado Não Mente, Mas Só Serve Se Alguém Tiver Coragem De Agir Sobre Ele.",
+"Ritmo É Vantagem Competitiva: Quem Decide Rápido Aprende Rápido.",
+"Consistência Bate Intensidade Quando O Jogo É De Longo Prazo.",
+"Cada Operação Bem Executada Hoje É Um Degrau Pra Escala De Amanhã.",
+"Foco É Dizer Não Pra Cem Coisas Boas Em Nome De Uma Coisa Essencial.",
+"O Que Não É Medido Não É Gerenciado — E O Que Não É Gerenciado Não Cresce.",
+"Disciplina Operacional É O Que Separa Uma Boa Ideia De Um Negócio De Verdade.",
+"Resultado É A Única Linguagem Que O Mercado Entende Sem Tradução.",
+"Toda Vantagem Competitiva Começa Como Uma Vantagem De Execução.",
+"Crescer É Fácil De Falar E Difícil De Sustentar — Por Isso Poucos Chegam Lá.",
+"Uma Empresa Séria Se Mede Pelo Que Entrega, Não Pelo Que Promete.",
+"Dados Sem Decisão São Só Números Bonitos Guardados Numa Planilha.",
+"A Diferença Entre Visão E Alucinação É Um Plano De Execução.",
+"Quem Constrói Pensando Em Escala Não Comemora O Pico, Comemora A Consistência.",
 "O lucro é a prova de que o modelo funciona; o crescimento, de que ele escala.",
-"Toda operação grande foi um dia uma operação pequena bem cuidada.",
-"Time forte não é o que não erra, é o que corrige rápido e sem drama.",
-"Liderar é decidir com dado incompleto e assumir a responsabilidade do resultado.",
-"O que constrói marca não é o discurso, é a entrega repetida sem exceção.",
-"Foco é escolher a métrica certa e ignorar o barulho ao redor dela.",
-"Empresas que escalam bem são as que documentam o que funciona antes de crescer.",
-"Cultura de resultado se prova no dia difícil, não no dia fácil.",
-"Executar bem o básico todos os dias é a estratégia mais subestimada que existe.",
-"O crescimento de verdade é chato de assistir e impossível de ignorar.",
-"Toda meta ambiciosa precisa de um checkpoint semanal, não só um sonho anual.",
-"Quem não revisita o número toda semana está gerenciando por intuição, não por fato.",
-"A margem conta a história que o faturamento sozinho esconde.",
-"Times vencedores têm o hábito de transformar problema em processo de melhoria.",
-"Não existe escala sem padronização — improviso não sobrevive ao volume.",
+"Toda Operação Grande Foi Um Dia Uma Operação Pequena Bem Cuidada.",
+"Time Forte Não É O Que Não Erra, É O Que Corrige Rápido E Sem Drama.",
+"Liderar É Decidir Com Dado Incompleto E Assumir A Responsabilidade Do Resultado.",
+"O Que Constrói Marca Não É O Discurso, É A Entrega Repetida Sem Exceção.",
+"Foco É Escolher A Métrica Certa E Ignorar O Barulho Ao Redor Dela.",
+"Empresas Que Escalam Bem São As Que Documentam O Que Funciona Antes De Crescer.",
+"Cultura De Resultado Se Prova No Dia Difícil, Não No Dia Fácil.",
+"Executar Bem O Básico Todos Os Dias É A Estratégia Mais Subestimada Que Existe.",
+"O Crescimento De Verdade É Chato De Assistir E Impossível De Ignorar.",
+"Toda Meta Ambiciosa Precisa De Um Checkpoint Semanal, Não Só Um Sonho Anual.",
+"Quem Não Revisita O Número Toda Semana Está Gerenciando Por Intuição, Não Por Fato.",
+"A Margem Conta A História Que O Faturamento Sozinho Esconde.",
+"Times Vencedores Têm O Hábito De Transformar Problema Em Processo De Melhoria.",
+"Não Existe Escala Sem Padronização — Improviso Não Sobrevive Ao Volume.",
 "O primeiro cliente prova o produto; o centésimo prova a operação.",
-"Decisão boa e tardia vale menos que decisão boa e a tempo.",
-"O que separa empresa profissional de empreendimento amador é a constância.",
-"Crescer rápido sem controle é só adiar o problema pra um tamanho maior.",
-"A meta do mês só importa se ela nasceu de uma meta do ano bem pensada.",
-"Cada real de custo evitável hoje é um real de margem garantido amanhã.",
-"Negócio sério tem plano B pronto antes de precisar dele.",
-"Quem mede tudo e não decide nada só está ocupado, não produtivo.",
-"A ambição sem processo vira só um sonho caro de manter.",
-"Boa operação é invisível: ninguém percebe até ela falhar.",
-"O sucesso de ontem não paga a meta de hoje.",
-"Escalar é multiplicar o que funciona e eliminar o que não escala.",
-"Toda empresa que cresce bem tem um dono obcecado pelo número certo.",
-"Dado ruim tomado a sério é pior que dado bom ignorado.",
-"A execução impecável do simples vale mais que a execução mediana do complexo.",
-"Empresa que não erra é empresa que não está tentando o suficiente.",
-"O padrão que você aceita hoje é o padrão que sua empresa vai ter amanhã.",
-"Crescimento sem margem é só volume caro.",
-"Toda virada de chave começa com alguém disposto a olhar o número de frente.",
-"Time pequeno e alinhado entrega mais que time grande e disperso.",
-"A meta trimestral existe pra dar realidade à meta anual.",
-"Negócio que dura é negócio que aprendeu a corrigir de rota sem parar de andar.",
-"Quem espera o momento perfeito pra decidir já perdeu a janela.",
-"A régua de qualidade da empresa é a régua que o dono aceita no dia a dia.",
-"Vantagem competitiva de verdade é difícil de copiar porque é difícil de sustentar.",
-"O crescimento saudável tem ritmo, não tem susto.",
-"Cada processo documentado é um problema que não vai se repetir.",
-"A diferença entre plano e realidade se mede em execução, não em intenção.",
-"Empresa disciplinada trata a meta como compromisso, não como esperança.",
-"O tamanho da operação hoje é reflexo direto da disciplina de seis meses atrás.",
-"Toda decisão estratégica boa nasce de uma pergunta simples bem feita.",
-"Negócio que escala tem processo que sobrevive à ausência do dono.",
-"A régua não muda porque o mês foi difícil — o esforço que muda.",
-"Quem não sabe seu custo real não sabe se está lucrando ou se enganando.",
-"Time que compartilha o número compartilha a responsabilidade pelo resultado.",
-"Crescer com controle é mais lento no começo e mais seguro no fim.",
-"A consistência de hoje é o argumento de venda de amanhã.",
-"Empresa que aprende rápido erra rápido, corrige rápido e cresce rápido.",
-"O trimestre bom é feito de semanas boas, uma atrás da outra.",
-"Foco não é fazer menos, é fazer o que importa com mais intensidade.",
+"Decisão Boa E Tardia Vale Menos Que Decisão Boa E A Tempo.",
+"O Que Separa Empresa Profissional De Empreendimento Amador É A Constância.",
+"Crescer Rápido Sem Controle É Só Adiar O Problema Pra Um Tamanho Maior.",
+"A Meta Do Mês Só Importa Se Ela Nasceu De Uma Meta Do Ano Bem Pensada.",
+"Cada Real De Custo Evitável Hoje É Um Real De Margem Garantido Amanhã.",
+"Negócio Sério Tem Plano B Pronto Antes De Precisar Dele.",
+"Quem Mede Tudo E Não Decide Nada Só Está Ocupado, Não Produtivo.",
+"A Ambição Sem Processo Vira Só Um Sonho Caro De Manter.",
+"Boa Operação É Invisível: Ninguém Percebe Até Ela Falhar.",
+"O Sucesso De Ontem Não Paga A Meta De Hoje.",
+"Escalar É Multiplicar O Que Funciona E Eliminar O Que Não Escala.",
+"Toda Empresa Que Cresce Bem Tem Um Dono Obcecado Pelo Número Certo.",
+"Dado Ruim Tomado A Sério É Pior Que Dado Bom Ignorado.",
+"A Execução Impecável Do Simples Vale Mais Que A Execução Mediana Do Complexo.",
+"Empresa Que Não Erra É Empresa Que Não Está Tentando O Suficiente.",
+"O Padrão Que Você Aceita Hoje É O Padrão Que Sua Empresa Vai Ter Amanhã.",
+"Crescimento Sem Margem É Só Volume Caro.",
+"Toda Virada De Chave Começa Com Alguém Disposto A Olhar O Número De Frente.",
+"Time Pequeno E Alinhado Entrega Mais Que Time Grande E Disperso.",
+"A Meta Trimestral Existe Pra Dar Realidade À Meta Anual.",
+"Negócio Que Dura É Negócio Que Aprendeu A Corrigir De Rota Sem Parar De Andar.",
+"Quem Espera O Momento Perfeito Pra Decidir Já Perdeu A Janela.",
+"A Régua De Qualidade Da Empresa É A Régua Que O Dono Aceita No Dia A Dia.",
+"Vantagem Competitiva De Verdade É Difícil De Copiar Porque É Difícil De Sustentar.",
+"O Crescimento Saudável Tem Ritmo, Não Tem Susto.",
+"Cada Processo Documentado É Um Problema Que Não Vai Se Repetir.",
+"A Diferença Entre Plano E Realidade Se Mede Em Execução, Não Em Intenção.",
+"Empresa Disciplinada Trata A Meta Como Compromisso, Não Como Esperança.",
+"O Tamanho Da Operação Hoje É Reflexo Direto Da Disciplina De Seis Meses Atrás.",
+"Toda Decisão Estratégica Boa Nasce De Uma Pergunta Simples Bem Feita.",
+"Negócio Que Escala Tem Processo Que Sobrevive À Ausência Do Dono.",
+"A Régua Não Muda Porque O Mês Foi Difícil — O Esforço Que Muda.",
+"Quem Não Sabe Seu Custo Real Não Sabe Se Está Lucrando Ou Se Enganando.",
+"Time Que Compartilha O Número Compartilha A Responsabilidade Pelo Resultado.",
+"Crescer Com Controle É Mais Lento No Começo E Mais Seguro No Fim.",
+"A Consistência De Hoje É O Argumento De Venda De Amanhã.",
+"Empresa Que Aprende Rápido Erra Rápido, Corrige Rápido E Cresce Rápido.",
+"O Trimestre Bom É Feito De Semanas Boas, Uma Atrás Da Outra.",
+"Foco Não É Fazer Menos, É Fazer O Que Importa Com Mais Intensidade.",
 "O produto vende uma vez; a operação decide se o cliente volta.",
-"Quem não define meta clara já perdeu antes de começar a medir.",
-"A execução constante vale mais que a estratégia brilhante mal executada.",
-"Empresa saudável cresce no ritmo que consegue sustentar, não no ritmo que quer.",
-"O detalhe operacional que parece pequeno é o que decide a margem no fim do mês.",
-"Resultado consistente é reputação construída sem precisar de discurso.",
+"Quem Não Define Meta Clara Já Perdeu Antes De Começar A Medir.",
+"A Execução Constante Vale Mais Que A Estratégia Brilhante Mal Executada.",
+"Empresa Saudável Cresce No Ritmo Que Consegue Sustentar, Não No Ritmo Que Quer.",
+"O Detalhe Operacional Que Parece Pequeno É O Que Decide A Margem No Fim Do Mês.",
+"Resultado Consistente É Reputação Construída Sem Precisar De Discurso.",
 "A meta define o destino; o processo define se você chega inteiro.",
-"Quem lidera com dado decide com menos ego e mais precisão.",
-"O crescimento estruturado hoje evita o caos operacional de amanhã.",
-"Empresa que mede tudo sabe exatamente onde apertar quando o resultado cai.",
-"A disciplina de revisar o número toda semana é o que separa reação de estratégia.",
-"Negócio que aguenta escala é negócio que testou o processo antes de crescer.",
+"Quem Lidera Com Dado Decide Com Menos Ego E Mais Precisão.",
+"O Crescimento Estruturado Hoje Evita O Caos Operacional De Amanhã.",
+"Empresa Que Mede Tudo Sabe Exatamente Onde Apertar Quando O Resultado Cai.",
+"A Disciplina De Revisar O Número Toda Semana É O Que Separa Reação De Estratégia.",
+"Negócio Que Aguenta Escala É Negócio Que Testou O Processo Antes De Crescer.",
 "Cada cliente satisfeito é um dado a favor da tese; cada reclamação, um dado contra.",
 "Crescer é fácil no papel; sustentar a qualidade enquanto cresce é o verdadeiro teste.",
-"A meta ambiciosa só vira realidade quando vira rotina de acompanhamento.",
-"Time alinhado no número não precisa de motivação artificial, precisa de clareza.",
-"O erro corrigido rápido custa menos que o acerto que demorou a acontecer.",
-"Negócio sério revisita premissa antiga sempre que o dado muda de direção.",
-"A execução de hoje escreve o relatório financeiro de amanhã.",
-"Quem constrói pensando em dez anos toma decisões diferentes de quem pensa em dez dias.",
-"O padrão de excelência não é um discurso de parede, é o que acontece quando ninguém está olhando.",
-"Crescimento real deixa rastro em planilha, não só em sensação.",
-"Empresa que trata o dado como bússola erra menos e corrige mais rápido.",
-"A meta sem prazo é só um desejo bem-intencionado.",
-"O cliente não compra a intenção da empresa, compra a experiência que ela entrega.",
-"Negócio que cresce com margem hoje tem fôlego pra crescer mais amanhã.",
-"A régua alta de hoje é o padrão normal de amanhã, se for mantida com consistência.",
-"Foco é a arte de proteger o essencial do barulho do urgente.",
-"O tamanho da ambição precisa ser do tamanho da estrutura que a sustenta.",
-"Empresa disciplinada não comemora meta batida sem entender por que bateu.",
-"A cada ciclo de melhoria, o processo fica mais forte e o erro fica mais raro.",
-"Quem decide com dado decide mais rápido porque decide com menos dúvida.",
-"O crescimento que não é medido de perto vira surpresa desagradável mais cedo ou mais tarde.",
-"Negócio de verdade se constrói corrigindo, não só planejando.",
-"A meta clara transforma esforço disperso em energia direcionada.",
-"Time que entende o número entende a própria contribuição pro resultado.",
-"Crescer rápido demais sem preparo é só emprestar problema do futuro.",
-"A qualidade da decisão de hoje se mede pelo resultado de amanhã, não pela sensação de agora.",
-"Empresa que aprende com o próprio erro cresce mais rápido do que a que só celebra o acerto.",
-"O detalhe que ninguém vê é o que sustenta a experiência que todo mundo sente.",
-"Foco no essencial é o que permite escalar sem perder qualidade.",
-"A disciplina de revisar processo é o que mantém a empresa jovem mesmo crescendo.",
-"Quem mede o próprio negócio de perto nunca é pego de surpresa pelo próprio resultado.",
-"Crescimento com propósito claro dura mais que crescimento por impulso.",
-"A meta boa é desconfortável o suficiente pra exigir esforço real.",
-"Empresa que respeita o processo respeita o cliente que depende dele.",
-"O lucro de hoje é reflexo direto da disciplina de custo de ontem.",
-"Time engajado no número entende que resultado é trabalho de todo mundo.",
-"A execução impecável é a estratégia mais difícil de copiar.",
-"Negócio que cresce com base sólida não teme a próxima fase de expansão.",
-"A meta anual só existe de verdade se for revisitada toda semana.",
-"Foco é decidir, com clareza, o que a empresa NÃO vai fazer este trimestre.",
-"O crescimento sustentável tem curva, não tem explosão.",
-"Empresa que documenta o processo transfere conhecimento em vez de depender de heróis.",
-"A cada erro registrado e corrigido, o próximo ciclo fica mais previsível.",
-"Quem entende o próprio custo entende exatamente onde está a alavanca de lucro.",
-"A régua de qualidade se sustenta quando vira hábito, não quando é só exigência pontual.",
-"Negócio disciplinado trata o número ruim como informação, não como fracasso.",
-"O crescimento consistente é o que constrói confiança de quem investe tempo e dinheiro na empresa.",
-"Time que executa com excelência hoje ganha o direito de crescer amanhã.",
-"A meta clara elimina a ambiguidade que trava a execução.",
-"Empresa que aprende com o dado corrige antes que o problema fique caro.",
-"O padrão de hoje é o piso de amanhã — por isso ele não pode cair.",
-"Foco é energia direcionada pro que realmente move o ponteiro do resultado.",
-"Crescer com controle é escolher o ritmo certo, não o ritmo mais rápido possível.",
-"A disciplina de acompanhar o número todo dia é o que evita o susto no fim do mês.",
-"Negócio de verdade constrói vantagem competitiva um processo bem feito de cada vez.",
-"A meta batida sem entender o motivo é sorte disfarçada de estratégia.",
-"Empresa séria não terceiriza a responsabilidade pelo próprio resultado.",
-"O crescimento que respeita a operação é o crescimento que sobrevive ao próximo ciclo.",
-"Foco no cliente certo vale mais que volume no cliente errado.",
-"A execução constante é o que transforma estratégia em vantagem real.",
-"Quem revisa premissa com frequência erra menos na decisão grande.",
-"O time que entende o porquê da meta executa com mais convicção que o time que só recebe a ordem.",
-"A qualidade do dado que você coleta define a qualidade da decisão que você toma.",
+"A Meta Ambiciosa Só Vira Realidade Quando Vira Rotina De Acompanhamento.",
+"Time Alinhado No Número Não Precisa De Motivação Artificial, Precisa De Clareza.",
+"O Erro Corrigido Rápido Custa Menos Que O Acerto Que Demorou A Acontecer.",
+"Negócio Sério Revisita Premissa Antiga Sempre Que O Dado Muda De Direção.",
+"A Execução De Hoje Escreve O Relatório Financeiro De Amanhã.",
+"Quem Constrói Pensando Em Dez Anos Toma Decisões Diferentes De Quem Pensa Em Dez Dias.",
+"O Padrão De Excelência Não É Um Discurso De Parede, É O Que Acontece Quando Ninguém Está Olhando.",
+"Crescimento Real Deixa Rastro Em Planilha, Não Só Em Sensação.",
+"Empresa Que Trata O Dado Como Bússola Erra Menos E Corrige Mais Rápido.",
+"A Meta Sem Prazo É Só Um Desejo Bem-Intencionado.",
+"O Cliente Não Compra A Intenção Da Empresa, Compra A Experiência Que Ela Entrega.",
+"Negócio Que Cresce Com Margem Hoje Tem Fôlego Pra Crescer Mais Amanhã.",
+"A Régua Alta De Hoje É O Padrão Normal De Amanhã, Se For Mantida Com Consistência.",
+"Foco É A Arte De Proteger O Essencial Do Barulho Do Urgente.",
+"O Tamanho Da Ambição Precisa Ser Do Tamanho Da Estrutura Que A Sustenta.",
+"Empresa Disciplinada Não Comemora Meta Batida Sem Entender Por Que Bateu.",
+"A Cada Ciclo De Melhoria, O Processo Fica Mais Forte E O Erro Fica Mais Raro.",
+"Quem Decide Com Dado Decide Mais Rápido Porque Decide Com Menos Dúvida.",
+"O Crescimento Que Não É Medido De Perto Vira Surpresa Desagradável Mais Cedo Ou Mais Tarde.",
+"Negócio De Verdade Se Constrói Corrigindo, Não Só Planejando.",
+"A Meta Clara Transforma Esforço Disperso Em Energia Direcionada.",
+"Time Que Entende O Número Entende A Própria Contribuição Pro Resultado.",
+"Crescer Rápido Demais Sem Preparo É Só Emprestar Problema Do Futuro.",
+"A Qualidade Da Decisão De Hoje Se Mede Pelo Resultado De Amanhã, Não Pela Sensação De Agora.",
+"Empresa Que Aprende Com O Próprio Erro Cresce Mais Rápido Do Que A Que Só Celebra O Acerto.",
+"O Detalhe Que Ninguém Vê É O Que Sustenta A Experiência Que Todo Mundo Sente.",
+"Foco No Essencial É O Que Permite Escalar Sem Perder Qualidade.",
+"A Disciplina De Revisar Processo É O Que Mantém A Empresa Jovem Mesmo Crescendo.",
+"Quem Mede O Próprio Negócio De Perto Nunca É Pego De Surpresa Pelo Próprio Resultado.",
+"Crescimento Com Propósito Claro Dura Mais Que Crescimento Por Impulso.",
+"A Meta Boa É Desconfortável O Suficiente Pra Exigir Esforço Real.",
+"Empresa Que Respeita O Processo Respeita O Cliente Que Depende Dele.",
+"O Lucro De Hoje É Reflexo Direto Da Disciplina De Custo De Ontem.",
+"Time Engajado No Número Entende Que Resultado É Trabalho De Todo Mundo.",
+"A Execução Impecável É A Estratégia Mais Difícil De Copiar.",
+"Negócio Que Cresce Com Base Sólida Não Teme A Próxima Fase De Expansão.",
+"A Meta Anual Só Existe De Verdade Se For Revisitada Toda Semana.",
+"Foco É Decidir, Com Clareza, O Que A Empresa NÃO Vai Fazer Este Trimestre.",
+"O Crescimento Sustentável Tem Curva, Não Tem Explosão.",
+"Empresa Que Documenta O Processo Transfere Conhecimento Em Vez De Depender De Heróis.",
+"A Cada Erro Registrado E Corrigido, O Próximo Ciclo Fica Mais Previsível.",
+"Quem Entende O Próprio Custo Entende Exatamente Onde Está A Alavanca De Lucro.",
+"A Régua De Qualidade Se Sustenta Quando Vira Hábito, Não Quando É Só Exigência Pontual.",
+"Negócio Disciplinado Trata O Número Ruim Como Informação, Não Como Fracasso.",
+"O Crescimento Consistente É O Que Constrói Confiança De Quem Investe Tempo E Dinheiro Na Empresa.",
+"Time Que Executa Com Excelência Hoje Ganha O Direito De Crescer Amanhã.",
+"A Meta Clara Elimina A Ambiguidade Que Trava A Execução.",
+"Empresa Que Aprende Com O Dado Corrige Antes Que O Problema Fique Caro.",
+"O Padrão De Hoje É O Piso De Amanhã — Por Isso Ele Não Pode Cair.",
+"Foco É Energia Direcionada Pro Que Realmente Move O Ponteiro Do Resultado.",
+"Crescer Com Controle É Escolher O Ritmo Certo, Não O Ritmo Mais Rápido Possível.",
+"A Disciplina De Acompanhar O Número Todo Dia É O Que Evita O Susto No Fim Do Mês.",
+"Negócio De Verdade Constrói Vantagem Competitiva Um Processo Bem Feito De Cada Vez.",
+"A Meta Batida Sem Entender O Motivo É Sorte Disfarçada De Estratégia.",
+"Empresa Séria Não Terceiriza A Responsabilidade Pelo Próprio Resultado.",
+"O Crescimento Que Respeita A Operação É O Crescimento Que Sobrevive Ao Próximo Ciclo.",
+"Foco No Cliente Certo Vale Mais Que Volume No Cliente Errado.",
+"A Execução Constante É O Que Transforma Estratégia Em Vantagem Real.",
+"Quem Revisa Premissa Com Frequência Erra Menos Na Decisão Grande.",
+"O Time Que Entende O Porquê Da Meta Executa Com Mais Convicção Que O Time Que Só Recebe A Ordem.",
+"A Qualidade Do Dado Que Você Coleta Define A Qualidade Da Decisão Que Você Toma.",
 "Empresa que cresce com margem preservada tem opção; a que cresce sem margem tem urgência.",
 "A régua alta mantida por meses vira cultura; mantida por dias, vira exceção.",
-"Foco é o combustível que faz o plano simples funcionar de verdade.",
-"O crescimento que dura é o que foi testado, ajustado e só depois escalado.",
-"Negócio disciplinado sabe separar problema de operação de problema de estratégia.",
-"A meta do trimestre é o checkpoint que evita que o ano inteiro vire surpresa.",
-"Empresa que aprende rápido com o mercado se adapta antes de precisar sobreviver a ele.",
-"O detalhe operacional bem cuidado é o que constrói reputação no boca a boca.",
-"Foco é dizer sim pro que importa e não pro que é só urgente.",
-"A disciplina financeira de hoje é a liberdade estratégica de amanhã.",
-"Negócio que mede o próprio processo encontra a alavanca antes de precisar dela com urgência.",
-"O crescimento saudável é medido em trimestre, não em semana boa isolada.",
-"Empresa que trata dado como ativo estratégico decide melhor que a que trata como relatório.",
-"A execução sem ego é o que permite corrigir rota rápido quando o número pede.",
-"Foco é a decisão diária de proteger o que move o resultado do que só ocupa a agenda.",
-"O padrão de excelência sobrevive à pressão quando virou hábito, não decisão pontual.",
-"Negócio que cresce com base em dado tem menos surpresa e mais previsibilidade.",
-"A meta clara e o processo certo transformam ambição em resultado mensurável.",
-"Empresa disciplinada revisita a estratégia sem abandonar a execução do dia a dia.",
-"O crescimento que respeita o ritmo da operação chega mais longe do que o que ignora limites.",
-"Foco é a diferença entre um negócio que cresce e um negócio que só se agita.",
-"A disciplina de medir, decidir e corrigir é o ciclo que sustenta qualquer escala.",
-"Negócio sério transforma meta em rotina, não em pressão de última hora.",
-"O resultado de hoje é a soma de decisões pequenas tomadas com consistência.",
-"Empresa que aprende com o erro de ontem executa melhor amanhã.",
-"A execução com dado reduz o achismo e aumenta a taxa de acerto.",
-"Foco é escolher batalha: nem toda urgência merece a atenção da liderança.",
-"O crescimento estruturado é o que permite dormir tranquilo mesmo escalando rápido.",
-"Negócio que cuida do detalhe cuida da experiência que constrói fidelidade.",
-"A meta anual sem checkpoint mensal é só um número bonito na parede.",
-"Empresa disciplinada não confunde estar ocupado com estar produzindo resultado.",
-"O crescimento que dura tem processo por trás, não só motivação.",
-"Foco é a clareza de saber exatamente o que fazer amanhã de manhã.",
-"A disciplina de olhar o número com frieza é o que evita decisão emocional cara.",
-"Negócio que escala bem testa em pequena escala antes de comprometer a operação inteira.",
-"O resultado consistente constrói confiança onde o discurso sozinho não chega.",
-"Empresa que executa com excelência todo dia não precisa correr atrás no fim do mês.",
-"A execução decidida é o que separa quem sonha grande de quem constrói grande.",
-"Foco é a decisão de investir tempo onde o retorno é real, não onde é só visível.",
-"O crescimento que respeita margem é o crescimento que financia a própria expansão.",
-"Negócio disciplinado trata cada mês como um ciclo de aprendizado, não só de meta.",
-"A meta clara com dono definido tem muito mais chance de virar resultado real.",
-"Empresa que aprende com o cliente ajusta o produto antes que o mercado exija.",
-"O padrão operacional bem definido é o que permite crescer sem perder controle.",
-"Foco é proteger o tempo da liderança pro que só a liderança pode decidir.",
-"A disciplina de revisar o processo evita que o sucesso de hoje vire o problema de amanhã.",
-"Negócio sério mede o impacto de cada decisão antes de escalar a decisão inteira.",
-"O crescimento sustentável nasce da soma entre ambição e realismo operacional.",
-"Empresa que executa com consistência ganha o direito de sonhar mais alto no próximo ciclo.",
+"Foco É O Combustível Que Faz O Plano Simples Funcionar De Verdade.",
+"O Crescimento Que Dura É O Que Foi Testado, Ajustado E Só Depois Escalado.",
+"Negócio Disciplinado Sabe Separar Problema De Operação De Problema De Estratégia.",
+"A Meta Do Trimestre É O Checkpoint Que Evita Que O Ano Inteiro Vire Surpresa.",
+"Empresa Que Aprende Rápido Com O Mercado Se Adapta Antes De Precisar Sobreviver A Ele.",
+"O Detalhe Operacional Bem Cuidado É O Que Constrói Reputação No Boca A Boca.",
+"Foco É Dizer Sim Pro Que Importa E Não Pro Que É Só Urgente.",
+"A Disciplina Financeira De Hoje É A Liberdade Estratégica De Amanhã.",
+"Negócio Que Mede O Próprio Processo Encontra A Alavanca Antes De Precisar Dela Com Urgência.",
+"O Crescimento Saudável É Medido Em Trimestre, Não Em Semana Boa Isolada.",
+"Empresa Que Trata Dado Como Ativo Estratégico Decide Melhor Que A Que Trata Como Relatório.",
+"A Execução Sem Ego É O Que Permite Corrigir Rota Rápido Quando O Número Pede.",
+"Foco É A Decisão Diária De Proteger O Que Move O Resultado Do Que Só Ocupa A Agenda.",
+"O Padrão De Excelência Sobrevive À Pressão Quando Virou Hábito, Não Decisão Pontual.",
+"Negócio Que Cresce Com Base Em Dado Tem Menos Surpresa E Mais Previsibilidade.",
+"A Meta Clara E O Processo Certo Transformam Ambição Em Resultado Mensurável.",
+"Empresa Disciplinada Revisita A Estratégia Sem Abandonar A Execução Do Dia A Dia.",
+"O Crescimento Que Respeita O Ritmo Da Operação Chega Mais Longe Do Que O Que Ignora Limites.",
+"Foco É A Diferença Entre Um Negócio Que Cresce E Um Negócio Que Só Se Agita.",
+"A Disciplina De Medir, Decidir E Corrigir É O Ciclo Que Sustenta Qualquer Escala.",
+"Negócio Sério Transforma Meta Em Rotina, Não Em Pressão De Última Hora.",
+"O Resultado De Hoje É A Soma De Decisões Pequenas Tomadas Com Consistência.",
+"Empresa Que Aprende Com O Erro De Ontem Executa Melhor Amanhã.",
+"A Execução Com Dado Reduz O Achismo E Aumenta A Taxa De Acerto.",
+"Foco É Escolher Batalha: Nem Toda Urgência Merece A Atenção Da Liderança.",
+"O Crescimento Estruturado É O Que Permite Dormir Tranquilo Mesmo Escalando Rápido.",
+"Negócio Que Cuida Do Detalhe Cuida Da Experiência Que Constrói Fidelidade.",
+"A Meta Anual Sem Checkpoint Mensal É Só Um Número Bonito Na Parede.",
+"Empresa Disciplinada Não Confunde Estar Ocupado Com Estar Produzindo Resultado.",
+"O Crescimento Que Dura Tem Processo Por Trás, Não Só Motivação.",
+"Foco É A Clareza De Saber Exatamente O Que Fazer Amanhã De Manhã.",
+"A Disciplina De Olhar O Número Com Frieza É O Que Evita Decisão Emocional Cara.",
+"Negócio Que Escala Bem Testa Em Pequena Escala Antes De Comprometer A Operação Inteira.",
+"O Resultado Consistente Constrói Confiança Onde O Discurso Sozinho Não Chega.",
+"Empresa Que Executa Com Excelência Todo Dia Não Precisa Correr Atrás No Fim Do Mês.",
+"A Execução Decidida É O Que Separa Quem Sonha Grande De Quem Constrói Grande.",
+"Foco É A Decisão De Investir Tempo Onde O Retorno É Real, Não Onde É Só Visível.",
+"O Crescimento Que Respeita Margem É O Crescimento Que Financia A Própria Expansão.",
+"Negócio Disciplinado Trata Cada Mês Como Um Ciclo De Aprendizado, Não Só De Meta.",
+"A Meta Clara Com Dono Definido Tem Muito Mais Chance De Virar Resultado Real.",
+"Empresa Que Aprende Com O Cliente Ajusta O Produto Antes Que O Mercado Exija.",
+"O Padrão Operacional Bem Definido É O Que Permite Crescer Sem Perder Controle.",
+"Foco É Proteger O Tempo Da Liderança Pro Que Só A Liderança Pode Decidir.",
+"A Disciplina De Revisar O Processo Evita Que O Sucesso De Hoje Vire O Problema De Amanhã.",
+"Negócio Sério Mede O Impacto De Cada Decisão Antes De Escalar A Decisão Inteira.",
+"O Crescimento Sustentável Nasce Da Soma Entre Ambição E Realismo Operacional.",
+"Empresa Que Executa Com Consistência Ganha O Direito De Sonhar Mais Alto No Próximo Ciclo.",
 "A execução sem dado é aposta; a execução com dado é estratégia.",
-"Foco é medir o que importa e ignorar o que só distrai.",
-"O resultado que se sustenta é o que foi construído sobre processo, não sobre exceção.",
-"Negócio disciplinado transforma meta ousada em plano de ação concreto.",
-"A cada correção de rota bem feita, a empresa fica mais preparada pro próximo desafio.",
-"Empresa que entende o próprio número entende exatamente onde investir energia.",
-"O crescimento com base sólida aguenta o peso da própria ambição.",
-"Foco é a arte de fazer menos coisas, mas fazer cada uma delas muito bem.",
-"A disciplina operacional é o alicerce silencioso de todo crescimento visível.",
-"Negócio que respeita o processo entrega qualidade mesmo sob pressão de volume.",
-"O resultado do trimestre é reflexo direto da disciplina das últimas treze semanas.",
-"Empresa que decide com dado erra menos e aprende mais rápido com o erro que comete.",
-"A execução consistente é o que transforma visão de longo prazo em marco de curto prazo.",
-"Foco é a coragem de abandonar o que não funciona, mesmo depois de investir nele.",
-"O crescimento que respeita a operação de hoje garante a operação de amanhã.",
-"Negócio disciplinado sabe a diferença entre ritmo saudável e pressa perigosa.",
-"A meta que tem dono, prazo e número claro tem muito mais chance de acontecer.",
-"Empresa que aprende rápido corrige rápido, e quem corrige rápido perde menos.",
-"O padrão de excelência é construído decisão por decisão, dia após dia.",
-"Foco é a decisão diária de proteger o essencial da urgência que não importa.",
-"A disciplina de revisar premissa evita que a empresa opere no piloto automático errado.",
-"Negócio sério trata cada dado como pista, não como veredito final.",
-"O crescimento consistente vale mais que o pico isolado que não se repete.",
-"Empresa que cuida do processo cuida, sem perceber, da própria reputação.",
-"A execução com excelência é a vantagem competitiva mais difícil de copiar.",
-"Foco é escolher, todo dia, entre o que urge e o que realmente importa.",
-"O resultado sólido nasce da disciplina que ninguém vê e todo mundo sente.",
-"Negócio disciplinado transforma erro em aprendizado documentado, não em segredo guardado.",
-"A meta clara com acompanhamento semanal muda o comportamento do time todo.",
-"Empresa que mede o custo de perto encontra margem onde ninguém mais está olhando.",
-"O crescimento estruturado é o que permite escalar sem multiplicar o caos.",
-"Foco é dizer não pra boa ideia de hoje em nome da prioridade certa deste trimestre.",
-"A disciplina de execução é o que separa o plano que funciona do que só parece bom no papel.",
-"Negócio que aprende com o próprio dado decide com mais confiança e menos medo.",
+"Foco É Medir O Que Importa E Ignorar O Que Só Distrai.",
+"O Resultado Que Se Sustenta É O Que Foi Construído Sobre Processo, Não Sobre Exceção.",
+"Negócio Disciplinado Transforma Meta Ousada Em Plano De Ação Concreto.",
+"A Cada Correção De Rota Bem Feita, A Empresa Fica Mais Preparada Pro Próximo Desafio.",
+"Empresa Que Entende O Próprio Número Entende Exatamente Onde Investir Energia.",
+"O Crescimento Com Base Sólida Aguenta O Peso Da Própria Ambição.",
+"Foco É A Arte De Fazer Menos Coisas, Mas Fazer Cada Uma Delas Muito Bem.",
+"A Disciplina Operacional É O Alicerce Silencioso De Todo Crescimento Visível.",
+"Negócio Que Respeita O Processo Entrega Qualidade Mesmo Sob Pressão De Volume.",
+"O Resultado Do Trimestre É Reflexo Direto Da Disciplina Das Últimas Treze Semanas.",
+"Empresa Que Decide Com Dado Erra Menos E Aprende Mais Rápido Com O Erro Que Comete.",
+"A Execução Consistente É O Que Transforma Visão De Longo Prazo Em Marco De Curto Prazo.",
+"Foco É A Coragem De Abandonar O Que Não Funciona, Mesmo Depois De Investir Nele.",
+"O Crescimento Que Respeita A Operação De Hoje Garante A Operação De Amanhã.",
+"Negócio Disciplinado Sabe A Diferença Entre Ritmo Saudável E Pressa Perigosa.",
+"A Meta Que Tem Dono, Prazo E Número Claro Tem Muito Mais Chance De Acontecer.",
+"Empresa Que Aprende Rápido Corrige Rápido, E Quem Corrige Rápido Perde Menos.",
+"O Padrão De Excelência É Construído Decisão Por Decisão, Dia Após Dia.",
+"Foco É A Decisão Diária De Proteger O Essencial Da Urgência Que Não Importa.",
+"A Disciplina De Revisar Premissa Evita Que A Empresa Opere No Piloto Automático Errado.",
+"Negócio Sério Trata Cada Dado Como Pista, Não Como Veredito Final.",
+"O Crescimento Consistente Vale Mais Que O Pico Isolado Que Não Se Repete.",
+"Empresa Que Cuida Do Processo Cuida, Sem Perceber, Da Própria Reputação.",
+"A Execução Com Excelência É A Vantagem Competitiva Mais Difícil De Copiar.",
+"Foco É Escolher, Todo Dia, Entre O Que Urge E O Que Realmente Importa.",
+"O Resultado Sólido Nasce Da Disciplina Que Ninguém Vê E Todo Mundo Sente.",
+"Negócio Disciplinado Transforma Erro Em Aprendizado Documentado, Não Em Segredo Guardado.",
+"A Meta Clara Com Acompanhamento Semanal Muda O Comportamento Do Time Todo.",
+"Empresa Que Mede O Custo De Perto Encontra Margem Onde Ninguém Mais Está Olhando.",
+"O Crescimento Estruturado É O Que Permite Escalar Sem Multiplicar O Caos.",
+"Foco É Dizer Não Pra Boa Ideia De Hoje Em Nome Da Prioridade Certa Deste Trimestre.",
+"A Disciplina De Execução É O Que Separa O Plano Que Funciona Do Que Só Parece Bom No Papel.",
+"Negócio Que Aprende Com O Próprio Dado Decide Com Mais Confiança E Menos Medo.",
 "O padrão alto sustentado por meses vira identidade; sustentado por dias, vira exceção.",
-"Empresa disciplinada não comemora volume sem checar se a margem acompanhou.",
-"A execução decidida hoje é o resultado que aparece no relatório de amanhã.",
-"Foco é a habilidade de proteger o tempo da equipe pro que realmente move o ponteiro.",
-"O crescimento com base em processo é o que sobrevive à saída de qualquer pessoa-chave.",
-"Negócio sério revisita a meta sempre que o cenário muda, sem perder a disciplina de perseguir o número.",
-"A disciplina de medir todo dia transforma incerteza em decisão informada.",
-"Empresa que cresce com controle tem energia sobrando pra aproveitar a próxima oportunidade.",
-"O resultado consistente é a prova mais honesta de que o modelo de negócio funciona.",
-"Foco é o que transforma um time cheio de boas intenções em um time que entrega.",
-"A execução impecável do básico é o que abre espaço pra inovar no que realmente importa.",
-"Negócio disciplinado trata cada semana como uma chance de corrigir o rumo do trimestre.",
-"O crescimento que respeita a capacidade da operação é o crescimento que não quebra no meio do caminho.",
-"Empresa que aprende com o dado de ontem toma decisão melhor hoje.",
-"A meta ambiciosa só é saudável quando vem acompanhada de um plano realista de execução.",
-"Foco é a clareza de saber o que fazer quando tudo parece urgente ao mesmo tempo.",
-"A disciplina operacional bem estabelecida é o que permite crescer sem perder a qualidade do primeiro cliente.",
-"Negócio sério celebra o processo que gerou o resultado, não só o número final.",
-"O crescimento sustentável tem paciência de curto prazo e ambição de longo prazo.",
-"Empresa que documenta o aprendizado não repete o mesmo erro duas vezes.",
-"A execução com dado é o antídoto mais eficaz contra a decisão por impulso.",
-"Foco é entender que nem toda oportunidade boa é a oportunidade certa agora.",
-"O padrão de qualidade que a empresa aceita hoje define o cliente que ela vai atrair amanhã.",
-"Negócio disciplinado sabe que resultado bom sem processo bom é resultado que não se repete.",
-"A meta clara com dono responsável tem muito mais força que meta genérica compartilhada por todos.",
-"Empresa que revisa o número toda semana nunca é surpreendida pelo balanço do mês.",
-"O crescimento com margem preservada é o crescimento que financia a próxima fase sozinho.",
-"Foco é proteger a energia da equipe pro que de fato constrói o resultado do trimestre.",
-"A disciplina de corrigir rápido é o que transforma erro caro em aprendizado barato.",
-"Negócio sério entende que a régua de qualidade é testada nos dias difíceis, não nos fáceis.",
-"O resultado que se sustenta no tempo nasce de processo, não de sorte pontual.",
-"Empresa que executa com consistência constrói vantagem competitiva sem precisar de discurso.",
-"A execução decidida transforma meta ambiciosa em marco alcançável passo a passo.",
-"Foco é escolher, com coragem, o que a empresa vai deixar de fazer este mês.",
-"O crescimento estruturado permite escalar o time sem escalar o caos junto.",
-"Negócio disciplinado usa o dado ruim como ponto de partida pra correção, não como desculpa.",
-"A meta batida com processo claro é meta que se repete no próximo ciclo.",
-"Empresa que respeita a operação de hoje garante a capacidade de crescer amanhã.",
-"O padrão de excelência exige repetição — uma vez não constrói reputação, sempre constrói.",
-"Foco é a decisão de investir onde o dado mostra retorno, não onde a intuição sugere conforto.",
-"A disciplina de acompanhar o número de perto é o que dá segurança pra decisão ousada.",
-"Negócio sério transforma ambição em plano, plano em rotina, e rotina em resultado.",
-"O crescimento saudável respeita o tempo que cada etapa da operação precisa amadurecer.",
-"Empresa que aprende com o cliente reduz a distância entre o que promete e o que entrega.",
-"A execução consistente é o único caminho comprovado pra escala que dura.",
-"Foco é a clareza que transforma prioridade em ação concreta todos os dias.",
-"O resultado do ano é a soma silenciosa de cada semana bem executada.",
-"Negócio disciplinado não deixa o sucesso de um mês relaxar o padrão do próximo.",
-"A meta com prazo definido é o que transforma intenção em compromisso real.",
-"Empresa que cuida do dado cuida da qualidade de cada decisão que toma.",
-"O crescimento com base em processo escala sem depender de heróis individuais.",
-"Foco é a habilidade de manter o time alinhado mesmo quando o cenário muda rápido.",
-"A disciplina de revisar premissa é o que evita operar com informação ultrapassada.",
-"Negócio sério entende que toda meta grande é uma sequência de metas pequenas bem executadas.",
-"O padrão operacional consistente é o que constrói confiança sem precisar prometer nada.",
-"Empresa que decide com dado decide com menos medo e mais precisão.",
-"A execução que respeita o processo entrega qualidade mesmo quando o volume aumenta.",
-"Foco é proteger o essencial do ruído que consome tempo sem gerar resultado.",
-"O crescimento que dura é aquele que foi testado antes de ser escalado.",
-"Negócio disciplinado sabe separar o urgente de hoje do importante do trimestre.",
-"A meta clara com acompanhamento constante muda comportamento antes de mudar resultado.",
-"Empresa que aprende rápido com o erro chega à correção antes que ela fique cara.",
-"O resultado consistente é o argumento mais forte que uma empresa pode ter.",
-"Foco é decidir, com disciplina, onde a energia da empresa vai ser investida hoje.",
-"A execução impecável constrói, tijolo por tijolo, a reputação que o marketing sozinho não compra.",
-"Negócio sério trata o crescimento como consequência de processo bem feito, não como meta isolada.",
-"O padrão de excelência que vira hábito é o que sustenta a empresa nos momentos difíceis.",
+"Empresa Disciplinada Não Comemora Volume Sem Checar Se A Margem Acompanhou.",
+"A Execução Decidida Hoje É O Resultado Que Aparece No Relatório De Amanhã.",
+"Foco É A Habilidade De Proteger O Tempo Da Equipe Pro Que Realmente Move O Ponteiro.",
+"O Crescimento Com Base Em Processo É O Que Sobrevive À Saída De Qualquer Pessoa-Chave.",
+"Negócio Sério Revisita A Meta Sempre Que O Cenário Muda, Sem Perder A Disciplina De Perseguir O Número.",
+"A Disciplina De Medir Todo Dia Transforma Incerteza Em Decisão Informada.",
+"Empresa Que Cresce Com Controle Tem Energia Sobrando Pra Aproveitar A Próxima Oportunidade.",
+"O Resultado Consistente É A Prova Mais Honesta De Que O Modelo De Negócio Funciona.",
+"Foco É O Que Transforma Um Time Cheio De Boas Intenções Em Um Time Que Entrega.",
+"A Execução Impecável Do Básico É O Que Abre Espaço Pra Inovar No Que Realmente Importa.",
+"Negócio Disciplinado Trata Cada Semana Como Uma Chance De Corrigir O Rumo Do Trimestre.",
+"O Crescimento Que Respeita A Capacidade Da Operação É O Crescimento Que Não Quebra No Meio Do Caminho.",
+"Empresa Que Aprende Com O Dado De Ontem Toma Decisão Melhor Hoje.",
+"A Meta Ambiciosa Só É Saudável Quando Vem Acompanhada De Um Plano Realista De Execução.",
+"Foco É A Clareza De Saber O Que Fazer Quando Tudo Parece Urgente Ao Mesmo Tempo.",
+"A Disciplina Operacional Bem Estabelecida É O Que Permite Crescer Sem Perder A Qualidade Do Primeiro Cliente.",
+"Negócio Sério Celebra O Processo Que Gerou O Resultado, Não Só O Número Final.",
+"O Crescimento Sustentável Tem Paciência De Curto Prazo E Ambição De Longo Prazo.",
+"Empresa Que Documenta O Aprendizado Não Repete O Mesmo Erro Duas Vezes.",
+"A Execução Com Dado É O Antídoto Mais Eficaz Contra A Decisão Por Impulso.",
+"Foco É Entender Que Nem Toda Oportunidade Boa É A Oportunidade Certa Agora.",
+"O Padrão De Qualidade Que A Empresa Aceita Hoje Define O Cliente Que Ela Vai Atrair Amanhã.",
+"Negócio Disciplinado Sabe Que Resultado Bom Sem Processo Bom É Resultado Que Não Se Repete.",
+"A Meta Clara Com Dono Responsável Tem Muito Mais Força Que Meta Genérica Compartilhada Por Todos.",
+"Empresa Que Revisa O Número Toda Semana Nunca É Surpreendida Pelo Balanço Do Mês.",
+"O Crescimento Com Margem Preservada É O Crescimento Que Financia A Próxima Fase Sozinho.",
+"Foco É Proteger A Energia Da Equipe Pro Que De Fato Constrói O Resultado Do Trimestre.",
+"A Disciplina De Corrigir Rápido É O Que Transforma Erro Caro Em Aprendizado Barato.",
+"Negócio Sério Entende Que A Régua De Qualidade É Testada Nos Dias Difíceis, Não Nos Fáceis.",
+"O Resultado Que Se Sustenta No Tempo Nasce De Processo, Não De Sorte Pontual.",
+"Empresa Que Executa Com Consistência Constrói Vantagem Competitiva Sem Precisar De Discurso.",
+"A Execução Decidida Transforma Meta Ambiciosa Em Marco Alcançável Passo A Passo.",
+"Foco É Escolher, Com Coragem, O Que A Empresa Vai Deixar De Fazer Este Mês.",
+"O Crescimento Estruturado Permite Escalar O Time Sem Escalar O Caos Junto.",
+"Negócio Disciplinado Usa O Dado Ruim Como Ponto De Partida Pra Correção, Não Como Desculpa.",
+"A Meta Batida Com Processo Claro É Meta Que Se Repete No Próximo Ciclo.",
+"Empresa Que Respeita A Operação De Hoje Garante A Capacidade De Crescer Amanhã.",
+"O Padrão De Excelência Exige Repetição — Uma Vez Não Constrói Reputação, Sempre Constrói.",
+"Foco É A Decisão De Investir Onde O Dado Mostra Retorno, Não Onde A Intuição Sugere Conforto.",
+"A Disciplina De Acompanhar O Número De Perto É O Que Dá Segurança Pra Decisão Ousada.",
+"Negócio Sério Transforma Ambição Em Plano, Plano Em Rotina, E Rotina Em Resultado.",
+"O Crescimento Saudável Respeita O Tempo Que Cada Etapa Da Operação Precisa Amadurecer.",
+"Empresa Que Aprende Com O Cliente Reduz A Distância Entre O Que Promete E O Que Entrega.",
+"A Execução Consistente É O Único Caminho Comprovado Pra Escala Que Dura.",
+"Foco É A Clareza Que Transforma Prioridade Em Ação Concreta Todos Os Dias.",
+"O Resultado Do Ano É A Soma Silenciosa De Cada Semana Bem Executada.",
+"Negócio Disciplinado Não Deixa O Sucesso De Um Mês Relaxar O Padrão Do Próximo.",
+"A Meta Com Prazo Definido É O Que Transforma Intenção Em Compromisso Real.",
+"Empresa Que Cuida Do Dado Cuida Da Qualidade De Cada Decisão Que Toma.",
+"O Crescimento Com Base Em Processo Escala Sem Depender De Heróis Individuais.",
+"Foco É A Habilidade De Manter O Time Alinhado Mesmo Quando O Cenário Muda Rápido.",
+"A Disciplina De Revisar Premissa É O Que Evita Operar Com Informação Ultrapassada.",
+"Negócio Sério Entende Que Toda Meta Grande É Uma Sequência De Metas Pequenas Bem Executadas.",
+"O Padrão Operacional Consistente É O Que Constrói Confiança Sem Precisar Prometer Nada.",
+"Empresa Que Decide Com Dado Decide Com Menos Medo E Mais Precisão.",
+"A Execução Que Respeita O Processo Entrega Qualidade Mesmo Quando O Volume Aumenta.",
+"Foco É Proteger O Essencial Do Ruído Que Consome Tempo Sem Gerar Resultado.",
+"O Crescimento Que Dura É Aquele Que Foi Testado Antes De Ser Escalado.",
+"Negócio Disciplinado Sabe Separar O Urgente De Hoje Do Importante Do Trimestre.",
+"A Meta Clara Com Acompanhamento Constante Muda Comportamento Antes De Mudar Resultado.",
+"Empresa Que Aprende Rápido Com O Erro Chega À Correção Antes Que Ela Fique Cara.",
+"O Resultado Consistente É O Argumento Mais Forte Que Uma Empresa Pode Ter.",
+"Foco É Decidir, Com Disciplina, Onde A Energia Da Empresa Vai Ser Investida Hoje.",
+"A Execução Impecável Constrói, Tijolo Por Tijolo, A Reputação Que O Marketing Sozinho Não Compra.",
+"Negócio Sério Trata O Crescimento Como Consequência De Processo Bem Feito, Não Como Meta Isolada.",
+"O Padrão De Excelência Que Vira Hábito É O Que Sustenta A Empresa Nos Momentos Difíceis.",
 "Empresa que mede de perto decide rápido; empresa que não mede reage tarde.",
-"A disciplina de execução diária é o que transforma estratégia em número real no fim do mês.",
-"Negócio que respeita o ritmo certo de crescimento evita o colapso operacional do crescimento errado.",
-"O foco bem direcionado faz mais diferença no resultado do que o esforço espalhado.",
-"Empresa disciplinada trata cada decisão como investimento, e cada investimento como responsabilidade.",
-"A execução consistente é o que separa quem fala sobre crescer de quem realmente cresce.",
-"O crescimento que respeita margem, processo e time é o crescimento que se sustenta no tempo.",
-"Foco é a decisão diária de proteger o que constrói o resultado de amanhã.",
-"A disciplina de revisar o número é o que transforma gestão em ciência, não em palpite.",
-"Negócio sério entende que resultado bom sustentado é sempre fruto de processo bem cuidado.",
-"Empresa que aprende com cada ciclo entra no próximo mais forte do que saiu do anterior.",
-"O padrão que a liderança aceita é o padrão que a empresa inteira vai reproduzir.",
-"A execução decidida, guiada por dado e sustentada por processo, é o que constrói empresas que duram.",
-"Toda empresa forte tem um ritual simples: medir, decidir, agir, e repetir amanhã.",
-"O tempo que você investe entendendo o número é o tempo que você economiza corrigindo o erro.",
-"Negócio que respeita o cliente respeita, antes de tudo, o processo que entrega pra ele.",
-"A ambição sem disciplina de execução é só otimismo caro.",
-"Empresa que aprende a dizer não com clareza protege o foco de quem executa.",
-"O crescimento que vem sem estrutura por trás é o crescimento que cobra a conta depois.",
-"Toda meta séria nasce de uma pergunta honesta: onde estamos e onde queremos chegar.",
-"A execução sem revisão periódica é estratégia andando no escuro.",
-"Negócio disciplinado entende que o detalhe pequeno de hoje é o problema grande de amanhã, se ignorado.",
-"O time que entende o objetivo final executa a tarefa do dia com outro nível de intenção.",
+"A Disciplina De Execução Diária É O Que Transforma Estratégia Em Número Real No Fim Do Mês.",
+"Negócio Que Respeita O Ritmo Certo De Crescimento Evita O Colapso Operacional Do Crescimento Errado.",
+"O Foco Bem Direcionado Faz Mais Diferença No Resultado Do Que O Esforço Espalhado.",
+"Empresa Disciplinada Trata Cada Decisão Como Investimento, E Cada Investimento Como Responsabilidade.",
+"A Execução Consistente É O Que Separa Quem Fala Sobre Crescer De Quem Realmente Cresce.",
+"O Crescimento Que Respeita Margem, Processo E Time É O Crescimento Que Se Sustenta No Tempo.",
+"Foco É A Decisão Diária De Proteger O Que Constrói O Resultado De Amanhã.",
+"A Disciplina De Revisar O Número É O Que Transforma Gestão Em Ciência, Não Em Palpite.",
+"Negócio Sério Entende Que Resultado Bom Sustentado É Sempre Fruto De Processo Bem Cuidado.",
+"Empresa Que Aprende Com Cada Ciclo Entra No Próximo Mais Forte Do Que Saiu Do Anterior.",
+"O Padrão Que A Liderança Aceita É O Padrão Que A Empresa Inteira Vai Reproduzir.",
+"A Execução Decidida, Guiada Por Dado E Sustentada Por Processo, É O Que Constrói Empresas Que Duram.",
+"Toda Empresa Forte Tem Um Ritual Simples: Medir, Decidir, Agir, E Repetir Amanhã.",
+"O Tempo Que Você Investe Entendendo O Número É O Tempo Que Você Economiza Corrigindo O Erro.",
+"Negócio Que Respeita O Cliente Respeita, Antes De Tudo, O Processo Que Entrega Pra Ele.",
+"A Ambição Sem Disciplina De Execução É Só Otimismo Caro.",
+"Empresa Que Aprende A Dizer Não Com Clareza Protege O Foco De Quem Executa.",
+"O Crescimento Que Vem Sem Estrutura Por Trás É O Crescimento Que Cobra A Conta Depois.",
+"Toda Meta Séria Nasce De Uma Pergunta Honesta: Onde Estamos E Onde Queremos Chegar.",
+"A Execução Sem Revisão Periódica É Estratégia Andando No Escuro.",
+"Negócio Disciplinado Entende Que O Detalhe Pequeno De Hoje É O Problema Grande De Amanhã, Se Ignorado.",
+"O Time Que Entende O Objetivo Final Executa A Tarefa Do Dia Com Outro Nível De Intenção.",
 "A meta clara traz foco; o foco traz execução; a execução traz resultado.",
-"Empresa que mede o próprio erro com honestidade cresce mais rápido que a que só mede o acerto.",
-"O crescimento estruturado é silencioso no começo e evidente depois de alguns trimestres.",
-"Negócio sério não confunde estar ocupado com estar gerando resultado.",
-"A disciplina de acompanhar o número transforma ansiedade em plano de ação.",
-"Empresa que aprende com o mercado se movimenta antes de ser forçada a se mover.",
-"O padrão de excelência não pede permissão pro dia difícil — ele se mantém mesmo assim.",
-"A execução com propósito claro rende mais do que a execução apressada sem direção.",
-"Negócio disciplinado trata cada reclamação como um dado valioso, não como um incômodo.",
-"O crescimento que respeita a capacidade do time é o crescimento que preserva a qualidade da entrega.",
-"Foco é a decisão de proteger a prioridade do trimestre da urgência do dia.",
-"A meta que o time entende de verdade é a meta que o time persegue sem precisar ser lembrado.",
-"Empresa que revisa premissa com frequência toma decisão alinhada com a realidade atual, não com a de seis meses atrás.",
-"O resultado que se repete todo mês é mais valioso que o resultado excepcional que não se repete.",
-"Negócio sério trata o crescimento como um projeto de engenharia, não como um evento de sorte.",
-"A disciplina de execução diária é o que transforma visão de cinco anos em progresso visível a cada trimestre.",
-"Empresa que entende o próprio funil de vendas entende exatamente onde investir pra crescer com eficiência.",
-"O crescimento que ignora o feedback do cliente cresce na direção errada, só que rápido.",
-"Foco é dar atenção total ao que move o ponteiro e atenção mínima ao que só parece importante.",
-"A meta trimestral bem definida transforma um ano inteiro em quatro desafios administráveis.",
-"Negócio disciplinado sabe que o número de hoje é resultado da decisão de ontem, não de sorte de hoje.",
-"Empresa que investe em processo investe, sem perceber, na própria capacidade de crescer sem quebrar.",
-"O crescimento com base em dado tem menos emoção e mais precisão — e por isso erra menos.",
-"A execução constante, mesmo em ritmo moderado, supera a execução intensa e intermitente.",
-"Negócio sério entende que cultura de resultado se constrói no exemplo da liderança, não no discurso dela.",
-"O padrão de qualidade que sobrevive à pressa é o padrão que realmente virou cultura.",
-"Foco é escolher a batalha certa antes de gastar energia nela.",
-"A meta bem comunicada economiza tempo que seria gasto alinhando expectativa depois.",
-"Empresa que aprende com o próprio histórico decide com mais segurança sobre o próprio futuro.",
-"O crescimento saudável tem espaço pra ajuste — o crescimento apressado só tem espaço pra reação.",
-"Negócio disciplinado transforma a meta anual em compromissos mensais concretos.",
-"A execução que respeita o processo de aprendizado do time rende resultado mais duradouro.",
-"Empresa que mede o próprio ciclo de venda encontra o gargalo antes que ele vire crise.",
-"O foco direcionado no cliente certo custa menos e converte mais que o esforço disperso em todos os clientes.",
-"A disciplina de fechar cada semana com uma revisão honesta é o que mantém o trimestre nos trilhos.",
-"Negócio sério entende que crescimento e controle não competem — eles se sustentam mutuamente.",
-"O resultado que nasce de processo bem definido é o resultado que a empresa consegue repetir de propósito.",
+"Empresa Que Mede O Próprio Erro Com Honestidade Cresce Mais Rápido Que A Que Só Mede O Acerto.",
+"O Crescimento Estruturado É Silencioso No Começo E Evidente Depois De Alguns Trimestres.",
+"Negócio Sério Não Confunde Estar Ocupado Com Estar Gerando Resultado.",
+"A Disciplina De Acompanhar O Número Transforma Ansiedade Em Plano De Ação.",
+"Empresa Que Aprende Com O Mercado Se Movimenta Antes De Ser Forçada A Se Mover.",
+"O Padrão De Excelência Não Pede Permissão Pro Dia Difícil — Ele Se Mantém Mesmo Assim.",
+"A Execução Com Propósito Claro Rende Mais Do Que A Execução Apressada Sem Direção.",
+"Negócio Disciplinado Trata Cada Reclamação Como Um Dado Valioso, Não Como Um Incômodo.",
+"O Crescimento Que Respeita A Capacidade Do Time É O Crescimento Que Preserva A Qualidade Da Entrega.",
+"Foco É A Decisão De Proteger A Prioridade Do Trimestre Da Urgência Do Dia.",
+"A Meta Que O Time Entende De Verdade É A Meta Que O Time Persegue Sem Precisar Ser Lembrado.",
+"Empresa Que Revisa Premissa Com Frequência Toma Decisão Alinhada Com A Realidade Atual, Não Com A De Seis Meses Atrás.",
+"O Resultado Que Se Repete Todo Mês É Mais Valioso Que O Resultado Excepcional Que Não Se Repete.",
+"Negócio Sério Trata O Crescimento Como Um Projeto De Engenharia, Não Como Um Evento De Sorte.",
+"A Disciplina De Execução Diária É O Que Transforma Visão De Cinco Anos Em Progresso Visível A Cada Trimestre.",
+"Empresa Que Entende O Próprio Funil De Vendas Entende Exatamente Onde Investir Pra Crescer Com Eficiência.",
+"O Crescimento Que Ignora O Feedback Do Cliente Cresce Na Direção Errada, Só Que Rápido.",
+"Foco É Dar Atenção Total Ao Que Move O Ponteiro E Atenção Mínima Ao Que Só Parece Importante.",
+"A Meta Trimestral Bem Definida Transforma Um Ano Inteiro Em Quatro Desafios Administráveis.",
+"Negócio Disciplinado Sabe Que O Número De Hoje É Resultado Da Decisão De Ontem, Não De Sorte De Hoje.",
+"Empresa Que Investe Em Processo Investe, Sem Perceber, Na Própria Capacidade De Crescer Sem Quebrar.",
+"O Crescimento Com Base Em Dado Tem Menos Emoção E Mais Precisão — E Por Isso Erra Menos.",
+"A Execução Constante, Mesmo Em Ritmo Moderado, Supera A Execução Intensa E Intermitente.",
+"Negócio Sério Entende Que Cultura De Resultado Se Constrói No Exemplo Da Liderança, Não No Discurso Dela.",
+"O Padrão De Qualidade Que Sobrevive À Pressa É O Padrão Que Realmente Virou Cultura.",
+"Foco É Escolher A Batalha Certa Antes De Gastar Energia Nela.",
+"A Meta Bem Comunicada Economiza Tempo Que Seria Gasto Alinhando Expectativa Depois.",
+"Empresa Que Aprende Com O Próprio Histórico Decide Com Mais Segurança Sobre O Próprio Futuro.",
+"O Crescimento Saudável Tem Espaço Pra Ajuste — O Crescimento Apressado Só Tem Espaço Pra Reação.",
+"Negócio Disciplinado Transforma A Meta Anual Em Compromissos Mensais Concretos.",
+"A Execução Que Respeita O Processo De Aprendizado Do Time Rende Resultado Mais Duradouro.",
+"Empresa Que Mede O Próprio Ciclo De Venda Encontra O Gargalo Antes Que Ele Vire Crise.",
+"O Foco Direcionado No Cliente Certo Custa Menos E Converte Mais Que O Esforço Disperso Em Todos Os Clientes.",
+"A Disciplina De Fechar Cada Semana Com Uma Revisão Honesta É O Que Mantém O Trimestre Nos Trilhos.",
+"Negócio Sério Entende Que Crescimento E Controle Não Competem — Eles Se Sustentam Mutuamente.",
+"O Resultado Que Nasce De Processo Bem Definido É O Resultado Que A Empresa Consegue Repetir De Propósito.",
 ];
 // Dia do ano em Brasília (1–366) — base pra escolher a frase do dia sem
 // precisar guardar estado nenhum: é só data(hoje) → índice, então já muda
@@ -8336,20 +8336,20 @@ function renderCeoPage(){
     <div class="ceo-header">
       <div class="ceo-greeting-block">
         <h1>${saudacao.icone} ${saudacao.texto}, ${nomeUsuario} <span class="ceo-badge-ceo">CEO</span></h1>
-        <div class="ceo-subtitle">Aqui está o resumo da performance da Let's Go Delivery hoje.</div>
+        <div class="ceo-subtitle">Aqui Está O Resumo Da Performance Da Let's Go Delivery Hoje.</div>
         <div class="ceo-frase">"${_ceoFraseDoDia()}"</div>
       </div>
       <div class="ceo-header-right">
         <div class="ceo-meta-loc">
           <span>📍 Ribeirão Preto - SP</span>
           <span>📅 <span id="ceo-data-atual">${hojeFmt}</span> · 🕐 <span id="ceo-hora-atual">${horaFmt}</span></span>
-          ${_dataComemorativaHoje()?`<span style="font-size:11px;color:var(--text3);opacity:.85">Hoje é dia de ${_dataComemorativaHoje()}</span>`:''}
+          ${_dataComemorativaHoje()?`<span style="font-size:11px;color:var(--text3);opacity:.85">Hoje É Dia De ${_dataComemorativaHoje()}</span>`:''}
         </div>
         <div class="ceo-avatar-wrap">
           <div class="ceo-avatar" onclick="_ceoToggleDropdown()"><img src="https://letsgodeliverybr.github.io/painel/img/gabriel-avatar.png" alt="${nomeUsuario}" onerror="this.parentElement.textContent='${iniciais}'"/></div>
           <div class="ceo-dropdown" id="ceo-dropdown">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:12.5px;font-weight:700;color:var(--text)">${nomeUsuario}</div><div style="font-size:11px;color:var(--text3)">CEO</div></div>
-            <button onclick="_ceoToggleDropdown();showNotif('Em breve','Edição de perfil ainda não está disponível.','var(--text3)')">${_icone('user',16,'btn-ico')}Meu Perfil</button>
+            <button onclick="_ceoToggleDropdown();showNotif('Em Breve','Edição De Perfil Ainda Não Está Disponível.','var(--text3)')">${_icone('user',16,'btn-ico')}Meu Perfil</button>
             <button onclick="_ceoToggleDropdown();goTab('configuracao')">${_icone('settings',16,'btn-ico')}Configurações</button>
             <button onclick="logout()" style="color:#ef4444">${_icone('log-out',16,'btn-ico')}Sair</button>
           </div>
@@ -8359,7 +8359,7 @@ function renderCeoPage(){
 
     <div class="ceo-block">
       <div class="ceo-block-header">
-        <span class="ceo-block-title">📈 Crescimento da Empresa</span>
+        <span class="ceo-block-title">📈 Crescimento Da Empresa</span>
         <div class="ceo-periodo-toggle">
           <button class="ceo-periodo-btn" data-p="7d" onclick="_ceoSetPeriodo('7d')">7 Dias</button>
           <button class="ceo-periodo-btn" data-p="30d" onclick="_ceoSetPeriodo('30d')">30 Dias</button>
@@ -8372,7 +8372,7 @@ function renderCeoPage(){
 
     <div class="ceo-block">
       <div class="ceo-block-header">
-        <span class="ceo-block-title">🎯 Hoje, o que merece sua atenção</span>
+        <span class="ceo-block-title">🎯 Hoje, O Que Merece Sua Atenção</span>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:11px;color:var(--text3)" id="ceo-atualizado-ha">—</span>
           <button class="ceo-btn-refresh" onclick="_carregarDadosCeo()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
@@ -8381,7 +8381,7 @@ function renderCeoPage(){
       <div class="ceo-block-body" id="ceo-alertas"><div style="color:var(--text3);text-align:center;padding:16px">Carregando...</div></div>
     </div>
 
-    <div style="text-align:center;padding:16px 0 4px;font-size:11px;color:var(--text3)">Juntos, vamos mais longe. · #CadaKmUmSonho</div>
+    <div style="text-align:center;padding:16px 0 4px;font-size:11px;color:var(--text3)">Juntos, Vamos Mais Longe. · #CadaKmUmSonho</div>
   </div>`;
   document.querySelector(`.ceo-periodo-btn[data-p="${_ceoPeriodoAtual}"]`)?.classList.add('active');
   _carregarDadosCeo();
@@ -8419,10 +8419,10 @@ async function _carregarDadosCeo(){
   const alertas=[];
   if(cobsVencidas.length){
     const valorTotal=cobsVencidas.reduce((s,c)=>s+(parseFloat(c.valor_total)||0),0);
-    alertas.push(`<div class="ceo-alert" onclick="goTab('cobranca-pagamento')"><span class="ceo-alert-dot" style="background:#ef4444"></span><span class="ceo-alert-text">🔴 <b>${cobsVencidas.length} loja${cobsVencidas.length===1?'':'s'}</b> com fatura vencida — ${_fmtMoedaCaixa(valorTotal)} em aberto</span></div>`);
+    alertas.push(`<div class="ceo-alert" onclick="goTab('cobranca-pagamento')"><span class="ceo-alert-dot" style="background:#ef4444"></span><span class="ceo-alert-text">🔴 <b>${cobsVencidas.length} Loja${cobsVencidas.length===1?'':'s'}</b> Com Fatura Vencida — ${_fmtMoedaCaixa(valorTotal)} Em Aberto</span></div>`);
   }
   if(pipeline.length){
-    alertas.push(`<div class="ceo-alert" onclick="goTab('cadastros')"><span class="ceo-alert-dot" style="background:#eab308"></span><span class="ceo-alert-text">🟡 <b>${pipeline.length} loja${pipeline.length===1?'':'s'}</b> aguardando aprovação de cadastro</span></div>`);
+    alertas.push(`<div class="ceo-alert" onclick="goTab('cadastros')"><span class="ceo-alert-dot" style="background:#eab308"></span><span class="ceo-alert-text">🟡 <b>${pipeline.length} Loja${pipeline.length===1?'':'s'}</b> Aguardando Aprovação De Cadastro</span></div>`);
   }
   _set('ceo-alertas',alertas.length?alertas.join(''):'<div style="text-align:center;padding:16px;color:#22c55e;font-size:13px;font-weight:600">✓ Tudo Sob Controle</div>');
 
@@ -8435,7 +8435,7 @@ async function _carregarDadosCeo(){
 function _escalaItem(label,id){
   return`<div>
     <div class="ceo-mini-stat-label">${label}</div>
-    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">meta a definir</span></span></div>
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px"><span class="ceo-mini-stat-value" id="${id}">—</span><span class="ceo-escala-meta">/ <span id="${id}-meta">Meta A Definir</span></span></div>
     <div class="ceo-progress-track"><div class="ceo-progress-fill" id="${id}-bar" style="width:0%"></div></div>
   </div>`;
 }
@@ -8471,22 +8471,22 @@ async function renderMetricasPage(){
         <button onclick="_buscarMetricas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('search',16,'btn-ico')}Aplicar</button>
       </div>
     </div></div>
-    <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados por Mês</span></div>
+    <div class="card"${currentPerfil==='adm'?' style="margin-bottom:14px"':''}><div class="card-header"><span class="card-title">📊 Pedidos Finalizados Por Mês</span></div>
       <div style="padding:20px 20px 16px" id="mm-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
     </div>
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
-      <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas por Mês</span></div>
+      <div class="card"><div class="card-header"><span class="card-title">🏪 Lojas Novas Por Mês</span></div>
         <div style="padding:20px 20px 16px" id="mm-chart-lojas-novas"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
-      <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos por Mês</span></div>
+      <div class="card"><div class="card-header"><span class="card-title">🛵 Motoboys Novos Por Mês</span></div>
         <div style="padding:20px 20px 16px" id="mm-chart-motoboys-novos"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px">
-      <div class="card"><div class="card-header"><span class="card-title">🏷️ Lojas por Categoria</span></div>
+      <div class="card"><div class="card-header"><span class="card-title">🏷️ Lojas Por Categoria</span></div>
         <div style="padding:20px 20px 8px" id="mm-chart-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
-      <div class="card"><div class="card-header"><span class="card-title">📦 Pedidos Finalizados por Categoria</span></div>
+      <div class="card"><div class="card-header"><span class="card-title">📦 Pedidos Finalizados Por Categoria</span></div>
         <div style="padding:20px 20px 8px" id="mm-chart-pedidos-categoria"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
       </div>
     </div>
@@ -8495,12 +8495,12 @@ async function renderMetricasPage(){
       <div class="metas-col"><div class="metas-col-titulo">👤 Pessoal</div>${_METAS_CONFIG.filter(m=>m.col==='pessoal').map(_renderMetaCard).join('')}</div>
     </div>
     <div class="ceo-block" style="margin-top:14px">
-      <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas configuráveis chegam na próxima etapa</span></div>
+      <div class="ceo-block-header"><span class="ceo-block-title">🚀 Escala Da Let's Go</span><span style="font-size:11px;color:var(--text3)">Metas Configuráveis Chegam Na Próxima Etapa</span></div>
       <div class="ceo-block-body ceo-mini-grid">
-        ${_escalaItem('Pedidos/dia (hoje)','esc-pedidos-dia')}
-        ${_escalaItem('Lojas ativas','esc-lojas')}
-        ${_escalaItem('Entregadores ativos','esc-entregadores')}
-        ${_escalaItem('Pedidos/mês','esc-pedidos-mes')}
+        ${_escalaItem('Pedidos/Dia (Hoje)','esc-pedidos-dia')}
+        ${_escalaItem('Lojas Ativas','esc-lojas')}
+        ${_escalaItem('Entregadores Ativos','esc-entregadores')}
+        ${_escalaItem('Pedidos/Mês','esc-pedidos-mes')}
       </div>
     </div>`:''}
   </div>`;
@@ -8515,8 +8515,8 @@ async function _buscarMetricas(){
   chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div>';
   const dataIni=document.getElementById('mm-data-ini')?.value;
   const dataFim=document.getElementById('mm-data-fim')?.value;
-  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione o período</div>';return;}
-  if(dataIni>dataFim){showNotif('⚠️ Período inválido','A data inicial não pode ser depois da final','var(--yellow)');return;}
+  if(!dataIni||!dataFim){chartEl.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Selecione O Período</div>';return;}
+  if(dataIni>dataFim){showNotif('⚠️ Período Inválido','A Data Inicial Não Pode Ser Depois Da Final','var(--yellow)');return;}
   // Agregação feita no banco (RPC pedidos_finalizados_por_mes, COUNT+GROUP BY
   // mês) — não traz as linhas de pedidos pro client, então não fica sujeito
   // ao limite de linhas do PostgREST que já causou números errados no
@@ -8565,7 +8565,7 @@ async function _buscarMetricas(){
   if(chartPedidosCategoriaEl){
     const _porCategoria=(Array.isArray(rowsPedidosCategoria)?rowsPedidosCategoria:[]).map(r=>({categoria:r.categoria,quantidade:Number(r.quantidade)||0})).filter(d=>d.quantidade>0);
     _dadosBrutoPedidosCategoria=_porCategoria;
-    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum pedido finalizado no período',corFn:_corGrupo,clicavel:true,chartId:'pedidos'});
+    chartPedidosCategoriaEl.innerHTML=_renderDonutCategoria(_agruparPorCategoria(_porCategoria),{rotuloCentro:'pedido finalizado',rotuloCentroPlural:'pedidos',vazio:'Nenhum Pedido Finalizado No Período',corFn:_corGrupo,clicavel:true,chartId:'pedidos'});
   }
 }
 // Metas (Caixa Operacional/Saque Rápido/Patrimônio BTC/Patrimônio Imóveis)
@@ -8583,12 +8583,12 @@ async function _buscarMetricas(){
 // de seção, já que agora tem 2 cards mostrando o mesmo texto "BTC" e só a
 // coluna diferencia qual é qual.
 const _METAS_CONFIG=[
-  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta de Caixa Operacional - Banco do Brasil 1%',col:'empresa'},
-  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta de Conta Salário - Caixa Econômica Federal 1%',col:'pessoal'},
-  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'🏦 Meta de Caixa Saque Rápido - ITAU 5%',col:'empresa'},
-  {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio em Imóveis',col:'pessoal'},
-  {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio em Dólar - Banco nos Estados Unidos',col:'empresa'},
-  {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio em Euro - Banco na Europa',col:'pessoal'},
+  {id:'caixa-operacional',chave:'meta_caixa_valor_atual',titulo:'🏦 Meta De Caixa Operacional - Banco Do Brasil 1%',col:'empresa'},
+  {id:'caixa-saque-rapido',chave:'meta_caixa_saque_rapido_valor_atual',titulo:'⚡ Meta De Conta Salário - Caixa Econômica Federal 1%',col:'pessoal'},
+  {id:'patrimonio-btc',chave:'meta_patrimonio_btc_valor_atual',titulo:'🏦 Meta De Caixa Saque Rápido - ITAU 5%',col:'empresa'},
+  {id:'patrimonio-imoveis',chave:'meta_patrimonio_imoveis_valor_atual',titulo:'🏠 Meta Patrimônio Em Imóveis',col:'pessoal'},
+  {id:'patrimonio-dolar',chave:'meta_patrimonio_dolar_valor_atual',titulo:'💵 Meta Patrimônio Em Dólar - Banco Nos Estados Unidos',col:'empresa'},
+  {id:'patrimonio-euro',chave:'meta_patrimonio_euro_valor_atual',titulo:'💶 Meta Patrimônio Em Euro - Banco Na Europa',col:'pessoal'},
   // Chave própria cada (não compartilham valor salvo) mesmo com o título
   // exibido igual ("BTC" nos dois, a pedido do usuário) — só a coluna
   // (Empresa/Pessoal) diferencia qual é qual.
@@ -8657,14 +8657,14 @@ async function _salvarMeta(metaId){
   const meta=_METAS_CONFIG.find(m=>m.id===metaId);if(!meta)return;
   const input=document.getElementById(`meta-valor-${metaId}`);
   const valor=parseFloat(input?.value);
-  if(!(valor>=0)){showNotif('⚠️ Valor inválido','Digite um valor válido em R$','var(--yellow)');return;}
+  if(!(valor>=0)){showNotif('⚠️ Valor Inválido','Digite Um Valor Válido Em R$','var(--yellow)');return;}
   const agora=new Date().toISOString();
   const existing=await db('configuracoes','GET',null,`?chave=eq.${meta.chave}`);
   const res=(existing&&existing.length>0)
     ?await db('configuracoes','PATCH',{valor:String(valor),updated_at:agora},`?chave=eq.${meta.chave}`)
     :await db('configuracoes','POST',{chave:meta.chave,valor:String(valor),created_at:agora,updated_at:agora});
-  if(!res||res.length===0){showNotif('❌ Erro ao salvar','Não foi possível salvar o valor','var(--red)');return;}
-  showNotif('✅ Valor salvo!',`${meta.titulo} atualizado com sucesso`);
+  if(!res||res.length===0){showNotif('❌ Erro Ao Salvar','Não Foi Possível Salvar O Valor','var(--red)');return;}
+  showNotif('✅ Valor Salvo!',`${meta.titulo} atualizado com sucesso`);
   const el=document.getElementById(`meta-progresso-${metaId}`);
   if(el)el.innerHTML=_renderMetaProgresso(valor);
 }
@@ -8674,7 +8674,7 @@ async function _salvarMeta(metaId){
 // que usam esta função (Finalizados, Lojas Novas, Motoboys Novos) — só
 // rotulo/rotuloPlural (texto do tooltip) muda por gráfico.
 function _renderMetricasChart(meses,opts){
-  if(!meses.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Selecione um período válido</div>';
+  if(!meses.length)return'<div style="color:var(--text3);text-align:center;padding:40px">Selecione Um Período Válido</div>';
   const{rotulo='pedido finalizado',rotuloPlural='pedidos finalizados'}=opts||{};
   const max=Math.max(1,...meses.map(m=>m.quantidade));
   const barras=meses.map(m=>{
@@ -8795,7 +8795,7 @@ function _corMarca(categoria){
 function _agruparPorCategoria(dadosPorCategoria){
   const porGrupo=new Map();
   dadosPorCategoria.forEach(d=>{
-    const grupo=_GRUPO_CATEGORIA[d.categoria]||'Sem categoria';
+    const grupo=_GRUPO_CATEGORIA[d.categoria]||'Sem Categoria';
     porGrupo.set(grupo,(porGrupo.get(grupo)||0)+d.quantidade);
   });
   return[...porGrupo.entries()].map(([categoria,quantidade])=>({categoria,quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
@@ -8810,7 +8810,7 @@ async function _buscarLojasPorCategoria(){
   el.innerHTML=_renderDonutCategoria(_agruparPorCategoria(dados),{corFn:_corGrupo,clicavel:true,chartId:'lojas'});
 }
 function _renderDonutCategoria(dados,opts){
-  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma loja cadastrada',corFn=_corGrupo,clicavel=false,chartId=''}=opts||{};
+  const{rotuloCentro='loja',rotuloCentroPlural='lojas',vazio='Nenhuma Loja Cadastrada',corFn=_corGrupo,clicavel=false,chartId=''}=opts||{};
   if(!dados.length)return`<div style="color:var(--text3);text-align:center;padding:40px">${vazio}</div>`;
   const total=dados.reduce((s,d)=>s+d.quantidade,0);
   const R=40,C=2*Math.PI*R;
@@ -8837,7 +8837,7 @@ function _renderDonutCategoria(dados,opts){
       </div>
     </div>
     <div style="min-width:200px;max-width:320px;flex:1">${legenda}</div>
-  </div>${clicavel?`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔎 Clique numa fatia ou item da legenda pra detalhar por marca</div>`:''}`;
+  </div>${clicavel?`<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔎 Clique Numa Fatia Ou Item Da Legenda Pra Detalhar Por Marca</div>`:''}`;
 }
 // Detalhamento completo de um grupo — mostra cada categoria/marca que o
 // compõe separada (genéricas e marcas específicas, sem somar nada em
@@ -8847,9 +8847,9 @@ function _renderDonutCategoria(dados,opts){
 // a categoria genérica de sempre, sem nada novo pra detalhar.
 function _abrirDrilldownCategoria(chartId,grupo){
   const bruto=chartId==='lojas'?_dadosBrutoLojasCategoria:_dadosBrutoPedidosCategoria;
-  const doGrupo=bruto.filter(d=>(_GRUPO_CATEGORIA[d.categoria]||'Sem categoria')===grupo);
+  const doGrupo=bruto.filter(d=>(_GRUPO_CATEGORIA[d.categoria]||'Sem Categoria')===grupo);
   const temMarca=doGrupo.some(d=>_MARCAS_ESPECIFICAS.has(d.categoria));
-  if(!temMarca){showNotif('Sem detalhamento disponível',`"${grupo}" ainda não tem marcas específicas cadastradas.`,'var(--text3)');return;}
+  if(!temMarca){showNotif('Sem Detalhamento Disponível',`"${grupo}" ainda não tem marcas específicas cadastradas.`,'var(--text3)');return;}
   const detalhado=doGrupo.map(d=>({categoria:d.categoria,quantidade:d.quantidade})).sort((a,b)=>b.quantidade-a.quantidade);
   const rotuloCentro=chartId==='lojas'?'loja':'pedido';
   const rotuloCentroPlural=chartId==='lojas'?'lojas':'pedidos';
@@ -8865,7 +8865,7 @@ const STATUS_RELATORIO=[
   {key:'pronto',         label:'Pronto',            cor:'#e91e8c'},
   {key:'aceito',         label:'Aceito',            cor:'#eab308'},
   {key:'em_rota',        label:'Em Rota',           cor:'#1A56DB'},
-  {key:'chegou_destino', label:'Chegou no Destino', cor:'#7c3aed'},
+  {key:'chegou_destino', label:'Chegou No Destino', cor:'#7c3aed'},
   {key:'finalizado',     label:'Finalizado',        cor:'#16a34a'},
   {key:'cancelado',      label:'Cancelado',         cor:'#ef4444'},
 ];
@@ -8874,7 +8874,7 @@ function abrirDropdownStatusRelatorio(event,pedidoId){
   const anchor=event.currentTarget;
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p)return;
-  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não É Possível Alterar Pedidos De Semanas Anteriores','var(--red)');return;}
   const itens=STATUS_RELATORIO.map(s=>`<button onclick="event.stopPropagation();alterarStatusPedidoRelatorio('${pedidoId}','${s.key}');_dropdownAberto&&_dropdownAberto.remove();_dropdownAberto=null" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#DDD;text-align:left"><span style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0;display:inline-block"></span>${s.label}</button>`).join('');
   const dd=_criarDropdown(pedidoId,itens);
   _posicionarDropdown(dd,anchor);
@@ -8883,13 +8883,13 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   fecharDropdownStatus();
   const p=_fpPedidos.find(x=>x.id===pedidoId);
   if(!p)return;
-  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não é possível alterar pedidos de semanas anteriores','var(--red)');return;}
+  if(_normDataLocal(p.created_at)<_inicioSemanaAtualBrasilia()){showNotif('🔒 Bloqueado','Não É Possível Alterar Pedidos De Semanas Anteriores','var(--red)');return;}
   // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
   // ver comentário lá.
   if(novoStatus==='finalizado'&&p.com_retorno&&!p.pagamento_confirmado){
     return confirmarPagamento(pedidoId);
   }
-  if(novoStatus==='cancelado'&&!confirm(`Cancelar o pedido #${p.numero||p.id?.substring(0,6)}?\nEsta ação pode ser revertida alterando o status novamente.`))return;
+  if(novoStatus==='cancelado'&&!confirm(`Cancelar O Pedido #${p.numero||p.id?.substring(0,6)}?\nEsta Ação Pode Ser Revertida Alterando O Status Novamente.`))return;
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
   if(novoStatus==='pronto'){update.pronto_em=agora;if(!p.motoboy_id&&!p.entregador_id){update.motoboy_id=null;update.entregador_id=null;}}
@@ -8901,22 +8901,22 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
     await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
     Object.assign(p,update);
     await logAcao('alterar_status_relatorio',{pedido_id:pedidoId,novo_status:novoStatus});
-    showNotif('✅ Status alterado',STATUS_LABEL[novoStatus]||novoStatus,'var(--green)');
-  }catch(e){showNotif('❌ Erro ao alterar status','','var(--red)');}
+    showNotif('✅ Status Alterado',STATUS_LABEL[novoStatus]||novoStatus,'var(--green)');
+  }catch(e){showNotif('❌ Erro Ao Alterar Status','','var(--red)');}
   _buscarPedidosAdmin();
 }
 async function renderMotoboyPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('bike',22)} Motoboys</div><button class="btn-sm btn-primary-sm" onclick="renderMotoboyPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Disponível</th><th>Localização</th><th>Atualizado</th></tr></thead><tbody id="tbody-moto"></tbody></table></div></div></div>`;
   const data=await db('entregadores','GET',null,'?order=updated_at.desc');
   const tbody=document.getElementById('tbody-moto');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Motoboy</td></tr>':data.map(e=>`<tr><td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td><td><span class="p-badge b-${e.status==='ocupado'?'aguardando':'entregue'}">${e.status||'—'}</span></td><td><span class="p-badge b-${e.disponivel?'em_rota':'fila'}">${e.disponivel?'Online':'Offline'}</span></td><td style="font-size:12px;color:var(--text3)">${e.lat?e.lat.toFixed(2)+', '+e.lng?.toFixed(2):'—'}</td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td></tr>`).join('');
 }
 
 async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone ainda é placeholder de importação — edite a loja pra completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro da Loja" aria-label="Financeiro da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -8943,23 +8943,23 @@ async function abrirEditarLoja(lojaId){
   const r2=(a,b)=>`<div class="form-row">${a}${b}</div>`;
   const r1=(a)=>`<div class="form-row full">${a}</div>`;
   modal.innerHTML=`<div class="modal" style="max-width:560px"><div class="modal-header"><span class="modal-title">${_icone('pencil',18)} Editar Loja — ${v(l.nome)}</span><button class="modal-close" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:75vh;overflow-y:auto">
-${r2(fi('Nome do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
+${r2(fi('Nome Do Estabelecimento',inp('el-nome',l.nome)),fi('Razão Social',inp('el-razao-social',l.razao_social)))}
 ${r1(fi('Categoria',sel('el-categoria',l.categoria,[['','Selecione...'],...CATEGORIAS_LOJA.map(c=>[c,c])])))}
 ${r2(fi('Inscrição Estadual',inp('el-insc-estadual',l.inscricao_estadual)),fi('Inscrição Municipal',inp('el-insc-municipal',l.inscricao_municipal)))}
 ${r1(fi('Endereço',`<input id="el-endereco" value="${v(l.endereco)}" data-orig="${v(l.endereco)}" placeholder="Rua, Número, Bairro" autocomplete="off" style="${is}" onfocus="iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback')"/><input type="hidden" id="el-lat" value="${l.latitude||''}"/><input type="hidden" id="el-lng" value="${l.longitude||''}"/>`))}
 <div id="el-geo-feedback" style="font-size:11px;margin:-6px 0 6px;min-height:16px"></div>
 ${r2(fi('CEP',inp('el-cep',l.cep,'00000-000')),fi('Complemento',inp('el-complemento',l.complemento)))}
-${r2(fi('Tipo de Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','Coleta Fixa'],['CLIENTE_FIXO','Cliente Fixo'],['CLIENTE_EVENTUAL','Cliente Eventual']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
-${r2(fi('WhatsApp da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
-${r1(fi('CPF ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 Ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
+${r2(fi('Tipo De Cliente',sel('el-tipo-cliente',l.tipo_cliente,[['','Selecione...'],['COLETA_FIXA','Coleta Fixa'],['CLIENTE_FIXO','Cliente Fixo'],['CLIENTE_EVENTUAL','Cliente Eventual']])),fi('Responsável',inp('el-responsavel',l.responsavel)))}
+${r2(fi('WhatsApp Da Loja',inp('el-telefone',l.telefone,'(16) 3333-3333')),fi('WhatsApp Financeiro',inp('el-celular',l.celular,'(16) 99999-9999')))}
+${r1(fi('CPF Ou CNPJ',`<input id="el-documento" value="${v(l.documento)}" placeholder="000.000.000-00 Ou 00.000.000/0000-00" oninput="_maskDocumentoLoja(this)" style="${is}"/>`))}
 ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-original-email="${v(l.email)}" style="${is}"/>`),fi('Pessoa Física / Jurídica',sel('el-pessoa-juridica',l.pessoa_juridica===true?'true':l.pessoa_juridica===false?'false':'',[['','Selecione...'],['false','Pessoa Física'],['true','Pessoa Jurídica']])))}
-${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
-${sec('Tabelas de Preço')}
-${r2(fi('Tabela de Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela de Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
-${r2(fi('Tipo de Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
-${r2(fi('🛵 Limite de Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
+${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe Em Branco Para Não Alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
+${sec('Tabelas De Preço')}
+${r2(fi('Tabela De Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela De Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
+${r2(fi('Tipo De Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
+${r2(fi('🛵 Limite De Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
 ${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
-<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo no app Let's Go cliente</label></div></div>
+<div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo No App Let's Go Cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -8971,12 +8971,12 @@ ${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
 // Roterizador/Creditar Saldo do modal Editar Loja.
 async function geocodificarLoja(){
   const endereco=document.getElementById('el-endereco')?.value,fb=document.getElementById('el-geo-feedback');
-  if(!endereco){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha o endereço primeiro</span>';return;}
+  if(!endereco){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha O Endereço Primeiro</span>';return;}
   if(!/\d/.test(endereco)){if(fb)fb.innerHTML='<span style="color:var(--text3)">Digite o endereço com número (ex: Rua das Flores, 123)</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Buscando...</span>';
   const geo=await geocodificarEndereco(endereco);
   if(geo){document.getElementById('el-lat').value=geo.lat.toFixed(6);document.getElementById('el-lng').value=geo.lng.toFixed(6);if(fb)fb.innerHTML=`<span style="color:var(--green)">✅ ${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)}</span>`;}
-  else{if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Não encontrado</span>';}
+  else{if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Não Encontrado</span>';}
 }
 // ── Entregador bloqueado por loja (Editar Loja) ──
 // Bloqueado aqui = não recebe pedido desta loja de jeito nenhum (despacho,
@@ -8991,10 +8991,10 @@ function _elBloqIniciar(atuais,todos){
   _elBloq.orig=[..._elBloq.sel.keys()].sort();
 }
 function _elBloqCampoHtml(is){
-  return`<div style="position:relative"><input id="el-bloq-busca" type="text" autocomplete="off" placeholder="Buscar entregador por nome ou telefone" oninput="_elBloqSugerir()" onfocus="_elBloqSugerir()" onblur="setTimeout(()=>{const s=document.getElementById('el-bloq-sug');if(s)s.style.display='none'},150)" style="${is}"/><div id="el-bloq-sug" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div><div id="el-bloq-lista" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${_elBloqListaHtml()}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Não recebe pedido desta loja (despacho, aviso e aceite). Bloqueado por 3 lojas diferentes, é bloqueado na plataforma automaticamente.</div>`;
+  return`<div style="position:relative"><input id="el-bloq-busca" type="text" autocomplete="off" placeholder="Buscar Entregador Por Nome Ou Telefone" oninput="_elBloqSugerir()" onfocus="_elBloqSugerir()" onblur="setTimeout(()=>{const s=document.getElementById('el-bloq-sug');if(s)s.style.display='none'},150)" style="${is}"/><div id="el-bloq-sug" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div><div id="el-bloq-lista" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${_elBloqListaHtml()}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Não Recebe Pedido Desta Loja (Despacho, Aviso E Aceite). Bloqueado Por 3 Lojas Diferentes, É Bloqueado Na Plataforma Automaticamente.</div>`;
 }
 function _elBloqListaHtml(){
-  if(!_elBloq.sel.size)return'<span style="font-size:12px;color:var(--text3)">Nenhum entregador bloqueado.</span>';
+  if(!_elBloq.sel.size)return'<span style="font-size:12px;color:var(--text3)">Nenhum Entregador Bloqueado.</span>';
   return[..._elBloq.sel].map(([id,e])=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#ef444418;border:1px solid #ef444455;color:var(--text);border-radius:20px;padding:4px 6px 4px 12px;font-size:12px;font-weight:600">${_escHtml(e.nome||'—')}<button type="button" onclick="_elBloqRemover('${id}')" title="Remover" style="background:none;border:none;cursor:pointer;color:var(--text3);display:inline-flex;padding:2px">${_icone('x',14)}</button></span>`).join('');
 }
 function _elBloqSugerir(){
@@ -9003,7 +9003,7 @@ function _elBloqSugerir(){
   const t=n(inp.value.trim()),dig=inp.value.replace(/\D/g,'');
   if(!t){box.style.display='none';return;}
   const res=_elBloq.todos.filter(e=>!_elBloq.sel.has(e.id)&&(n(e.nome).includes(t)||(dig.length>=3&&String(e.telefone||'').replace(/\D/g,'').includes(dig)))).slice(0,20);
-  box.innerHTML=res.length?res.map(e=>`<div onmousedown="event.preventDefault();_elBloqAdicionar('${e.id}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:var(--text)"><b>${_escHtml(e.nome||'—')}</b> <span style="color:var(--text3);font-size:12px">${_escHtml(e.telefone||'')}${e.status==='bloqueado'?' · já bloqueado na plataforma':''}</span></div>`).join(''):'<div style="padding:10px 12px;font-size:12px;color:var(--text3)">Nenhum entregador encontrado</div>';
+  box.innerHTML=res.length?res.map(e=>`<div onmousedown="event.preventDefault();_elBloqAdicionar('${e.id}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:var(--text)"><b>${_escHtml(e.nome||'—')}</b> <span style="color:var(--text3);font-size:12px">${_escHtml(e.telefone||'')}${e.status==='bloqueado'?' · já bloqueado na plataforma':''}</span></div>`).join(''):'<div style="padding:10px 12px;font-size:12px;color:var(--text3)">Nenhum Entregador Encontrado</div>';
   box.style.display='block';
 }
 function _elBloqAdicionar(id){
@@ -9031,10 +9031,10 @@ async function salvarEdicaoLoja(lojaId){
   const emailOriginal=(document.getElementById('el-email')?.getAttribute('data-original-email')||'').trim().toLowerCase();
   const novaSenha=document.getElementById('el-nova-senha')?.value||'';
   if(novaSenha){
-    if(novaSenha.length<6){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nova senha precisa ter no mínimo 6 caracteres.</div>';return;}
-    if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Atualizando senha…</div>';
+    if(novaSenha.length<6){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nova Senha Precisa Ter No Mínimo 6 Caracteres.</div>';return;}
+    if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Atualizando Senha…</div>';
     const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
-    if(!resSenha.ok){if(fb)fb.innerHTML=`<div style="color:#ef4444;font-size:13px">❌ Erro ao redefinir senha: ${resSenha.error}</div>`;return;}
+    if(!resSenha.ok){if(fb)fb.innerHTML=`<div style="color:#ef4444;font-size:13px">❌ Erro Ao Redefinir Senha: ${resSenha.error}</div>`;return;}
   }
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
   const g=(id)=>document.getElementById(id)?.value||'';
@@ -9047,7 +9047,7 @@ async function salvarEdicaoLoja(lojaId){
   const documentoRaw=g('el-documento');
   const documentoDigits=documentoRaw.replace(/\D/g,'');
   if(documentoDigits && !/^0+$/.test(documentoDigits) && !_validarDocumentoLoja(documentoDigits)){
-    if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">CPF ou CNPJ inválido — confere os números.</div>';return;
+    if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">CPF Ou CNPJ Inválido — Confere Os Números.</div>';return;
   }
   const update={
     nome:g('el-nome'),razao_social:g('el-razao-social'),categoria:g('el-categoria')||null,
@@ -9071,7 +9071,7 @@ async function salvarEdicaoLoja(lojaId){
     // false/null o que já foi configurado por aquela tela.
     updated_at:new Date().toISOString()
   };
-  if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome obrigatório.</div>';return;}
+  if(!update.nome){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nome Obrigatório.</div>';return;}
   // C.A.C.: janela de 90 dias do bônus conta da atribuição do vendedor —
   // só grava a data quando o vendedor MUDA (salvar a loja de novo com o
   // mesmo vendedor não pode reiniciar a contagem).
@@ -9089,23 +9089,23 @@ async function salvarEdicaoLoja(lojaId){
   if(lat)update.latitude=lat;
   if(lng)update.longitude=lng;
   const res=await dbPatch('lojas',update,`?id=eq.${lojaId}`);
-  if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro ao salvar loja','','var(--red)');return;}
+  if(res===null){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">❌ Erro ao salvar. Veja o console.</div>';showNotif('❌ Erro Ao Salvar Loja','','var(--red)');return;}
   await logAcao('editar_loja',{loja_id:lojaId,nome:update.nome});
   const _bq=await _elBloqSalvar(lojaId);
-  if(!_bq.ok){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Loja salva, mas a lista de entregadores bloqueados NÃO foi salva. Veja o console.</div>';showNotif('Erro ao salvar entregadores bloqueados','Os demais dados da loja foram salvos.','var(--red)');return;}
+  if(!_bq.ok){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Loja salva, mas a lista de entregadores bloqueados NÃO foi salva. Veja o console.</div>';showNotif('Erro Ao Salvar Entregadores Bloqueados','Os Demais Dados Da Loja Foram Salvos.','var(--red)');return;}
   const _bqPlat=_bq.r?.bloqueados_plataforma||[];
-  if(_bqPlat.length)showNotif('Bloqueado na plataforma',`${_bqPlat.map(b=>b.nome).join(', ')}: bloqueado por 3 lojas diferentes.`,'var(--red)');
+  if(_bqPlat.length)showNotif('Bloqueado Na Plataforma',`${_bqPlat.map(b=>b.nome).join(', ')}: bloqueado por 3 lojas diferentes.`,'var(--red)');
   // invalida cache de faixas para a loja editada
   const _lojaEdit=allLojas.find(l=>l.id===lojaId);if(_lojaEdit){_lojaEdit.tabela_cobranca_id=update.tabela_cobranca_id;_lojaEdit.tabela_pagamento_id=update.tabela_pagamento_id;_lojaEdit.tipo_cobranca=update.tipo_cobranca;if(update.tabela_cobranca_id)delete _faixasCachePorTabela[update.tabela_cobranca_id];if(update.tabela_pagamento_id)delete _faixasCachePorTabelaPag[update.tabela_pagamento_id];}
-  if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja atualizada!</div>';showNotif('✅ Loja atualizada!',update.nome);
+  if(fb)fb.innerHTML='<div style="color:#22c55e;font-size:13px">✅ Loja Atualizada!</div>';showNotif('✅ Loja Atualizada!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-loja')?.classList.remove('open');_recarregarListaLojas();},1200);
 }
 async function criarLoja(){
   const g=(id)=>document.getElementById(id)?.value||'';
   const nome=g('loja-nome'),email=g('loja-email'),senha=g('loja-senha');
   const fb=document.getElementById('loja-feedback');
-  if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha nome, e-mail e senha.</div>';return;}
-  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
+  if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha Nome, E-mail E Senha.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha Mínima De 6 Caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const auth=await _criarContaAuth(email,senha);
   if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
@@ -9113,7 +9113,7 @@ async function criarLoja(){
   let lat=parseFloat(document.getElementById('loja-lat')?.value)||null;
   let lng=parseFloat(document.getElementById('loja-lng')?.value)||null;
   if(endereco&&(!lat||!lng)){
-    fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Geocodificando endereço...</div>';
+    fb.innerHTML='<div style="color:var(--text2);font-size:13px">📍 Geocodificando Endereço...</div>';
     const geo=await geocodificarEndereco(endereco).catch(()=>null);
     if(geo){lat=geo.lat;lng=geo.lng;}
   }
@@ -9142,10 +9142,10 @@ async function criarLoja(){
     created_at:_agoraBrasilia()
   };
   const lojas=await db('lojas','POST',payload);
-  if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro ao cadastrar loja.</div>';return;}
+  if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro Ao Cadastrar Loja.</div>';return;}
   await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
   await logAcao('criar_loja',{nome,email});
-  fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja cadastrada!</div>';showNotif('Loja criada!',`${nome} pode acessar com ${email}`);
+  fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja Cadastrada!</div>';showNotif('Loja Criada!',`${nome} pode acessar com ${email}`);
   setTimeout(()=>fecharModal('modal-loja'),2000);
 }
 
@@ -9219,7 +9219,7 @@ async function _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,e
   const payload={nome,endereco,telefone,celular,responsavel,email,documento,ativo:false,ativo_app:false,tipo_cobranca:'credito',status_cadastro:'em_analise',latitude:lat||null,longitude:lng||null,created_at:_agoraBrasilia()};
   if(categoria)payload.categoria=categoria;
   const lojas=await db('lojas','POST',payload);
-  if(!lojas||lojas.length===0)return{ok:false,erro:'Erro ao enviar cadastro.'};
+  if(!lojas||lojas.length===0)return{ok:false,erro:'Erro Ao Enviar Cadastro.'};
   await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
   return{ok:true};
 }
@@ -9231,15 +9231,15 @@ async function enviarCadastroLoja(){
   const documentoRaw=g('cl-documento');
   const documento=documentoRaw.replace(/\D/g,'');
   const fb=document.getElementById('cl-feedback');
-  if(!nome||!endereco||!telefone||!celular||!responsavel||!email||!senha||!documentoRaw){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Preencha todos os campos.</div>';return;}
-  if(!_validarDocumentoLoja(documento)){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">CPF ou CNPJ inválido — confere os números.</div>';return;}
-  if(senha.length<6){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
-  fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">⏳ Enviando cadastro...</div>';
+  if(!nome||!endereco||!telefone||!celular||!responsavel||!email||!senha||!documentoRaw){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Preencha Todos Os Campos.</div>';return;}
+  if(!_validarDocumentoLoja(documento)){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">CPF Ou CNPJ Inválido — Confere Os Números.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red,#ef4444);font-size:13px">Senha Mínima De 6 Caracteres.</div>';return;}
+  fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">⏳ Enviando Cadastro...</div>';
   const res=await _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,email,senha,documento,lat:parseFloat(document.getElementById('cl-lat')?.value)||null,lng:parseFloat(document.getElementById('cl-lng')?.value)||null},
-    ()=>{fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">📍 Geocodificando endereço...</div>';});
+    ()=>{fb.innerHTML='<div style="color:var(--text2,#666);font-size:13px">📍 Geocodificando Endereço...</div>';});
   if(!res.ok){fb.innerHTML=`<div style="color:var(--red,#ef4444);font-size:13px">❌ ${res.erro}</div>`;return;}
-  fb.innerHTML='<div style="color:var(--green,#10b981);font-size:13px">✅ Cadastro enviado! Você será avisado quando for aprovado.</div>';
-  showNotif('✅ Cadastro enviado!','Nosso time vai analisar e liberar seu acesso em breve.');
+  fb.innerHTML='<div style="color:var(--green,#10b981);font-size:13px">✅ Cadastro Enviado! Você Será Avisado Quando For Aprovado.</div>';
+  showNotif('✅ Cadastro Enviado!','Nosso Time Vai Analisar E Liberar Seu Acesso Em Breve.');
   setTimeout(()=>{
     fecharModal('modal-cadastro-loja');
     ['cl-nome','cl-endereco','cl-lat','cl-lng','cl-telefone','cl-celular','cl-responsavel','cl-email','cl-senha','cl-documento'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -9259,18 +9259,18 @@ async function enviarCadastroLoja(){
 // Segmento: grava em lojas.categoria (lista CATEGORIAS_LOJA de sempre); o
 // tipo (Restaurantes/Multicategorias) sai da própria categoria.
 const _CLF_TIPOS={
-  restaurantes:{nome:'Restaurantes',desc:'Restaurantes, lanchonetes, pizzarias, docerias, cafeterias e outros estabelecimentos de comida.',cenas:['utensils','pizza','hamburger'],
-    segmentos:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa de Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Café']},
-  multicategorias:{nome:'Multicategorias',desc:'Mercados, farmácias, pet shops, adegas, conveniências e outros tipos de comércio.',cenas:['shopping-basket','pill','paw-print'],
+  restaurantes:{nome:'Restaurantes',desc:'Restaurantes, Lanchonetes, Pizzarias, Docerias, Cafeterias E Outros Estabelecimentos De Comida.',cenas:['utensils','pizza','hamburger'],
+    segmentos:['Restaurantes','Hamburgueria','Japonesa','Pizzaria','Confeitaria','Sorveteria','Açaí','Casa De Carnes','Padaria','Comida Fit','Marmitaria','Salgados','Café']},
+  multicategorias:{nome:'Multicategorias',desc:'Mercados, Farmácias, Pet Shops, Adegas, Conveniências E Outros Tipos De Comércio.',cenas:['shopping-basket','pill','paw-print'],
     segmentos:['Mercado','Conveniência','Adega','Empório','Pet Shop','Farmácia','Suplementos','Tabacarias','Auto Peças']},
 };
 const _CLF_ETAPAS=[
-  {id:'sobre',nome:'Sobre a loja',icone:'store',titulo:'Sobre a Sua Loja',sub:'Conte pra gente como sua loja se chama e o que ela vende.'},
-  {id:'endereco',nome:'Endereço',icone:'map-pin',titulo:'Onde Fica a Sua Loja',sub:'É daqui que os entregadores vão retirar os pedidos.'},
-  {id:'contato',nome:'Contato',icone:'phone',titulo:'Contato',sub:'Como nossa equipe fala com a loja e com o responsável.'},
-  {id:'documento',nome:'Documento',icone:'file-text',titulo:'Documento da Loja',sub:'Informe o CPF ou o CNPJ do responsável pela loja.'},
-  {id:'acesso',nome:'Acesso',icone:'lock',titulo:'Dados de Acesso',sub:'Você vai usar este e-mail e esta senha para entrar no sistema depois da aprovação.'},
-  {id:'revisao',nome:'Revisão',icone:'circle-check',titulo:'Revise Seus Dados',sub:'Confira tudo antes de enviar. Você pode alterar qualquer etapa.'},
+  {id:'sobre',nome:'Sobre a loja',icone:'store',titulo:'Sobre A Sua Loja',sub:'Conte Pra Gente Como Sua Loja Se Chama E O Que Ela Vende.'},
+  {id:'endereco',nome:'Endereço',icone:'map-pin',titulo:'Onde Fica A Sua Loja',sub:'É Daqui Que Os Entregadores Vão Retirar Os Pedidos.'},
+  {id:'contato',nome:'Contato',icone:'phone',titulo:'Contato',sub:'Como Nossa Equipe Fala Com A Loja E Com O Responsável.'},
+  {id:'documento',nome:'Documento',icone:'file-text',titulo:'Documento Da Loja',sub:'Informe O CPF Ou O CNPJ Do Responsável Pela Loja.'},
+  {id:'acesso',nome:'Acesso',icone:'lock',titulo:'Dados De Acesso',sub:'Você Vai Usar Este E-mail E Esta Senha Para Entrar No Sistema Depois Da Aprovação.'},
+  {id:'revisao',nome:'Revisão',icone:'circle-check',titulo:'Revise Seus Dados',sub:'Confira Tudo Antes De Enviar. Você Pode Alterar Qualquer Etapa.'},
 ];
 let _clf=null;
 const _clfEsc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -9439,7 +9439,7 @@ function _clfPararCenas(){if(_clf){_clf.timers.forEach(clearInterval);_clf.timer
 
 function _clfTopo(){
   return`<div class="clf-top"><div class="clf-marca"><div class="clf-marca-ico">${_icone('bike',18)}</div><div>Let's Go<small>DELIVERY</small></div></div>
-    <button class="clf-link" onclick="_clfSair()">${_icone('arrow-left',16)}<span>Voltar ao Login</span></button></div>`;
+    <button class="clf-link" onclick="_clfSair()">${_icone('arrow-left',16)}<span>Voltar Ao Login</span></button></div>`;
 }
 
 function _clfRender(){
@@ -9461,8 +9461,8 @@ function _clfEntradaHtml(){
     <div class="clf-arte">${t.cenas.map((c,i)=>_clfCena(c,k+i,i===0)).join('')}</div>
     <h3>${t.nome}</h3><p>${t.desc}</p>
     <button class="clf-btn clf-btn-pri" onclick="_clfEscolher('${k}')">Cadastrar Agora ${_icone('arrow-right',18)}</button></div>`;};
-  return`<h1 class="clf-h1">Cadastre sua loja e comece a vender com a <span>Let's Go</span></h1>
-    <p class="clf-sub">Escolha o tipo do seu negócio. O cadastro leva poucos minutos e nossa equipe analisa e libera o seu acesso.</p>
+  return`<h1 class="clf-h1">Cadastre Sua Loja E Comece A Vender Com A <span>Let's Go</span></h1>
+    <p class="clf-sub">Escolha O Tipo Do Seu Negócio. O Cadastro Leva Poucos Minutos E Nossa Equipe Analisa E Libera O Seu Acesso.</p>
     <div class="clf-cards" id="clf-cards">${card('restaurantes')}${card('multicategorias')}</div>`;
 }
 function _clfTrocarCena(k){
@@ -9473,13 +9473,13 @@ function _clfTrocarCena(k){
 // Com mouse: a cena só troca no cartão em foco, e o outro fica atenuado.
 // Sem hover (celular/toque): as cenas dos dois cartões alternam sozinhas.
 function _clfLigarCenas(){
-  if(window.matchMedia&&matchMedia('(hover: none)').matches){
+  if(window.matchMedia&&matchMedia('(Hover: None)').matches){
     _clf.timers.push(setInterval(()=>_clfTrocarCena('restaurantes'),2600));
     setTimeout(()=>{if(_clf&&_clf.etapa===-1)_clf.timers.push(setInterval(()=>_clfTrocarCena('multicategorias'),2600));},1300);
   }
 }
 function _clfFoco(k,entrou){
-  if(!_clf||(window.matchMedia&&matchMedia('(hover: none)').matches))return;
+  if(!_clf||(window.matchMedia&&matchMedia('(Hover: None)').matches))return;
   const cards=document.getElementById('clf-cards');if(!cards)return;
   _clfPararCenas();
   cards.classList.toggle('foco',entrou);
@@ -9508,25 +9508,25 @@ function _clfEtapaHtml(){
   let campos='';
   if(et.id==='sobre'){
     const err=_clf.erros.categoria;
-    campos=_clfCampo('nome','Nome da loja',{valor:d.nome,ph:'Ex.: Pizzaria Central',extra:'autocomplete="organization" maxlength="120"'})
+    campos=_clfCampo('nome','Nome Da Loja',{valor:d.nome,ph:'Ex.: Pizzaria Central',extra:'autocomplete="organization" maxlength="120"'})
       +`<div class="clf-campo${err?' erro':''}"><label>Segmento</label><div class="clf-segs">${t.segmentos.map(s=>`<button type="button" class="clf-seg${d.categoria===s?' sel':''}" onclick="_clfSegmento(this)" data-seg="${_clfEsc(s)}">${s}</button>`).join('')}</div>
         ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:''}</div>`;
   }else if(et.id==='endereco'){
     const loc=d.lat&&d.lng;
-    campos=_clfCampo('rua','Rua',{valor:d.rua,ph:'Comece a digitar e escolha na lista',extra:'autocomplete="off" oninput="_clfEnderecoEditado()"',dica:loc?`${_icone('circle-check',13)} Endereço localizado no mapa`:'Escolher o endereço na lista ajuda a localizar sua loja no mapa.'})
+    campos=_clfCampo('rua','Rua',{valor:d.rua,ph:'Comece A Digitar E Escolha Na Lista',extra:'autocomplete="off" oninput="_clfEnderecoEditado()"',dica:loc?`${_icone('circle-check',13)} Endereço localizado no mapa`:'Escolher O Endereço Na Lista Ajuda A Localizar Sua Loja No Mapa.'})
       +`<div class="clf-grid">${_clfCampo('bairro','Bairro',{valor:d.bairro,ph:'Ex.: Centro',extra:'oninput="_clfEnderecoEditado()"'})}${_clfCampo('numero','Número',{valor:d.numero,ph:'Ex.: 123',extra:'inputmode="numeric" maxlength="10" oninput="_clfEnderecoEditado()"'})}</div>`;
   }else if(et.id==='contato'){
-    campos=`<div class="clf-grid2">${_clfCampo('telefone','Telefone da loja',{valor:d.telefone,ph:'(16) 3333-3333',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}${_clfCampo('celular','Telefone financeiro',{valor:d.celular,ph:'(16) 99999-9999',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}</div>`
-      +_clfCampo('responsavel','Nome do responsável',{valor:d.responsavel,ph:'Nome completo',extra:'autocomplete="name" maxlength="120"'});
+    campos=`<div class="clf-grid2">${_clfCampo('telefone','Telefone Da Loja',{valor:d.telefone,ph:'(16) 3333-3333',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}${_clfCampo('celular','Telefone Financeiro',{valor:d.celular,ph:'(16) 99999-9999',tipo:'tel',extra:'inputmode="tel" oninput="_clfMaskTel(this)"'})}</div>`
+      +_clfCampo('responsavel','Nome Do Responsável',{valor:d.responsavel,ph:'Nome Completo',extra:'autocomplete="name" maxlength="120"'});
   }else if(et.id==='documento'){
-    campos=_clfCampo('documento','CPF ou CNPJ',{valor:d.documento,ph:'000.000.000-00 ou 00.000.000/0000-00',extra:'inputmode="numeric" maxlength="18" oninput="_maskDocumentoLoja(this)"',dica:'Usamos o documento só para validar o cadastro da loja.'});
+    campos=_clfCampo('documento','CPF Ou CNPJ',{valor:d.documento,ph:'000.000.000-00 ou 00.000.000/0000-00',extra:'inputmode="numeric" maxlength="18" oninput="_maskDocumentoLoja(this)"',dica:'Usamos O Documento Só Para Validar O Cadastro Da Loja.'});
   }else if(et.id==='acesso'){
     const err=_clf.erros.senha;
     campos=_clfCampo('email','E-mail',{valor:d.email,ph:'loja@email.com',tipo:'email',extra:'autocomplete="email" maxlength="160"'})
       +`<div class="clf-campo${err?' erro':''}"><label for="clf-senha">Senha</label><div class="clf-senha">
         <input id="clf-senha" type="password" placeholder="Mínimo 6 Caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();_clfContinuar();}"/>
         <button type="button" class="clf-olho" aria-label="Mostrar Senha" onclick="_clfOlho(this)">${_icone('eye',18)}</button></div>
-        ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:'<div class="clf-dica">Use pelo menos 6 caracteres.</div>'}</div>`;
+        ${err?`<div class="clf-msg">${_icone('circle-alert',14)}${err}</div>`:'<div class="clf-dica">Use Pelo Menos 6 Caracteres.</div>'}</div>`;
   }else{
     const bloco=(i,linhas)=>`<div class="clf-rev"><div class="clf-rev-cab"><span>${_icone(_CLF_ETAPAS[i].icone,16)}${_CLF_ETAPAS[i].nome}</span><button onclick="_clfIr(${i})">${_icone('pencil',14)}Alterar</button></div>${linhas.map(([a,b])=>`<div class="clf-rev-lin"><span>${a}</span><span>${_clfEsc(b||'—')}</span></div>`).join('')}</div>`;
     campos=bloco(0,[['Tipo',t.nome],['Nome da loja',d.nome],['Segmento',d.categoria]])
@@ -9559,7 +9559,7 @@ function _clfPosRender(){
   }));
   const primeiroErro=Object.keys(_clf.erros)[0];
   const alvo=document.getElementById('clf-'+(primeiroErro||''))||document.querySelector('#clf .clf-box input');
-  if(alvo&&window.matchMedia&&!matchMedia('(hover: none)').matches)alvo.focus();
+  if(alvo&&window.matchMedia&&!matchMedia('(Hover: None)').matches)alvo.focus();
 }
 function _clfSegmento(b){
   _clf.d.categoria=b.dataset.seg;
@@ -9609,7 +9609,7 @@ function _clfAutocomplete(){
 function _clfEnderecoEditado(){
   if(!_clf||!_clf.d.lat)return;
   _clf.d.lat=null;_clf.d.lng=null;_clf.d.cidade='';_clf.d.uf='';
-  const dica=document.getElementById('clf-dica-rua');if(dica){dica.className='clf-dica';dica.textContent='Escolher o endereço na lista ajuda a localizar sua loja no mapa.';}
+  const dica=document.getElementById('clf-dica-rua');if(dica){dica.className='clf-dica';dica.textContent='Escolher O Endereço Na Lista Ajuda A Localizar Sua Loja No Mapa.';}
 }
 function _clfEnderecoCompleto(){
   const d=_clf.d;
@@ -9627,11 +9627,11 @@ function _clfSalvarCampos(){
 function _clfValidar(){
   const d=_clf.d,e={},et=_CLF_ETAPAS[_clf.etapa].id,t=x=>(x||'').trim();
   const tel=x=>{const n=(x||'').replace(/\D/g,'');return n.length===10||n.length===11;};
-  if(et==='sobre'){if(t(d.nome).length<2)e.nome='Informe o nome da loja.';if(!d.categoria)e.categoria='Escolha o segmento da loja.';}
-  if(et==='endereco'){if(t(d.rua).length<3)e.rua='Informe a rua.';if(!t(d.numero))e.numero='Informe o número.';if(t(d.bairro).length<2)e.bairro='Informe o bairro.';}
-  if(et==='contato'){if(!tel(d.telefone))e.telefone='Telefone inválido. Use DDD + número.';if(!tel(d.celular))e.celular='Telefone inválido. Use DDD + número.';if(t(d.responsavel).length<3)e.responsavel='Informe o nome do responsável.';}
-  if(et==='documento'){if(!t(d.documento))e.documento='Informe o CPF ou o CNPJ.';else if(!_validarDocumentoLoja(d.documento))e.documento='CPF ou CNPJ inválido. Confira os números.';}
-  if(et==='acesso'){if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(d.email)))e.email='Informe um e-mail válido.';if((_clf.senha||'').length<6)e.senha='A senha precisa ter no mínimo 6 caracteres.';}
+  if(et==='sobre'){if(t(d.nome).length<2)e.nome='Informe O Nome Da Loja.';if(!d.categoria)e.categoria='Escolha O Segmento Da Loja.';}
+  if(et==='endereco'){if(t(d.rua).length<3)e.rua='Informe A Rua.';if(!t(d.numero))e.numero='Informe O Número.';if(t(d.bairro).length<2)e.bairro='Informe O Bairro.';}
+  if(et==='contato'){if(!tel(d.telefone))e.telefone='Telefone Inválido. Use DDD + Número.';if(!tel(d.celular))e.celular='Telefone Inválido. Use DDD + Número.';if(t(d.responsavel).length<3)e.responsavel='Informe O Nome Do Responsável.';}
+  if(et==='documento'){if(!t(d.documento))e.documento='Informe O CPF Ou O CNPJ.';else if(!_validarDocumentoLoja(d.documento))e.documento='CPF Ou CNPJ Inválido. Confira Os Números.';}
+  if(et==='acesso'){if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(d.email)))e.email='Informe Um E-mail Válido.';if((_clf.senha||'').length<6)e.senha='A Senha Precisa Ter No Mínimo 6 Caracteres.';}
   return e;
 }
 function _clfContinuar(){
@@ -9660,7 +9660,7 @@ async function _clfEnviar(){
   const res=await _gravarCadastroLoja({
     nome:d.nome.trim(),endereco:_clfEnderecoCompleto(),telefone:d.telefone.trim(),celular:d.celular.trim(),responsavel:d.responsavel.trim(),
     email:d.email.trim(),senha:_clf.senha,documento:d.documento.replace(/\D/g,''),lat:d.lat||null,lng:d.lng||null,categoria:d.categoria,
-  },()=>{const b=document.getElementById('clf-enviar');if(b)b.textContent='Localizando endereço...';}).catch(()=>({ok:false,erro:'Erro de conexão.'}));
+  },()=>{const b=document.getElementById('clf-enviar');if(b)b.textContent='Localizando Endereço...';}).catch(()=>({ok:false,erro:'Erro De Conexão.'}));
   if(!_clf)return; // fechou no meio
   _clf.enviando=false;
   if(!res.ok){_clf.erroGeral=`Não foi possível enviar o cadastro: ${res.erro}`;_clfRender();return;}
@@ -9668,44 +9668,44 @@ async function _clfEnviar(){
 }
 function _clfFimHtml(){
   return`<div class="clf-box"><div class="clf-fim"><div class="clf-fim-ico">${_icone('circle-check',44)}</div>
-    <h2>Cadastro enviado!</h2><p>Nossa equipe vai analisar e liberar seu acesso. Assim que for aprovado, é só entrar com o e-mail e a senha que você cadastrou.</p>
-    <button class="clf-btn clf-btn-pri" onclick="_clfSair()">${_icone('arrow-left',18)}Voltar ao Login</button></div></div>`;
+    <h2>Cadastro Enviado!</h2><p>Nossa Equipe Vai Analisar E Liberar Seu Acesso. Assim Que For Aprovado, É Só Entrar Com O E-mail E A Senha Que Você Cadastrou.</p>
+    <button class="clf-btn clf-btn-pri" onclick="_clfSair()">${_icone('arrow-left',18)}Voltar Ao Login</button></div></div>`;
 }
 
 async function renderUsuariosPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários Do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado Em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
   const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?formatarDataHora(u.created_at):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?formatarDataHora(u.created_at):'—'}</td></tr>`;}).join('');
 }
 async function abrirModalUsuario(){
   const lojas=await db('lojas','GET',null,'');const sel=document.getElementById('u-loja-id');
-  sel.innerHTML='<option value="">Selecione a loja</option>'+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  sel.innerHTML='<option value="">Selecione A Loja</option>'+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   document.getElementById('u-perfil').onchange=function(){document.getElementById('u-loja-row').style.display=this.value==='loja'?'grid':'none';};
   document.getElementById('modal-usuario').classList.add('open');
 }
 async function criarUsuario(){
   const nome=document.getElementById('u-nome').value,email=document.getElementById('u-email').value,senha=document.getElementById('u-senha').value,perfil=document.getElementById('u-perfil').value,lojaId=document.getElementById('u-loja-id').value||null;
   const fb=document.getElementById('u-feedback');
-  if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha todos os campos.</div>';return;}
-  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha mínima de 6 caracteres.</div>';return;}
+  if(!nome||!email||!senha){fb.innerHTML='<div style="color:var(--red);font-size:13px">Preencha Todos Os Campos.</div>';return;}
+  if(senha.length<6){fb.innerHTML='<div style="color:var(--red);font-size:13px">Senha Mínima De 6 Caracteres.</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const auth=await _criarContaAuth(email,senha);
   if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
   const result=await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil,loja_id:lojaId,ativo:true});
   await logAcao('criar_usuario',{nome,email,perfil});
-  if(result&&result.length>0){fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Usuário cadastrado!</div>';showNotif('Usuário criado!',`${nome} (${perfil})`);setTimeout(()=>fecharModal('modal-usuario'),2000);}
-  else fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro. E-mail pode já estar cadastrado.</div>';
+  if(result&&result.length>0){fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Usuário Cadastrado!</div>';showNotif('Usuário Criado!',`${nome} (${perfil})`);setTimeout(()=>fecharModal('modal-usuario'),2000);}
+  else fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro. E-mail Pode Já Estar Cadastrado.</div>';
 }
 
 async function renderRelatoriosPage(){
   const hoje=_dataHojeBrasilia();
   const lojas=currentPerfil!=='loja'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
-  const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas as Lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  const opcoesLojas=currentPerfil==='loja'?'':`<option value="">Todas As Lojas</option>`+lojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
   const selectStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text);min-width:160px';
   const inputStyle='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;color:var(--text)';
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">${_icone('search',16,'btn-ico')}Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header" style="flex-wrap:wrap;gap:12px"><div class="page-title">${_icone('chart-line',22)} Relatórios</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">De</label><input type="date" id="r-de" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Até</label><input type="date" id="r-ate" value="${hoje}" style="${inputStyle}"/></div><div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap">Loja</label><select id="r-loja" style="${selectStyle}">${opcoesLojas}</select></div><button class="btn-sm btn-primary-sm" onclick="carregarRelatorio()">${_icone('search',16,'btn-ico')}Filtrar</button></div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">Total Pedidos</div><div class="stat-value" id="r-total">—</div></div><div class="stat-card"><div class="stat-label">Entregues</div><div class="stat-value" id="r-ent" style="color:var(--green)">—</div></div><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="r-fat" style="color:var(--accent)">—</div></div>${currentPerfil!=='loja'?`<div class="stat-card"><div class="stat-label">Motoboys</div><div class="stat-value" id="r-moto">—</div></div><div class="stat-card"><div class="stat-label">Lojas</div><div class="stat-value" id="r-lojas">—</div></div><div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="r-usuarios">—</div></div>`:''}</div><div class="card"><div class="card-header"><span class="card-title">Pedidos Por Status</span></div><div style="padding:20px" id="status-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div></div>`;
   carregarRelatorio();
 }
 async function carregarRelatorio(){
@@ -9750,11 +9750,11 @@ async function carregarRelatorio(){
   }
   const sc={};pedidos.forEach(p=>{const s=getStatusKey(p);sc[s]=(sc[s]||0)+1;});
   const total=pedidos.length||1;const colors={recebido:'#EF4444',pronto:'#EC4899',aceito:'#F59E0B',chegou_local:'#38BDF8',em_rota:'#1A56DB',chegou_destino:'#7C3AED',retornando:'#10B981',finalizado:'#10B981',entregue:'#475569',cancelado:'#EF4444'};
-  document.getElementById('status-bars').innerHTML=pedidos.length===0?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum pedido no período</div>':Object.entries(sc).map(([s,n])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${STATUS_LABEL[s]||s}</span><span style="font-weight:700">${n}</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${colors[s]||'#475569'};height:100%;width:${(n/total*100).toFixed(1)}%;border-radius:4px"></div></div></div>`).join('');
+  document.getElementById('status-bars').innerHTML=pedidos.length===0?'<div style="color:var(--text3);text-align:center;padding:20px">Nenhum Pedido No Período</div>':Object.entries(sc).map(([s,n])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">${STATUS_LABEL[s]||s}</span><span style="font-weight:700">${n}</span></div><div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden"><div style="background:${colors[s]||'#475569'};height:100%;width:${(n/total*100).toFixed(1)}%;border-radius:4px"></div></div></div>`).join('');
 }
 
 async function renderAuditoriaPage(){
-  if(currentPerfil!=='adm'){showNotif('Sem acesso','','var(--red)');return;}
+  if(currentPerfil!=='adm'){showNotif('Sem Acesso','','var(--red)');return;}
   const hoje=_dataHojeBrasilia();
   const inputStyle='padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;outline:none';
   document.getElementById('app-body').innerHTML=`
@@ -9789,7 +9789,7 @@ async function _runAuditoria(){
     const _segundaStr=new Date(Date.UTC(_yy,_mm-1,_dd-_diasDesdeSegunda)).toISOString().slice(0,10);
     const segundaAtualInicio=_inicioDiaBrasilia(_segundaStr);
     const pedidos=await db('pedidos','GET',null,`?created_at=gte.${ini}&created_at=lte.${fim}&order=created_at.asc&limit=1000`);
-    if(!Array.isArray(pedidos)){el.innerHTML=`<div class="card" style="padding:20px;color:var(--red)">❌ Erro ao buscar pedidos.</div>`;return;}
+    if(!Array.isArray(pedidos)){el.innerHTML=`<div class="card" style="padding:20px;color:var(--red)">❌ Erro Ao Buscar Pedidos.</div>`;return;}
     const problemas=[];
 
     // CHECK 1 — Consistência de cálculo
@@ -9871,7 +9871,7 @@ async function _runAuditoria(){
     }
 
     if(!problemas.length){
-      el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center;color:var(--green);font-size:15px;font-weight:700">✅ Nenhum problema encontrado no período (${pedidos.length} pedido(s) verificado(s))</div></div>`;
+      el.innerHTML=`<div class="card"><div style="padding:48px;text-align:center;color:var(--green);font-size:15px;font-weight:700">✅ Nenhum Problema Encontrado No Período (${pedidos.length} Pedido(s) Verificado(s))</div></div>`;
       return;
     }
     const pedidoStatusMap=Object.fromEntries(pedidos.map(p=>[p.id,p.status_detalhado||p.status||'']));
@@ -9885,20 +9885,20 @@ async function _runAuditoria(){
         :`goTab('mapa');setTimeout(()=>_irParaPedido('${pr.pedidoId}'),600)`;
       return`<button onclick="${onclick}" style="padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Ver #${pr.numero||'?'}</button>`;
     };
-    el.innerHTML=`<div class="card"><div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span style="font-weight:700;font-size:14px">⚠️ ${problemas.length} problema(s) encontrado(s) em ${pedidos.length} pedido(s)</span></div><div style="overflow-x:auto"><table><thead><tr><th>Tipo</th><th>Descrição</th><th></th></tr></thead><tbody>
+    el.innerHTML=`<div class="card"><div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span style="font-weight:700;font-size:14px">⚠️ ${problemas.length} Problema(s) Encontrado(s) Em ${pedidos.length} Pedido(s)</span></div><div style="overflow-x:auto"><table><thead><tr><th>Tipo</th><th>Descrição</th><th></th></tr></thead><tbody>
       ${problemas.map(pr=>`<tr><td style="white-space:nowrap">${badgeHtml(pr)}</td><td style="font-size:13px;color:var(--text2)">${pr.descricao}</td><td>${btnVer(pr)}</td></tr>`).join('')}
     </tbody></table></div></div>`;
   }catch(e){
     console.error('[Auditoria] erro:',e);
-    el.innerHTML=`<div class="card"><div style="padding:20px;color:var(--red);font-size:13px">❌ Erro ao rodar verificações: ${e?.message||String(e)}</div></div>`;
+    el.innerHTML=`<div class="card"><div style="padding:20px;color:var(--red);font-size:13px">❌ Erro Ao Rodar Verificações: ${e?.message||String(e)}</div></div>`;
   }
 }
 
 async function renderLogsPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs de Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs De Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
   const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
-  tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
+  tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
 }
 
 let _financeiroAba='gerar-pagamento';
@@ -9942,7 +9942,7 @@ async function renderFinanceiroPage(aba){
     {id:'aprovar-cobrancas',icon:'file-check',label:'Aprovar Faturas'},
     {id:'gerar-pagamento',icon:'banknote',label:'Gerar Pagamentos'},
     {id:'aprovar-saques',icon:'circle-check',label:'Aprovar Pagamentos'},
-    {id:'contas-pagar',icon:'wallet',label:'Contas a Pagar'},
+    {id:'contas-pagar',icon:'wallet',label:'Contas A Pagar'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -9980,7 +9980,7 @@ function _renderCredito(){
     </div>
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div style="flex:2;min-width:140px">${_scLabel('Nome')}<input id="sc-f-nome" placeholder="Buscar por nome..." style="${_scInput()}"/></div>
+        <div style="flex:2;min-width:140px">${_scLabel('Nome')}<input id="sc-f-nome" placeholder="Buscar Por Nome..." style="${_scInput()}"/></div>
         <div>${_scLabel('Data Inicio')}<input type="date" id="sc-f-ini" style="${_scInput()}"/></div>
         <div>${_scLabel('Data Fim')}<input type="date" id="sc-f-fim" style="${_scInput()}"/></div>
         <div>${_scLabel('Tipo')}<select id="sc-f-tipo" style="${_scInput()}"><option value="">Todos</option><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
@@ -9994,7 +9994,7 @@ function _renderCredito(){
       <div style="background:var(--card,var(--surface));border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px" id="sc-modal-titulo">Cadastrar</div>
         <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('Entidade')}<select id="sc-m-ent" onchange="_scAtualizarPrevia(true)" style="${_scInput()}"></select></div>
-        <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('Lançamento')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (valor pago pela loja)</option><option value="ajuste">Ajuste Manual (crédito ou débito)</option></select></div>
+        <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('Lançamento')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (Valor Pago Pela Loja)</option><option value="ajuste">Ajuste Manual (Crédito Ou Débito)</option></select></div>
         <div style="margin-bottom:14px" id="sc-m-data-wrap">${_scLabel('Data')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
         <div style="margin-bottom:14px" id="sc-m-tipo-wrap">${_scLabel('Tipo')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
         <div style="margin-bottom:14px" id="sc-m-valor-wrap">${_scLabel('Valor')}<input type="number" id="sc-m-valor" min="0.01" step="0.01" placeholder="0.00" oninput="_scAtualizarPrevia()" style="${_scInput()}"/></div>
@@ -10055,7 +10055,7 @@ async function _scBuscar(){
   if(e2)e2.textContent=`R$ ${totD.toFixed(2)}`;
   if(e4)e4.textContent=`R$ ${totB.toFixed(2)}`;
   if(e3){e3.textContent=`R$ ${Math.abs(saldo).toFixed(2)}`;e3.style.color=saldo>=0?'#10b981':'#ef4444';}
-  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum registro encontrado</div></div>';return;}
+  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhum Registro Encontrado</div></div>';return;}
   const tipoBadge=t=>t==='credito'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Crédito</span>`:t==='bonus'?`<span style="background:#ede9fe;color:#7c3aed;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Bônus</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Débito</span>`;
   const colLabel=isLojas?'Loja':'Entregador';
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
@@ -10100,26 +10100,26 @@ async function _scAtualizarPrevia(recarregar){
   const recarga=isLojas&&document.getElementById('sc-m-motivo')?.value==='recarga';
   const show=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'block':'none';};
   show('sc-m-tipo-wrap',!recarga);show('sc-m-data-wrap',!recarga);
-  const lbl=document.querySelector('#sc-m-valor-wrap label');if(lbl)lbl.textContent=recarga?'Valor Pago pela Loja':'Valor';
+  const lbl=document.querySelector('#sc-m-valor-wrap label');if(lbl)lbl.textContent=recarga?'Valor Pago Pela Loja':'Valor';
   const box=document.getElementById('sc-m-previa');if(!box)return;
   if(!recarga){box.style.display='none';return;}
   const lojaId=document.getElementById('sc-m-ent')?.value;if(!lojaId){box.style.display='none';return;}
-  if(recarregar||!_scPreviaCache[lojaId]){box.style.display='block';box.innerHTML='<div style="font-size:12px;color:var(--text3)">Consultando regras da recarga...</div>';_scPreviaCache[lojaId]=await _rcgCarregarInfo(lojaId);}
+  if(recarregar||!_scPreviaCache[lojaId]){box.style.display='block';box.innerHTML='<div style="font-size:12px;color:var(--text3)">Consultando Regras Da Recarga...</div>';_scPreviaCache[lojaId]=await _rcgCarregarInfo(lojaId);}
   const info=_scPreviaCache[lojaId];
   if(document.getElementById('sc-m-ent')?.value!==lojaId)return;
   const valor=parseFloat(document.getElementById('sc-m-valor')?.value)||0;
   const caixa=(cor,icone,html)=>`<div style="display:flex;gap:8px;align-items:flex-start;border:1px solid ${cor}55;background:${cor}14;border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.45;color:var(--text);margin-bottom:8px">${_icone(icone,15)}<div>${html}</div></div>`;
   let h='';
-  if(info._semServidor)h+=caixa('#ef4444','circle-alert','<b>Função de recarga indisponível no banco.</b> Aplique a migration da recarga antes de lançar recargas.');
+  if(info._semServidor)h+=caixa('#ef4444','circle-alert','<b>Função De Recarga Indisponível No Banco.</b> Aplique a migration da recarga antes de lançar recargas.');
   const min=info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA;
-  if(info.primeira_recarga)h+=caixa(valor&&valor<min?'#ef4444':'#3b82f6','info',`<b>Primeira recarga: mínimo ${_rcgFmtCurto(min)}.</b>${valor&&valor<min?' O valor informado está abaixo do mínimo e será recusado.':''}`);
+  if(info.primeira_recarga)h+=caixa(valor&&valor<min?'#ef4444':'#3b82f6','info',`<b>Primeira Recarga: Mínimo ${_rcgFmtCurto(min)}.</b>${valor&&valor<min?' O valor informado está abaixo do mínimo e será recusado.':''}`);
   const j=info.janela,pac=_rcgPacotes(info).find(p=>Math.abs(p.pago-valor)<0.005);
   if(j&&j.ativo){
-    h+=caixa('#10b981','badge-percent',`<b>Bônus ativo até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total Creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
+    h+=caixa('#10b981','badge-percent',`<b>Bônus Ativo Até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total Creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
   }else if(j){
-    h+=caixa('#64748b','calendar',`<b>Bônus Fora da Janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
+    h+=caixa('#64748b','calendar',`<b>Bônus Fora Da Janela</b> (próxima: ${_rcgDM(j.proximo_inicio)} a ${_rcgDM(j.proximo_fim)}). Será creditado só o valor pago${valor?': <b>'+_rcgFmt(valor)+'</b>':''}.`);
   }
-  h+=`<div style="font-size:11.5px;color:var(--text3)">Data do crédito: hoje. O bônus é calculado pelo servidor no momento do lançamento.</div>`;
+  h+=`<div style="font-size:11.5px;color:var(--text3)">Data Do Crédito: Hoje. O Bônus É Calculado Pelo Servidor No Momento Do Lançamento.</div>`;
   box.style.display='block';box.innerHTML=h;
 }
 // RPC com a mensagem de erro do servidor (dbRpc devolve [] em qualquer erro)
@@ -10129,7 +10129,7 @@ async function _dbRpcDetalhe(fn,args){
     const t=await r.text();let j=null;try{j=t?JSON.parse(t):null;}catch{}
     if(!r.ok)return{ok:false,erro:j?.message||`Erro ${r.status}`,hint:j?.hint||null};
     return{ok:true,data:j};
-  }catch{return{ok:false,erro:'Erro de conexão.'};}
+  }catch{return{ok:false,erro:'Erro De Conexão.'};}
 }
 
 async function _scSalvar(){
@@ -10140,28 +10140,28 @@ async function _scSalvar(){
   const valor=parseFloat(document.getElementById('sc-m-valor')?.value||0);
   const observacoes=(document.getElementById('sc-m-obs')?.value||'').trim();
   if(isLojas&&document.getElementById('sc-m-motivo')?.value==='recarga'){
-    if(!entId||!(valor>0)){showNotif('Atenção','Escolha a loja e informe o valor pago','var(--yellow)');return;}
+    if(!entId||!(valor>0)){showNotif('Atenção','Escolha A Loja E Informe O Valor Pago','var(--yellow)');return;}
     const r=await _dbRpcDetalhe('creditar_recarga_loja',{p_loja_id:entId,p_valor_pago:valor,p_usuario:`${currentUser?.nome||''} (${currentUser?.email||currentPerfil||''})`,p_observacoes:observacoes||null});
-    if(!r.ok){showNotif('Recarga não lançada',r.erro,'var(--red)');return;}
+    if(!r.ok){showNotif('Recarga Não Lançada',r.erro,'var(--red)');return;}
     const d=r.data||{};
     await logAcao('recarga_loja',{loja_id:entId,valor_pago:valor,bonus:d.bonus,credito_total:d.credito_total,primeira:d.primeira_recarga});
-    showNotif('Recarga lançada',`${_rcgFmt(d.valor_pago)}${d.bonus>0?` + ${_rcgFmt(d.bonus)} de bônus = ${_rcgFmt(d.credito_total)}`:' (sem bônus)'}`);
+    showNotif('Recarga Lançada',`${_rcgFmt(d.valor_pago)}${d.bonus>0?` + ${_rcgFmt(d.bonus)} De Bônus = ${_rcgFmt(d.credito_total)}`:' (Sem Bônus)'}`);
     document.getElementById('modal-sc').style.display='none';
     _scBuscar();
     return;
   }
-  if(!entId||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha todos os campos obrigatórios','var(--yellow)');return;}
+  if(!entId||!data||!tipo||!(valor>0)){showNotif('Atenção','Preencha Todos Os Campos Obrigatórios','var(--yellow)');return;}
   const agora=new Date().toISOString();
   const tabela=isLojas?'creditos_lojas':'creditos_entregadores';
   const fkField=isLojas?'loja_id':'entregador_id';
   const payload={[fkField]:entId,tipo,valor,observacoes,data,created_at:agora,updated_at:agora};
   const res=await db(tabela,'POST',payload);
   if(res&&(Array.isArray(res)?res.length>0:res.id)){
-    showNotif('✅ Registro salvo com sucesso!','');
+    showNotif('✅ Registro Salvo Com Sucesso!','');
     document.getElementById('modal-sc').style.display='none';
     _scBuscar();
   } else {
-    showNotif('❌ Erro ao salvar',`Verifique as permissões da tabela ${tabela} no Supabase`,'var(--red)');
+    showNotif('❌ Erro Ao Salvar',`Verifique as permissões da tabela ${tabela} no Supabase`,'var(--red)');
   }
 }
 
@@ -10172,7 +10172,7 @@ function _renderContasPagar(){
   const mesAtual=new Date().toISOString().slice(0,7);
   el.innerHTML=`
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
-      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px" id="cp-form-titulo">Cadastrar Conta a Pagar</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px" id="cp-form-titulo">Cadastrar Conta A Pagar</div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
         <div>${_scLabel('Mês/Ano')}<input type="month" id="cp-m-competencia" value="${mesAtual}" style="${_scInput()}"/></div>
         <div style="flex:2;min-width:200px">${_scLabel('Descrição')}<input type="text" id="cp-m-descricao" placeholder="Ex: Aluguel escritório" style="${_scInput()}"/></div>
@@ -10190,7 +10190,7 @@ function _renderContasPagar(){
     </div></div>
     <div class="card" style="margin-bottom:16px"><div style="padding:16px 20px">
       <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
-        <div>${_scLabel('Filtrar por Mês')}<input type="month" id="cp-f-mes" style="${_scInput()}"/></div>
+        <div>${_scLabel('Filtrar Por Mês')}<input type="month" id="cp-f-mes" style="${_scInput()}"/></div>
         <button onclick="_cpBuscar()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Buscar</button>
         <button onclick="document.getElementById('cp-f-mes').value='';_cpBuscar()" style="background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Limpar</button>
       </div>
@@ -10207,7 +10207,7 @@ async function _cpBuscar(){
   if(mes)qs+=`&competencia=eq.${mes}-01`;
   const rows=await db('contas_pagar','GET',null,qs);
   const data=Array.isArray(rows)?rows:[];
-  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma conta cadastrada</div></div>';return;}
+  if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma Conta Cadastrada</div></div>';return;}
   const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:`<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
     <thead><tr><th>Competência</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Vencimento</th><th>Ações</th></tr></thead>
@@ -10229,18 +10229,18 @@ async function _cpSalvar(){
   const valor=parseFloat(document.getElementById('cp-m-valor')?.value||0);
   const status=document.getElementById('cp-m-status')?.value;
   const vencimento=document.getElementById('cp-m-vencimento')?.value||null;
-  if(!mes||!descricao||!categoria||!(valor>0)){showNotif('Atenção','Preencha todos os campos obrigatórios','var(--yellow)');return;}
+  if(!mes||!descricao||!categoria||!(valor>0)){showNotif('Atenção','Preencha Todos Os Campos Obrigatórios','var(--yellow)');return;}
   const agora=new Date().toISOString();
   const payload={competencia:`${mes}-01`,descricao,categoria,valor,status,vencimento,updated_at:agora};
   let res;
   if(_cpEditId){res=await dbPatch('contas_pagar',payload,`?id=eq.${_cpEditId}`);}
   else{payload.created_at=agora;res=await db('contas_pagar','POST',payload);}
   if(res&&(Array.isArray(res)?res.length>0:res.id)){
-    showNotif('✅ Conta salva com sucesso!','');
+    showNotif('✅ Conta Salva Com Sucesso!','');
     _cpCancelarEdicao();
     _cpBuscar();
   } else {
-    showNotif('❌ Erro ao salvar','Verifique as permissões da tabela contas_pagar no Supabase','var(--red)');
+    showNotif('❌ Erro Ao Salvar','Verifique as permissões da tabela contas_pagar no Supabase','var(--red)');
   }
 }
 async function _cpEditar(id){
@@ -10254,8 +10254,8 @@ async function _cpEditar(id){
   if(g('cp-m-valor'))g('cp-m-valor').value=r.valor||'';
   if(g('cp-m-status'))g('cp-m-status').value=r.status||'pendente';
   if(g('cp-m-vencimento'))g('cp-m-vencimento').value=r.vencimento||'';
-  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Editar conta a pagar';
-  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar edição';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Editar Conta A Pagar';
+  if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar Edição';
   if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='inline-block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -10268,14 +10268,14 @@ function _cpCancelarEdicao(){
   if(g('cp-m-valor'))g('cp-m-valor').value='';
   if(g('cp-m-status'))g('cp-m-status').value='pendente';
   if(g('cp-m-vencimento'))g('cp-m-vencimento').value='';
-  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Cadastrar conta a pagar';
+  if(g('cp-form-titulo'))g('cp-form-titulo').textContent='Cadastrar Conta A Pagar';
   if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar';
   if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='none';
 }
 async function _cpExcluir(id){
-  if(!confirm('Excluir esta conta a pagar?'))return;
+  if(!confirm('Excluir Esta Conta A Pagar?'))return;
   await db('contas_pagar','DELETE',null,`?id=eq.${id}`);
-  showNotif('🗑️ Conta excluída','','var(--red)');
+  showNotif('🗑️ Conta Excluída','','var(--red)');
   _cpBuscar();
 }
 
@@ -10298,7 +10298,7 @@ async function _cpExcluir(id){
 // partir dela.
 const _FIN_POR_PAGINA=15;
 let _fin={lojaId:null,loja:null,equipe:false,linhas:[],grupos:[],pagina:0,filtro:{ini:'',fim:'',tipo:''},abertos:new Set()};
-const _FIN_TIPOS=[['','Todos os Tipos'],['recarga','Recarga Pix'],['bonus','Bônus'],['entrega','Débito de Entrega'],['estorno','Estorno de Entrega'],['ajuste','Ajuste']];
+const _FIN_TIPOS=[['','Todos Os Tipos'],['recarga','Recarga Pix'],['bonus','Bônus'],['entrega','Débito De Entrega'],['estorno','Estorno De Entrega'],['ajuste','Ajuste']];
 function _finTipo(r){
   if(r.tipo==='bonus')return'bonus';
   const o=r.origem||'';
@@ -10358,7 +10358,7 @@ function abrirFinanceiroLoja(lojaId){_finVoltarPara=_navAtivo||'lojas';renderFat
 async function renderFaturasLojaPage(lojaIdEquipe){
   const lojaId=(typeof lojaIdEquipe==='string'&&lojaIdEquipe)||currentUser?.loja_id;
   const body=document.getElementById('app-body');
-  if(!lojaId){body.innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Financeiro</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!lojaId){body.innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('receipt',22)+' Financeiro</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Loja Associada Ao Seu Usuário.</div></div>';return;}
   const equipe=lojaId!==currentUser?.loja_id;
   const lr=await db('lojas','GET',null,`?id=eq.${lojaId}&select=*`);
   const loja=Array.isArray(lr)&&lr[0]?lr[0]:{id:lojaId,tipo_cobranca:'faturamento'};
@@ -10377,8 +10377,8 @@ async function renderFaturasLojaPage(lojaIdEquipe){
   _fin={lojaId,loja,equipe,linhas:[],grupos:[],pagina:0,filtro:{ini:'',fim:'',tipo:''},abertos:new Set()};
   body.innerHTML=`<div class="alt-page">
     ${cab}
-    <div class="card" style="margin-bottom:16px"><div class="fin-topo" id="fin-topo"><div class="fin-saldo"><span>Saldo do Crédito</span><b>—</b><small>Carregando...</small></div></div></div>
-    <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">${_icone('wallet',18)} Extrato do Crédito</span></div>
+    <div class="card" style="margin-bottom:16px"><div class="fin-topo" id="fin-topo"><div class="fin-saldo"><span>Saldo Do Crédito</span><b>—</b><small>Carregando...</small></div></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">${_icone('wallet',18)} Extrato Do Crédito</span></div>
       <div class="fin-filtros">
         <div><label for="fin-ini">Data Início</label><input type="date" id="fin-ini" onchange="_finFiltrar()"/></div>
         <div><label for="fin-fim">Data Fim</label><input type="date" id="fin-fim" onchange="_finFiltrar()"/></div>
@@ -10407,8 +10407,8 @@ async function renderFaturasLojaPage(lojaIdEquipe){
 function _finRenderTopo(saldo){
   const el=document.getElementById('fin-topo');if(!el)return;
   const cor=saldo>=0?'#10b981':'#ef4444';
-  el.innerHTML=`<div class="fin-saldo"><span>Saldo do Crédito</span><b style="color:${cor}">${saldo<0?'-':''}${_rcgFmt(Math.abs(saldo))}</b>
-      <small>${saldo<=0?'Recarregue para continuar pedindo entregas.':'Cada entrega é descontada deste saldo.'}</small></div>
+  el.innerHTML=`<div class="fin-saldo"><span>Saldo Do Crédito</span><b style="color:${cor}">${saldo<0?'-':''}${_rcgFmt(Math.abs(saldo))}</b>
+      <small>${saldo<=0?'Recarregue Para Continuar Pedindo Entregas.':'Cada Entrega É Descontada Deste Saldo.'}</small></div>
     <button class="fin-btn" onclick="_abrirModalRecargaPix()">${_icone('wallet',18)}Recarregar</button>`;
 }
 // agrupa: débitos de entrega do mesmo dia viram uma linha (expansível)
@@ -10432,11 +10432,11 @@ function _finToggle(id){_fin.abertos.has(id)?_fin.abertos.delete(id):_fin.aberto
 function _finRenderExtrato(){
   const el=document.getElementById('fin-extrato');if(!el)return;
   if(!_fin.linhas.length){
-    el.innerHTML=`<div class="fin-vazio"><div class="ic">${_icone('wallet',26)}</div><b>Nenhuma movimentação ainda</b>
-      <p>${_fin.equipe?'Esta loja ainda não tem lançamentos de crédito.':'Faça sua primeira recarga via Pix: o valor entra como crédito e cada entrega é descontada dele.'}</p>
+    el.innerHTML=`<div class="fin-vazio"><div class="ic">${_icone('wallet',26)}</div><b>Nenhuma Movimentação Ainda</b>
+      <p>${_fin.equipe?'Esta Loja Ainda Não Tem Lançamentos De Crédito.':'Faça Sua Primeira Recarga Via Pix: O Valor Entra Como Crédito E Cada Entrega É Descontada Dele.'}</p>
       <button class="fin-btn" onclick="_abrirModalRecargaPix()">${_icone('wallet',18)}Recarregar</button></div>`;return;
   }
-  if(!_fin.grupos.length){el.innerHTML='<div class="fin-vazio"><b>Nenhum lançamento nesse filtro</b><p>Ajuste o período ou o tipo para ver outros lançamentos.</p></div>';return;}
+  if(!_fin.grupos.length){el.innerHTML='<div class="fin-vazio"><b>Nenhum Lançamento Nesse Filtro</b><p>Ajuste O Período Ou O Tipo Para Ver Outros Lançamentos.</p></div>';return;}
   const tot=_fin.grupos.length,pags=Math.ceil(tot/_FIN_POR_PAGINA);
   if(_fin.pagina>=pags)_fin.pagina=pags-1;
   const ini=_fin.pagina*_FIN_POR_PAGINA,pag=_fin.grupos.slice(ini,ini+_FIN_POR_PAGINA);
@@ -10446,7 +10446,7 @@ function _finRenderExtrato(){
   const linha=g=>{
     if(g.entrega){
       const aberto=_fin.abertos.has(g.id),n=g.itens.length;
-      return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor.entrega}"></i>Débito de Entrega</span>
+      return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor.entrega}"></i>Débito De Entrega</span>
         <span class="fin-desc">${n} entrega${n>1?'s':''} no dia <button class="fin-exp" aria-expanded="${aberto}" onclick="_finToggle('${g.id}')">${aberto?'Ocultar':'Ver Pedidos'} ${_icone(aberto?'chevron-up':'chevron-down',14)}</button></span>
         <span class="v">${val(g.valor,-1)}</span><span class="s">${sal(g._saldo)}</span></div>
         ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
@@ -10482,7 +10482,7 @@ async function _flBuscar(lojaId){
   }
   if(atualWrap)atualWrap.innerHTML=atual?_renderFaturaAtualCard(atual):'';
   const hist=todas.filter(c=>c.id!==atual?.id);
-  if(!hist.length){histWrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma fatura no histórico</div>';return;}
+  if(!hist.length){histWrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma Fatura No Histórico</div>';return;}
   const badge=c=>c.status==='pago'
     ?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
     :c.status==='pendente'
@@ -10540,13 +10540,13 @@ async function renderRankingPage(aba){
 
 async function _renderRankingLista(){
   const el=document.getElementById('ranking-content');if(!el)return;
-  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 da semana atual por pontos — só informativo, sem pagamento automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 Da Semana Atual Por Pontos — Só Informativo, Sem Pagamento Automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&pontos_semana=gt.0&order=pontos_semana.desc&limit=10');
   const lista=document.getElementById('ranking-lista');if(!lista)return;
   const arr=Array.isArray(entregadores)?entregadores:[];
-  if(!arr.length){lista.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum entregador com pontos ainda</div>';return;}
+  if(!arr.length){lista.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum Entregador Com Pontos Ainda</div>';return;}
   const medalha=(i)=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}º`;
-  lista.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Posição</th><th>Entregador</th><th>Pontos (semana)</th><th>Prêmio</th></tr></thead><tbody>${arr.map((e,i)=>`<tr>
+  lista.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Posição</th><th>Entregador</th><th>Pontos (Semana)</th><th>Prêmio</th></tr></thead><tbody>${arr.map((e,i)=>`<tr>
     <td style="font-weight:800;font-size:16px">${medalha(i)}</td>
     <td style="font-weight:600;color:var(--text)">${e.nome||e.id?.substring(0,8)||'—'}</td>
     <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
@@ -10581,7 +10581,7 @@ async function _renderClasTab(){
   const entAll=Array.isArray(entregadores)?entregadores:[];
   const cidades=[...new Set(lojasAll.map(l=>l.cidade).filter(Boolean))].sort();
   const elFinal=document.getElementById('ranking-content');if(!elFinal)return;
-  if(!cidades.length){elFinal.innerHTML='<div class="card"><div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cidade com loja cadastrada ainda.</div></div>';return;}
+  if(!cidades.length){elFinal.innerHTML='<div class="card"><div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Cidade Com Loja Cadastrada Ainda.</div></div>';return;}
   elFinal.innerHTML=`<div style="display:flex;flex-direction:column;gap:16px">${cidades.map(c=>_claCardHtml(c,lojasAll,entAll)).join('')}</div>`;
 }
 
@@ -10592,10 +10592,10 @@ function _claCardHtml(cidade,lojasAll,entAll){
   if(!cla){
     return `<div class="card"><div style="padding:20px 24px">
       <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">${cidade}</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Nenhum clã criado pra essa cidade ainda.</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Nenhum Clã Criado Pra Essa Cidade Ainda.</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <select id="cla-uf-${cidSafe}" style="${_ss};max-width:100px">${_UF_LIST.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
-        <button class="btn-modal-primary" onclick="_criarCla('${cidadeEsc}','${cidSafe}')">${_icone('plus',16,'btn-ico')}Criar Clã de ${cidade}</button>
+        <button class="btn-modal-primary" onclick="_criarCla('${cidadeEsc}','${cidSafe}')">${_icone('plus',16,'btn-ico')}Criar Clã De ${cidade}</button>
       </div>
     </div></div>`;
   }
@@ -10628,7 +10628,7 @@ function _claPickerHtml(tipo,cidSafe,entidades,selecionadosIds){
     <input type="text" placeholder="Buscar..." oninput="_claFiltrarOpcoes('${multiId}',this.value)"
       style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
     <div id="${multiId}" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2)">
-      ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum disponível (todos já estão em outro clã)</div>'}
+      ${optionsHtml||'<div style="color:var(--text3);font-size:12px">Nenhum Disponível (Todos Já Estão Em Outro Clã)</div>'}
     </div>
   </div>`;
 }
@@ -10645,7 +10645,7 @@ function _claVerLista(multiId,verLabel){
   if(!modal){modal=document.createElement('div');modal.id='modal-cla-ver-lista';modal.className='modal-overlay';document.body.appendChild(modal);}
   const listaHtml=nomes.length
     ?nomes.map(n=>`<div style="padding:9px 2px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)">${n}</div>`).join('')
-    :`<div style="text-align:center;padding:24px;color:var(--text3)">Nenhum selecionado ainda</div>`;
+    :`<div style="text-align:center;padding:24px;color:var(--text3)">Nenhum Selecionado Ainda</div>`;
   modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${verLabel} (${nomes.length})</span><button class="modal-close" onclick="fecharModal('modal-cla-ver-lista')">${_icone('x',16)}</button></div><div class="modal-body" style="max-height:340px;overflow-y:auto">${listaHtml}</div></div>`;
   modal.classList.add('open');
   modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open');};
@@ -10670,8 +10670,8 @@ function _claFiltrarOpcoes(multiId,busca){
 async function _criarCla(cidade,cidSafe){
   const uf=document.getElementById(`cla-uf-${cidSafe}`)?.value;if(!uf)return;
   const res=await db('clas','POST',{cidade,uf});
-  if(!Array.isArray(res)||!res.length){showNotif('❌ Erro ao criar clã','','var(--red)');return;}
-  showNotif('✅ Clã criado','','var(--green)');
+  if(!Array.isArray(res)||!res.length){showNotif('❌ Erro Ao Criar Clã','','var(--red)');return;}
+  showNotif('✅ Clã Criado','','var(--green)');
   _renderClasTab();
 }
 
@@ -10685,7 +10685,7 @@ async function _salvarCla(claId,cidSafe){
   if(lojaIds.length)await db('clas_lojas','POST',lojaIds.map(id=>({cla_id:claId,loja_id:id})));
   if(entIds.length)await db('clas_entregadores','POST',entIds.map(id=>({cla_id:claId,entregador_id:id})));
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
-  showNotif('✅ Clã atualizado','','var(--green)');
+  showNotif('✅ Clã Atualizado','','var(--green)');
   setTimeout(_renderClasTab,900);
 }
 
@@ -10715,7 +10715,7 @@ async function renderVagasPage(){
       </div>
       <div id="vagas-calendario"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
       <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:var(--text3)">
-        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span> Tem vaga disponível</div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block"></span> Tem Vaga Disponível</div>
         <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block"></span> Só Vagas Preenchidas</div>
       </div>
     </div></div>
@@ -10798,7 +10798,7 @@ function _vagasRenderCard(v){
         ${currentPerfil!=='loja'?`<div style="font-size:13px;font-weight:700;color:var(--text)">${loja?.nome||'—'}</div>`:''}
         <div style="font-size:12px;color:var(--text2)">${v.endereco||'—'}</div>
         <div style="font-size:12px;color:var(--text3)">${(v.horario_inicio||'').slice(0,5)} - ${(v.horario_fim||'').slice(0,5)} · R$ ${parseFloat(v.valor).toFixed(2)}</div>
-        ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:5px">${_icone('bike',14)} ${entregador?.nome||'Motoboy alocado'}</div>`:''}
+        ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:5px">${_icone('bike',14)} ${entregador?.nome||'Motoboy Alocado'}</div>`:''}
       </div>
       ${badge}
     </div>
@@ -10820,7 +10820,7 @@ function _vagasAbrirDia(dataStr,semRolar){
   const diasSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
   const dow=diasSem[new Date(Date.UTC(+ano,+mes-1,+dia)).getUTCDay()];
   const vagasDoDia=_vagasDoMes.filter(v=>v.data===dataStr);
-  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}" onchange="_vagasAtualizarEnderecoLoja()"><option value="">Selecione a loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}" data-endereco="${(l.endereco||'').replace(/"/g,'&quot;')}">${l.nome}</option>`).join('')}</select>`;
+  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}" onchange="_vagasAtualizarEnderecoLoja()"><option value="">Selecione A Loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}" data-endereco="${(l.endereco||'').replace(/"/g,'&quot;')}">${l.nome}</option>`).join('')}</select>`;
   const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
   const periodo=(id,icone,nome,hora)=>`<label class="vg-periodo" for="${id}"><input type="checkbox" id="${id}"/><span class="vg-periodo-caixa">${_icone('check',14)}</span><span class="vg-periodo-icone">${_icone(icone,18)}</span><span class="vg-periodo-texto"><span class="vg-periodo-nome">${nome}</span><span class="vg-periodo-hora">${hora}</span></span></label>`;
@@ -10834,18 +10834,18 @@ function _vagasAbrirDia(dataStr,semRolar){
       <div class="vg-painel-grid">
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Vagas do dia${vagasDoDia.length?` (${vagasDoDia.length})`:''}</div>
-          <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:14px;background:var(--surface2);border-radius:8px">Nenhuma vaga cadastrada nesse dia ainda.</div>'}</div>
+          <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:14px;background:var(--surface2);border-radius:8px">Nenhuma Vaga Cadastrada Nesse Dia Ainda.</div>'}</div>
         </div>
         <div class="vg-form${passado?' vg-form-bloqueado':''}">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova Vaga em ${dia}/${mes}/${ano}</div>
-          ${passado?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_icone('lock',16)} Dia já passou — não é possível criar vagas nesta data.</div>`:''}
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova Vaga Em ${dia}/${mes}/${ano}</div>
+          ${passado?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_icone('lock',16)} Dia Já Passou — Não É Possível Criar Vagas Nesta Data.</div>`:''}
           <fieldset ${passado?'disabled':''} style="border:none;padding:0;margin:0;min-width:0">
             ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
-            <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione a loja acima'}" style="${_scInput()};opacity:.7"/></div>
+            <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione A Loja Acima'}" style="${_scInput()};opacity:.7"/></div>
             <div class="fi" style="margin-bottom:10px"><label>Período</label>
               <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','10:00–14:00')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
             </div>
-            <div class="fi" style="margin-bottom:14px"><label>Valor (calculado automaticamente, por vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
+            <div class="fi" style="margin-bottom:14px"><label>Valor (Calculado Automaticamente, Por Vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
             <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:${passado?'not-allowed':'pointer'};width:100%;opacity:${passado?.5:1};display:inline-flex;align-items:center;justify-content:center">${_icone('check',16,'btn-ico')}Criar Vaga</button>
           </fieldset>
           <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
@@ -10868,7 +10868,7 @@ async function _vagasSalvar(dataStr){
   const endereco=(document.getElementById('vg-endereco')?.value||'').trim();
   const almoco=document.getElementById('vg-periodo-almoco')?.checked;
   const jantar=document.getElementById('vg-periodo-jantar')?.checked;
-  if(!lojaId||!endereco||(!almoco&&!jantar)){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha todos os campos e marque ao menos um período.</span>';return;}
+  if(!lojaId||!endereco||(!almoco&&!jantar)){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha Todos Os Campos E Marque Ao Menos Um Período.</span>';return;}
   const valor=_vagasCalcularValor(dataStr);
   const periodos=[];
   if(almoco)periodos.push({horario_inicio:'10:00',horario_fim:'14:00'});
@@ -10881,10 +10881,10 @@ async function _vagasSalvar(dataStr){
     if(!res||res.length===0)erro=true;
   }
   if(!erro){
-    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${periodos.length>1?'Vagas criadas!':'Vaga criada!'}</span>`;
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${periodos.length>1?'Vagas Criadas!':'Vaga Criada!'}</span>`;
     await _vagasCarregarMes(); // re-renderiza calendário e painel do dia
   } else {
-    if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao criar vaga.</span>';
+    if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro Ao Criar Vaga.</span>';
   }
 }
 
@@ -10904,7 +10904,7 @@ function _vagasRegraAcoes(v){
   return {
     alocar:livre&&!passado?null:fechada?motivoFechada:ocupada?'Vaga Já Tem Entregador':'Dia Já Passou',
     desatribuir:ocupada&&!passado?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Dia Já Passou',
-    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Só no dia da vaga ou depois',
+    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Só No Dia Da Vaga Ou Depois',
     cancelar:fechada?motivoFechada:null,
   };
 }
@@ -10915,7 +10915,7 @@ function _vagasAcoesHtml(v){
 }
 async function _vagasMudarStatus(vagaId,acao){
   const v=_vagasDoMes.find(x=>x.id===vagaId);if(!v)return;
-  if(_vagasRegraAcoes(v)[acao]){showNotif('Ação indisponível',_vagasRegraAcoes(v)[acao],'var(--yellow)');return;}
+  if(_vagasRegraAcoes(v)[acao]){showNotif('Ação Indisponível',_vagasRegraAcoes(v)[acao],'var(--yellow)');return;}
   const [ano,mes,dia]=v.data.split('-');const quando=`${dia}/${mes} ${(v.horario_inicio||'').slice(0,5)}–${(v.horario_fim||'').slice(0,5)}`;
   const txt={desatribuir:`Tirar o entregador da vaga de ${quando}? Ela volta a ficar disponível.`,finalizar:`Finalizar a vaga de ${quando} como cumprida?`,cancelar:`Cancelar a vaga de ${quando}?${v.entregador_id?' O entregador será avisado.':''}`}[acao];
   if(!confirm(txt))return;
@@ -10923,14 +10923,14 @@ async function _vagasMudarStatus(vagaId,acao){
   const de={desatribuir:'preenchida',finalizar:'preenchida',cancelar:v.status}[acao];
   const para={desatribuir:{status:'disponivel',entregador_id:null},finalizar:{status:'finalizada'},cancelar:{status:'cancelada'}}[acao];
   const res=await dbPatch('vagas_motoboy_fixo',{...para,updated_at:new Date().toISOString()},`?id=eq.${vagaId}&status=eq.${de}`);
-  if(res===null){showNotif('❌ Erro ao atualizar a vaga','','var(--red)');return;}
-  if(Array.isArray(res)&&!res.length){showNotif('⚠️ A vaga mudou','Atualizando a lista…','var(--yellow)');await _vagasCarregarMes();return;}
+  if(res===null){showNotif('❌ Erro Ao Atualizar A Vaga','','var(--red)');return;}
+  if(Array.isArray(res)&&!res.length){showNotif('⚠️ A Vaga Mudou','Atualizando A Lista…','var(--yellow)');await _vagasCarregarMes();return;}
   await logAcao('vaga_'+acao,{vaga_id:vagaId,loja_id:v.loja_id,data:v.data,horario:`${(v.horario_inicio||'').slice(0,5)}-${(v.horario_fim||'').slice(0,5)}`,status_anterior:v.status,entregador_id:v.entregador_id||null});
   if(v.entregador_id&&(acao==='desatribuir'||acao==='cancelar')){
     fetch(`${SB_URL}/functions/v1/notify-vaga`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({vaga_id:vagaId,entregador_id:v.entregador_id,acao:acao==='cancelar'?'cancelada':'desatribuida'})})
       .then(r=>{if(!r.ok)console.warn('[notify-vaga] HTTP',r.status);}).catch(e=>console.warn('[notify-vaga]',e));
   }
-  showNotif({desatribuir:'✅ Entregador removido da vaga',finalizar:'✅ Vaga finalizada',cancelar:'🗑️ Vaga cancelada'}[acao],'',acao==='cancelar'?'var(--red)':'var(--green)');
+  showNotif({desatribuir:'✅ Entregador Removido Da Vaga',finalizar:'✅ Vaga Finalizada',cancelar:'🗑️ Vaga Cancelada'}[acao],'',acao==='cancelar'?'var(--red)':'var(--green)');
   await _vagasCarregarMes();
 }
 function _vagasDesatribuir(id){return _vagasMudarStatus(id,'desatribuir');}
@@ -10943,7 +10943,7 @@ function _vagasAbrirAlocar(vagaId){
   modal.innerHTML=`<div class="modal" style="max-width:420px">
     <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <div class="fi" style="margin-bottom:12px"><label>CPF do Motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
+      <div class="fi" style="margin-bottom:12px"><label>CPF Do Motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
       <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">${_icone('search',16,'btn-ico')}Buscar</button>
       <div id="va-resultado" style="margin-top:14px"></div>
     </div>
@@ -10954,16 +10954,16 @@ function _vagasAbrirAlocar(vagaId){
 async function _vagasBuscarCpf(vagaId){
   const cpfDigitado=(document.getElementById('va-cpf')?.value||'').trim();
   const resultado=document.getElementById('va-resultado');
-  if(!cpfDigitado){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Digite um CPF.</span>';return;}
+  if(!cpfDigitado){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Digite Um CPF.</span>';return;}
   if(resultado)resultado.innerHTML='<span style="color:var(--text3);font-size:13px">Buscando...</span>';
   const cpfSoDigitos=cpfDigitado.replace(/\D/g,'');
   // Compara com e sem formatação, mesmo critério já usado no app entregador
   // pra checar CPF duplicado — cobre qualquer padrão gravado no banco.
   const rows=await db('entregadores','GET',null,`?or=(cpf.eq.${encodeURIComponent(cpfDigitado)},cpf.eq.${cpfSoDigitos})&select=id,nome,cpf,modal_veiculo&limit=1`);
   const ent=Array.isArray(rows)&&rows[0]?rows[0]:null;
-  if(!ent){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Nenhum entregador encontrado com esse CPF.</span>';return;}
+  if(!ent){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Nenhum Entregador Encontrado Com Esse CPF.</span>';return;}
   if((ent.modal_veiculo||'').toLowerCase()!=='moto'){
-    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px"><b>${ent.nome}</b> encontrado, mas não está cadastrado com moto (veículo: ${ent.modal_veiculo||'—'}).<br>Vagas fixas exigem motoboy de moto — alocação bloqueada.</div>`;
+    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px"><b>${ent.nome}</b> Encontrado, Mas Não Está Cadastrado Com Moto (Veículo: ${ent.modal_veiculo||'—'}).<br>Vagas Fixas Exigem Motoboy De Moto — Alocação Bloqueada.</div>`;
     return;
   }
   resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Encontrado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${ent.nome}</div></div>
@@ -10972,8 +10972,8 @@ async function _vagasBuscarCpf(vagaId){
 
 async function _vagasConfirmarAlocar(vagaId,entregadorId){
   const res=await dbPatch('vagas_motoboy_fixo',{status:'preenchida',entregador_id:entregadorId,updated_at:new Date().toISOString()},`?id=eq.${vagaId}`);
-  if(res===null){showNotif('❌ Erro ao alocar','','var(--red)');return;}
-  showNotif('✅ Entregador alocado!','');
+  if(res===null){showNotif('❌ Erro Ao Alocar','','var(--red)');return;}
+  showNotif('✅ Entregador Alocado!','');
   document.getElementById('modal-vagas-alocar')?.classList.remove('open');
   await _vagasCarregarMes();
   if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto,true);
@@ -10993,7 +10993,7 @@ async function _vagasAbrirFeriados(){
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end">
         <div class="fi" style="flex:1"><label>Data</label><input type="date" id="fer-data" style="${_scInput()}"/></div>
-        <div class="fi" style="flex:1"><label>Descrição (opcional)</label><input type="text" id="fer-descricao" placeholder="Ex: Natal" style="${_scInput()}"/></div>
+        <div class="fi" style="flex:1"><label>Descrição (Opcional)</label><input type="text" id="fer-descricao" placeholder="Ex: Natal" style="${_scInput()}"/></div>
       </div>
       <button onclick="_feriadoSalvar()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px">${_icone('plus',16,'btn-ico')}Adicionar</button>
       <div id="fer-lista"></div>
@@ -11007,7 +11007,7 @@ async function _feriadosBuscar(){
   const rows=await db('feriados_importantes','GET',null,'?order=data.asc');
   _feriadosCache=Array.isArray(rows)?rows:[];
   const lista=document.getElementById('fer-lista');if(!lista)return;
-  if(!_feriadosCache.length){lista.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum feriado cadastrado.</div>';return;}
+  if(!_feriadosCache.length){lista.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum Feriado Cadastrado.</div>';return;}
   lista.innerHTML=_feriadosCache.map(f=>{
     const [ano,mes,dia]=f.data.split('-');
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -11020,16 +11020,16 @@ async function _feriadosBuscar(){
 async function _feriadoSalvar(){
   const data=document.getElementById('fer-data')?.value;
   const descricao=(document.getElementById('fer-descricao')?.value||'').trim()||null;
-  if(!data){showNotif('Atenção','Selecione uma data','var(--yellow)');return;}
+  if(!data){showNotif('Atenção','Selecione Uma Data','var(--yellow)');return;}
   const res=await db('feriados_importantes','POST',{data,descricao});
-  if(!res||!res.length){showNotif('❌ Erro','Data já cadastrada ou inválida','var(--red)');return;}
+  if(!res||!res.length){showNotif('❌ Erro','Data Já Cadastrada Ou Inválida','var(--red)');return;}
   document.getElementById('fer-data').value='';document.getElementById('fer-descricao').value='';
   await _feriadosBuscar();
   if(document.getElementById('vagas-calendario'))_vagasRenderCalendario();
 }
 
 async function _feriadoExcluir(id){
-  if(!confirm('Excluir esse feriado?'))return;
+  if(!confirm('Excluir Esse Feriado?'))return;
   await db('feriados_importantes','DELETE',null,`?id=eq.${id}`);
   await _feriadosBuscar();
   if(document.getElementById('vagas-calendario'))_vagasRenderCalendario();
@@ -11121,7 +11121,7 @@ async function _carregarHistoricoSaques(append){
   const el=document.getElementById('gp-historico');if(!el)return;
   const saques=await db('saques','GET',null,`?select=*,entregadores(nome)&order=created_at.desc&limit=${_gpHistoricoPageSize}&offset=${_gpHistoricoOffset}`);
   const rows=Array.isArray(saques)?saques:[];
-  if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum pagamento gerado ainda</div>';return;}
+  if(!append&&!rows.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhum Pagamento Gerado Ainda</div>';return;}
   const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='aprovado'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Aprovado</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
   const html=rows.map(s=>`<tr>
     <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
@@ -11159,7 +11159,7 @@ function _gpAtualizarResumo(rows){
   const totalMotoboy=rows.reduce((s,r)=>s+r.total,0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-      <div class="stat-card"><div class="stat-label">Total Pagamento aos Motoboys</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Pagamento Aos Motoboys</div><div class="stat-value" style="font-size:24px;color:var(--red)">R$ ${totalMotoboy.toFixed(2)}</div></div>
     </div>`;
 }
 
@@ -11168,7 +11168,7 @@ async function _calcularPagamentos(){
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const dataIni=document.getElementById('gp-data-inicio')?.value;
   const dataFim=document.getElementById('gp-data-fim')?.value;
-  if(!dataIni||!dataFim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  if(!dataIni||!dataFim){showNotif('Atenção','Selecione O Período','var(--yellow)');return;}
   const horaIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
   const horaFim=document.getElementById('gp-hora-fim')?.value||'23:59';
   // pedidos.finalizado_em é timestamp SEM fuso, já local — string direta,
@@ -11219,14 +11219,14 @@ async function _calcularPagamentos(){
   const rows=Object.values(_gpResultados).filter(r=>r.total>0);
   _gpAtualizarResumo(rows);
   if(!lista)return;
-  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum entregador com saldo a pagar</div></div>`;return;}
+  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhum Entregador Com Saldo A Pagar</div></div>`;return;}
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gp-sel-all" onchange="_gpToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todos</label>
       <button onclick="_gerarPagamento()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('credit-card',16,'btn-ico')}Gerar Pagamento</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total a Pagar</th><th>Chave Pix</th><th>Tipo Pix</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Entregador</th><th>Pedidos</th><th>Já Retirado</th><th>Total A Pagar</th><th>Chave Pix</th><th>Tipo Pix</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gp-cb" value="${r.entregador.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.entregador.nome||'—'}</td>
@@ -11247,7 +11247,7 @@ async function _buscarPagamentos(){
   (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor};});
   if(!pendWrap)return;
   if(!saques||!saques.length){
-    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque pendente</div></div>`;
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum Saque Pendente</div></div>`;
     _renderHistoricoAprovarSaques();
     return;
   }
@@ -11282,7 +11282,7 @@ function _gpToggleAll(checked){document.querySelectorAll('.gp-cb').forEach(cb=>c
 
 async function _gerarPagamento(){
   const selecionados=[...document.querySelectorAll('.gp-cb:checked')].map(cb=>cb.value);
-  if(!selecionados.length){showNotif('Atenção','Selecione ao menos um entregador','var(--yellow)');return;}
+  if(!selecionados.length){showNotif('Atenção','Selecione Ao Menos Um Entregador','var(--yellow)');return;}
   const inicio=document.getElementById('gp-data-inicio')?.value||null;
   const fim=document.getElementById('gp-data-fim')?.value||null;
   const agora=new Date().toISOString();let ok=0;
@@ -11294,14 +11294,14 @@ async function _gerarPagamento(){
     if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
   }
   if(ok>0){
-    showNotif(`✅ ${ok} pagamento(s) gerado(s)!`,'');
+    showNotif(`✅ ${ok} Pagamento(s) Gerado(s)!`,'');
     _saquesPendentesCount+=ok;renderNavSidebar(_navAtivo);
     _carregarResumoFinanceiro();
     _gpHistoricoOffset=0;
     _carregarHistoricoSaques(false);
     document.getElementById('gp-lista').innerHTML='';
   } else {
-    showNotif('❌ Erro ao gerar pagamento','Verifique as permissões da tabela saques no Supabase','var(--red)');
+    showNotif('❌ Erro Ao Gerar Pagamento','Verifique As Permissões Da Tabela Saques No Supabase','var(--red)');
   }
 }
 
@@ -11312,7 +11312,7 @@ function _renderAprovarSaques(){
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        <div style="font-size:14px;font-weight:700;color:var(--text)">Saques Pendentes de Aprovação</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Saques Pendentes De Aprovação</div>
         <button onclick="_buscarPagamentos()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button>
       </div>
       <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
@@ -11330,9 +11330,9 @@ async function _renderHistoricoAprovarSaques(inicio,fim){
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Saques</div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico De Saques</div>
     <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado em</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado Em</th><th>Status</th></tr></thead>
       <tbody>${hist.map(s=>`<tr>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
@@ -11361,7 +11361,7 @@ async function _atualizarSaldoEntregador(entregador_id,valor){
 
 async function _aprovarSaquesSelecionados(){
   const ids=[...document.querySelectorAll('.as-cb:checked')].map(cb=>cb.value);
-  if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
+  if(!ids.length){showNotif('Atenção','Selecione Ao Menos Um Saque','var(--yellow)');return;}
   // Clique duplo / duas abas: só grava 'pago' se o saque AINDA estiver
   // pendente (filtro status=eq.pendente) e só desconta saldo quando o banco
   // devolve a linha alterada — antes o 2º clique aprovava e descontava de novo.
@@ -11380,7 +11380,7 @@ async function _aprovarSaquesSelecionados(){
   }
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-ok);
   renderNavSidebar(_navAtivo);
-  showNotif(`✅ ${ok} saque(s) aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
+  showNotif(`✅ ${ok} Saque(s) Aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
   _carregarResumoFinanceiro();
   _buscarPagamentos();
 }
@@ -11389,13 +11389,13 @@ async function recusarSaque(id){
   const agora=new Date().toISOString();
   const s=_saquesPendentesMap[id];
   const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
-  if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
+  if(!res){showNotif('Erro','Não Foi Possível Recusar O Saque','var(--red)');return;}
   document.getElementById(`saque-row-${id}`)?.remove();
-  if(!res.length){showNotif('Saque já processado','Esse saque não estava mais pendente — nada foi alterado.','var(--yellow)');_buscarPagamentos();return;}
+  if(!res.length){showNotif('Saque Já Processado','Esse Saque Não Estava Mais Pendente — Nada Foi Alterado.','var(--yellow)');_buscarPagamentos();return;}
   _saquesPendentesCount=Math.max(0,_saquesPendentesCount-1);
   renderNavSidebar(_navAtivo);
   console.log(`[SALDO] saque ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
-  showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
+  showNotif('❌ Saque Recusado','Saque Foi Recusado','var(--red)');
   _carregarResumoFinanceiro();
   _buscarPagamentos();
 }
@@ -11417,8 +11417,8 @@ function renderSaqueRapidoPage(){
           <button onclick="_srSalvarCaixa()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16)}</button>
         </div>
       </div>
-      <div class="stat-card"><div class="stat-label">Pago no Período</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
-      <div class="stat-card"><div class="stat-label">Lucro no Período</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pago No Período</div><div class="stat-value" id="sr-card-pago" style="font-size:22px;color:#10b981">—</div></div>
+      <div class="stat-card"><div class="stat-label">Lucro No Período</div><div class="stat-value" id="sr-card-taxa" style="font-size:22px;color:#ef4444">—</div></div>
     </div>
     <div class="card" style="margin-bottom:20px"><div style="padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
       <div><label style="display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">Data Início</label><input type="date" id="sr-data-ini" value="${hoje}" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px"/></div>
@@ -11426,7 +11426,7 @@ function renderSaqueRapidoPage(){
       <button onclick="_srAplicarPeriodo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Filtrar</button>
     </div></div>
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques Rápidos Pendentes de Aprovação</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Saques Rápidos Pendentes De Aprovação</div>
       <div id="sr-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
     <div id="sr-historico-wrap"></div>
@@ -11456,10 +11456,10 @@ async function _srPersistirCaixa(v){
 }
 async function _srSalvarCaixa(){
   const v=parseFloat(document.getElementById('sr-caixa-input')?.value);
-  if(isNaN(v)||v<0){showNotif('Atenção','Valor inválido','var(--yellow)');return;}
+  if(isNaN(v)||v<0){showNotif('Atenção','Valor Inválido','var(--yellow)');return;}
   await _srPersistirCaixa(v);
   document.getElementById('sr-caixa-edit').style.display='none';
-  showNotif('✅ Caixa atualizado!','');
+  showNotif('✅ Caixa Atualizado!','');
 }
 async function _srAplicarPeriodo(){
   const ini=document.getElementById('sr-data-ini')?.value;
@@ -11483,7 +11483,7 @@ async function _buscarSaquesRapidos(){
   (Array.isArray(saques)?saques:[]).forEach(s=>{_saquesRapidosPendentesMap[s.id]={entregador_id:s.entregador_id,valor:s.valor,valor_liquido:s.valor_liquido};});
   if(!pendWrap)return;
   if(!saques||!saques.length){
-    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum saque rápido pendente</div></div>`;
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhum Saque Rápido Pendente</div></div>`;
     _renderHistoricoSaqueRapido();
     return;
   }
@@ -11516,7 +11516,7 @@ async function _buscarSaquesRapidos(){
 function _srToggleAll(checked){document.querySelectorAll('.sr-cb').forEach(cb=>cb.checked=checked);}
 async function _aprovarSaquesRapidosSelecionados(){
   const ids=[...document.querySelectorAll('.sr-cb:checked')].map(cb=>cb.value);
-  if(!ids.length){showNotif('Atenção','Selecione ao menos um saque','var(--yellow)');return;}
+  if(!ids.length){showNotif('Atenção','Selecione Ao Menos Um Saque','var(--yellow)');return;}
   // Mesma trava do repasse: só aprova (e só desconta saldo/caixa) se o saque
   // ainda estava pendente — clique duplo ou outra aba não paga duas vezes.
   const agora=new Date().toISOString();let ok=0,decrementoCaixa=0,jaProcessados=0;
@@ -11537,7 +11537,7 @@ async function _aprovarSaquesRapidosSelecionados(){
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
   if(decrementoCaixa>0)await _srPersistirCaixa(Math.max(0,_srCaixaAtual-decrementoCaixa));
-  showNotif(`✅ ${ok} saque(s) rápido(s) aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
+  showNotif(`✅ ${ok} Saque(s) Rápido(s) Aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
   _buscarSaquesRapidos();
   _srAplicarPeriodo();
 }
@@ -11545,14 +11545,14 @@ async function recusarSaqueRapido(id){
   const agora=new Date().toISOString();
   const s=_saquesRapidosPendentesMap[id];
   const res=await dbPatch('saques',{status:'recusado',updated_at:agora},`?id=eq.${id}&status=eq.pendente`);
-  if(!res){showNotif('Erro','Não foi possível recusar o saque','var(--red)');return;}
+  if(!res){showNotif('Erro','Não Foi Possível Recusar O Saque','var(--red)');return;}
   document.getElementById(`saque-rapido-row-${id}`)?.remove();
-  if(!res.length){showNotif('Saque já processado','Esse saque não estava mais pendente — nada foi alterado.','var(--yellow)');_buscarSaquesRapidos();return;}
+  if(!res.length){showNotif('Saque Já Processado','Esse Saque Não Estava Mais Pendente — Nada Foi Alterado.','var(--yellow)');_buscarSaquesRapidos();return;}
   _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-1);
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
   console.log(`[SALDO] saque rápido ${id} recusado — saldo do entregador ${s?.entregador_id} mantido`);
-  showNotif('❌ Saque recusado','Saque foi recusado','var(--red)');
+  showNotif('❌ Saque Recusado','Saque Foi Recusado','var(--red)');
   _buscarSaquesRapidos();
 }
 async function _renderHistoricoSaqueRapido(inicio,fim){
@@ -11565,9 +11565,9 @@ async function _renderHistoricoSaqueRapido(inicio,fim){
   if(!hist||!hist.length){wrap.innerHTML='';return;}
   const badge=s=>s.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Saques Rápidos</div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico De Saques Rápidos</div>
     <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado em</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data</th><th>Entregador</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Aprovado Em</th><th>Status</th></tr></thead>
       <tbody>${hist.map(s=>`<tr>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${s.entregadores?.nome||'—'}</td>
@@ -11617,7 +11617,7 @@ async function _carregarHistoricoCobrancas(append){
   const el=document.getElementById('gc-historico');if(!el)return;
   const rows=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome)&status=in.(pago,pendente,aprovado)&order=created_at.desc&limit=${_gcHistoricoPageSize}&offset=${_gcHistoricoOffset}`);
   const data=Array.isArray(rows)?rows:[];
-  if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma cobrança gerada ainda</div>';return;}
+  if(!append&&!data.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Cobrança Gerada Ainda</div>';return;}
   const _gcBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:s==='aprovado'?`<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Aprovado</span>`:s==='recusado'?`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`:`<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`;
   const html=data.map(c=>`<tr id="gc-hist-row-${c.id}">
     <td style="font-weight:600;color:var(--text)">${c.lojas?.nome||'—'}</td>
@@ -11632,7 +11632,7 @@ async function _carregarHistoricoCobrancas(append){
     if(tbody)tbody.insertAdjacentHTML('beforeend',html);
   }else{
     el.innerHTML=`<div style="overflow-x:auto;max-height:400px;overflow-y:auto"><table style="width:100%">
-      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Status / Ações</th></tr></thead>
+      <thead><tr><th>Loja</th><th>Período</th><th>Pedidos</th><th>Valor Total</th><th>Gerado Em</th><th>Status / Ações</th></tr></thead>
       <tbody>${html}</tbody>
     </table></div>
     ${data.length===_gcHistoricoPageSize?`<div style="text-align:center;padding:12px"><button onclick="_gcCarregarMais()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:Inter,sans-serif">Carregar Mais</button></div>`:''}`;
@@ -11651,14 +11651,14 @@ function _gcCarregarMais(){_carregarHistoricoCobrancas(true);}
 async function _enviarFaturaHistorico(cobId){
   const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=id,loja_id,lojas(nome,celular)&limit=1`);
   const c=Array.isArray(cobRes)?cobRes[0]:null;
-  if(!c){showNotif('Erro','Cobrança não encontrada','var(--red)');return;}
+  if(!c){showNotif('Erro','Cobrança Não Encontrada','var(--red)');return;}
   const cfg=await _getEvolutionConfig();
-  if(!cfg.url||!cfg.instance||!cfg.token){showNotif('⚠️ Evolution API não configurada','','var(--yellow)');return;}
+  if(!cfg.url||!cfg.instance||!cfg.token){showNotif('⚠️ Evolution API Não Configurada','','var(--yellow)');return;}
   const phone=c.lojas?.celular;
-  if(!phone){showNotif('⚠️ Loja sem WhatsApp cadastrado','','var(--yellow)');return;}
+  if(!phone){showNotif('⚠️ Loja Sem WhatsApp Cadastrado','','var(--yellow)');return;}
   const msg=cfg.msgFinanceiro.replace(/{loja}/g,c.lojas?.nome||'');
   const sent=await _evolutionSendText(phone,msg);
-  showNotif(sent?'📲 Fatura enviada!':'❌ Falha ao enviar fatura',c.lojas?.nome||'',sent?'#22c55e':'var(--red)');
+  showNotif(sent?'📲 Fatura Enviada!':'❌ Falha Ao Enviar Fatura',c.lojas?.nome||'',sent?'#22c55e':'var(--red)');
 }
 
 // Card de resumo acima da tabela: total a cobrar das lojas (mesmo escopo da
@@ -11669,14 +11669,14 @@ function _gcAtualizarResumo(rowsCobranca){
   const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total,0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-      <div class="stat-card"><div class="stat-label">Total a Cobrar das Lojas</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total A Cobrar Das Lojas</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
     </div>`;
 }
 
 async function _buscarCobrancas(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
   const fim=document.getElementById('gc-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  if(!inicio||!fim){showNotif('Atenção','Selecione O Período','var(--yellow)');return;}
   const hIni=document.getElementById('gc-hora-inicio')?.value||'00:00';
   const hFim=document.getElementById('gc-hora-fim')?.value||'23:59';
   // pedidos.finalizado_em é timestamp SEM fuso, já local — string direta,
@@ -11703,14 +11703,14 @@ async function _buscarCobrancas(){
   const rows=Object.values(_gcResultados);
   _gcAtualizarResumo(rows);
   if(!lista)return;
-  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma loja com pedidos finalizados no período</div></div>`;return;}
+  if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma Loja Com Pedidos Finalizados No Período</div></div>`;return;}
   lista.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="gc-sel-all" onchange="_gcToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todas</label>
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('store',16,'btn-ico')}Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total a Cobrar</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total A Cobrar</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
@@ -11726,7 +11726,7 @@ async function _gerarCobranca(){
   const inicio=document.getElementById('gc-data-inicio')?.value;
   const fim=document.getElementById('gc-data-fim')?.value;
   const selecionadas=[...document.querySelectorAll('.gc-cb:checked')].map(cb=>cb.value);
-  if(!selecionadas.length){showNotif('Atenção','Selecione ao menos uma loja','var(--yellow)');return;}
+  if(!selecionadas.length){showNotif('Atenção','Selecione Ao Menos Uma Loja','var(--yellow)');return;}
   const agora=new Date().toISOString();let ok=0;
   for(const lid of selecionadas){
     const r=_gcResultados[lid];if(!r)continue;
@@ -11734,7 +11734,7 @@ async function _gerarCobranca(){
     const res=await db('cobrancas_lojas','POST',{loja_id:lid,valor_total:valor,status:'pendente',data_inicio:inicio,data_fim:fim,qtd_pedidos:r.qtd,created_at:agora,updated_at:agora});
     if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
   }
-  showNotif(`✅ ${ok} cobrança(s) gerada(s)!`,'');
+  showNotif(`✅ ${ok} Cobrança(s) Gerada(s)!`,'');
   _gcHistoricoOffset=0;
   _carregarHistoricoCobrancas(false);
   document.getElementById('gc-lista').innerHTML='';
@@ -11755,7 +11755,7 @@ function _renderAprovarCobrancas(){
       </div>
       <div id="ac-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
-    <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando histórico...</div></div>`;
+    <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando Histórico...</div></div>`;
   _buscarCobrancasPendentes();
   _renderHistoricoCobrancas();
 }
@@ -11770,14 +11770,14 @@ function _buscarAprovarCobrancas(){
 async function _buscarCobrancasPendentes(){
   const inicio=document.getElementById('ac-data-inicio')?.value;
   const fim=document.getElementById('ac-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione o período','var(--yellow)');return;}
+  if(!inicio||!fim){showNotif('Atenção','Selecione O Período','var(--yellow)');return;}
   const pendWrap=document.getElementById('ac-pendentes-wrap');
   if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const _rawCobs=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome,tipo_cobranca)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.desc`);
   const cobrancas=(Array.isArray(_rawCobs)?_rawCobs:[]).filter(c=>c.lojas?.tipo_cobranca!=='credito');
   if(!pendWrap)return;
   if(!cobrancas.length){
-    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma cobrança pendente no período</div></div>`;
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma Cobrança Pendente No Período</div></div>`;
     return;
   }
   pendWrap.innerHTML=`
@@ -11786,7 +11786,7 @@ async function _buscarCobrancasPendentes(){
       <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionadas</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Vencimento</th><th>Pedidos</th><th>Valor Total</th><th>Gerado em</th><th>Ações</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Período</th><th>Vencimento</th><th>Pedidos</th><th>Valor Total</th><th>Gerado Em</th><th>Ações</th></tr></thead>
       <tbody>${cobrancas.map(c=>{
         const loja=c.lojas||{};
         const vencYMD=_faturaVencimentoYMD(c);
@@ -11813,10 +11813,10 @@ async function _renderHistoricoCobrancas(inicio,fim){
     ?`?select=*,lojas(nome)&status=in.(pago,recusado)&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=updated_at.desc&limit=50`
     :`?select=*,lojas(nome)&status=in.(pago,recusado)&order=updated_at.desc&limit=30`;
   const hist=await db('cobrancas_lojas','GET',null,qs);
-  if(!hist||!hist.length){wrap.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Nenhum histórico encontrado</div>';return;}
+  if(!hist||!hist.length){wrap.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Nenhum Histórico Encontrado</div>';return;}
   const badge=c=>c.status==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`:`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   wrap.innerHTML=`<div class="card"><div style="padding:14px 20px 8px">
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico de Cobranças</div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Histórico De Cobranças</div>
     <div style="overflow-x:auto;max-height:360px;overflow-y:auto"><table style="width:100%">
       <thead><tr><th>Data</th><th>Loja</th><th>Período</th><th>Valor</th><th>Status</th></tr></thead>
       <tbody>${hist.map(c=>`<tr>
@@ -11846,14 +11846,14 @@ async function _valorFinalParaAprovar(id){
 
 async function _aprovarCobrancasSelecionadas(){
   const ids=[...document.querySelectorAll('.ac-cb:checked')].map(cb=>cb.value);
-  if(!ids.length){showNotif('Atenção','Selecione ao menos uma cobrança','var(--yellow)');return;}
+  if(!ids.length){showNotif('Atenção','Selecione Ao Menos Uma Cobrança','var(--yellow)');return;}
   const agora=new Date().toISOString();let ok=0;
   for(const id of ids){
     const valorPagoFinal=await _valorFinalParaAprovar(id);
     const res=await dbPatch('cobrancas_lojas',{status:'pago',valor_pago_final:valorPagoFinal,updated_at:agora},`?id=eq.${id}`);
     if(res!==null){document.getElementById(`cob-row-${id}`)?.remove();ok++;}
   }
-  showNotif(`✅ ${ok} cobrança(s) aprovada(s)!`,'');
+  showNotif(`✅ ${ok} Cobrança(s) Aprovada(s)!`,'');
   _buscarCobrancasPendentes();
 }
 
@@ -11861,17 +11861,17 @@ async function _aprovarCobrancaUnica(id){
   const agora=new Date().toISOString();
   const valorPagoFinal=await _valorFinalParaAprovar(id);
   const res=await dbPatch('cobrancas_lojas',{status:'pago',valor_pago_final:valorPagoFinal,updated_at:agora},`?id=eq.${id}`);
-  if(res===null){showNotif('Erro','Não foi possível aprovar','var(--red)');return;}
+  if(res===null){showNotif('Erro','Não Foi Possível Aprovar','var(--red)');return;}
   document.getElementById(`cob-row-${id}`)?.remove();
-  showNotif('✅ Cobrança aprovada!','');
+  showNotif('✅ Cobrança Aprovada!','');
   _buscarCobrancasPendentes();
 }
 
 async function recusarCobranca(id){
   const res=await dbPatch('cobrancas_lojas',{status:'recusado',updated_at:new Date().toISOString()},`?id=eq.${id}`);
-  if(!res){showNotif('Erro','Não foi possível recusar a cobrança','var(--red)');return;}
+  if(!res){showNotif('Erro','Não Foi Possível Recusar A Cobrança','var(--red)');return;}
   document.getElementById(`cob-row-${id}`)?.remove();
-  showNotif('❌ Cobrança recusada','','var(--red)');
+  showNotif('❌ Cobrança Recusada','','var(--red)');
   _buscarCobrancasPendentes();
 }
 
@@ -11879,7 +11879,7 @@ async function verFaturaCobranca(cobId){
   let modal=document.getElementById('modal-fatura-cobranca');
   if(!modal){modal=document.createElement('div');modal.id='modal-fatura-cobranca';document.body.appendChild(modal);}
   modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';
-  modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:36px;margin-bottom:12px">⏳</div><div style="font-size:14px;font-weight:600">Carregando fatura...</div></div>';
+  modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:36px;margin-bottom:12px">⏳</div><div style="font-size:14px;font-weight:600">Carregando Fatura...</div></div>';
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
   const cobRes=await db('cobrancas_lojas','GET',null,`?id=eq.${cobId}&select=*,lojas(nome,email,endereco,telefone)&limit=1`);
   const c=Array.isArray(cobRes)?cobRes[0]:null;
@@ -11941,7 +11941,7 @@ async function verFaturaCobranca(cobId){
       <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">Fatura</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${numFatura}</div></div>
     </div>
     <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
-      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitida em:</span> ${dataEmissao}</div>
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitida Em:</span> ${dataEmissao}</div>
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Vencimento:</span> <span style="color:#dc2626;font-weight:700">${vencimento}</span></div>
       <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Período:</span> ${dataInicio} – ${dataFim}</div>
     </div>
@@ -11953,13 +11953,13 @@ async function verFaturaCobranca(cobId){
         ${lojaEmail?`<div style="font-size:13px;color:#6b7280">✉️ ${lojaEmail}</div>`:''}
       </div>
       <div style="text-align:right;min-width:140px">
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${jaPago?'Total Pago':'Total a Pagar'}</div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${jaPago?'Total Pago':'Total A Pagar'}</div>
         ${faturaVencida?`<div style="font-size:13px;color:#9ca3af;text-decoration:line-through">R$ ${valorOriginalFatura.toFixed(2)}</div>`:''}
         <div style="font-size:30px;font-weight:800;color:${jaPago?'#059669':faturaVencida?'#dc2626':'#1A56DB'};line-height:1">R$ ${valorFinalExibido.toFixed(2)}</div>
       </div>
     </div>
     <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções de Pagamento</div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Instruções De Pagamento</div>
       <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px">
         <span style="font-size:18px">💠</span>
         <div><div style="font-size:11px;font-weight:600;color:#0369a1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Pix</div><div style="font-size:15px;font-weight:800;color:#0c4a6e;letter-spacing:.3px">CNPJ: 54.039.529/0001-48</div></div>
@@ -11990,7 +11990,7 @@ async function verFaturaCobranca(cobId){
     <div id="fatura-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e5e7eb;background:#fff">
       <button onclick="document.getElementById('modal-fatura-cobranca').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
       <button onclick="_imprimirFatura()" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Imprimir</button>
-      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('send',16,'btn-ico')}Enviar Comprovante no WhatsApp Financeiro</button>`:''}
+      ${(currentPerfil==='loja'&&c.status==='pendente')?`<button onclick="_enviarComprovanteWhatsappFatura('${c.id}','${numFatura}','${(dataInicio+' – '+dataFim).replace(/'/g,"\\'")}',${faturaVencida?valorAtualizado:valorOriginalFatura})" style="padding:9px 22px;border:none;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('send',16,'btn-ico')}Enviar Comprovante No WhatsApp Financeiro</button>`:''}
     </div>
   </div>`;
   modal.innerHTML=invoice;
@@ -12038,8 +12038,8 @@ function _imprimirComanda(pedidoId){
     .codigo .lbl{font-size:11px;letter-spacing:1px}
     .codigo .num{font-size:25px;font-weight:700;letter-spacing:6px}
   </style></head><body>
-    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 Retirada na Loja':'🛵 Entrega'}</div></div>
-    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">Código de Coleta (iFOOD)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
+    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 Retirada Na Loja':'🛵 Entrega'}</div></div>
+    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">Código De Coleta (iFood)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
     <div class="secao">
       <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
       ${p.cliente_documento?`<div class="linha"><span>CPF/CNPJ:</span><span>${_escHtml(p.cliente_documento)}</span></div>`:''}
@@ -12048,7 +12048,7 @@ function _imprimirComanda(pedidoId){
     <div class="secao">${itensHtml||'<div>—</div>'}</div>
     <div class="secao">
       ${pagamentoTxt?`<div class="linha"><span>Pagamento:</span><span>${pagamentoTxt}</span></div>`:''}
-      ${p.troco_para?`<div class="linha"><span>Troco para:</span><span>R$ ${parseFloat(p.troco_para).toFixed(2)}</span></div>`:''}
+      ${p.troco_para?`<div class="linha"><span>Troco Para:</span><span>R$ ${parseFloat(p.troco_para).toFixed(2)}</span></div>`:''}
       ${p.cupom_valor?`<div class="linha"><span>Cupom:</span><span>R$ ${parseFloat(p.cupom_valor).toFixed(2)}${patrocinadores?` (${patrocinadores})`:''}</span></div>`:''}
     </div>
     <div class="total linha"><span>Total</span><span>R$ ${parseFloat(p.total_pedido||p.valor||0).toFixed(2)}</span></div>
@@ -12122,19 +12122,19 @@ async function _dispararWhatsappEmRota(pedidoId){
     .replace(/{link}/g,link)
     .replace(/{numero}/g,p.numero||p.id?.substring(0,6)||'');
   const ok=await _evolutionSendText(p.telefone,msg);
-  if(ok)showNotif('📲 WhatsApp enviado!',p.cliente||'','#22c55e');
+  if(ok)showNotif('📲 WhatsApp Enviado!',p.cliente||'','#22c55e');
 }
 
 async function _dispararWhatsappFinanceiro(manual=true){
   const cfg=await _getEvolutionConfig();
   if(!cfg.url||!cfg.instance||!cfg.token){
-    if(manual)showNotif('⚠️ API não configurada','Vá em Disparo WhatsApp → Configuração API','var(--yellow)');
+    if(manual)showNotif('⚠️ API Não Configurada','Vá Em Disparo WhatsApp → Configuração API','var(--yellow)');
     return;
   }
   const lojas=await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc');
   const alvo=lojas.filter(l=>l.celular);
-  if(!alvo.length){if(manual)showNotif('ℹ️ Sem lojas com WhatsApp financeiro','','var(--text2)');return;}
-  if(manual){const conf=confirm(`Disparar mensagem financeira para ${alvo.length} loja(s)?`);if(!conf)return;}
+  if(!alvo.length){if(manual)showNotif('ℹ️ Sem Lojas Com WhatsApp Financeiro','','var(--text2)');return;}
+  if(manual){const conf=confirm(`Disparar Mensagem Financeira Para ${alvo.length} Loja(s)?`);if(!conf)return;}
   let ok=0,err=0;
   for(const l of alvo){
     const msg=cfg.msgFinanceiro.replace(/{loja}/g,l.nome||'');
@@ -12142,7 +12142,7 @@ async function _dispararWhatsappFinanceiro(manual=true){
     if(sent)ok++;else err++;
     await new Promise(r=>setTimeout(r,1500));
   }
-  if(manual)showNotif(`📲 Financeiro enviado!`,`${ok} loja(s)${err?' · '+err+' erro(s)':''}`,ok>0?'#22c55e':'var(--red)');
+  if(manual)showNotif(`📲 Financeiro Enviado!`,`${ok} loja(s)${err?' · '+err+' erro(s)':''}`,ok>0?'#22c55e':'var(--red)');
   else console.log(`[WA] Financeiro auto: ${ok} ok, ${err} erros`);
 }
 
@@ -12191,7 +12191,7 @@ async function _salvarConfigEvolution(){
   _evolutionInvalidateCache();
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb&&fb.innerHTML.includes('Salvo'))fb.innerHTML='';},3000);
-  showNotif('✅ Configuração salva!','Evolution API configurada','#22c55e');
+  showNotif('✅ Configuração Salva!','Evolution API Configurada','#22c55e');
 }
 
 let _waAba='em-rota';
@@ -12200,7 +12200,7 @@ async function renderWhatsappPage(){
     <div class="alt-page">
       <div class="page-header"><div class="page-title">${_icone('message-circle',22)} Disparo WhatsApp</div></div>
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
-        <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('bike',16,'btn-ico')}Mensagem em Rota</button>
+        <button onclick="_waGoAba('em-rota')" id="wat-em-rota" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('bike',16,'btn-ico')}Mensagem Em Rota</button>
         <button onclick="_waGoAba('financeiro')" id="wat-financeiro" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">${_icone('banknote',16,'btn-ico')}Financeiro</button>
         <button onclick="_waGoAba('config')" id="wat-config" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--text3)">${_icone('settings',16,'btn-ico')}Configuração API</button>
       </div>
@@ -12230,8 +12230,8 @@ async function _waGoAba(aba){
     ]);
     el.innerHTML=`<div class="card" style="max-width:520px">
       <div style="font-size:15px;font-weight:700;margin-bottom:4px">⚙️ Evolution API</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:18px">Configure o chip para disparo automático de mensagens WhatsApp.</div>
-      <div class="fi" style="margin-bottom:12px"><label>URL da API</label><input id="wa-api-url" placeholder="https://api.seudominio.com" value="${(urlR&&urlR[0]?.valor)||''}"/></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:18px">Configure O Chip Para Disparo Automático De Mensagens WhatsApp.</div>
+      <div class="fi" style="margin-bottom:12px"><label>URL Da API</label><input id="wa-api-url" placeholder="https://api.seudominio.com" value="${(urlR&&urlR[0]?.valor)||''}"/></div>
       <div class="fi" style="margin-bottom:12px"><label>Instância</label><input id="wa-api-inst" placeholder="nome-da-instancia" value="${(instR&&instR[0]?.valor)||''}"/></div>
       <div class="fi" style="margin-bottom:16px"><label>Token (apikey)</label><input id="wa-api-token" type="password" placeholder="••••••••••" value="${(tokenR&&tokenR[0]?.valor)||''}"/></div>
       <div id="wa-cfg-fb" style="min-height:18px;margin-bottom:12px"></div>
@@ -12244,10 +12244,10 @@ async function _waGoAba(aba){
     const msgR=await db('configuracoes','GET',null,'?chave=eq.whatsapp_msg_em_rota');
     const msg=(msgR&&msgR[0]?.valor)||'Olá {cliente}! 🛵 Seu pedido está a caminho!\n\nAcompanhe em tempo real:\n{link}';
     el.innerHTML=`<div class="card" style="max-width:560px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:4px">🛵 Mensagem em Rota</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviada automaticamente ao número do cliente quando o motoboy clicar em <strong>"Em Rota"</strong>. Requer o campo <strong>Telefone</strong> preenchido no pedido.</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">🛵 Mensagem Em Rota</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviada Automaticamente Ao Número Do Cliente Quando O Motoboy Clicar Em <strong>"Em Rota"</strong>. Requer o campo <strong>Telefone</strong> Preenchido No Pedido.</div>
       <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-em-rota" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{cliente}</code> nome &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{link}</code> rastreio &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{numero}</code> nº pedido</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{cliente}</code> nome &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{link}</code> rastreio &nbsp;·&nbsp; <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{numero}</code> Nº Pedido</div>
       <div id="wa-emrota-fb" style="min-height:18px;margin-bottom:12px"></div>
       <button onclick="_salvarMsgWhatsapp('em_rota')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar Mensagem</button>
     </div>`;
@@ -12259,9 +12259,9 @@ async function _waGoAba(aba){
     const msg=(msgR&&msgR[0]?.valor)||'Olá, {loja}! 👋\n\nSegue a fatura do período de cobrança.\nEm caso de dúvidas entre em contato conosco.\n\nLet\'s Go Delivery';
     el.innerHTML=`<div class="card" style="max-width:560px">
       <div style="font-size:15px;font-weight:700;margin-bottom:4px">💵 Disparo Financeiro</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviado Automaticamente Toda <strong>segunda-feira às 08:01</strong> ao campo <strong>"WhatsApp Financeiro"</strong> de cada loja ativa. O painel precisa estar aberto neste horário.</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enviado Automaticamente Toda <strong>Segunda-Feira Às 08:01</strong> Ao Campo <strong>"WhatsApp Financeiro"</strong> De Cada Loja Ativa. O Painel Precisa Estar Aberto Neste Horário.</div>
       <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="wa-msg-fin" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${msg}</textarea></div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{loja}</code> nome da loja</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Variáveis: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">{loja}</code> Nome Da Loja</div>
       <div id="wa-fin-fb" style="min-height:18px;margin-bottom:12px"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button onclick="_salvarMsgWhatsapp('financeiro')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar Mensagem</button>
@@ -12291,23 +12291,23 @@ async function renderDisparoNotificacoesPage(){
     db('configuracoes','GET',null,'?chave=eq.notif_indicacao_titulo'),
     db('configuracoes','GET',null,'?chave=eq.notif_indicacao_corpo'),
   ]);
-  const avTitulo=((avTituloR&&avTituloR[0]?.valor)||'Gostando do app? 💙🩵').replace(/"/g,'&quot;');
-  const avCorpo=(avCorpoR&&avCorpoR[0]?.valor)||'Deixa sua avaliação pra gente na Play Store!';
-  const inTitulo=((inTituloR&&inTituloR[0]?.valor)||'🛵 Ei, motoboy!').replace(/"/g,'&quot;');
-  const inCorpo=(inCorpoR&&inCorpoR[0]?.valor)||"Já tá gostando de faturar R$2 por km rodado nas entregas? Indique um motoboy ou uma loja nova pra Let's Go Delivery e fature ainda mais — R$150 de bônus por loja indicada! Chama (11) 99170-2772, time de expansão nacional Let's Go Delivery.";
+  const avTitulo=((avTituloR&&avTituloR[0]?.valor)||'Gostando Do App? 💙🩵').replace(/"/g,'&quot;');
+  const avCorpo=(avCorpoR&&avCorpoR[0]?.valor)||'Deixa Sua Avaliação Pra Gente Na Play Store!';
+  const inTitulo=((inTituloR&&inTituloR[0]?.valor)||'🛵 Ei, Motoboy!').replace(/"/g,'&quot;');
+  const inCorpo=(inCorpoR&&inCorpoR[0]?.valor)||"Já Tá Gostando De Faturar R$2 Por km Rodado Nas Entregas? Indique Um Motoboy Ou Uma Loja Nova Pra Let's Go Delivery E Fature Ainda Mais — R$150 De Bônus Por Loja Indicada! Chama (11) 99170-2772, Time De Expansão Nacional Let's Go Delivery.";
   el.innerHTML=`
-    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;max-width:940px">Os 2 disparos automáticos rodam sozinhos a cada 3 dias (72h), às 9h. O texto salvo aqui é o <strong>mesmo</strong> usado pelo disparo automático E pelo botão "Enviar agora pra todos" — editar aqui muda os dois de uma vez só.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;max-width:940px">Os 2 Disparos Automáticos Rodam Sozinhos A Cada 3 Dias (72h), Às 9h. O Texto Salvo Aqui É O <strong>mesmo</strong> Usado Pelo Disparo Automático E Pelo Botão "Enviar Agora Pra Todos" — Editar Aqui Muda Os Dois De Uma Vez Só.</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap">
       <div class="card" style="max-width:460px;flex:1;min-width:320px">
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">⭐ Avaliar App</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Pede pro entregador avaliar o app na Play Store. Texto neutro de propósito — políticas da Play Store proíbem pedir uma nota específica.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Pede Pro Entregador Avaliar O App Na Play Store. Texto Neutro De Propósito — Políticas Da Play Store Proíbem Pedir Uma Nota Específica.</div>
         <div class="fi" style="margin-bottom:10px"><label>Título</label><input id="np-av-titulo" value="${avTitulo}"/></div>
         <div class="fi" style="margin-bottom:6px"><label>Mensagem</label><textarea id="np-av-corpo" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;line-height:1.5;resize:vertical">${avCorpo}</textarea></div>
         <div id="np-av-fb" style="min-height:18px;margin:8px 0 12px;font-size:12px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="_npSalvarTexto('avaliar_app')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
           <button onclick="_npTestar('avaliar_app')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar Comigo</button>
-          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora pra Todos</button>
+          <button onclick="_npEnviarTodos('avaliar_app')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora Pra Todos</button>
         </div>
       </div>
       <div class="card" style="max-width:460px;flex:1;min-width:320px">
@@ -12319,13 +12319,13 @@ async function renderDisparoNotificacoesPage(){
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="_npSalvarTexto('indicacao')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('save',16,'btn-ico')}Salvar Texto</button>
           <button onclick="_npTestar('indicacao')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('flask-conical',16,'btn-ico')}Testar Comigo</button>
-          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora pra Todos</button>
+          <button onclick="_npEnviarTodos('indicacao')" style="background:#8b5cf6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer">${_icone('megaphone',16,'btn-ico')}Enviar Agora Pra Todos</button>
         </div>
       </div>
     </div>
 
-    <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes por Dia da Semana</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 Disparos automáticos (7 dias × 2 horários fixos, 09:09 e 18:18 brasília) — cada card é independente, com seu próprio texto. Card com título/mensagem vazio simplesmente não dispara nesse dia. Sem botão de "enviar a todos" aqui — são só automáticos, use "Testar" pra conferir o texto antes.</div>
+    <div style="font-size:14px;font-weight:700;margin:28px 0 4px">📅 Lembretes Por Dia Da Semana</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:940px">14 Disparos Automáticos (7 Dias × 2 Horários Fixos, 09:09 E 18:18 Brasília) — Cada Card É Independente, Com Seu Próprio Texto. Card Com Título/Mensagem Vazio Simplesmente Não Dispara Nesse Dia. Sem Botão De "Enviar A Todos" Aqui — São Só Automáticos, Use "Testar" Pra Conferir O Texto Antes.</div>
     ${await _npRenderPeriodicos()}`;
 }
 
@@ -12420,14 +12420,14 @@ async function _npSalvarTexto(tipo){
   const fb=document.getElementById(m.fbId);
   const titulo=document.getElementById(m.tituloId)?.value.trim();
   const corpo=document.getElementById(m.corpoId)?.value.trim();
-  if(!titulo||!corpo){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha título e mensagem</span>';return;}
+  if(!titulo||!corpo){if(fb)fb.innerHTML='<span style="color:var(--red)">Preencha Título E Mensagem</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   try{
     await Promise.all([_npSalvarChave(m.chaveTitulo,titulo),_npSalvarChave(m.chaveCorpo,corpo)]);
-    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo! Já vale pro próximo disparo automático e pro botão "Enviar agora".</span>';
+    if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo! Já Vale Pro Próximo Disparo Automático E Pro Botão "Enviar Agora".</span>';
   }catch(e){
     console.error('[np] erro ao salvar texto:',e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Salvar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Salvar</span>';
   }
 }
 
@@ -12448,43 +12448,43 @@ async function _npChamarFn(tipo,body){
 async function _npTestar(tipo){
   const m=_NP_MAP[tipo];
   const fb=document.getElementById(m.fbId);
-  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando teste...</span>';
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando Teste...</span>';
   try{
     const res=await _npChamarFn(tipo,{entregador_id_teste:_NP_GABRIEL_ID});
     if(res&&res.sent>0){
-      if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Teste enviado às ${formatarHora(new Date().toISOString())}</span>`;
+      if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Teste Enviado Às ${formatarHora(new Date().toISOString())}</span>`;
     }else{
-      if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Não enviou (${(res&&res.error)||'sem token FCM salvo?'})</span>`;
+      if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Não Enviou (${(res&&res.error)||'sem token FCM salvo?'})</span>`;
     }
   }catch(e){
     console.error('[np] erro ao testar:',e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao chamar a function</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Chamar A Function</span>';
   }
 }
 
 async function _npEnviarTodos(tipo){
   const m=_NP_MAP[tipo];
   const fb=document.getElementById(m.fbId);
-  if(!confirm('Confirma o envio dessa notificação pra TODOS os entregadores aprovados agora?'))return;
-  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando pra todos...</span>';
+  if(!confirm('Confirma O Envio Dessa Notificação Pra TODOS Os Entregadores Aprovados Agora?'))return;
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Enviando Pra Todos...</span>';
   try{
     const res=await _npChamarFn(tipo,{});
     const hora=formatarHora(new Date().toISOString());
-    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Enviado pra ${(res&&res.sent)||0} entregadores às ${hora}</span>`;
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ Enviado Pra ${(res&&res.sent)||0} Entregadores Às ${hora}</span>`;
   }catch(e){
     console.error('[np] erro ao enviar pra todos:',e);
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro ao Enviar</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Enviar</span>';
   }
 }
 
 function renderConfiguracaoPage(aba){
   _configAba=aba||_configAba||'cliente';
   const abas=[
-    {id:'cliente',       icon:'user', label:'Cliente',       desc:'Configurações de experiência do cliente final, notificações e preferências de pedido.',        icone:'👤'},
-    {id:'integracao',    icon:'link', label:'Integração',    desc:'Conecte sistemas externos, webhooks, APIs de terceiros e integrações de pagamento.',            icone:'🔗'},
-    {id:'open-delivery', icon:'rocket', label:'Open Delivery', desc:'Configurações do protocolo Open Delivery para interoperabilidade com outras plataformas.',       icone:'🚀'},
-    {id:'operacao',      icon:'wrench', label:'Operação',      desc:'Parâmetros operacionais: raio de aceite, tempo máximo, filas e regras de despacho automático.', icone:'🛠️'},
-    {id:'logs-ifood',    icon:'scroll-text', label:'Logs iFood',    desc:'Histórico de erros da integração com o iFood: autenticação, polling de pedidos e envio de status.', icone:'📋'},
+    {id:'cliente',       icon:'user', label:'Cliente',       desc:'Configurações De Experiência Do Cliente Final, Notificações E Preferências De Pedido.',        icone:'👤'},
+    {id:'integracao',    icon:'link', label:'Integração',    desc:'Conecte Sistemas Externos, Webhooks, APIs De Terceiros E Integrações De Pagamento.',            icone:'🔗'},
+    {id:'open-delivery', icon:'rocket', label:'Open Delivery', desc:'Configurações Do Protocolo Open Delivery Para Interoperabilidade Com Outras Plataformas.',       icone:'🚀'},
+    {id:'operacao',      icon:'wrench', label:'Operação',      desc:'Parâmetros Operacionais: Raio De Aceite, Tempo Máximo, Filas E Regras De Despacho Automático.', icone:'🛠️'},
+    {id:'logs-ifood',    icon:'scroll-text', label:'Logs iFood',    desc:'Histórico De Erros Da Integração Com O iFood: Autenticação, Polling De Pedidos E Envio De Status.', icone:'📋'},
   ];
   document.getElementById('app-body').innerHTML=`
     <div class="alt-page">
@@ -12519,7 +12519,7 @@ function _renderConfigCliente(){
         <div style="margin-bottom:20px">
           <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Loja</label>
           <select id="rc-loja-id" onchange="_rcSelecionarLoja(this.value)" style="${_ss}">
-            <option value="">Selecione a loja...</option>
+            <option value="">Selecione A Loja...</option>
           </select>
         </div>
 
@@ -12529,12 +12529,12 @@ function _renderConfigCliente(){
               <input type="checkbox" id="rc-rot-ativo" style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/>
               Ativar roterizador para esta loja
             </label>
-            <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa pedidos próximos em uma única rota antes de despachar ao entregador.</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;margin-left:26px">Agrupa Pedidos Próximos Em Uma Única Rota Antes De Despachar Ao Entregador.</div>
           </div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de Agrupamento</label>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância máxima entre pedidos para considerá-los na mesma rota.</div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio De Agrupamento</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Distância Máxima Entre Pedidos Para Considerá-Los Na Mesma Rota.</div>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="number" id="rc-raio" min="0.1" max="50" step="0.1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
               <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
@@ -12542,14 +12542,14 @@ function _renderConfigCliente(){
           </div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo de Pedidos por Rota</label>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Máximo De Pedidos Por Rota</label>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Limite de pedidos agrupados em uma única rota (ex: 2, 3, 4).</div>
             <input type="number" id="rc-max" min="1" max="20" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
           </div>
 
           <div style="margin-bottom:28px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Espera para Agrupar</label>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o sistema aguarda novos pedidos antes de montar a rota.</div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo De Espera Para Agrupar</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos Que O Sistema Aguarda Novos Pedidos Antes De Montar A Rota.</div>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="number" id="rc-espera" min="0" max="600" step="1" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
               <span style="font-size:14px;color:var(--text2);font-weight:600">seg</span>
@@ -12596,7 +12596,7 @@ async function _rcSelecionarLoja(lojaId){
 
 async function _salvarConfigCliente(){
   const lojaId=document.getElementById('rc-loja-id')?.value;
-  if(!lojaId){showNotif('Atenção','Selecione uma loja antes de salvar','var(--yellow)');return;}
+  if(!lojaId){showNotif('Atenção','Selecione Uma Loja Antes De Salvar','var(--yellow)');return;}
   const fb=document.getElementById('rc-feedback');
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   const g=(id)=>document.getElementById(id)?.value?.trim();
@@ -12609,7 +12609,7 @@ async function _salvarConfigCliente(){
     updated_at:new Date().toISOString()
   };
   const res=await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro ao Salvar</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">❌ Erro Ao Salvar</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
@@ -12651,14 +12651,14 @@ function _htmlOutrasPlataformas(){
   return `<div class="card" style="max-width:720px;margin:20px auto 0">
     <div style="padding:24px 28px">
       <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">🧩 Outras Plataformas</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Integrações planejadas — cada card muda de status conforme a gente for implementando, uma por uma.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Integrações Planejadas — Cada Card Muda De Status Conforme A Gente For Implementando, Uma Por Uma.</div>
 
       <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Marketplaces</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px">
         ${_PLATAFORMAS_MARKETPLACE.map(_cardPlataforma).join('')}
       </div>
 
-      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio Digital / PDV e Gestão</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio Digital / PDV E Gestão</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
         ${_PLATAFORMAS_CARDAPIO_PDV.map(_cardPlataforma).join('')}
       </div>
@@ -12671,7 +12671,7 @@ async function _renderConfigLogsIfood(){
     <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
         <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">📋 Logs iFood</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log de erros da integração (autenticação, polling de pedidos, envio de status de volta pro iFood). Toda falha aparece aqui — nada acontece em silêncio.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Log De Erros Da Integração (Autenticação, Polling De Pedidos, Envio De Status De Volta Pro iFood). Toda Falha Aparece Aqui — Nada Acontece Em Silêncio.</div>
         <div id="ifood-erros-lista" style="font-size:13px;color:var(--text2)">Carregando...</div>
         <div id="ifood-erros-legenda" style="font-size:11px;color:var(--text3);margin-top:10px"></div>
         <div id="ifood-erros-btn-wrap" style="margin-top:10px"></div>
@@ -12686,10 +12686,10 @@ async function _renderConfigIntegracao(){
     <div class="card" style="max-width:720px;margin:0 auto">
       <div style="padding:24px 28px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
-          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo de Lojas — iFood</div>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">🏪 Vínculo De Lojas — iFood</div>
           <button onclick="_abrirModalAdicionarIntegracaoIfood()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('plus',16,'btn-ico')}Adicionar Integração</button>
         </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula cada loja ao merchant ID do app do iFood (Portal do desenvolvedor → seu app → merchant UUID). Sem isso, pedidos vindos do iFood não sabem de qual loja são nem o endereço de coleta. Só aparecem aqui as lojas já vinculadas.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Vincula Cada Loja Ao Merchant ID Do App Do iFood (Portal Do Desenvolvedor → Seu App → Merchant UUID). Sem Isso, Pedidos Vindos Do iFood Não Sabem De Qual Loja São Nem O Endereço De Coleta. Só Aparecem Aqui As Lojas Já Vinculadas.</div>
         <div id="ifood-merchant-contador" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Carregando...</div>
         <div style="max-height:420px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px">
           <table style="width:100%;min-width:520px;border-collapse:collapse">
@@ -12719,7 +12719,7 @@ async function _carregarIfoodErros(){
   const logs=await db('logs_acoes','GET',null,qs);
   if(!el)return;
   if(!Array.isArray(logs)||logs.length===0){
-    el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">✅</div>Nenhum erro registrado.</div>`;
+    el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">✅</div>Nenhum Erro Registrado.</div>`;
   } else {
     el.innerHTML=logs.map(l=>{
       const hora=l.created_at?formatarHora(l.created_at):'—';
@@ -12734,7 +12734,7 @@ async function _carregarIfoodErros(){
     }).join('');
   }
   if(legenda)legenda.textContent=_ifoodErrosCompleto
-    ?`Mostrando histórico completo (${logs.length} registro${logs.length===1?'':'s'}).`
+    ?`Mostrando histórico completo (${logs.length} Registro${logs.length===1?'':'s'}).`
     :`Mostrando os ${Math.min(_IFOOD_ERROS_LIMITE_PADRAO,logs.length)} mais recentes.`;
   if(btnWrap)btnWrap.innerHTML=_ifoodErrosCompleto
     ?`<button onclick="_toggleIfoodErrosCompleto()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▲ Mostrar Só Recentes</button>`
@@ -12751,13 +12751,13 @@ async function _carregarIfoodMerchantLojas(){
   if(!el)return;
   const lojas=await db('lojas','GET',null,'?select=id,nome,ifood_merchant_id&ifood_merchant_id=not.is.null&order=nome.asc');
   if(!Array.isArray(lojas)){
-    el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro ao Carregar Lojas</td></tr>';
+    el.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--red)">❌ Erro Ao Carregar Lojas</td></tr>';
     if(contador)contador.textContent='—';
     return;
   }
-  if(contador)contador.innerHTML=`🔗 <b>${lojas.length}</b> loja${lojas.length===1?'':'s'} vinculada${lojas.length===1?'':'s'} ao iFood`;
+  if(contador)contador.innerHTML=`🔗 <b>${lojas.length}</b> Loja${lojas.length===1?'':'s'} Vinculada${lojas.length===1?'':'s'} ao iFood`;
   if(!lojas.length){
-    el.innerHTML='<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text3)">Nenhuma loja vinculada ainda. Clique em "➕ adicionar integração" pra vincular a primeira.</td></tr>';
+    el.innerHTML='<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text3)">Nenhuma Loja Vinculada Ainda. Clique Em "➕ Adicionar Integração" Pra Vincular A Primeira.</td></tr>';
     return;
   }
   el.innerHTML=lojas.map(l=>{
@@ -12796,7 +12796,7 @@ async function _salvarIfoodMerchantId(lojaId){
   }
   const res=await dbPatch('lojas',{ifood_merchant_id:valor||null,updated_at:new Date().toISOString()},`?id=eq.${lojaId}`);
   if(res===null){
-    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse merchant ID já está vinculado a outra loja</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID Já Está Vinculado A Outra Loja</span>';
     return;
   }
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo!</span>';
@@ -12823,7 +12823,7 @@ async function _abrirModalAdicionarIntegracaoIfood(){
       <div class="fi ifood-busca-wrap" style="position:relative;gap:8px">
         <label>🏪 Buscar Loja</label>
         <span class="ifood-busca-icone">🔍</span>
-        <input type="text" id="ifood-add-busca" placeholder="Digite o nome da loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)"/>
+        <input type="text" id="ifood-add-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_ifoodAddFiltrarLojas(this.value)" onfocus="_ifoodAddFiltrarLojas(this.value)"/>
       </div>
       <!-- Fluxo normal (não position:absolute) de propósito: .modal tem
            overflow:auto (regra num media query), que clipava um dropdown
@@ -12854,7 +12854,7 @@ function _ifoodAddFiltrarLojas(termo){
   if(!dd)return;
   const t=(termo||'').toLowerCase().trim();
   const filtradas=t?_ifoodAddLojasDisponiveis.filter(l=>(l.nome||'').toLowerCase().includes(t)):_ifoodAddLojasDisponiveis;
-  if(!filtradas.length){dd.innerHTML=`<div style="padding:20px 16px;color:var(--text3);font-size:13px;text-align:center">🔎 Nenhuma loja encontrada</div>`;dd.style.display='block';return;}
+  if(!filtradas.length){dd.innerHTML=`<div style="padding:20px 16px;color:var(--text3);font-size:13px;text-align:center">🔎 Nenhuma Loja Encontrada</div>`;dd.style.display='block';return;}
   dd.innerHTML=filtradas.slice(0,50).map((l,i)=>`<div onclick="_ifoodAddSelecionarLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="padding:13px 16px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);${i<filtradas.length-1?'border-bottom:1px solid var(--border);':''}transition:background .1s" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">🏪 ${(l.nome||'—').replace(/</g,'&lt;')}</div>`).join('');
   dd.style.display='block';
 }
@@ -12868,15 +12868,15 @@ function _ifoodAddSelecionarLoja(id,nome){
 }
 async function _salvarNovaIntegracaoIfood(){
   const fb=document.getElementById('ifood-add-feedback');
-  if(!_ifoodAddLojaSelecionadaId){if(fb)fb.innerHTML='<span style="color:var(--red)">Selecione uma loja primeiro</span>';return;}
+  if(!_ifoodAddLojaSelecionadaId){if(fb)fb.innerHTML='<span style="color:var(--red)">Selecione Uma Loja Primeiro</span>';return;}
   const valor=(document.getElementById('ifood-add-merchant-input')?.value||'').trim();
-  if(!valor){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe o merchant ID</span>';return;}
+  if(!valor){if(fb)fb.innerHTML='<span style="color:var(--red)">Informe O Merchant ID</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
   const conflito=await db('lojas','GET',null,`?ifood_merchant_id=eq.${encodeURIComponent(valor)}&select=id,nome`);
   const outraLoja=Array.isArray(conflito)?conflito.find(l=>l.id!==_ifoodAddLojaSelecionadaId):null;
   if(outraLoja){if(fb)fb.innerHTML=`<span style="color:var(--red)">❌ Esse Merchant ID já está vinculado à loja "${outraLoja.nome}"</span>`;return;}
   const res=await dbPatch('lojas',{ifood_merchant_id:valor,updated_at:new Date().toISOString()},`?id=eq.${_ifoodAddLojaSelecionadaId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse merchant ID já está vinculado a outra loja</span>';return;}
+  if(res===null){if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Esse Merchant ID Já Está Vinculado A Outra Loja</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Vinculado!</span>';
   setTimeout(()=>{
     document.getElementById('modal-ifood-add-loja')?.classList.remove('open');
@@ -12893,11 +12893,11 @@ function _renderConfigOperacao(){
         <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:24px">🛠️ Operação</div>
 
         <div style="margin-bottom:20px">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Modo de Despacho</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Define como os pedidos são enviados aos entregadores disponíveis.</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Modo De Despacho</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Define Como Os Pedidos São Enviados Aos Entregadores Disponíveis.</div>
           <div style="display:flex;gap:10px;margin-bottom:0">
             <button id="op-modo-todos" onclick="_opSetModo('todos')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
-              ${_icone('megaphone',16,'btn-ico')}Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos os disponíveis recebem ao mesmo tempo</div>
+              ${_icone('megaphone',16,'btn-ico')}Todos<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Todos Os Disponíveis Recebem Ao Mesmo Tempo</div>
             </button>
             <button id="op-modo-sequencial" onclick="_opSetModo('sequencial')" style="flex:1;padding:12px 10px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:Inter,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
               ${_icone('refresh-cw',16,'btn-ico')}Sequencial<div style="font-size:11px;font-weight:400;color:var(--text2);margin-top:4px">Envia um por vez; passa pro próximo se não aceitar</div>
@@ -12906,11 +12906,11 @@ function _renderConfigOperacao(){
         </div>
 
         <div id="op-propagacao-wrap" style="display:none;border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px;background:var(--surface2)">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px">Configuração de Propagação</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px">Configuração De Propagação</div>
 
           <div style="margin-bottom:20px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Exibição por Entregador</label>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos que o pedido fica visível para cada entregador antes de passar ao próximo.</div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo De Exibição Por Entregador</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos Que O Pedido Fica Visível Para Cada Entregador Antes De Passar Ao Próximo.</div>
             <div style="display:flex;align-items:center;gap:8px">
               ${_inp('op-tempo-exib','29',5,300,1,'90px')}
               <span style="font-size:13px;color:var(--text2);font-weight:600">segundos</span>
@@ -12918,8 +12918,8 @@ function _renderConfigOperacao(){
           </div>
 
           <div style="margin-bottom:20px">
-            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Ondas de Propagação por Distância</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Se nenhum entregador aceitar, o pedido é propagado em ondas crescentes de raio.</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Ondas De Propagação Por Distância</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Se Nenhum Entregador Aceitar, O Pedido É Propagado Em Ondas Crescentes De Raio.</div>
             <div style="overflow-x:auto">
               <table style="width:100%;border-collapse:collapse;font-size:13px">
                 <thead>
@@ -12943,8 +12943,8 @@ function _renderConfigOperacao(){
           </div>
 
           <div>
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo de Reset</label>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após esse tempo sem aceite, reseta a busca e recomeça do início. Padrão: 10 min.</div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Tempo De Reset</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Após Esse Tempo Sem Aceite, Reseta A Busca E Recomeça Do Início. Padrão: 10 min.</div>
             <div style="display:flex;align-items:center;gap:8px">
               ${_inp('op-tempo-reset','12',1,120,1,'90px')}
               <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
@@ -12953,8 +12953,8 @@ function _renderConfigOperacao(){
         </div>
 
         <div style="margin-bottom:20px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio de Busca de Entregadores</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Raio em km para buscar entregadores disponíveis próximos ao pedido.</div>
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio De Busca De Entregadores</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Raio Em km Para Buscar Entregadores Disponíveis Próximos Ao Pedido.</div>
           <div style="display:flex;align-items:center;gap:10px">
             <input type="number" id="op-raio-busca" min="1" max="200" step="0.5" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
@@ -12962,8 +12962,8 @@ function _renderConfigOperacao(){
         </div>
 
         <div style="margin-bottom:32px">
-          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio limite de despacho (por cidade)</label>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Entregadores além deste raio não recebem o pedido, evitando despacho para outra cidade. Padrão: 32 km.</div>
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Raio Limite De Despacho (Por Cidade)</label>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Entregadores Além Deste Raio Não Recebem O Pedido, Evitando Despacho Para Outra Cidade. Padrão: 32 km.</div>
           <div style="display:flex;align-items:center;gap:10px">
             <input type="number" id="op-raio-limite" min="1" max="500" step="0.5" style="width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>
             <span style="font-size:14px;color:var(--text2);font-weight:600">km</span>
@@ -13021,7 +13021,7 @@ async function _salvarConfigOperacao(){
   const fb=document.getElementById('op-feedback');
   const g=(id,def='')=>document.getElementById(id)?.value?.trim()||def;
   const raio=g('op-raio-busca');
-  if(!raio){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Informe o raio de busca</span>';return;}
+  if(!raio){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Informe O Raio De Busca</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await Promise.all([
     _upsertConfigWa('modo_despacho',_opModoAtual),
@@ -13040,7 +13040,7 @@ async function _salvarConfigOperacao(){
 
 let _tabAba='cobranca';
 async function renderTabelasPrecoPage(){
-  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('circle-dollar-sign',22)} Cobrança e Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('clipboard-list',16,'btn-ico')}Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">${_icone('bike',16,'btn-ico')}Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('circle-dollar-sign',22)} Cobrança E Pagamento</div><div id="tp-btn-novo"></div></div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)"><button id="aba-cobranca" onclick="trocarAbaTabela('cobranca')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">${_icone('clipboard-list',16,'btn-ico')}Cobrança Cliente</button><button id="aba-pagamento" onclick="trocarAbaTabela('pagamento')" style="padding:10px 24px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">${_icone('bike',16,'btn-ico')}Pagamento Motoboy</button></div><div class="card" id="tabelas-lista"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
   _tabAba='cobranca';await carregarTabelasPreco();
 }
 function trocarAbaTabela(aba){_tabAba=aba;const bc=document.getElementById('aba-cobranca'),bp=document.getElementById('aba-pagamento');if(aba==='cobranca'){bc.style.borderBottom='2px solid var(--accent)';bc.style.color='var(--accent)';bp.style.borderBottom='2px solid transparent';bp.style.color='var(--text3)';}else{bp.style.borderBottom='2px solid #10b981';bp.style.color='#10b981';bc.style.borderBottom='2px solid transparent';bc.style.color='var(--text3)';}carregarTabelasPreco();}
@@ -13048,7 +13048,7 @@ async function carregarTabelasPreco(){
   const tabelas=await db('tabelas_preco','GET',null,`?tipo=eq.${_tabAba}&order=nome.asc`);
   const el=document.getElementById('tabelas-lista'),btnNovo=document.getElementById('tp-btn-novo');if(!el)return;
   if(btnNovo){const cor=_tabAba==='pagamento'?'#10b981':'var(--accent)';const label=_icone('plus',16,'btn-ico')+(_tabAba==='pagamento'?'Novo Pagamento':'Nova Cobrança');btnNovo.innerHTML=`<button class="btn-sm" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="abrirModalNovaTabela('${_tabAba}')">${label}</button>`;}
-  if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma tabela. Clique ➕ para criar.</div>';return;}
+  if(!tabelas.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Tabela. Clique ➕ Para Criar.</div>';return;}
   _tabelasPrecoCache=tabelas;
   tabelas.forEach(t=>console.log('[FAIXAS] tabela id:',t.id,'nome:',t.nome));
   el.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead><tbody>${tabelas.map(t=>`<tr><td style="font-weight:600;color:var(--text)">💰 ${t.nome}</td><td><span class="p-badge b-${t.ativa?'em_rota':'fila'}">${t.ativa?'Ativa':'Inativa'}</span></td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="verFaixasTabela('${t.id}')">${_icone('chart-column',16,'btn-ico')}Ver Faixas</button><button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="renomearTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')">${_icone('pencil',16)}</button><button class="btn-sm" style="background:#6366f1;color:#fff" onclick="clonarTabela('${t.id}','${(t.nome||'').replace(/'/g,"\\'")}')" title="Clonar Tabela">${_icone('clipboard-list',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirTabela('${t.id}')">${_icone('trash-2',16)}</button></td></tr>`).join('')}</tbody></table></div>`;
@@ -13061,32 +13061,32 @@ async function verFaixas(tabelaId,tabelaNome,tipo){
   ]);
   const kmAdicVal=parseFloat(Array.isArray(tabRes)&&tabRes[0]?tabRes[0].km_adicional_valor:0)||0;
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem retorno</th><th style="color:${corCom}">Com Retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova Faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/Km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">💰 ${tabelaNome}</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${isPag?'Pagamento Motoboy':'Cobrança Cliente'}</span></div><table><thead><tr><th>Range</th><th style="color:${corSem}">Sem Retorno</th><th style="color:${corCom}">Com Retorno</th><th>Ações</th></tr></thead><tbody>${Array.isArray(faixas)?faixas.map(f=>`<tr><td>${f.km_de} a ${f.km_ate} km</td><td style="color:${corSem};font-weight:700">R$ ${parseFloat(f.valor_sem_retorno).toFixed(2)}</td><td style="color:${corCom};font-weight:700">R$ ${parseFloat(f.valor_com_retorno).toFixed(2)}</td><td style="display:flex;gap:6px"><button class="btn-sm btn-primary-sm" onclick="editarFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}',${f.km_de},${f.km_ate},${f.valor_sem_retorno},${f.valor_com_retorno})">${_icone('pencil',16)}</button><button class="btn-sm" style="background:var(--red);color:#fff" onclick="excluirFaixa('${f.id}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('trash-2',16)}</button></td></tr>`).join(''):''}</tbody></table><div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="adicionarFaixa('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('plus',16,'btn-ico')}Nova Faixa</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><span style="font-size:12px;color:var(--text2);white-space:nowrap">Taxa KM Adicional:</span><span style="font-size:12px;color:var(--text3)">R$</span><input id="kma-valor" type="number" step="0.01" min="0" value="${kmAdicVal.toFixed(2)}" style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right"/><span style="font-size:12px;color:var(--text3)">/Km</span><button class="btn-sm btn-primary-sm" onclick="salvarKmAdicional('${tabelaId}','${tabelaNome}','${tipo}')">${_icone('save',16)}</button></div></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
   const val=parseFloat(document.getElementById('kma-valor')?.value)||0;
   const res=await dbPatch('tabelas_preco',{km_adicional_valor:val,updated_at:new Date().toISOString()},`?id=eq.${tabelaId}`);
-  if(res===null){showNotif('Erro','Não foi possível salvar','var(--red)');return;}
+  if(res===null){showNotif('Erro','Não Foi Possível Salvar','var(--red)');return;}
   delete _faixasCachePorTabela[tabelaId];
   delete _faixasCachePorTabelaPag[tabelaId];
-  showNotif('✅ Taxa KM adicional salva!',`R$ ${val.toFixed(2)}/km`);
+  showNotif('✅ Taxa KM Adicional Salva!',`R$ ${val.toFixed(2)}/km`);
   verFaixas(tabelaId,tabelaNome,tipo);
 }
-async function excluirFaixa(faixaId,tabelaId,tabelaNome,tipo){if(!confirm('Excluir?'))return;await db('tabelas_preco_faixas','DELETE',null,`?id=eq.${faixaId}`);showNotif('🗑️ Faixa excluída','','var(--red)');verFaixas(tabelaId,tabelaNome,tipo);}
+async function excluirFaixa(faixaId,tabelaId,tabelaNome,tipo){if(!confirm('Excluir?'))return;await db('tabelas_preco_faixas','DELETE',null,`?id=eq.${faixaId}`);showNotif('🗑️ Faixa Excluída','','var(--red)');verFaixas(tabelaId,tabelaNome,tipo);}
 async function salvarKmAdicional(tabelaId,tabelaNome,tipo){
   const val=parseFloat(document.getElementById('kma-valor')?.value)||0;
   const res=await dbPatch('tabelas_preco',{km_adicional_valor:val,updated_at:new Date().toISOString()},`?id=eq.${tabelaId}`);
-  if(res===null){showNotif('Erro','Não foi possível salvar','var(--red)');return;}
+  if(res===null){showNotif('Erro','Não Foi Possível Salvar','var(--red)');return;}
   // Invalida cache para forçar recarga com novo km_adicional_valor
   delete _faixasCachePorTabela[tabelaId];
   delete _faixasCachePorTabelaPag[tabelaId];
-  showNotif('✅ Taxa KM adicional salva!',`R$ ${val.toFixed(2)}/km`);
+  showNotif('✅ Taxa KM Adicional Salva!',`R$ ${val.toFixed(2)}/km`);
   verFaixas(tabelaId,tabelaNome,tipo);
 }
 function abrirModalNovaTabela(tipo){
   _faixaCount=1;const isPag=tipo==='pagamento',cor=isPag?'#10b981':'var(--accent)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km de</span><span style="font-size:11px;color:var(--text3)">Km Até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">${_icone('plus',16,'btn-ico')}Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa por KM adicional (acima do último range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/Km percorrido além do último range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">${_icone('check',16,'btn-ico')}Cadastrar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><h3 style="color:#fff;margin:0 0 16px">➕ Nova Tabela <span class="p-badge" style="background:${cor}20;color:${cor}">${isPag?'Pagamento':'Cobrança'}</span></h3><div class="form-row full"><div class="fi"><label>Nome</label><input id="tp-nome" placeholder="Ex: Tabela Lets Go"/></div></div><div style="margin:12px 0 6px;font-size:12px;font-weight:600;color:var(--text2)">Faixas</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px"><span style="font-size:11px;color:var(--text3)">Km De</span><span style="font-size:11px;color:var(--text3)">Km Até</span><span style="font-size:11px;color:var(--text3)">Sem retorno R$</span><span style="font-size:11px;color:var(--text3)">Com retorno R$</span></div><div id="tp-faixas">${gerarLinhaFaixa(0)}</div><button onclick="adicionarLinhaFaixa()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;margin-top:8px">${_icone('plus',16,'btn-ico')}Faixa</button><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Taxa Por KM Adicional (Acima Do Último Range)</div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;color:var(--text3)">R$</span><input type="number" id="tp-km-adicional" value="2.00" step="0.01" min="0" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"/><span style="font-size:12px;color:var(--text3)">/Km Percorrido Além Do Último Range</span></div></div><div id="tp-feedback" style="margin-top:10px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="fecharModal('modal-tabela-preco')">Cancelar</button><button class="btn-modal-primary" onclick="salvarNovaTabela('${tipo}')">${_icone('check',16,'btn-ico')}Cadastrar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 let _faixaCount=1;
@@ -13094,7 +13094,7 @@ function gerarLinhaFaixa(idx){return`<div style="display:grid;grid-template-colu
 function adicionarLinhaFaixa(){document.getElementById('tp-faixas').insertAdjacentHTML('beforeend',gerarLinhaFaixa(_faixaCount++));}
 async function salvarNovaTabela(tipo){
   const nome=document.getElementById('tp-nome').value.trim(),fb=document.getElementById('tp-feedback');
-  if(!nome){fb.innerHTML='<div style="color:var(--red);font-size:12px">Informe o nome</div>';return;}
+  if(!nome){fb.innerHTML='<div style="color:var(--red);font-size:12px">Informe O Nome</div>';return;}
   fb.innerHTML='<div style="color:var(--text2);font-size:12px">⏳ Salvando...</div>';
   const kmAdicional=parseFloat(document.getElementById('tp-km-adicional')?.value)||2;
   const tabela=await db('tabelas_preco','POST',{nome,ativa:true,tipo,km_adicional_valor:kmAdicional});
@@ -13102,12 +13102,12 @@ async function salvarNovaTabela(tipo){
   const faixas=[];
   for(let i=0;i<_faixaCount;i++){const el=document.getElementById(`f-ate-${i}`);if(!el)continue;const ate=parseFloat(el.value)||0;if(ate>0)faixas.push({tabela_id:tabela[0].id,km_de:parseFloat(document.getElementById(`f-de-${i}`).value)||0,km_ate:ate,valor_sem_retorno:parseFloat(document.getElementById(`f-sem-${i}`).value)||0,valor_com_retorno:parseFloat(document.getElementById(`f-com-${i}`).value)||0});}
   if(faixas.length)await db('tabelas_preco_faixas','POST',faixas);
-  showNotif('✅ Tabela criada!',nome);fecharModal('modal-tabela-preco');await carregarTabelasPreco();
+  showNotif('✅ Tabela Criada!',nome);fecharModal('modal-tabela-preco');await carregarTabelasPreco();
 }
-async function adicionarFaixa(tabelaId,tabelaNome,tipo){fecharModal('modal-tabela-preco');const de=prompt('Km de:','0'),ate=prompt('Km até:',''),sem=prompt('Sem retorno (R$):','0.0000'),com=prompt('Com retorno (R$):','0.0000');if(!ate)return;await db('tabelas_preco_faixas','POST',{tabela_id:tabelaId,km_de:parseFloat(de)||0,km_ate:parseFloat(ate)||0,valor_sem_retorno:parseFloat(sem)||0,valor_com_retorno:parseFloat(com)||0});showNotif('✅ Faixa adicionada!','');verFaixas(tabelaId,tabelaNome,tipo);}
+async function adicionarFaixa(tabelaId,tabelaNome,tipo){fecharModal('modal-tabela-preco');const de=prompt('Km De:','0'),ate=prompt('Km Até:',''),sem=prompt('Sem Retorno (R$):','0.0000'),com=prompt('Com Retorno (R$):','0.0000');if(!ate)return;await db('tabelas_preco_faixas','POST',{tabela_id:tabelaId,km_de:parseFloat(de)||0,km_ate:parseFloat(ate)||0,valor_sem_retorno:parseFloat(sem)||0,valor_com_retorno:parseFloat(com)||0});showNotif('✅ Faixa Adicionada!','');verFaixas(tabelaId,tabelaNome,tipo);}
 function editarFaixa(faixaId,tabelaId,tabelaNome,tipo,de,ate,sem,com){
   const isPag=tipo==='pagamento',corSem=isPag?'#10b981':'var(--accent)',corCom=isPag?'#60a5fa':'var(--orange)';
-  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km de</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km Até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
+  document.getElementById('modal-tabela-body').innerHTML=`<div style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="color:#fff;margin:0">✏️ Editar Faixa</h3><span class="p-badge" style="background:${corSem}20;color:${corSem}">${tabelaNome}</span></div><div class="form-row"><div class="fi"><label>Km De</label><input type="number" id="ef-de" value="${parseFloat(de).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label>Km Até</label><input type="number" id="ef-ate" value="${parseFloat(ate).toFixed(2)}" step="0.01" min="0"/></div></div><div class="form-row"><div class="fi"><label style="color:${corSem}">Sem retorno (R$)</label><input type="number" id="ef-sem" value="${parseFloat(sem).toFixed(2)}" step="0.01" min="0"/></div><div class="fi"><label style="color:${corCom}">Com retorno (R$)</label><input type="number" id="ef-com" value="${parseFloat(com).toFixed(2)}" step="0.01" min="0"/></div></div><div id="ef-feedback" style="margin-top:8px;min-height:16px"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn-modal-cancel" onclick="verFaixas('${tabelaId}','${tabelaNome}','${tipo}')">Cancelar</button><button class="btn-modal-primary" onclick="salvarEdicaoFaixa('${faixaId}','${tabelaId}','${tabelaNome}','${tipo}')">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   document.getElementById('modal-tabela-preco').classList.add('open');
 }
 async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
@@ -13115,28 +13115,28 @@ async function salvarEdicaoFaixa(faixaId,tabelaId,tabelaNome,tipo){
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   const update={km_de:parseFloat(document.getElementById('ef-de').value)||0,km_ate:parseFloat(document.getElementById('ef-ate').value)||0,valor_sem_retorno:parseFloat(document.getElementById('ef-sem').value)||0,valor_com_retorno:parseFloat(document.getElementById('ef-com').value)||0};
   const res=await dbPatch('tabelas_preco_faixas',update,`?id=eq.${faixaId}`);
-  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:12px">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro ao salvar faixa','','var(--red)');return;}
-  showNotif('✅ Faixa atualizada!','');verFaixas(tabelaId,tabelaNome,tipo);
+  if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:12px">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro Ao Salvar Faixa','','var(--red)');return;}
+  showNotif('✅ Faixa Atualizada!','');verFaixas(tabelaId,tabelaNome,tipo);
 }
-async function excluirTabela(id){if(!confirm('Excluir tabela e faixas?'))return;await db('tabelas_preco_faixas','DELETE',null,`?tabela_id=eq.${id}`);await db('tabelas_preco','DELETE',null,`?id=eq.${id}`);showNotif('🗑️ Excluída','','var(--red)');carregarTabelasPreco();}
+async function excluirTabela(id){if(!confirm('Excluir Tabela E Faixas?'))return;await db('tabelas_preco_faixas','DELETE',null,`?tabela_id=eq.${id}`);await db('tabelas_preco','DELETE',null,`?id=eq.${id}`);showNotif('🗑️ Excluída','','var(--red)');carregarTabelasPreco();}
 async function renomearTabela(id,nomeAtual){
-  const novoNome=(prompt('Novo nome da tabela:',nomeAtual)||'').trim();
+  const novoNome=(prompt('Novo Nome Da Tabela:',nomeAtual)||'').trim();
   if(!novoNome||novoNome===nomeAtual)return;
   const res=await dbPatch('tabelas_preco',{nome:novoNome,updated_at:new Date().toISOString()},`?id=eq.${id}`);
-  if(res===null){showNotif('Erro','Não foi possível renomear','var(--red)');return;}
-  showNotif('✅ Tabela renomeada!','');
+  if(res===null){showNotif('Erro','Não Foi Possível Renomear','var(--red)');return;}
+  showNotif('✅ Tabela Renomeada!','');
   carregarTabelasPreco();
 }
 async function clonarTabela(id,nome){
   showNotif('⏳ Clonando...','');
   const orig=await db('tabelas_preco','GET',null,`?id=eq.${id}`);
-  if(!orig||!orig[0]){showNotif('Erro','Tabela não encontrada','var(--red)');return;}
+  if(!orig||!orig[0]){showNotif('Erro','Tabela Não Encontrada','var(--red)');return;}
   const faixas=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${id}&order=km_de.asc`);
   const base={...orig[0]};delete base.id;
   const nova=await db('tabelas_preco','POST',{...base,nome:nome+' (cópia)',created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
-  if(!nova||!nova[0]){showNotif('Erro','Falha ao clonar','var(--red)');return;}
+  if(!nova||!nova[0]){showNotif('Erro','Falha Ao Clonar','var(--red)');return;}
   for(const f of faixas){const fc={...f};delete fc.id;await db('tabelas_preco_faixas','POST',{...fc,tabela_id:nova[0].id,created_at:new Date().toISOString()});}
-  showNotif('✅ Tabela clonada!',nova[0].nome);
+  showNotif('✅ Tabela Clonada!',nova[0].nome);
   carregarTabelasPreco();
 }
 
@@ -13144,7 +13144,7 @@ async function renderLojaPedidosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('package',22)} Meus Pedidos</div><button class="btn-sm btn-primary-sm" onclick="renderLojaPedidosPage()">${_icone('refresh-cw',16)}</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Pedido</th><th>Endereço</th><th>Valor</th><th>Status</th><th>Código</th></tr></thead><tbody id="tbody-loja-pedidos"></tbody></table></div></div></div>`;
   const pedidos=currentUser?.loja_id?await db('pedidos','GET',null,`?loja_id=eq.${currentUser.loja_id}&order=created_at.desc&limit=50`):[];
   const tbody=document.getElementById('tbody-loja-pedidos');if(!tbody)return;
-  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum pedido</td></tr>':pedidos.map(p=>`<tr><td style="font-weight:700">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${getStatusKey(p)}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td></tr>`).join('');
+  tbody.innerHTML=pedidos.length===0?'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Pedido</td></tr>':pedidos.map(p=>`<tr><td style="font-weight:700">#${p.numero||p.id?.substring(0,6)}</td><td>${p.endereco||'—'}</td><td style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td><td><span class="p-badge b-${getStatusKey(p)}">${getStatusLabel(p)}</span></td><td style="font-weight:700;letter-spacing:4px;color:var(--pink)">${p.codigo_confirmacao||'—'}</td></tr>`).join('');
 }
 function renderLojaMapaPage(){
   document.getElementById('app-body').innerHTML=`<div style="flex:1;position:relative;overflow:hidden;height:100%"><div class="mapa-stats"><div class="mapa-stat"><span style="font-size:16px">📦</span><div><div class="mapa-stat-val" id="ms-pedidos">0</div><div class="mapa-stat-label">Pedidos</div></div></div></div><div id="map" style="width:100%;height:100%"></div></div>`;
@@ -13177,20 +13177,20 @@ const LOJA_INICIO_CONTEUDOS=[];
 const _LOJA_INICIO_SLIDES=[
   // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
   // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
-  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos planos',icone:'bike',titulo:"Let's Go Envios: entregas para os seus pedidos próprios",texto:'Use nossos entregadores nos pedidos que você mesmo vende: <br class="li-br-desk">WhatsApp, telefone, balcão e site próprio.',botao:'Ver planos'},
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos Planos',icone:'bike',titulo:"Let's Go Envios: Entregas Para Os Seus Pedidos Próprios",texto:'Use Nossos Entregadores Nos Pedidos Que Você Mesmo Vende: <br class="li-br-desk">WhatsApp, Telefone, Balcão E Site Próprio.',botao:'Ver Planos'},
   // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
   // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
   // abaixo do botão.
-  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: seu produto na mão do cliente em até 10 minutos",texto:'Tem produto de marca própria? Deixe seu estoque na nossa base Turbo Fresh Ribeirão. Pedido aprovado, expedição em 1 minuto e entrega em até 10 minutos na região de Ribeirão Preto. A partir de R$ 49,90/mês + valor por entrega.',botao:'Quero o Turbo',linha:'Dúvidas sobre cadastro e aprovação? (11) 99170-2772'},
-  {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: garanta entregadores fixos na sua loja',texto:'Reserve entregadores exclusivos para os horários de maior movimento e tenha mais previsibilidade nas suas entregas.',botao:'Conhecer Entrega Dedicada'},
+  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: Seu Produto Na Mão Do Cliente Em Até 10 Minutos",texto:'Tem Produto De Marca Própria? Deixe Seu Estoque Na Nossa Base Turbo Fresh Ribeirão. Pedido Aprovado, Expedição Em 1 Minuto E Entrega Em Até 10 Minutos Na Região De Ribeirão Preto. A Partir De R$ 49,90/mês + Valor Por Entrega.',botao:'Quero O Turbo',linha:'Dúvidas Sobre Cadastro E Aprovação? (11) 99170-2772'},
+  {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: Garanta Entregadores Fixos Na Sua Loja',texto:'Reserve Entregadores Exclusivos Para Os Horários De Maior Movimento E Tenha Mais Previsibilidade Nas Suas Entregas.',botao:'Conhecer Entrega Dedicada'},
   // Crédito pré-pago (2026-09-29): pra TODAS as lojas. % máximo lido dos
   // pacotes reais; fora da janela de bônus o texto mostra a próxima (mesma
   // função de dia útil do servidor). Botão depende do tipo de cobrança
   // (_liPrepagoAcao / _liAtualizarSlidePrepago).
-  {id:'prepago',acao:'_liPrepagoAcao()',tag:'Promoção',icone:'badge-percent',titulo:'Você já conhece as vantagens do crédito pré-pago?',
-   texto:()=>`Recarregue seu saldo nos 7 primeiros dias úteis do mês e ganhe bônus de até ${_rcgBonusMaxPct(_rcgPacotes(null))}% em crédito. Quanto maior a recarga, maior o bônus.`,botao:'Recarregar agora'},
-  {destino:'loja-clientes',icone:'users',titulo:'Acompanhe seus clientes',texto:'Veja quantos clientes você atendeu, quantos são novos e quem pede com mais frequência.',botao:'Ver meus clientes'},
-  {destino:'metricas',icone:'chart-column',titulo:'Acompanhe seu desempenho',texto:'Acompanhe os números da sua loja e a evolução dos seus pedidos ao longo do tempo.',botao:'Ver desempenho'},
+  {id:'prepago',acao:'_liPrepagoAcao()',tag:'Promoção',icone:'badge-percent',titulo:'Você Já Conhece As Vantagens Do Crédito Pré-Pago?',
+   texto:()=>`Recarregue Seu Saldo Nos 7 Primeiros Dias Úteis Do Mês E Ganhe Bônus De Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% Em Crédito. Quanto Maior A Recarga, Maior O Bônus.`,botao:'Recarregar Agora'},
+  {destino:'loja-clientes',icone:'users',titulo:'Acompanhe Seus Clientes',texto:'Veja Quantos Clientes Você Atendeu, Quantos São Novos E Quem Pede Com Mais Frequência.',botao:'Ver Meus Clientes'},
+  {destino:'metricas',icone:'chart-column',titulo:'Acompanhe Seu Desempenho',texto:'Acompanhe Os Números Da Sua Loja E A Evolução Dos Seus Pedidos Ao Longo Do Tempo.',botao:'Ver Desempenho'},
 ];
 let _liSlide=0,_liTimer=null,_liPausado=false;
 function _liEstilos(){
@@ -13283,7 +13283,7 @@ async function renderLojaInicioPage(){
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
   const body=document.getElementById('app-body');
   const cab=`<div class="page-header"><div class="page-title">${_icone('house',22)} Início</div></div>`;
-  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>`;return;}
+  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Loja Associada Ao Seu Usuário.</div></div>`;return;}
   // o que antes só começava no Gestor de Pedidos (renderMapaPage) também
   // começa aqui, já que a loja agora entra por esta tela. O aviso de fatura
   // NÃO aparece no Início (pedido do usuário): _iniciarFaturaBannerLoja só
@@ -13294,7 +13294,7 @@ async function renderLojaInicioPage(){
   _carregarSaldoTopbar();
   _liSlide=0;_liPausado=false;
   const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
-      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} ${s.tag||'Novidade para sua loja'}</div>
+      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} ${s.tag||'Novidade Para Sua Loja'}</div>
         <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc"${s.id?` id="li-desc-${s.id}"`:''}>${typeof s.texto==='function'?s.texto():s.texto}</div>
         ${s.acao
           ?`<button class="li-btn"${s.id?` id="li-btn-${s.id}"`:''} onclick="${s.acao}">${s.botao} ${_icone('arrow-right',16)}</button>`
@@ -13303,7 +13303,7 @@ async function renderLojaInicioPage(){
           :`<button class="li-btn" onclick="goTab('${s.destino}')">${s.botao} ${_icone('arrow-right',16)}</button>`}
         ${s.linha?`<div class="li-slide-linha">${_icone('phone',13)}<span>${s.linha.replace(/(\(\d{2}\) [\d-]+)/,'<span style="white-space:nowrap">$1</span>')}</span></div>`:''}</div>
       <div class="li-slide-arte">${_liArte(s.icone,i)}</div></div>`).join('');
-  const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos para Você</div>
+  const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos Para Você</div>
     <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
   body.innerHTML=`<div class="alt-page"><div class="li-wrap">
     ${cab}
@@ -13313,12 +13313,12 @@ async function renderLojaInicioPage(){
       <button class="li-seta" style="right:12px" onclick="_liIrSlide(_liSlide+1);_liIniciarTimer()" aria-label="Próximo">${_icone('chevron-right',18)}</button>
       <div class="li-pontos">${_LOJA_INICIO_SLIDES.map((_,i)=>`<button class="li-ponto${i===0?' ativo':''}" onclick="_liIrSlide(${i});_liIniciarTimer()" aria-label="Destaque ${i+1}"></button>`).join('')}</div>
     </div>
-    <div class="li-secao-titulo">Comece por Aqui</div>
+    <div class="li-secao-titulo">Comece Por Aqui</div>
     <div class="li-grid2">
-      <div class="card li-card"><div class="li-card-icone">${_icone('clipboard-list',22)}</div><div><div class="li-card-titulo">Acesse o Gestor de Pedidos</div><div class="li-card-texto">Acompanhe seus pedidos em tempo real no mapa, com o status de cada entrega.</div><button class="li-btn" onclick="goTab('mapa')">Acessar Gestor de Pedidos</button></div></div>
-      <div class="card li-card"><div class="li-card-icone">${_icone('plus',22)}</div><div><div class="li-card-titulo">Crie uma Entrega</div><div class="li-card-texto">Chame um entregador para uma nova entrega em poucos cliques.</div><button class="li-btn" onclick="_liNovoPedido()">${_icone('plus',16,'btn-ico')}Novo Pedido</button></div></div>
+      <div class="card li-card"><div class="li-card-icone">${_icone('clipboard-list',22)}</div><div><div class="li-card-titulo">Acesse O Gestor De Pedidos</div><div class="li-card-texto">Acompanhe Seus Pedidos Em Tempo Real No Mapa, Com O Status De Cada Entrega.</div><button class="li-btn" onclick="goTab('mapa')">Acessar Gestor De Pedidos</button></div></div>
+      <div class="card li-card"><div class="li-card-icone">${_icone('plus',22)}</div><div><div class="li-card-titulo">Crie Uma Entrega</div><div class="li-card-texto">Chame Um Entregador Para Uma Nova Entrega Em Poucos Cliques.</div><button class="li-btn" onclick="_liNovoPedido()">${_icone('plus',16,'btn-ico')}Novo Pedido</button></div></div>
     </div>
-    <div class="li-secao-titulo">Resumo de Hoje</div>
+    <div class="li-secao-titulo">Resumo De Hoje</div>
     <div id="li-resumo"><div class="card" style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
     ${conteudos}
   </div></div>`;
@@ -13336,7 +13336,7 @@ async function renderLojaInicioPage(){
   const fat=comValor.reduce((s,p)=>s+parseFloat(p.valor),0);
   const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   res.innerHTML=!lista.length
-    ?`<div class="card" style="padding:28px 24px;text-align:center"><div style="color:var(--text3);margin-bottom:8px">${_icone('package',30)}</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Nenhum pedido hoje ainda</div><div style="font-size:12.5px;color:var(--text2)">Assim que os pedidos de hoje chegarem, o resumo aparece aqui.</div></div>`
+    ?`<div class="card" style="padding:28px 24px;text-align:center"><div style="color:var(--text3);margin-bottom:8px">${_icone('package',30)}</div><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Nenhum Pedido Hoje Ainda</div><div style="font-size:12.5px;color:var(--text2)">Assim Que Os Pedidos De Hoje Chegarem, O Resumo Aparece Aqui.</div></div>`
     :`<div class="stats-grid">
       <div class="stat-card"><div class="stat-label">Pedidos Hoje</div><div class="stat-value">${lista.length}</div></div>
       <div class="stat-card"><div class="stat-label">Faturamento Hoje</div><div class="stat-value">${comValor.length?R(fat):'—'}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${comValor.length?`soma do valor de ${comValor.length} pedido(s) não cancelado(s)`:'valor não informado nos pedidos de hoje'}</div></div>
@@ -13414,14 +13414,14 @@ async function renderLojaClientesPage(){
   const cab=`<div class="page-header"><div class="page-title">${_icone('users',22)} Clientes</div></div>`;
   const body=document.getElementById('app-body');
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
-  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>`;return;}
+  if(!lojaId){body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Loja Associada Ao Seu Usuário.</div></div>`;return;}
   body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>`;
   const linhas=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&status=eq.finalizado&select=id,loja_id,cliente,telefone,endereco,valor,itens,created_at&order=created_at.asc,id.asc`);
   if(!document.getElementById('app-body'))return;
   const m=_cliCalcular((Array.isArray(linhas)?linhas:[]).filter(p=>p.loja_id===lojaId),_dataHojeBrasilia());
   _cliRanking=m.ranking;
   if(!m.total90){
-    body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="color:var(--text3);margin-bottom:12px">${_icone('users',40)}</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Ainda não há clientes para mostrar</div><div style="font-size:13px;color:var(--text2);line-height:1.6">Assim que sua loja tiver pedidos finalizados nos últimos 90 dias, você vai ver aqui quantos clientes atendeu, quantos são novos e quem pede com mais frequência.</div></div></div>`;
+    body.innerHTML=`<div class="alt-page">${cab}<div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="color:var(--text3);margin-bottom:12px">${_icone('users',40)}</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Ainda Não Há Clientes Para Mostrar</div><div style="font-size:13px;color:var(--text2);line-height:1.6">Assim Que Sua Loja Tiver Pedidos Finalizados Nos Últimos 90 Dias, Você Vai Ver Aqui Quantos Clientes Atendeu, Quantos São Novos E Quem Pede Com Mais Frequência.</div></div></div>`;
     return;
   }
   const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -13435,28 +13435,28 @@ async function renderLojaClientesPage(){
       <div style="font-size:9px;color:var(--text3);white-space:nowrap;overflow:visible;width:0;display:flex;justify-content:center">${i%2===0?_cliDiaMes(s.ini):'&nbsp;'}</div></div>`;}).join('');
   const maxDow=Math.max(...m.dow),diaTop=m.dow.indexOf(maxDow);
   const cardsHabitos=[
-    m.pedidosComValor>=5?`<div class="stat-card"><div class="stat-label">Ticket Médio</div><div class="stat-value">${R(m.ticket)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">com base em ${N(m.pedidosComValor)} de ${N(m.pedidos90)} pedidos com valor informado (90 dias)</div></div>`:'',
-    `<div class="stat-card"><div class="stat-label">Dia com Mais Pedidos</div><div class="stat-value" style="font-size:22px!important">${_CLI_DIAS[diaTop].replace(/^./,c=>c.toUpperCase())}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(maxDow)} pedido(s) nos últimos 90 dias</div></div>`,
-    m.topItem?`<div class="stat-card"><div class="stat-label">Item Mais Pedido</div><div class="stat-value" style="font-size:20px!important">${_escHtml(m.topItem[0])}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.topItem[1])} unidade(s) nos últimos 90 dias</div></div>`:'',
+    m.pedidosComValor>=5?`<div class="stat-card"><div class="stat-label">Ticket Médio</div><div class="stat-value">${R(m.ticket)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Com Base Em ${N(m.pedidosComValor)} De ${N(m.pedidos90)} Pedidos Com Valor Informado (90 Dias)</div></div>`:'',
+    `<div class="stat-card"><div class="stat-label">Dia Com Mais Pedidos</div><div class="stat-value" style="font-size:22px!important">${_CLI_DIAS[diaTop].replace(/^./,c=>c.toUpperCase())}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(maxDow)} Pedido(s) Nos Últimos 90 Dias</div></div>`,
+    m.topItem?`<div class="stat-card"><div class="stat-label">Item Mais Pedido</div><div class="stat-value" style="font-size:20px!important">${_escHtml(m.topItem[0])}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.topItem[1])} Unidade(s) Nos Últimos 90 Dias</div></div>`:'',
   ].filter(Boolean).join('');
   body.innerHTML=`<div class="alt-page">${cab}
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Clientes identificados pelo telefone (ou nome + endereço quando não há telefone), contando só pedidos finalizados da sua loja.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;max-width:880px">Clientes Identificados Pelo Telefone (Ou Nome + Endereço Quando Não Há Telefone), Contando Só Pedidos Finalizados Da Sua Loja.</div>
     <div class="stats-grid" style="margin-bottom:16px">
-      <div class="stat-card"><div class="stat-label">Clientes (90 dias)</div><div class="stat-value">${N(m.total90)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.pedidos90)} pedidos finalizados</div></div>
-      <div class="stat-card"><div class="stat-label">Clientes Novos (30 dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">fizeram o primeiro pedido nesse período</div></div>
-      <div class="stat-card"><div class="stat-label">Pediram 2x ou Mais (30 dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
+      <div class="stat-card"><div class="stat-label">Clientes (90 Dias)</div><div class="stat-value">${N(m.total90)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${N(m.pedidos90)} Pedidos Finalizados</div></div>
+      <div class="stat-card"><div class="stat-label">Clientes Novos (30 Dias)</div><div class="stat-value">${N(m.novos30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Fizeram O Primeiro Pedido Nesse Período</div></div>
+      <div class="stat-card"><div class="stat-label">Pediram 2x Ou Mais (30 Dias)</div><div class="stat-value">${N(m.recorrentes30)}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${m.recorrentes30?`${N(m.pedidosRecorrentes30)} pedidos no total · média de ${mediaRec.toLocaleString('pt-BR',{maximumFractionDigits:1})} por cliente`:'nenhum cliente voltou a pedir no último mês'}</div></div>
     </div>
     <div class="card" style="padding:16px 18px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução de Clientes por Semana</div>
-        <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span>novos</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.45"></span>que já compravam</span></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--text)">Evolução De Clientes Por Semana</div>
+        <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span>novos</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.45"></span>Que Já Compravam</span></div></div>
       <div style="display:flex;align-items:flex-end;gap:6px;overflow-x:auto;padding:0 14px 2px">${barras}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px">Últimas 13 semanas · cada barra é uma semana (clientes diferentes que pediram)</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Últimas 13 Semanas · Cada Barra É Uma Semana (Clientes Diferentes Que Pediram)</div>
     </div>
-    <div style="font-size:14px;font-weight:700;color:var(--text);margin:4px 0 8px">Hábitos de Compra</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin:4px 0 8px">Hábitos De Compra</div>
     <div class="stats-grid" style="margin-bottom:16px">${cardsHabitos}</div>
     <div class="card" style="padding:16px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text)">Clientes Mais Frequentes (90 dias)</div>
-        <input type="text" id="cli-busca" placeholder="Buscar por nome ou final do telefone..." oninput="_cliRenderLista(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:220px;outline:none"/></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text)">Clientes Mais Frequentes (90 Dias)</div>
+        <input type="text" id="cli-busca" placeholder="Buscar Por Nome Ou Final Do Telefone..." oninput="_cliRenderLista(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:220px;outline:none"/></div>
       <div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Telefone</th><th style="text-align:center">Pedidos</th><th>Último Pedido</th><th style="text-align:center">Ticket Médio</th></tr></thead><tbody id="cli-tbody"></tbody></table></div>
       <div id="cli-rodape" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
     </div>
@@ -13468,14 +13468,14 @@ function _cliRenderLista(busca){
   const q=_cliNorm(busca),qd=String(busca||'').replace(/\D/g,'');
   const lista=_cliRanking.filter(c=>!q||_cliNorm(c.nome).includes(q)||(qd&&String(c.telefone||'').replace(/\D/g,'').endsWith(qd)));
   const R=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  tb.innerHTML=lista.slice(0,50).map(c=>`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(c.nome||'(sem nome)')}</td><td style="font-size:12px;color:var(--text3)">${_cliTelMascarado(c.telefone)}</td><td style="text-align:center;font-weight:700">${c.pedidos}</td><td style="font-size:12px">${_cliDataBR(c.ultimo)}</td><td style="text-align:center;white-space:nowrap">${c.ticket!=null?R(c.ticket):'—'}</td></tr>`).join('')
-    ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">Nenhum cliente encontrado${busca?' para essa busca':''}.</td></tr>`;
+  tb.innerHTML=lista.slice(0,50).map(c=>`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(c.nome||'(Sem Nome)')}</td><td style="font-size:12px;color:var(--text3)">${_cliTelMascarado(c.telefone)}</td><td style="text-align:center;font-weight:700">${c.pedidos}</td><td style="font-size:12px">${_cliDataBR(c.ultimo)}</td><td style="text-align:center;white-space:nowrap">${c.ticket!=null?R(c.ticket):'—'}</td></tr>`).join('')
+    ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">Nenhum Cliente encontrado${busca?' para essa busca':''}.</td></tr>`;
   const rod=document.getElementById('cli-rodape');if(rod)rod.textContent=lista.length>50?`Mostrando os 50 mais frequentes de ${lista.length}.`:`${lista.length} cliente(s).`;
 }
 
 async function renderMeuCardapioPage(){
   const lojaId=currentUser?.loja_id;
-  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('utensils',22)+' Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma loja associada ao seu usuário.</div></div>';return;}
+  if(!lojaId){document.getElementById('app-body').innerHTML='<div class="alt-page"><div class="page-header"><div class="page-title">'+_icone('utensils',22)+' Cardápio</div></div><div class="card" style="padding:32px;text-align:center;color:var(--text3)">Nenhuma Loja Associada Ao Seu Usuário.</div></div>';return;}
   document.getElementById('app-body').innerHTML=`
   <div class="alt-page">
     <div class="page-header">
@@ -13493,7 +13493,7 @@ async function renderMeuCardapioPage(){
       <!-- Coluna direita: produtos -->
       <div class="card" style="display:flex;flex-direction:column;gap:0;overflow:hidden;padding:0">
         <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <span id="mc-prod-titulo" style="font-weight:700;font-size:14px;color:var(--text3)">← Selecione uma categoria</span>
+          <span id="mc-prod-titulo" style="font-weight:700;font-size:14px;color:var(--text3)">← Selecione Uma Categoria</span>
           <button id="mc-btn-novo-prod" onclick="_mcAbrirModalProduto()" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">+ Novo Produto</button>
         </div>
         <div id="mc-prod-lista" style="flex:1;overflow-y:auto;padding:8px"></div>
@@ -13508,7 +13508,7 @@ async function _mcCarregarCategorias(){
   const lojaId=currentUser?.loja_id;if(!lojaId)return;
   _mcCategorias=await db('cardapio_categorias','GET',null,`?loja_id=eq.${lojaId}&order=ordem.asc,created_at.asc`)||[];
   const el=document.getElementById('mc-cat-lista');if(!el)return;
-  if(!_mcCategorias.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma categoria.<br>Crie a primeira!</div>';return;}
+  if(!_mcCategorias.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhuma Categoria.<br>Crie A Primeira!</div>';return;}
   el.innerHTML=_mcCategorias.map(c=>`
     <div id="mc-cat-${c.id}" onclick="_mcSelecionarCategoria('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .15s${_mcCatSelecionada===c.id?';background:var(--surface2);border-color:var(--accent)':''}">
       <span style="font-size:18px">📁</span>
@@ -13541,7 +13541,7 @@ async function _mcCarregarProdutos(catId){
   const el=document.getElementById('mc-prod-lista');if(!el)return;
   el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Carregando...</div>';
   _mcProdutos=await db('cardapio_produtos','GET',null,`?categoria_id=eq.${catId}&order=ordem.asc,created_at.asc`)||[];
-  if(!_mcProdutos.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum produto nesta categoria.<br>Clique em "+ novo produto".</div>';return;}
+  if(!_mcProdutos.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum Produto Nesta Categoria.<br>Clique Em "+ Novo Produto".</div>';return;}
   el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:4px">
     ${_mcProdutos.map(p=>`
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
@@ -13572,7 +13572,7 @@ function _mcAbrirModalCategoria(catId){
   m.innerHTML=`<div class="modal" style="max-width:400px">
     <div class="modal-header"><span class="modal-title">${_icone(cat?'pencil':'plus',18)} ${cat?'Editar':'Nova'} Categoria</span><button class="modal-close" onclick="document.getElementById('mc-modal-cat').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <div class="fi"><label>Nome da Categoria</label><input id="mc-cat-nome" value="${v(cat?.nome)}" placeholder="Ex: Lanches, Bebidas..." style="${ss}"/></div>
+      <div class="fi"><label>Nome Da Categoria</label><input id="mc-cat-nome" value="${v(cat?.nome)}" placeholder="Ex: Lanches, Bebidas..." style="${ss}"/></div>
       <div class="form-row" style="margin-top:12px">
         <div class="fi"><label>Ordem</label><input id="mc-cat-ordem" type="number" value="${cat?.ordem??0}" min="0" style="${ss}"/></div>
         <div class="fi"><label>Status</label><select id="mc-cat-ativo" style="${ss}"><option value="true"${cat===null||cat?.ativo?' selected':''}>Ativa</option><option value="false"${cat&&!cat.ativo?' selected':''}>Inativa</option></select></div>
@@ -13588,7 +13588,7 @@ function _mcAbrirModalCategoria(catId){
 async function _mcSalvarCategoria(catId){
   const fb=document.getElementById('mc-cat-fb');
   const nome=(document.getElementById('mc-cat-nome')?.value||'').trim();
-  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome é obrigatório.</span>';return;}
+  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome É Obrigatório.</span>';return;}
   const lojaId=currentUser?.loja_id;if(!lojaId)return;
   const ordem=parseInt(document.getElementById('mc-cat-ordem')?.value||'0',10);
   const ativo=document.getElementById('mc-cat-ativo')?.value==='true';
@@ -13602,7 +13602,7 @@ async function _mcSalvarCategoria(catId){
   document.getElementById('mc-modal-cat')?.classList.remove('open');
   await _mcCarregarCategorias();
   if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
-  showNotif(catId?'✅ Categoria atualizada!':'✅ Categoria criada!','');
+  showNotif(catId?'✅ Categoria Atualizada!':'✅ Categoria Criada!','');
 }
 
 async function _mcToggleCategoria(catId,novoAtivo){
@@ -13610,7 +13610,7 @@ async function _mcToggleCategoria(catId,novoAtivo){
   await _mcCarregarCategorias();
   if(_mcCatSelecionada===catId&&!novoAtivo){
     const el=document.getElementById('mc-prod-lista');
-    if(el)el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Categoria inativa.</div>';
+    if(el)el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Categoria Inativa.</div>';
   }
 }
 
@@ -13626,20 +13626,20 @@ function _mcAbrirModalProduto(prodId){
     <div class="modal-header"><span class="modal-title">${_icone(prod?'pencil':'plus',18)} ${prod?'Editar':'Novo'} Produto</span><button class="modal-close" onclick="document.getElementById('mc-modal-prod').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div class="form-row full fi"><label>Categoria</label><select id="mc-prod-cat" style="${ss}">${catOpts}</select></div>
-      <div class="form-row full fi" style="margin-top:10px"><label>Nome do Produto</label><input id="mc-prod-nome" value="${v(prod?.nome)}" placeholder="Ex: X-Burguer Especial" style="${ss}"/></div>
-      <div class="form-row full fi" style="margin-top:10px"><label>Descrição</label><textarea id="mc-prod-desc" placeholder="Ingredientes, observações..." style="${ss};height:70px;resize:vertical">${v(prod?.descricao)}</textarea></div>
+      <div class="form-row full fi" style="margin-top:10px"><label>Nome Do Produto</label><input id="mc-prod-nome" value="${v(prod?.nome)}" placeholder="Ex: X-Burguer Especial" style="${ss}"/></div>
+      <div class="form-row full fi" style="margin-top:10px"><label>Descrição</label><textarea id="mc-prod-desc" placeholder="Ingredientes, Observações..." style="${ss};height:70px;resize:vertical">${v(prod?.descricao)}</textarea></div>
       <div class="form-row" style="margin-top:10px">
         <div class="fi"><label>Preço (R$)</label><input id="mc-prod-preco" type="number" min="0" step="0.01" value="${parseFloat(prod?.preco||0).toFixed(2)}" style="${ss}"/></div>
         <div class="fi"><label>Ordem</label><input id="mc-prod-ordem" type="number" min="0" value="${prod?.ordem??0}" style="${ss}"/></div>
       </div>
       <div class="fi" style="margin-top:10px"><label>Status</label><select id="mc-prod-disp" style="${ss}"><option value="true"${prod===null||prod?.disponivel?' selected':''}>Disponível</option><option value="false"${prod&&!prod.disponivel?' selected':''}>Indisponível</option></select></div>
       <div class="fi" style="margin-top:14px">
-        <label>Foto do Produto</label>
+        <label>Foto Do Produto</label>
         ${fotoAtual?`<img id="mc-prod-foto-preview" src="${fotoAtual}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px"/>`:
           `<div id="mc-prod-foto-preview" style="display:none"></div>`}
         <input type="file" id="mc-prod-foto-file" accept="image/jpeg,image/png,image/webp" onchange="_mcPreviewFoto(this)" style="display:none"/>
-        <input id="mc-prod-foto-url" type="text" value="${v(fotoAtual)}" placeholder="URL da foto ou escolha arquivo abaixo" style="${ss};margin-bottom:6px" oninput="_mcAtualizarPreviewUrl(this.value)"/>
-        <button type="button" onclick="document.getElementById('mc-prod-foto-file').click()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;width:100%">${_icone('camera',16,'btn-ico')}Escolher imagem (máx. 2MB)</button>
+        <input id="mc-prod-foto-url" type="text" value="${v(fotoAtual)}" placeholder="URL Da Foto Ou Escolha Arquivo Abaixo" style="${ss};margin-bottom:6px" oninput="_mcAtualizarPreviewUrl(this.value)"/>
+        <button type="button" onclick="document.getElementById('mc-prod-foto-file').click()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;width:100%">${_icone('camera',16,'btn-ico')}Escolher Imagem (Máx. 2MB)</button>
         <div id="mc-prod-foto-status" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
       </div>
       <div id="mc-prod-fb" style="margin-top:10px"></div>
@@ -13652,13 +13652,13 @@ function _mcAbrirModalProduto(prodId){
 
 function _mcPreviewFoto(input){
   const file=input.files[0];if(!file)return;
-  if(file.size>2097152){showNotif('Arquivo muito grande','Máximo 2MB','var(--red)');input.value='';return;}
+  if(file.size>2097152){showNotif('Arquivo Muito Grande','Máximo 2MB','var(--red)');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
     const prev=document.getElementById('mc-prod-foto-preview');
     if(prev){prev.src=e.target.result;prev.style.display='block';prev.style.width='100%';prev.style.maxHeight='140px';prev.style.objectFit='cover';prev.style.borderRadius='8px';prev.style.marginBottom='8px';}
     const status=document.getElementById('mc-prod-foto-status');
-    if(status)status.innerHTML=`<span style="color:#10b981">✅ ${file.name} pronto para upload</span>`;
+    if(status)status.innerHTML=`<span style="color:#10b981">✅ ${file.name} Pronto Para Upload</span>`;
   };
   reader.readAsDataURL(file);
 }
@@ -13686,7 +13686,7 @@ async function _mcUploadFoto(file,prodId){
 async function _mcSalvarProduto(prodId){
   const fb=document.getElementById('mc-prod-fb');
   const nome=(document.getElementById('mc-prod-nome')?.value||'').trim();
-  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome é obrigatório.</span>';return;}
+  if(!nome){if(fb)fb.innerHTML='<span style="color:#ef4444;font-size:13px">Nome É Obrigatório.</span>';return;}
   const lojaId=currentUser?.loja_id;if(!lojaId)return;
   const catId=document.getElementById('mc-prod-cat')?.value||_mcCatSelecionada;
   const desc=(document.getElementById('mc-prod-desc')?.value||'').trim();
@@ -13699,10 +13699,10 @@ async function _mcSalvarProduto(prodId){
   let fotoUrl=(document.getElementById('mc-prod-foto-url')?.value||'').trim();
   const fileInput=document.getElementById('mc-prod-foto-file');
   if(fileInput?.files[0]){
-    if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:13px">⏳ Enviando foto...</span>';
+    if(fb)fb.innerHTML='<span style="color:var(--text3);font-size:13px">⏳ Enviando Foto...</span>';
     const url=await _mcUploadFoto(fileInput.files[0],prodId||null);
     if(url)fotoUrl=url;
-    else{if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:13px">⚠️ Foto não enviada, produto salvo sem ela.</span>';}
+    else{if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:13px">⚠️ Foto Não Enviada, Produto Salvo Sem Ela.</span>';}
   }
 
   const agora=new Date().toISOString();
@@ -13714,7 +13714,7 @@ async function _mcSalvarProduto(prodId){
   }
   document.getElementById('mc-modal-prod')?.classList.remove('open');
   if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
-  showNotif(prodId?'✅ Produto atualizado!':'✅ Produto criado!','');
+  showNotif(prodId?'✅ Produto Atualizado!':'✅ Produto Criado!','');
 }
 
 async function _mcToggleProduto(prodId,novoDisp){
@@ -13723,10 +13723,10 @@ async function _mcToggleProduto(prodId,novoDisp){
 }
 
 async function _mcExcluirProduto(prodId,nome){
-  if(!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`))return;
+  if(!confirm(`Excluir "${nome}"? Esta Ação Não Pode Ser Desfeita.`))return;
   await db('cardapio_produtos','DELETE',null,`?id=eq.${prodId}`);
   if(_mcCatSelecionada)await _mcCarregarProdutos(_mcCatSelecionada);
-  showNotif('🗑️ Produto excluído','');
+  showNotif('🗑️ Produto Excluído','');
 }
 
 // ═══════════════════════════════════════════════
@@ -13778,7 +13778,7 @@ function _rastreioPrevisaoHtml(p){
   const _prazo=_indicadorPrazoPedido(p);
   const previsaoMs=_prazo.previsaoMs,corTxt=_prazo.cor,texto=_prazo.texto;
   return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:8px 12px;margin-bottom:10px">
-    <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">Previsão de Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
+    <div><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px">Previsão De Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
     <div style="font-size:16px;font-weight:800;color:${corTxt}">${texto}</div>
   </div>`;
 }
@@ -13807,12 +13807,12 @@ function _rastreioRenderCard(el,p,motoboy,sk){
       ${RASTREIO_ETAPAS.map((e,i)=>(i===0?'':stepLine(i-1))+step(i,e.label)).join('')}
     </div>
     ${_rastreioPrevisaoHtml(p)}
-    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:2px">Código pra Entrega</div><div style="font-size:20px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
+    ${p.codigo_confirmacao?`<div style="background:var(--surface2);border-radius:10px;padding:8px;text-align:center;margin-bottom:10px"><div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:2px">Código Pra Entrega</div><div style="font-size:20px;font-weight:800;letter-spacing:6px;color:var(--text)">${p.codigo_confirmacao}</div></div>`:''}
     ${motoboy?`<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:8px;margin-bottom:10px">
       <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">${motoboy.foto_perfil?`<img src="${motoboy.foto_perfil}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;color:var(--text);font-size:13px">${motoboy.nome||'Entregador'}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa de suporte com sua entrega?<br>Qualquer dúvida, nossa equipe está À disposição.<br>Suporte Operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;text-align:center">Precisa De Suporte Com Sua Entrega?<br>Qualquer Dúvida, Nossa Equipe Está À Disposição.<br>Suporte Operacional <a href="https://wa.me/5511991702772" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none;white-space:nowrap">(11) 99170-2772</a></div>
       </div>
     </div>`:''}
     ${itens.length?`<div style="margin-bottom:10px">
@@ -13833,11 +13833,11 @@ async function _rastreioCompartilhar(){
   const url=window.location.href;
   const btn=document.getElementById('rastreio-btn-compartilhar');
   if(navigator.share){
-    try{ await navigator.share({title:"Acompanhe sua entrega — Let's Go Delivery",url}); return; }catch(e){ /* cancelado pelo usuário — tenta clipboard abaixo */ }
+    try{ await navigator.share({title:"Acompanhe Sua Entrega — Let's Go Delivery",url}); return; }catch(e){ /* cancelado pelo usuário — tenta clipboard abaixo */ }
   }
   try{
     await navigator.clipboard.writeText(url);
-    if(btn){const original=btn.innerHTML;btn.innerHTML=_icone('check',16,'btn-ico')+'Link copiado!';setTimeout(()=>{btn.innerHTML=original;},2000);}
+    if(btn){const original=btn.innerHTML;btn.innerHTML=_icone('check',16,'btn-ico')+'Link Copiado!';setTimeout(()=>{btn.innerHTML=original;},2000);}
   }catch(e){ /* ambiente sem clipboard API — raro, falha silenciosa */ }
 }
 // Tela final quando o pedido chega em "finalizado" — substitui TODO o
@@ -13854,12 +13854,12 @@ function _rastreioTelaEntregue(numero,nomeLoja){
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px;font-family:'Inter',sans-serif">
       <img src="https://letsgodeliverybr.github.io/painel/img/logo.png" style="width:64px;height:64px;border-radius:16px;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.15)"/>
       <div style="font-size:44px">✅</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido entregue!</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">Pedido Entregue!</div>
       <div style="font-size:13px;color:var(--text2);max-width:320px;line-height:1.5">${numero?`Pedido #${numero} — `:''}Obrigado Por Escolher <span id="rastreio-entregue-loja"></span> E Entregas Let's Go Delivery.</div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;width:100%;max-width:280px">
-        <div style="font-size:13px;color:var(--text2);font-weight:600">Avalie nosso app na Play Store</div>
+        <div style="font-size:13px;color:var(--text2);font-weight:600">Avalie Nosso App Na Play Store</div>
         <div style="font-size:22px;color:#eab308;letter-spacing:2px">★★★★★</div>
-        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;width:100%">⭐ Avaliar na Play Store</a>
+        <a id="rastreio-link-playstore" href="https://play.google.com/store/apps/details?id=br.com.letsgodelivery.parceiro" target="_blank" style="background:#1A56DB;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;font-size:13px;width:100%">⭐ Avaliar Na Play Store</a>
       </div>
     </div>
   `;
@@ -13877,7 +13877,7 @@ async function _iniciarRastreioPublico(pedidoId){
     const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em,aceito_em,agendado_para`);
     const p=pedidos?.[0];
     if(!p){
-      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido não encontrado.</div>`;
+      cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido Não Encontrado.</div>`;
       pararPolling=true;
       return;
     }
@@ -13929,21 +13929,21 @@ async function _iniciarRastreioPublico(pedidoId){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+  if(window.matchMedia('(Prefers-Color-Scheme: Dark)').matches){
     document.documentElement.classList.add('dark');
   }
   const card=document.querySelector('.login-card');
   if(card){
     if(!document.getElementById('login-logo-wrap')){
       const wrap=document.createElement('div');wrap.id='login-logo-wrap';
-      wrap.innerHTML=`<div id="login-logo-icon">🛵</div><div id="login-logo-text">Let's Go Delivery</div><div id="login-logo-sub">Painel de Gestão</div>`;
+      wrap.innerHTML=`<div id="login-logo-icon">🛵</div><div id="login-logo-text">Let's Go Delivery</div><div id="login-logo-sub">Painel De Gestão</div>`;
       card.insertBefore(wrap,card.firstChild);
     }
     if(!document.getElementById('login-forgot')){
       const btn=document.getElementById('login-btn');
       if(btn){
-        const link=document.createElement('button');link.id='login-forgot';link.type='button';link.textContent='Esqueci minha senha';
-        link.onclick=()=>showNotif('Redefinir senha','Entre em contato com o administrador para redefinir sua senha.','var(--accent)');
+        const link=document.createElement('button');link.id='login-forgot';link.type='button';link.textContent='Esqueci Minha Senha';
+        link.onclick=()=>showNotif('Redefinir Senha','Entre Em Contato Com O Administrador Para Redefinir Sua Senha.','var(--accent)');
         btn.insertAdjacentElement('afterend',link);
       }
     }
@@ -14202,7 +14202,7 @@ function iniciarAutocompleteEndereco(inputId,latId,lngId,feedbackId,_retry=0){
     const place=ac.getPlace();
     const fb=feedbackId?document.getElementById(feedbackId):null;
     if(!place.geometry){
-      if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Selecione um endereço da lista</span>';
+      if(fb)fb.innerHTML='<span style="color:#f59e0b;font-size:11px">⚠️ Selecione Um Endereço Da Lista</span>';
       return;
     }
     const lat=place.geometry.location.lat(),lng=place.geometry.location.lng();
