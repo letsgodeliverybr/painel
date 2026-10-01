@@ -500,23 +500,20 @@ function _diasAtrasoFatura(vencYMD){
   const [hy,hm,hd]=_dataHojeBrasilia().split('-').map(Number);
   return Math.round((Date.UTC(hy,hm-1,hd)-Date.UTC(vy,vm-1,vd))/86400000);
 }
-// Multa de 2% única (não recorrente) + juros de 10%/mês pro-rata ao dia
-// (10%/30), ambos incidindo a partir do dia seguinte ao vencimento —
-// dataAtraso===0 (vence hoje) ainda não pega multa/juros.
-// Fatura pequena (valor original < R$100): o percentual renderia menos que
-// vale a pena cobrar, então substitui multa+juros inteiros por uma taxa
-// mínima fixa de R$5 — mesmo padrão de piso fixo usado no saque rápido do
-// motoboy, independe de quantos dias de atraso.
+// Regra de atraso (2026-10-01): multa única = o MAIOR entre 2% do valor
+// original e R$ 5,00; juros = 0,3% ao dia sobre o valor original, por dia
+// corrido desde o vencimento. Os dois começam no dia seguinte ao vencimento
+// (dataAtraso===0, vence hoje, ainda sem multa/juros). Substitui a regra
+// anterior (multa 2% + juros 10%/mês = 0,333%/dia, e taxa fixa de R$ 5 sem
+// juros para fatura < R$ 100). Fatura já paga não passa por aqui: o valor
+// fica congelado em valor_pago_final na aprovação.
+const FATURA_MULTA_PCT=0.02,FATURA_MULTA_MIN=5,FATURA_JUROS_DIA=0.003;
 function _calcularJurosMultaFatura(valorOriginal,vencYMD){
   const diasAtraso=Math.max(0,_diasAtrasoFatura(vencYMD));
   const valOrig=parseFloat(valorOriginal)||0;
   if(diasAtraso<=0)return{diasAtraso:0,multa:0,juros:0,taxaFixa:0,valorAtualizado:Math.round(valOrig*100)/100};
-  if(valOrig<100){
-    const taxaFixa=5;
-    return{diasAtraso,multa:0,juros:0,taxaFixa,valorAtualizado:Math.round((valOrig+taxaFixa)*100)/100};
-  }
-  const multa=Math.round(valOrig*0.02*100)/100;
-  const juros=Math.round(valOrig*(0.10/30)*diasAtraso*100)/100;
+  const multa=Math.max(Math.round(valOrig*FATURA_MULTA_PCT*100)/100,FATURA_MULTA_MIN);
+  const juros=Math.round(valOrig*FATURA_JUROS_DIA*diasAtraso*100)/100;
   return{diasAtraso,multa,juros,taxaFixa:0,valorAtualizado:Math.round((valOrig+multa+juros)*100)/100};
 }
 // Carrega a(s) cobrança(s) pendente(s) da loja logada e escolhe a mais
@@ -11793,9 +11790,9 @@ async function _buscarCobrancasPendentes(){
       <tbody>${cobrancas.map(c=>{
         const loja=c.lojas||{};
         const vencYMD=_faturaVencimentoYMD(c);
-        const {diasAtraso,multa,juros,taxaFixa,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,vencYMD);
+        const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,vencYMD);
         const vencida=diasAtraso>=1;
-        const detalheVencida=taxaFixa>0?`+taxa mínima R$ ${taxaFixa.toFixed(2)}`:`+multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}`;
+        const detalheVencida=`+multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}`;
         return`<tr id="cob-row-${c.id}">
         <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
@@ -11929,8 +11926,8 @@ async function verFaturaCobranca(cobId){
   // acima). Sem isso, reabrir o modal de uma fatura paga há semanas mostrava
   // juros acumulando pra sempre, como se ainda estivesse em aberto.
   const jaPago=c.status==='pago';
-  const {diasAtraso,multa,juros,taxaFixa,valorAtualizado}=jaPago
-    ?{diasAtraso:0,multa:0,juros:0,taxaFixa:0,valorAtualizado:valorOriginalFatura}
+  const {diasAtraso,multa,juros,valorAtualizado}=jaPago
+    ?{diasAtraso:0,multa:0,juros:0,valorAtualizado:valorOriginalFatura}
     :_calcularJurosMultaFatura(valorOriginalFatura,vencYMD);
   const faturaVencida=!jaPago&&diasAtraso>=1;
   const valorFinalExibido=jaPago?(parseFloat(c.valor_pago_final??c.valor_total)||valorOriginalFatura):(faturaVencida?valorAtualizado:valorOriginalFatura);
@@ -11981,10 +11978,10 @@ async function verFaturaCobranca(cobId){
       </table>
     </div>
     ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
-      <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — ${taxaFixa>0?'taxa mínima aplicada':'juros e multa aplicados'}</div>
+      <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — juros e multa aplicados</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor Original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
-      ${taxaFixa>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Taxa mínima (fatura &lt; R$100)</span><span>R$ ${taxaFixa.toFixed(2)}</span></div>`:`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (2% única)</span><span>R$ ${multa.toFixed(2)}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,333%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>`}
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (2%, mínimo R$ 5,00)</span><span>R$ ${multa.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,3%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total Atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
     </div>`:''}
     <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
