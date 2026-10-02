@@ -1366,6 +1366,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       #sidebar-mapa:not(.sb-minimized){width:var(--sb-mapa-w,525px) !important;min-width:480px !important;max-width:45vw !important;}
       body.nav-desktop #sidebar-mapa:not(.sb-minimized){min-width:480px !important;max-width:45vw !important;}
     }
+    /* A partir de 1280px (2026-10-02): largura FIXA de 700px, igual para
+       todos (ignora a largura guardada no navegador) e sem a alça de
+       arrastar. De 900 a 1279px fica como acima, até decisão. */
+    @media (min-width:1280px){
+      #sidebar-mapa:not(.sb-minimized),body.nav-desktop #sidebar-mapa:not(.sb-minimized){width:700px !important;min-width:700px !important;max-width:none !important;}
+      #sidebar-mapa .sb-alca{display:none !important;}
+    }
 
     /* Botão "Mapa ao Vivo" do topo destacado quando a tela do mapa está
        aberta e o menu não tem item pra ela (admin — ver renderNavSidebar). */
@@ -4523,6 +4530,7 @@ function iniciarDragSidebar(){
   let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
   // Handle de arrasto (faixa de 8px na borda direita da sidebar)
   const handle=document.createElement('div');
+  handle.className='sb-alca';
   handle.style.cssText='position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:20;touch-action:none';
   sb.style.position='relative';sb.appendChild(handle);
   function isMin(){return sb.classList.contains('sb-minimized');}
