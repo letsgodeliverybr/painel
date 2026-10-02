@@ -1357,6 +1357,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        espaço — limita a 45% da área no modo desktop do menu. min-width
        zerado com !important (min-width sempre vence max-width). */
     body.nav-desktop #sidebar-mapa{max-width:45%;min-width:0 !important;}
+    /* Gestor de Pedidos (2026-10-02): lista de pedidos com ~525px a partir de
+       900px (mín. 480px, máx. 45vw), pra caber nome, endereço, status e o
+       aviso "Saída Até" sem cortar. Largura arrastável pela alça da borda
+       direita (iniciarDragSidebar), guardada no localStorage. Abaixo de
+       900px fica como era. */
+    @media (min-width:900px){
+      #sidebar-mapa:not(.sb-minimized){width:var(--sb-mapa-w,525px) !important;min-width:480px !important;max-width:45vw !important;}
+      body.nav-desktop #sidebar-mapa:not(.sb-minimized){min-width:480px !important;max-width:45vw !important;}
+    }
 
     /* Botão "Mapa ao Vivo" do topo destacado quando a tela do mapa está
        aberta e o menu não tem item pra ela (admin — ver renderNavSidebar). */
@@ -4505,7 +4514,12 @@ function _iniciarResizeMapa(){
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
-  const SB_W=600,SNAP=80;
+  const SB_MIN=480,SNAP=80,SB_KEY='lg_sb_mapa_w';
+  const sbMax=()=>Math.round(window.innerWidth*0.45);
+  const desktop=()=>window.innerWidth>=900;
+  const aplicarLargura=w=>{document.documentElement.style.setProperty('--sb-mapa-w',w+'px');};
+  try{const salvo=parseInt(localStorage.getItem(SB_KEY),10);if(salvo>=SB_MIN)aplicarLargura(salvo);}catch(e){}
+  const SB_W=600;
   let dragging=false,startX=0,startW=0,_wasMin=false,fromTab=false;
   // Handle de arrasto (faixa de 8px na borda direita da sidebar)
   const handle=document.createElement('div');
@@ -4525,8 +4539,9 @@ function iniciarDragSidebar(){
   }
   function moveDrag(x){
     if(!dragging)return;
-    const newW=Math.max(0,Math.min(SB_W,startW+(x-startX)));
-    sb.style.width=newW+'px';sb.style.minWidth=newW+'px';
+    const newW=Math.max(0,Math.min(desktop()?sbMax():SB_W,startW+(x-startX)));
+    if(desktop()&&newW>=SB_MIN){aplicarLargura(newW);sb.style.width='';sb.style.minWidth='';}
+    else{sb.style.width=newW+'px';sb.style.minWidth=newW+'px';}
     if(tab)tab.style.transform=newW>24?'translateX(-100%)':'translateX(0)';
   }
   function endDrag(x){
@@ -4534,7 +4549,13 @@ function iniciarDragSidebar(){
     dragging=false;document.body.style.userSelect='';
     const delta=Math.abs(x-startX);
     if(delta<8){snapTo(fromTab?!_wasMin:_wasMin);}
+    else if(desktop()){
+      const w=sb.offsetWidth;
+      if(w<SB_MIN-SNAP)snapTo(true);
+      else{const fim=Math.max(SB_MIN,Math.min(sbMax(),w));aplicarLargura(fim);sb.style.width='';sb.style.minWidth='';try{localStorage.setItem(SB_KEY,String(fim));}catch(e){}snapTo(false);}
+    }
     else{snapTo((parseFloat(sb.style.width)||0)<SB_W-SNAP);}
+    setTimeout(()=>{try{if(typeof map!=='undefined'&&map)map.invalidateSize();}catch(e){}},350);
   }
   handle.addEventListener('mousedown',e=>{e.preventDefault();startDrag(e.clientX,false);});
   handle.addEventListener('touchstart',e=>startDrag(e.touches[0].clientX,false),{passive:true});
@@ -4859,13 +4880,13 @@ function renderPedidosLista(){
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar Entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
                 <span id="badge-wrapper-${p.id}" style="position:relative;flex-shrink:0">
-                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55;max-width:112px;overflow:hidden;box-sizing:border-box"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span style="font-size:10px;flex-shrink:0">▾</span></span>
+                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55;box-sizing:border-box;white-space:nowrap"><span style="white-space:nowrap">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span style="font-size:10px;flex-shrink:0">▾</span></span>
                 </span>
               </div>
             </div>
-            ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <div style="font-size:11px;color:var(--sb-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📍 ${(p.endereco||'—').slice(0,45)}${(p.endereco||'').length>45?'…':''}</div>
+            ${clienteNome?`<div style="font-size:12px;color:var(--sb-text);font-weight:500;overflow-wrap:anywhere;margin-bottom:2px">👤 ${clienteNome}</div>`:''}
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px 8px;flex-wrap:wrap">
+              <div style="font-size:11px;color:var(--sb-text3);overflow-wrap:anywhere;flex:1 1 220px;min-width:0">📍 ${p.endereco||'—'}</div>
               ${horaSaidaAte?`<div style="display:inline-flex;align-items:center;background:transparent;color:#ccc;border:1px solid #3a3a3a;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">Saída Até ${horaSaidaAte} Para Evitar Atraso</div>`:''}
             </div>
             ${_sobDemandaExpandidoId===p.id?_htmlSobDemandaInline(p):''}
