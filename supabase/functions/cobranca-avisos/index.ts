@@ -51,9 +51,9 @@ Deno.serve(async (req) => {
 
   const payload = await req.json().catch(() => ({}));
   const tipo: string = payload.tipo;
-  if (tipo !== "vencimento" && tipo !== "vencido") {
+  if (tipo !== "vencimento" && tipo !== "vencido" && tipo !== "pre_bloqueio") {
     return new Response(
-      JSON.stringify({ error: "tipo deve ser 'vencimento' ou 'vencido'" }),
+      JSON.stringify({ error: "tipo deve ser 'vencimento', 'vencido' ou 'pre_bloqueio'" }),
       { status: 400 },
     );
   }
@@ -87,12 +87,12 @@ Deno.serve(async (req) => {
   const msgTemplate: string = cfg.whatsapp_msg_financeiro ||
     "Olá, {loja}! 👋\n\nSegue a fatura do período de cobrança.\nEm caso de dúvidas entre em contato conosco.\n\nLet's Go Delivery";
 
-  const colunaAviso = tipo === "vencimento" ? "aviso_vencimento_em" : "aviso_vencido_em";
+  const colunaAviso = tipo === "vencimento" ? "aviso_vencimento_em" : tipo === "vencido" ? "aviso_vencido_em" : "aviso_pre_bloqueio_em";
 
   let query = supabase
     .from("cobrancas_lojas")
-    .select(`id, loja_id, valor_total, created_at, ${colunaAviso}, lojas(nome, celular, telefone, tipo_cobranca)`)
-    .eq("status", "pendente")
+    .select(`id, loja_id, valor_total, created_at, data_inicio, data_fim, ${colunaAviso}, lojas(nome, celular, telefone, tipo_cobranca)`)
+    .in("status", tipo === "pre_bloqueio" ? ["pendente", "recusado"] : ["pendente"])
     .is(colunaAviso, null);
   if (forcarCobrancaId) query = query.eq("id", forcarCobrancaId);
 
@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   let enviados = 0;
+  const lojasAvisadas = new Set<string>();
   const detalhes: Record<string, unknown>[] = [];
 
   for (const c of cobs ?? []) {
@@ -110,14 +111,27 @@ Deno.serve(async (req) => {
     if (!forcarCobrancaId) {
       const venc = vencimentoYMD(c.created_at);
       const atraso = diasAtraso(venc);
+      // pre_bloqueio: roda no domingo (vencimento foi quarta → atraso 4);
+      // pega também faturas mais antigas ainda em aberto (atraso >= 1).
       const elegivel = tipo === "vencimento" ? atraso === 0 : atraso >= 1;
       if (!elegivel) continue;
     }
 
+    // pre_bloqueio: 1 mensagem por loja (a mensagem já lista todas as faturas dela)
+    if (tipo === "pre_bloqueio") {
+      if (lojasAvisadas.has(c.loja_id)) { await supabase.from("cobrancas_lojas").update({ [colunaAviso]: new Date().toISOString() }).eq("id", c.id); continue; }
+      lojasAvisadas.add(c.loja_id);
+    }
     const telefoneRaw = (loja.celular || loja.telefone || "").replace(/\D/g, "");
     if (!telefoneRaw) { detalhes.push({ loja: loja.nome, erro: "sem telefone/celular cadastrado" }); continue; }
     const numero = telefoneRaw.startsWith("55") ? telefoneRaw : "55" + telefoneRaw;
-    const msg = msgTemplate.replace(/\{loja\}/g, loja.nome || "");
+    let msg = msgTemplate.replace(/\{loja\}/g, loja.nome || "");
+    if (tipo === "pre_bloqueio") {
+      // loja isenta do bloqueio (ex.: ACAI ATACADO) ou sem fatura vencida: não manda nada
+      const { data: msgBloq } = await supabase.rpc("mensagem_pre_bloqueio_fatura", { p_loja: c.loja_id });
+      if (!msgBloq) { detalhes.push({ loja: loja.nome, cobranca_id: c.id, pulado: "isenta ou sem fatura vencida" }); continue; }
+      msg = msgBloq;
+    }
 
     try {
       const r = await fetch(`${cfg.evolution_api_url}/message/sendText/${cfg.evolution_api_instance}`, {
