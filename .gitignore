@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# arquivos de controle local do Supabase CLI (mudam a cada comando)
+supabase/.temp/
