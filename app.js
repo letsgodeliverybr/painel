@@ -500,14 +500,14 @@ function _diasAtrasoFatura(vencYMD){
   const [hy,hm,hd]=_dataHojeBrasilia().split('-').map(Number);
   return Math.round((Date.UTC(hy,hm-1,hd)-Date.UTC(vy,vm-1,vd))/86400000);
 }
-// Regra de atraso (2026-10-01): multa única = o MAIOR entre 2% do valor
+// Regra de atraso (2026-10-02): multa única = o MAIOR entre 5% do valor
 // original e R$ 5,00; juros = 0,3% ao dia sobre o valor original, por dia
 // corrido desde o vencimento. Os dois começam no dia seguinte ao vencimento
 // (dataAtraso===0, vence hoje, ainda sem multa/juros). Substitui a regra
 // anterior (multa 2% + juros 10%/mês = 0,333%/dia, e taxa fixa de R$ 5 sem
 // juros para fatura < R$ 100). Fatura já paga não passa por aqui: o valor
 // fica congelado em valor_pago_final na aprovação.
-const FATURA_MULTA_PCT=0.02,FATURA_MULTA_MIN=5,FATURA_JUROS_DIA=0.003;
+const FATURA_MULTA_PCT=0.05,FATURA_MULTA_MIN=5,FATURA_JUROS_DIA=0.003;
 function _calcularJurosMultaFatura(valorOriginal,vencYMD){
   const diasAtraso=Math.max(0,_diasAtrasoFatura(vencYMD));
   const valOrig=parseFloat(valorOriginal)||0;
@@ -11993,7 +11993,7 @@ async function verFaturaCobranca(cobId){
     ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
       <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">⚠️ Fatura vencida há ${diasAtraso} dia${diasAtraso>1?'s':''} — juros e multa aplicados</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Valor Original</span><span>R$ ${valorOriginalFatura.toFixed(2)}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (2%, mínimo R$ 5,00)</span><span>R$ ${multa.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Multa (5%, Mínimo R$ 5,00)</span><span>R$ ${multa.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#7f1d1d;padding:3px 0"><span>Juros (0,3%/dia × ${diasAtraso}d)</span><span>R$ ${juros.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#b91c1c;border-top:1px solid #fecaca;margin-top:6px;padding-top:6px"><span>Total Atualizado</span><span>R$ ${valorAtualizado.toFixed(2)}</span></div>
     </div>`:''}
