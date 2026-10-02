@@ -116,6 +116,7 @@ const ICONES_LUCIDE={
   'hard-hat':'<path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M14 6a6 6 0 0 1 6 6v3"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><rect x="2" y="15" width="20" height="4" rx="1"/>',
   'hourglass':'<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
   'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'flag':'<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
   'map-pin':'<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
   'megaphone':'<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
   'menu':'<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>',
@@ -1362,9 +1363,37 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        aviso "Saída Até" sem cortar. Largura arrastável pela alça da borda
        direita (iniciarDragSidebar), guardada no localStorage. Abaixo de
        900px fica como era. */
+    /* Card da lista de pedidos (2026-10-02): a partir de 900px a linha de
+       cima fica fixa numa linha só — número, horários, "Pedido Pronto",
+       "Sobre Demanda", ícones e status — sem mudar tamanho de nada (o
+       espaço vem da largura do painel, abaixo). "Chegou No Local"/"Chegou
+       No Destino" aparecem como "Chegou" com pino/bandeira; o nome completo
+       fica no title e no dropdown. Abaixo de 900px o card fica como era. */
+    .pd-num-linha,.pd-st-curto{display:none}
+    @media (min-width:900px){
+      .pd-st-curto{display:inline-flex !important;align-items:center;gap:3px}
+      .pd-st-longo{display:none !important}
+    }
+    /* Linha de cima fixa só a partir de 1280px: medido em 2026-10-02, ela
+       precisa de 680px de painel (sem reduzir logo, horários, ícones nem
+       chips). Abaixo disso o mapa ficaria pequeno demais, então de 900 a
+       1279px o card continua como era (chips podem descer de linha). */
+    @media (min-width:1280px){
+      .pd-head,.pd-head-esq{flex-wrap:nowrap !important}
+      .pd-head{align-items:center !important}
+      .pd-head-esq{flex:0 0 auto !important}
+      .pd-num-col{display:none !important}
+      .pd-num-linha{display:inline !important;font-size:13px;font-weight:800;color:var(--sb-text);flex-shrink:0}
+    }
     @media (min-width:900px){
       #sidebar-mapa:not(.sb-minimized){width:var(--sb-mapa-w,525px) !important;min-width:480px !important;max-width:45vw !important;}
       body.nav-desktop #sidebar-mapa:not(.sb-minimized){min-width:480px !important;max-width:45vw !important;}
+    }
+    /* A partir de 1280px: 680px padrão (máx. 55vw) pra linha de cima do card
+       caber inteira — ver regra .pd-head acima. */
+    @media (min-width:1280px){
+      #sidebar-mapa:not(.sb-minimized){width:var(--sb-mapa-w,680px) !important;max-width:55vw !important;}
+      body.nav-desktop #sidebar-mapa:not(.sb-minimized){max-width:55vw !important;}
     }
 
     /* Botão "Mapa ao Vivo" do topo destacado quando a tela do mapa está
@@ -4514,8 +4543,10 @@ function _iniciarResizeMapa(){
 function iniciarDragSidebar(){
   const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab');
   if(!sb||!tab)return;
-  const SB_MIN=480,SNAP=80,SB_KEY='lg_sb_mapa_w';
-  const sbMax=()=>Math.round(window.innerWidth*0.45);
+  // chave nova (2026-10-02): a largura padrão subiu pra 680px a partir de
+  // 1280px; quem tinha guardado ~525px na chave antiga começa no novo padrão
+  const SB_MIN=480,SNAP=80,SB_KEY='lg_sb_mapa_w2';
+  const sbMax=()=>Math.round(window.innerWidth*(window.innerWidth>=1280?0.55:0.45));
   const desktop=()=>window.innerWidth>=900;
   const aplicarLargura=w=>{document.documentElement.style.setProperty('--sb-mapa-w',w+'px');};
   try{const salvo=parseInt(localStorage.getItem(SB_KEY),10);if(salvo>=SB_MIN)aplicarLargura(salvo);}catch(e){}
@@ -4858,7 +4889,7 @@ function renderPedidosLista(){
       return `<div class="pd-card${isSel?' selected':''}" onclick="selecionarPedido('${p.id}')">
         <div style="display:flex;gap:10px;align-items:flex-start">
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-            <span style="font-size:13px;font-weight:800;color:var(--sb-text)">#${p.numero||p.id?.substring(0,6)}</span>
+            <span class="pd-num-col" style="font-size:13px;font-weight:800;color:var(--sb-text)">#${p.numero||p.id?.substring(0,6)}</span>
             <div onclick="event.stopPropagation();toggleSelecaoPedido('${p.id}',event)"
               style="width:58px;height:58px;min-width:58px;border-radius:12px;background:${isSel?'#0a3080':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;user-select:none;color:#fff;overflow:hidden">
               ${isSel?'<span style="font-size:20px;font-weight:900;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0a3080">✓</span>':
@@ -4868,8 +4899,9 @@ function renderPedidosLista(){
             </div>
           </div>
           <div style="flex:1;min-width:0;overflow:hidden">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px;flex-wrap:nowrap">
-              <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;flex-wrap:wrap;row-gap:4px">
+            <div class="pd-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px;flex-wrap:nowrap">
+              <div class="pd-head-esq" style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;flex-wrap:wrap;row-gap:4px">
+                <span class="pd-num-linha">#${p.numero||p.id?.substring(0,6)}</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaC}</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">·</span>
                 <span style="font-size:11px;color:var(--sb-text3);flex-shrink:0">${horaU}</span>
@@ -4880,7 +4912,7 @@ function renderPedidosLista(){
                 <button onclick="event.stopPropagation();abrirEditarPedido('${p.id}')" title="Editar" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button onclick="event.stopPropagation();abrirAlocarMotoboy('${p.id}')" title="Alocar Entregador" style="background:#2a2a2a;border:0.5px solid #3A3A3A;border-radius:6px;padding:5px 7px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button>
                 <span id="badge-wrapper-${p.id}" style="position:relative;flex-shrink:0">
-                  <span ${prontoAnim} onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55;box-sizing:border-box;white-space:nowrap"><span style="white-space:nowrap">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span style="font-size:10px;flex-shrink:0">▾</span></span>
+                  <span ${prontoAnim} title="${_escHtml(sk==='agendado'&&p.agendado_para?'Agendado '+formatarAgendado(p.agendado_para):getStatusLabel(p))}" onclick="event.stopPropagation();abrirDropdownStatus(event,'${p.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:${corStatus(sk)}22;color:${corStatus(sk)};border:1px solid ${corStatus(sk)}55;box-sizing:border-box;white-space:nowrap"><span class="pd-st-longo" style="white-space:nowrap">${sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p)}</span><span class="pd-st-curto" style="white-space:nowrap">${sk==='chegou_local'?_icone('map-pin',12)+'Chegou':sk==='chegou_destino'?_icone('flag',12)+'Chegou':(sk==='agendado'&&p.agendado_para?'⏰ '+formatarAgendado(p.agendado_para):getStatusLabel(p))}</span><span style="font-size:10px;flex-shrink:0">▾</span></span>
                 </span>
               </div>
             </div>
