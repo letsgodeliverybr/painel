@@ -43,6 +43,7 @@ let _pedidosAtivosGlobal=[];
 let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
 let _saquesPendentesCount=0;
+let _cadastrosEmAnaliseCount=0; // lojas com status_cadastro='em_analise' (bolinha do Cadastros, só adm)
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
 // ── Ícones de linha (Lucide v1.48.0, licença ISC — https://lucide.dev) ──
@@ -3777,7 +3778,7 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   const _navBtn=item=>{
-    const badge=item.id==='financeiro'&&_saquesPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
+    const badge=item.id==='cadastros'&&currentPerfil==='adm'&&_cadastrosEmAnaliseCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_cadastrosEmAnaliseCount}</span>`:item.id==='financeiro'&&_saquesPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     if(item.submenu){
       const ativo=item.submenu.some(x=>x.id===_navAtivo);
       return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" data-label="${item.label}" aria-label="${item.label}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span><span class="nav-item-seta" style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
@@ -4703,7 +4704,7 @@ async function atualizarTudo(){
   renderPedidosLista();if(map)atualizarMarcadores();
   carregarTabelaMapa();
   if(currentPerfil==='loja')_carregarSaldoTopbar();
-  if(currentPerfil==='adm')_carregarBadgeSaqueRapido();
+  if(currentPerfil==='adm'){_carregarBadgeSaqueRapido();_carregarBadgeCadastros();}
 }
 
 let _wsRealtime=null,_wsHeartbeat=null,_wsReconTimer=null;
@@ -6083,6 +6084,7 @@ async function _setCadastroStatusLoja(lojaId,novoStatus){
   await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
   await dbPatch('usuarios_painel',{ativo:novoStatus==='aprovado'},`?loja_id=eq.${lojaId}`);
   showNotif(`Status Atualizado: ${novoStatus}`,'');
+  _carregarBadgeCadastros();
   renderCadastrosPage('estabelecimentos');
 }
 function _reprovarLoja(id,nome){
@@ -6112,6 +6114,7 @@ async function _confirmarReprovacaoLoja(id){
   await dbPatch('usuarios_painel',{ativo:false},`?loja_id=eq.${id}`);
   document.getElementById('modal-reprovar-loja')?.classList.remove('open');
   showNotif('❌ Loja Reprovada',motivo.substring(0,50),'var(--red)');
+  _carregarBadgeCadastros();
   renderCadastrosPage('estabelecimentos');
 }
 
@@ -9953,6 +9956,19 @@ let _gcResultados={};
 async function _carregarBadgeSaques(){
   const r=await db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=is.null');
   _saquesPendentesCount=Array.isArray(r)?r.length:0;
+  renderNavSidebar(_navAtivo);
+  // Chamado daqui também porque o login de produção (override da Hostinger)
+  // só chama _carregarBadgeSaques — ver memória do login override.
+  _carregarBadgeCadastros();
+}
+// Bolinha do Cadastros (2026-10-05): só lojas em análise — não conta
+// pendentes, reprovadas nem entregadores. Só re-renderiza o menu se o número mudar.
+async function _carregarBadgeCadastros(){
+  if(currentPerfil!=='adm')return;
+  const r=await db('lojas','GET',null,'?select=id&status_cadastro=eq.em_analise');
+  const n=Array.isArray(r)?r.length:0;
+  if(n===_cadastrosEmAnaliseCount)return;
+  _cadastrosEmAnaliseCount=n;
   renderNavSidebar(_navAtivo);
 }
 // Saque rápido = solicitado pelo entregador no app Flutter (RPC solicitar_saque),
