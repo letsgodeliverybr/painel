@@ -371,12 +371,17 @@ async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
 // esperado pra presence events) — o chamador decide se isso vira 5xx
 // (retry do iFood).
 async function processarEventoWebhook(evento: any): Promise<void> {
-  const orderId = evento?.orderId ?? evento?.id;
+  const code = evento?.code ?? evento?.fullCode ?? null;
+  // Evento de presença (KEEPALIVE, a cada ~30s e no "testar conexão" do
+  // portal): não é de pedido — só confirma (202), sem log e sem chamar a API.
+  // Antes o id do EVENTO virava "orderId", a busca do pedido falhava e o
+  // webhook respondia 500 (o iFood reenvia por até 15 min).
+  if (code === "KEEPALIVE") return;
+  const orderId = evento?.orderId;
   if (!orderId) {
     await logErro("webhook_evento_sem_orderId", { evento });
     return;
   }
-  const code = evento?.code ?? evento?.fullCode ?? null;
   const metadata = evento?.metadata;
 
   const { data: existente, error: existeErr } = await supabase
