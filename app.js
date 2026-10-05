@@ -7519,7 +7519,7 @@ async function _buscarPedidosAdmin(){
   // Finalizados, Cancelados, KM, Faturamento, Custo, Lucro) são todos
   // calculados sobre esse array, então precisam do conjunto completo.
   let qs=`?order=created_at.desc${_lojaFiltro()}`;
-  let qsCreditos=`?select=tipo,valor,observacoes&order=created_at.desc${_lojaFiltro()}`;
+  let qsCreditos=`?select=tipo,valor,observacoes,origem&order=created_at.desc${_lojaFiltro()}`;
   // pedidos.created_at é `timestamp` SEM fuso, já em hora local de Brasília
   // (confirmado via information_schema) — compara direto, sem Date()/-03:00.
   // creditos_lojas.created_at é `timestamptz` de verdade (também confirmado)
@@ -7574,6 +7574,9 @@ async function _buscarPedidosAdmin(){
   // próprio depósito — a receita real dela nesse card.
   const _avulsos=(Array.isArray(_creditosRes)?_creditosRes:[]).filter(c=>{
     const obs=(c.observacoes||'').toLowerCase();
+    // Ajuste que zera saldo de loja de faturamento (2026-10-05) não é dinheiro
+    // recebido — só corrige débitos gravados por engano. Não é receita.
+    if(c.origem==='ajuste_zerar_faturamento')return false;
     return !obs.startsWith('entrega #')&&!obs.startsWith('estorno #');
   });
   const _totalCreditos=_avulsos.filter(c=>c.tipo==='credito').reduce((s,c)=>s+(parseFloat(c.valor)||0),0);
@@ -9781,7 +9784,7 @@ async function carregarRelatorio(){
   if(ate)filtro+=`&created_at=lte.${ate}T23:59:59.999`;
   if(lojaId)filtro+=`&loja_id=eq.${lojaId}`;
   filtro+=_lojaFiltro();
-  let filtroCreditos='?select=tipo,valor,observacoes';
+  let filtroCreditos='?select=tipo,valor,observacoes,origem';
   if(de)filtroCreditos+=`&created_at=gte.${_inicioDiaBrasilia(de)}`;
   if(ate)filtroCreditos+=`&created_at=lte.${_fimDiaBrasilia(ate)}`;
   if(lojaId)filtroCreditos+=`&loja_id=eq.${lojaId}`;
@@ -9800,6 +9803,9 @@ async function carregarRelatorio(){
   // estão contados via pedidos.valor — ver mesmo filtro em _scBuscar).
   const avulsos=(Array.isArray(creditosLojas)?creditosLojas:[]).filter(c=>{
     const obs=(c.observacoes||'').toLowerCase();
+    // Ajuste que zera saldo de loja de faturamento (2026-10-05) não é dinheiro
+    // recebido — só corrige débitos gravados por engano. Não é receita.
+    if(c.origem==='ajuste_zerar_faturamento')return false;
     return !obs.startsWith('entrega #')&&!obs.startsWith('estorno #');
   });
   const somaPedidos=pedidos.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
