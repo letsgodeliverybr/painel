@@ -2951,12 +2951,12 @@ async function alterarStatusPedido(pedidoId,novoStatus){
 // faturamento paga pela fatura semanal — antes o débito era gravado pra
 // qualquer loja e virava "saldo" negativo falso (zerado em 30/09 com
 // migrations/zerar_saldo_lojas_faturamento.sql). Tipo desconhecido (falha
-// ao consultar) → debita, como antes, pra nunca deixar loja de crédito sem cobrança.
+// ao consultar) → NÃO debita (2026-10-03): na dúvida, não mexe na carteira.
 async function _deveDebitarSaldo(lojaId){
   if(!lojaId)return false;
   let l=allLojas.find(x=>x.id===lojaId);
   if(!l?.tipo_cobranca){const r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,tipo_cobranca`).catch(()=>null);l=Array.isArray(r)&&r[0]?r[0]:null;}
-  return !l?.tipo_cobranca||l.tipo_cobranca==='credito';
+  return l?.tipo_cobranca==='credito';
 }
 async function _estornarDebitoEntrega(pedido){
   if(!pedido?.loja_id||!pedido?.numero)return;
