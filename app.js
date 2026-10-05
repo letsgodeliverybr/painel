@@ -2187,6 +2187,20 @@ function _toggleSenhaVisivel(inputId,btn){
   const el=document.getElementById(inputId);if(!el)return;
   if(el.type==='password'){el.type='text';btn.innerHTML=_icone('eye-off',16);}else{el.type='password';btn.innerHTML=_icone('eye',16);}
 }
+// Senha do login do PAINEL (2026-10-05): o login de produção confere
+// usuarios_painel.senha, não o Auth — trocar só no Auth não mudava a senha
+// de entrada. Grava nos dois: primeiro no Auth (se a conta existir lá) e
+// depois em usuarios_painel. Conta sem usuário no Auth (criada direto em
+// usuarios_painel) não bloqueia mais a troca.
+async function _redefinirSenhaPainel(email,novaSenha,filtroUsuarios){
+  const resAuth=await _redefinirSenhaAuth(email,novaSenha);
+  const semAuth=!resAuth.ok&&/não encontrado/i.test(resAuth.error||'');
+  if(!resAuth.ok&&!semAuth)return resAuth;
+  const r=await dbPatch('usuarios_painel',{senha:novaSenha},`${filtroUsuarios}&select=id`);
+  if(r===null)return{ok:false,error:'Senha Do Painel Não Foi Atualizada.'};
+  if(!r.length)return{ok:false,error:'Nenhum Login Do Painel Encontrado Para Atualizar.'};
+  return{ok:true,semAuth};
+}
 async function _redefinirSenhaAuth(email,novaSenha){
   let sessao=null;
   try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
@@ -6699,7 +6713,7 @@ async function salvarEdicaoUsuario(userId){
   if(novaSenha){
     if(novaSenha.length<6){if(fb)fb.innerHTML='<span style="color:#ef4444">Nova Senha Precisa Ter No Mínimo 6 Caracteres.</span>';return;}
     if(fb)fb.innerHTML='<span style="color:var(--text3)">Atualizando Senha…</span>';
-    const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
+    const resSenha=await _redefinirSenhaPainel(emailOriginal,novaSenha,`?id=eq.${userId}`);
     if(!resSenha.ok){if(fb)fb.innerHTML=`<span style="color:#ef4444">❌ Erro Ao Redefinir Senha: ${resSenha.error}</span>`;return;}
   }
   const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null};
@@ -9082,7 +9096,7 @@ async function salvarEdicaoLoja(lojaId){
   if(novaSenha){
     if(novaSenha.length<6){if(fb)fb.innerHTML='<div style="color:#ef4444;font-size:13px">Nova Senha Precisa Ter No Mínimo 6 Caracteres.</div>';return;}
     if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">Atualizando Senha…</div>';
-    const resSenha=await _redefinirSenhaAuth(emailOriginal,novaSenha);
+    const resSenha=await _redefinirSenhaPainel(emailOriginal,novaSenha,`?loja_id=eq.${lojaId}&perfil=eq.loja`);
     if(!resSenha.ok){if(fb)fb.innerHTML=`<div style="color:#ef4444;font-size:13px">❌ Erro Ao Redefinir Senha: ${resSenha.error}</div>`;return;}
   }
   if(fb)fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Salvando...</div>';
