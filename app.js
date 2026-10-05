@@ -2156,6 +2156,10 @@ async function _dbTodasLinhas(table,filtroBase,pageSize=500){
   return todas;
 }
 
+// Colunas de usuarios_painel liberadas para leitura pela API (2026-10-05):
+// a senha deixa de ser legível pela chave pública — toda leitura/retorno
+// dessa tabela precisa listar as colunas (select=* passa a dar erro).
+const _UP_COLS='id,email,nome,perfil,loja_id,ativo,created_at';
 async function dbPatch(table,body,filter,tokenOverride){
   const url=`${SB_URL}/rest/v1/${table}${filter}`;
   const h={'apikey':SB_KEY,'Authorization':await _authHeader(tokenOverride),'Content-Type':'application/json','Prefer':'return=representation'};
@@ -3912,7 +3916,7 @@ async function fazerLogin(){
     if(r.ok)session=await r.json();
   }catch{}
   if(!session?.access_token){btn.disabled=false;btn.textContent='Entrar →';errEl.textContent='E-mail, Senha Ou Perfil Incorretos.';errEl.style.display='block';return;}
-  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true`,session.access_token);
+  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&perfil=eq.${perfil}&ativo=eq.true&select=${_UP_COLS}`,session.access_token);
   btn.disabled=false;btn.textContent='Entrar →';
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail, Senha Ou Perfil Incorretos.';errEl.style.display='block';return;}
   currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
@@ -6082,7 +6086,7 @@ async function _setCadastroStatusLoja(lojaId,novoStatus){
   const patch={status_cadastro:novoStatus,updated_at:new Date().toISOString()};
   if(novoStatus==='aprovado')patch.ativo=true;
   await dbPatch('lojas',patch,`?id=eq.${lojaId}`);
-  await dbPatch('usuarios_painel',{ativo:novoStatus==='aprovado'},`?loja_id=eq.${lojaId}`);
+  await dbPatch('usuarios_painel',{ativo:novoStatus==='aprovado'},`?loja_id=eq.${lojaId}&select=id`);
   showNotif(`Status Atualizado: ${novoStatus}`,'');
   _carregarBadgeCadastros();
   renderCadastrosPage('estabelecimentos');
@@ -6111,7 +6115,7 @@ async function _confirmarReprovacaoLoja(id){
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
   const res=await dbPatch('lojas',{status_cadastro:'reprovado',motivo_reprovacao:motivo,ativo:false,updated_at:new Date().toISOString()},`?id=eq.${id}`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">Erro Ao Salvar.</span>';return;}
-  await dbPatch('usuarios_painel',{ativo:false},`?loja_id=eq.${id}`);
+  await dbPatch('usuarios_painel',{ativo:false},`?loja_id=eq.${id}&select=id`);
   document.getElementById('modal-reprovar-loja')?.classList.remove('open');
   showNotif('❌ Loja Reprovada',motivo.substring(0,50),'var(--red)');
   _carregarBadgeCadastros();
@@ -6669,14 +6673,14 @@ async function criarNovoEntregador(){
 
 async function _renderUsuariosTab(el){
   el.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button><button class="btn-sm btn-primary-sm" onclick="renderCadastrosPage('usuarios')">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado Em</th><th>Ações</th></tr></thead><tbody id="tbody-cad-usuarios"></tbody></table></div></div>`;
-  const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
+  const data=await db('usuarios_painel','GET',null,`?perfil=neq.loja&order=created_at.desc&select=${_UP_COLS}`),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-cad-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
   tbody.innerHTML=data.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${formatarDataHora(u.created_at)}</td><td><button onclick="abrirEditarUsuario('${u.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button></td></tr>`;}).join('');
 }
 
 async function abrirEditarUsuario(userId){
-  const arr=await db('usuarios_painel','GET',null,`?id=eq.${userId}`);
+  const arr=await db('usuarios_painel','GET',null,`?id=eq.${userId}&select=${_UP_COLS}`);
   const u=Array.isArray(arr)?arr[0]:arr;if(!u)return;
   const lojas=await db('lojas','GET',null,'');
   const sel='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px';
@@ -6700,7 +6704,7 @@ async function salvarEdicaoUsuario(userId){
   }
   const update={nome:document.getElementById('eu-nome')?.value||'',email:document.getElementById('eu-email')?.value||'',perfil:document.getElementById('eu-perfil')?.value||'',ativo:document.getElementById('eu-ativo')?.value==='true',loja_id:document.getElementById('eu-loja-id')?.value||null};
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando…</span>';
-  const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}`);
+  const res=await dbPatch('usuarios_painel',update,`?id=eq.${userId}&select=id`);
   if(res===null){if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro ao salvar. Veja o console.</span>';showNotif('❌ Erro Ao Salvar Usuário','','var(--red)');return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e">✅ Salvo Com Sucesso!</span>';showNotif('✅ Usuário Atualizado!',update.nome);
   setTimeout(()=>{document.getElementById('modal-editar-usuario')?.classList.remove('open');renderCadastrosPage('usuarios');},1200);
@@ -9188,7 +9192,7 @@ async function criarLoja(){
   };
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0){fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro Ao Cadastrar Loja.</div>';return;}
-  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true});
+  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:true},'?select=id');
   await logAcao('criar_loja',{nome,email});
   fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Loja Cadastrada!</div>';showNotif('Loja Criada!',`${nome} pode acessar com ${email}`);
   setTimeout(()=>fecharModal('modal-loja'),2000);
@@ -9265,7 +9269,7 @@ async function _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,e
   if(categoria)payload.categoria=categoria;
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0)return{ok:false,erro:'Erro Ao Enviar Cadastro.'};
-  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false});
+  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false},'?select=id');
   return{ok:true};
 }
 
@@ -9719,7 +9723,7 @@ function _clfFimHtml(){
 
 async function renderUsuariosPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('users',22)} Usuários Do Painel</div><button class="btn-sm btn-primary-sm" onclick="abrirModalUsuario()">${_icone('plus',16,'btn-ico')}Novo Usuário</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja</th><th>Status</th><th>Criado Em</th></tr></thead><tbody id="tbody-usuarios"></tbody></table></div></div></div>`;
-  const data=await db('usuarios_painel','GET',null,'?perfil=neq.loja&order=created_at.desc'),lojas=await db('lojas','GET',null,'');
+  const data=await db('usuarios_painel','GET',null,`?perfil=neq.loja&order=created_at.desc&select=${_UP_COLS}`),lojas=await db('lojas','GET',null,'');
   const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
   const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'};
   tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Usuário</td></tr>':data.map(u=>{const loja=lojas.find(l=>l.id===u.loja_id);return`<tr><td style="font-weight:600;color:var(--text)">${u.nome}</td><td style="font-size:12px">${u.email}</td><td><span class="user-perfil-badge ${badgeMap[u.perfil]||''}">${u.perfil?.toUpperCase()}</span></td><td style="font-size:12px;color:var(--text3)">${loja?loja.nome:'—'}</td><td><span class="p-badge b-${u.ativo?'em_rota':'fila'}">${u.ativo?'Ativo':'Inativo'}</span></td><td style="font-size:12px;color:var(--text3)">${u.created_at?formatarDataHora(u.created_at):'—'}</td></tr>`;}).join('');
@@ -9738,7 +9742,7 @@ async function criarUsuario(){
   fb.innerHTML='<div style="color:var(--text2);font-size:13px">⏳ Cadastrando...</div>';
   const auth=await _criarContaAuth(email,senha);
   if(!auth.ok){fb.innerHTML=`<div style="color:var(--red);font-size:13px">❌ Erro Auth: ${auth.error}</div>`;return;}
-  const result=await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil,loja_id:lojaId,ativo:true});
+  const result=await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil,loja_id:lojaId,ativo:true},'?select=id');
   await logAcao('criar_usuario',{nome,email,perfil});
   if(result&&result.length>0){fb.innerHTML='<div style="color:var(--green);font-size:13px">✅ Usuário Cadastrado!</div>';showNotif('Usuário Criado!',`${nome} (${perfil})`);setTimeout(()=>fecharModal('modal-usuario'),2000);}
   else fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro. E-mail Pode Já Estar Cadastrado.</div>';
@@ -9773,7 +9777,7 @@ async function carregarRelatorio(){
     db('pedidos','GET',null,filtro),
     isLoja?Promise.resolve([]):db('entregadores','GET',null,''),
     isLoja?Promise.resolve([]):db('lojas','GET',null,''),
-    isLoja?Promise.resolve([]):db('usuarios_painel','GET',null,''),
+    isLoja?Promise.resolve([]):db('usuarios_painel','GET',null,`?select=${_UP_COLS}`),
     db('creditos_lojas','GET',null,filtroCreditos),
   ]);
   document.getElementById('r-total').textContent=pedidos.length;
@@ -9941,7 +9945,7 @@ async function _runAuditoria(){
 
 async function renderLogsPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('scroll-text',22)} Logs De Ações</div><button class="btn-sm btn-primary-sm" onclick="renderLogsPage()">${_icone('refresh-cw',16,'btn-ico')}Atualizar</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="tbody-logs"></tbody></table></div></div></div>`;
-  const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,'');
+  const logs=await db('logs_acoes','GET',null,'?order=created_at.desc&limit=100'),usuarios=await db('usuarios_painel','GET',null,`?select=${_UP_COLS}`);
   const tbody=document.getElementById('tbody-logs');if(!tbody)return;
   tbody.innerHTML=logs.length===0?'<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Log</td></tr>':logs.map(l=>{const u=usuarios.find(x=>x.id===l.usuario_id);return`<tr><td style="font-size:12px;color:var(--text3)">${formatarDataHora(l.created_at)}</td><td style="font-weight:600;color:var(--text)">${u?u.nome:'—'} <span style="font-size:10px;color:var(--text3)">(${u?.perfil||'—'})</span></td><td><span class="p-badge b-disponivel">${l.acao}</span></td><td style="font-size:12px;color:var(--text3)">${l.detalhes?JSON.stringify(l.detalhes).substring(0,80):'—'}</td></tr>`;}).join('');
 }
