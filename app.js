@@ -11413,20 +11413,32 @@ async function _renderRetornoSaqueRapido(){
   const acao=dev
     ?`<span style="background:#d1fae5;color:#059669;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">${_icone('check',14)} Devolvido Em ${formatarDataHora(dev.devolvido_em)}</span>`
     :arr.length
-      ?`<button onclick="_aprovarRetornoSaqueRapido('${ini}',${total})" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Retorno</button>`
+      ?`<button id="as-retorno-btn" disabled onclick="_aprovarRetornoSaqueRapido('${ini}',${total})" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.45;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Retorno</button>`
       :`<span style="font-size:12px;color:var(--text3)">Nenhum Saque Rápido Pago Na Semana</span>`;
   wrap.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="padding:16px 20px">
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">${_icone('zap',16)} RETORNO AO SAQUE RÁPIDO <span style="font-weight:500;color:var(--text3)">· ${dm(ini)} A ${dm(fim)}</span></div>
     <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
       ${item('Valor Pago',_rcgFmt(pago),'#10b981')}
-      ${item('Lucro',_rcgFmt(lucro),'#ef4444')}
+      ${item('Lucro',_rcgFmt(lucro),'var(--accent)')}
       ${item('% De Lucro',pct,'var(--text)')}
       ${item('Total A Devolver',_rcgFmt(total),'var(--accent)')}
       <div style="margin-left:auto">${acao}</div>
     </div>
+    ${!dev&&arr.length?`<label style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;color:var(--text2)">
+      <input type="checkbox" id="as-retorno-destino" onchange="_srRetornoDestinoToggle(this.checked)" style="width:16px;height:16px;cursor:pointer;flex-shrink:0"/>
+      <span style="min-width:0;overflow-wrap:anywhere"><b style="color:var(--text)">Destino Da Devolução:</b> Chave Pix <span style="font-family:monospace;font-size:12px;color:var(--text)">${_SR_RETORNO_DESTINO.chave}</span> · ${_SR_RETORNO_DESTINO.tipo} · ${_SR_RETORNO_DESTINO.banco}</span>
+    </label>`:''}
   </div></div>`;
 }
+// Destino fixo da devolução do Saque Rápido (conta da empresa). O botão
+// Aprovar Retorno só habilita depois de marcar a confirmação do destino.
+const _SR_RETORNO_DESTINO={chave:'26e1914e-dd34-4603-963c-db0da81db7c5',tipo:'Chave Aleatória',banco:'Mercado Pago'};
+function _srRetornoDestinoToggle(ok){
+  const b=document.getElementById('as-retorno-btn');if(!b)return;
+  b.disabled=!ok;b.style.opacity=ok?'1':'.45';b.style.cursor=ok?'pointer':'not-allowed';
+}
 async function _aprovarRetornoSaqueRapido(ini,total){
+  if(!document.getElementById('as-retorno-destino')?.checked){showNotif('Atenção','Confirme O Destino Da Devolução','var(--yellow)');return;}
   if(!confirm(`Somar ${_rcgFmt(total)} Ao Caixa Do Saque Rápido (Semana De ${ini.split('-').reverse().join('/')})?\nIsso Só Pode Ser Feito Uma Vez Por Semana.`))return;
   let r,corpo;
   try{
