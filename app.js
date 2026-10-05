@@ -11359,8 +11359,67 @@ function _renderAprovarSaques(){
       </div>
       <div id="as-pendentes-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div></div>
     </div></div>
+    <div id="as-retorno-sr-wrap"></div>
     <div id="as-historico-wrap"></div>`;
   _buscarPagamentos();
+  _renderRetornoSaqueRapido();
+}
+
+// Retorno ao Saque Rápido (2026-10-05): linha fixa com a última semana
+// FECHADA (segunda 00:00 a domingo 23:59, horário de Brasília) pela data de
+// aprovação do saque. Mesma fonte da tela Saque Rápido (_srAplicarPeriodo):
+// status pago + chave_pix preenchida. "Aprovar Retorno" soma pago + lucro ao
+// caixa do Saque Rápido pela função aprovar_retorno_saque_rapido, que recalcula
+// no banco, grava a semana em saque_rapido_retornos e recusa repetição.
+function _srSemanaFechada(){
+  const [y,m,d]=_dataHojeBrasilia().split('-').map(Number);
+  const hoje=new Date(Date.UTC(y,m-1,d));
+  const seg=new Date(hoje);seg.setUTCDate(hoje.getUTCDate()-((hoje.getUTCDay()+6)%7)-7);
+  const dom=new Date(seg);dom.setUTCDate(seg.getUTCDate()+6);
+  const iso=x=>x.toISOString().slice(0,10);
+  return{ini:iso(seg),fim:iso(dom)};
+}
+async function _renderRetornoSaqueRapido(){
+  const wrap=document.getElementById('as-retorno-sr-wrap');if(!wrap)return;
+  const {ini,fim}=_srSemanaFechada();
+  const [rows,ret]=await Promise.all([
+    db('saques','GET',null,`?select=valor,valor_liquido,taxa&status=eq.pago&chave_pix=not.is.null&aprovado_em=gte.${_inicioDiaBrasilia(ini)}&aprovado_em=lte.${_fimDiaBrasilia(fim)}`),
+    db('saque_rapido_retornos','GET',null,`?semana_inicio=eq.${ini}&select=valor_total,devolvido_em`),
+  ]);
+  const arr=Array.isArray(rows)?rows:[];
+  const pago=Math.round(arr.reduce((s,r)=>s+(parseFloat(r.valor_liquido||r.valor)||0),0)*100)/100;
+  const lucro=Math.round(arr.reduce((s,r)=>s+(parseFloat(r.taxa)||0),0)*100)/100;
+  const total=Math.round((pago+lucro)*100)/100;
+  const pct=pago>0?(lucro/pago*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%':'—';
+  const dev=Array.isArray(ret)&&ret[0]?ret[0]:null;
+  const dm=s=>s.slice(8,10)+'/'+s.slice(5,7);
+  const item=(rot,val,cor)=>`<div style="min-width:120px"><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:2px">${rot}</div><div style="font-size:17px;font-weight:700;color:${cor}">${val}</div></div>`;
+  const acao=dev
+    ?`<span style="background:#d1fae5;color:#059669;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">${_icone('check',14)} Devolvido Em ${formatarDataHora(dev.devolvido_em)}</span>`
+    :arr.length
+      ?`<button onclick="_aprovarRetornoSaqueRapido('${ini}',${total})" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Retorno</button>`
+      :`<span style="font-size:12px;color:var(--text3)">Nenhum Saque Rápido Pago Na Semana</span>`;
+  wrap.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="padding:16px 20px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">${_icone('zap',16)} RETORNO AO SAQUE RÁPIDO <span style="font-weight:500;color:var(--text3)">· ${dm(ini)} A ${dm(fim)}</span></div>
+    <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+      ${item('Valor Pago',_rcgFmt(pago),'#10b981')}
+      ${item('Lucro',_rcgFmt(lucro),'#ef4444')}
+      ${item('% De Lucro',pct,'var(--text)')}
+      ${item('Total A Devolver',_rcgFmt(total),'var(--accent)')}
+      <div style="margin-left:auto">${acao}</div>
+    </div>
+  </div></div>`;
+}
+async function _aprovarRetornoSaqueRapido(ini,total){
+  if(!confirm(`Somar ${_rcgFmt(total)} Ao Caixa Do Saque Rápido (Semana De ${ini.split('-').reverse().join('/')})?\nIsso Só Pode Ser Feito Uma Vez Por Semana.`))return;
+  let r,corpo;
+  try{
+    r=await fetch(`${SB_URL}/rest/v1/rpc/aprovar_retorno_saque_rapido`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify({p_semana_inicio:ini,p_usuario:currentUser?.nome||currentUser?.email||''})});
+    corpo=await r.json().catch(()=>null);
+  }catch(e){showNotif('Erro','Falha De Conexão — Nada Foi Alterado','var(--red)');return;}
+  if(!r.ok){showNotif('Retorno Não Aprovado',corpo?.message||'Erro Ao Aprovar','var(--red)');_renderRetornoSaqueRapido();return;}
+  showNotif('✅ Retorno Aprovado!',`Caixa Do Saque Rápido: ${_rcgFmt(corpo?.caixa_depois)}`);
+  _renderRetornoSaqueRapido();
 }
 
 async function _renderHistoricoAprovarSaques(inicio,fim){
@@ -11578,7 +11637,9 @@ async function _aprovarSaquesRapidosSelecionados(){
   _saquesRapidosPendentesCount=Math.max(0,_saquesRapidosPendentesCount-ok);
   renderNavSidebar(_navAtivo);
   _atualizarAlertaSaqueRapidoMapa();
-  if(decrementoCaixa>0)await _srPersistirCaixa(Math.max(0,_srCaixaAtual-decrementoCaixa));
+  // Relê o caixa do banco antes de subtrair (2026-10-05): o valor em memória
+  // pode estar velho (ex: retorno semanal somado em outra aba) e seria sobrescrito.
+  if(decrementoCaixa>0){await _srCarregarCaixa();await _srPersistirCaixa(Math.max(0,_srCaixaAtual-decrementoCaixa));}
   showNotif(`✅ ${ok} Saque(s) Rápido(s) Aprovado(s)!`,jaProcessados?`${jaProcessados} já tinha(m) sido processado(s) — nada foi alterado.`:'');
   _buscarSaquesRapidos();
   _srAplicarPeriodo();
