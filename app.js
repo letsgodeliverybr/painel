@@ -5296,6 +5296,9 @@ async function abrirAlocarMotoboy(pedidoId){
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const _p=allPedidos.find(x=>x.id===pedidoId);
+  // Pedido de teste do Open Delivery não recebe entregador (2026-10-06): o banco
+  // também recusa (tg_aa_od_teste_sem_alocacao). Teste os webhooks pelo seletor.
+  if(_p?.od_teste){showNotif('Pedido De Teste','Não Aloque Entregador: Use O Seletor De Status Para Testar.','var(--yellow)');return;}
   // Trava real (2026-09-10, bug real corrigido) — o banner em
   // abrirAlocarMotoboy() é só contexto visual, essa confirmação é o que
   // de fato impede o clique acidental: pedido já tem entregador ATIVO
