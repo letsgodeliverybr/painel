@@ -12653,6 +12653,7 @@ function renderConfiguracaoPage(aba){
   if(_configAba==='cliente'){_renderConfigCliente();return;}
   if(_configAba==='integracao'){_renderConfigIntegracao();return;}
   if(_configAba==='logs-ifood'){_renderConfigLogsIfood();return;}
+  if(_configAba==='open-delivery'&&currentPerfil==='adm'){_renderConfigOpenDelivery();return;}
   const abaInfo=abas.find(a=>a.id===_configAba);
   document.getElementById('config-content').innerHTML=`
     <div class="card" style="max-width:520px;margin:40px auto;text-align:center;padding:48px 32px">
@@ -12664,6 +12665,145 @@ function renderConfiguracaoPage(aba){
 }
 
 const _ss='background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:13px';
+
+// ── OPEN DELIVERY (admin) — etapa 5 (2026-10-06) ──
+// Tudo passa por funções do banco que exigem a SESSÃO REAL de um admin
+// (od_admin_*). O secret da credencial só aparece no modal de criação, uma
+// vez, e é apagado da tela ao fechar — nunca fica em variável, log ou storage.
+async function _odRpc(fn,args={}){
+  let sessao=null;try{sessao=JSON.parse(sessionStorage.getItem('lg_session')||'null');}catch{}
+  if(!sessao?.access_token)return{ok:false,error:'Sessão Expirada — Faça Login Novamente.'};
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify(args)});
+    const t=await r.text();let d=null;try{d=t?JSON.parse(t):null;}catch{}
+    if(!r.ok)return{ok:false,error:d?.message||`Erro ${r.status}`};
+    return{ok:true,data:d};
+  }catch{return{ok:false,error:'Erro De Conexão.'};}
+}
+// atributos HTML: também escapa aspas (o _escHtml do painel não escapa)
+const _odAttr=v=>_escHtml(v).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const _odBtn=(cor,txt,onclick)=>`<button onclick="${onclick}" style="background:${cor};color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${txt}</button>`;
+async function _renderConfigOpenDelivery(){
+  const el=document.getElementById('config-content');if(!el)return;
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:20px"><div style="padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <div style="font-size:16px;font-weight:800;color:var(--text)">${_icone('rocket',18)} Credenciais Open Delivery</div>
+        <div style="margin-left:auto">${_odBtn('var(--accent)','+ Nova Credencial','_odModalNova()')}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Uma credencial ativa por loja. O secret aparece só uma vez, na criação. Revogar derruba os tokens na hora.</div>
+      <div id="od-cred-lista" style="overflow-x:auto">Carregando...</div>
+    </div></div>
+    <div class="card"><div style="padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="font-size:16px;font-weight:800;color:var(--text)">${_icone('send',18)} Fila De Eventos (Webhook)</div>
+        <select id="od-ev-filtro" onchange="_odCarregarEventos()" style="${_ss};width:auto;margin-left:auto">
+          <option value="">Todos</option><option value="pendente">Pendentes</option><option value="falhou" selected>Com Falha</option><option value="descartado">Descartados</option><option value="enviado">Enviados</option>
+        </select>
+        ${_odBtn('#475569','Atualizar','_odCarregarEventos()')}
+      </div>
+      <div id="od-ev-lista" style="overflow-x:auto">Carregando...</div>
+    </div></div>`;
+  _odCarregarCredenciais();_odCarregarEventos();
+}
+async function _odCarregarCredenciais(){
+  const el=document.getElementById('od-cred-lista');if(!el)return;
+  const r=await _odRpc('od_admin_listar_credenciais');
+  if(!r.ok){el.innerHTML=`<div style="color:#ef4444;font-size:13px">${_escHtml(r.error)}</div>`;return;}
+  const lista=Array.isArray(r.data)?r.data:[];
+  if(!lista.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma Credencial Criada.</div>';return;}
+  window._odCredCache=lista;
+  el.innerHTML=`<table style="width:100%;min-width:760px"><thead><tr><th>Loja</th><th>Client ID</th><th>Webhook</th><th>Modo</th><th>Situação</th><th>Criada</th><th></th></tr></thead><tbody>${lista.map(c=>`<tr>
+    <td style="font-weight:600;color:var(--text)">${_escHtml(c.loja||'—')}</td>
+    <td style="font-family:monospace;font-size:12px">${_escHtml(c.client_id)}</td>
+    <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_odAttr(c.webhook_url||'')}">${_escHtml(c.webhook_url||'— sem webhook')}</td>
+    <td>${c.modo_teste?'<span style="color:#f59e0b;font-weight:700;font-size:12px">Teste</span>':'<span style="font-size:12px">Produção</span>'}</td>
+    <td>${c.ativo?'<span style="color:#10b981;font-weight:700;font-size:12px">Ativa</span>':`<span style="color:#ef4444;font-size:12px">Revogada ${c.revogado_em?formatarDataHora(c.revogado_em):''}</span>`}</td>
+    <td style="font-size:11px;color:var(--text3)">${c.criado_em?formatarDataHora(c.criado_em):''}<br>${_escHtml(c.criado_por||'')}</td>
+    <td style="white-space:nowrap">${c.ativo?_odBtn('#475569','Editar',`_odModalEditar('${c.id}')`)+' '+_odBtn('#ef4444','Revogar',`_odRevogar('${c.id}')`):''}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function _odModal(id,titulo,corpo){
+  let m=document.getElementById(id);if(!m){m=document.createElement('div');m.id=id;m.className='modal-overlay';document.body.appendChild(m);}
+  m.innerHTML=`<div class="modal" style="max-width:520px"><div class="modal-header"><span class="modal-title">${titulo}</span><button class="modal-close" onclick="_odFecharModal('${id}')">${_icone('x',18)}</button></div><div class="modal-body">${corpo}</div></div>`;
+  m.classList.add('open');
+}
+function _odFecharModal(id){const m=document.getElementById(id);if(m){m.classList.remove('open');m.innerHTML='';}}
+const _odCampo=(id,rot,val='',ph='')=>`<label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin:10px 0 4px">${rot}</label><input id="${id}" value="${_odAttr(val)}" placeholder="${_odAttr(ph)}" style="${_ss}"/>`;
+async function _odModalNova(){
+  const lojas=await db('lojas','GET',null,'?select=id,nome&tipo_cobranca=eq.faturamento&ativo=eq.true&order=nome.asc');
+  _odModal('modal-od-nova',`${_icone('rocket',18)} Nova Credencial`,`
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">Loja (Só Faturamento)</label>
+    <select id="od-n-loja" style="${_ss}"><option value="">Selecione…</option>${(Array.isArray(lojas)?lojas:[]).map(l=>`<option value="${l.id}">${_escHtml(l.nome)}</option>`).join('')}</select>
+    ${_odCampo('od-n-url','URL Do Webhook (https)','','https://sistema-do-parceiro.com.br/deliveryEvent')}
+    ${_odCampo('od-n-merchant','MerchantId Do Parceiro')}
+    ${_odCampo('od-n-app','AppId Do Parceiro')}
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="od-n-teste" checked style="width:16px;height:16px"/> Modo Teste (Pedidos Não São Despachados Nem Cobrados)</label>
+    <div id="od-n-fb" style="margin-top:12px;font-size:13px"></div>
+    <div style="margin-top:14px;text-align:right">${_odBtn('var(--accent)','Criar Credencial','_odCriar()')}</div>`);
+}
+async function _odCriar(){
+  const fb=document.getElementById('od-n-fb');const loja=document.getElementById('od-n-loja')?.value;
+  if(!loja){fb.innerHTML='<span style="color:#ef4444">Selecione A Loja.</span>';return;}
+  fb.innerHTML='<span style="color:var(--text3)">Criando…</span>';
+  const r=await _odRpc('od_admin_criar_credencial',{p_loja_id:loja,p_webhook_url:document.getElementById('od-n-url').value.trim(),p_merchant_id:document.getElementById('od-n-merchant').value.trim(),p_app_id:document.getElementById('od-n-app').value.trim(),p_modo_teste:document.getElementById('od-n-teste').checked});
+  if(!r.ok){fb.innerHTML=`<span style="color:#ef4444">${_escHtml(r.error)}</span>`;return;}
+  _odFecharModal('modal-od-nova');
+  // secret exibido UMA vez; ao fechar o modal, o conteúdo é apagado
+  _odModal('modal-od-secret',`${_icone('circle-check',18)} Credencial Criada`,`
+    <div style="background:#7c2d12;color:#fed7aa;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:12px"><b>O Secret Aparece Só Agora.</b> Copie E Entregue Por Canal Seguro, Separado Do Client ID. Se Perder, Revogue E Crie Outra.</div>
+    ${['Client ID','Client Secret'].map((rot,i)=>`<label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin:8px 0 4px">${rot}</label><div style="display:flex;gap:6px"><input id="od-s-${i}" readonly value="${_odAttr(i?r.data.client_secret:r.data.client_id)}" style="${_ss};font-family:monospace;font-size:12px"/>${_odBtn('#475569','Copiar',`navigator.clipboard.writeText(document.getElementById('od-s-${i}').value).then(()=>showNotif('Copiado',''))`)}</div>`).join('')}
+    <div style="margin-top:14px;text-align:right">${_odBtn('var(--accent)','Já Copiei, Fechar',"_odFecharModal('modal-od-secret');_odCarregarCredenciais()")}</div>`);
+  r.data=null;
+}
+function _odModalEditar(id){
+  const c=(window._odCredCache||[]).find(x=>x.id===id);if(!c)return;
+  _odModal('modal-od-editar',`${_icone('pencil',18)} Editar Credencial — ${_escHtml(c.loja||'')}`,`
+    ${_odCampo('od-e-url','URL Do Webhook (https)',c.webhook_url||'')}
+    ${_odCampo('od-e-merchant','MerchantId Do Parceiro',c.parceiro_merchant_id||'')}
+    ${_odCampo('od-e-app','AppId Do Parceiro',c.parceiro_app_id||'')}
+    ${_odCampo('od-e-dia','Limite De Pedidos Por Dia',String(c.limite_pedidos_dia||300))}
+    ${_odCampo('od-e-tok','Limite De Tokens Por Minuto',String(c.limite_tokens_min||20))}
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="od-e-teste" ${c.modo_teste?'checked':''} style="width:16px;height:16px"/> Modo Teste</label>
+    <div id="od-e-fb" style="margin-top:12px;font-size:13px"></div>
+    <div style="margin-top:14px;text-align:right">${_odBtn('var(--accent)','Salvar',`_odSalvar('${id}')`)}</div>`);
+}
+async function _odSalvar(id){
+  const fb=document.getElementById('od-e-fb');const n=v=>parseInt(v,10)||null;
+  const r=await _odRpc('od_admin_atualizar_credencial',{p_id:id,p_webhook_url:document.getElementById('od-e-url').value.trim(),p_merchant_id:document.getElementById('od-e-merchant').value.trim(),p_app_id:document.getElementById('od-e-app').value.trim(),p_modo_teste:document.getElementById('od-e-teste').checked,p_limite_dia:n(document.getElementById('od-e-dia').value),p_limite_tokens:n(document.getElementById('od-e-tok').value)});
+  if(!r.ok){fb.innerHTML=`<span style="color:#ef4444">${_escHtml(r.error)}</span>`;return;}
+  _odFecharModal('modal-od-editar');showNotif('✅ Credencial Atualizada','');_odCarregarCredenciais();
+}
+async function _odRevogar(id){
+  if(!confirm('Revogar Esta Credencial?\nOs Tokens Param Na Hora E O Parceiro Perde O Acesso. Não Dá Para Desfazer.'))return;
+  const r=await _odRpc('od_admin_revogar_credencial',{p_id:id});
+  if(!r.ok){showNotif('Erro',r.error,'var(--red)');return;}
+  showNotif('Credencial Revogada','');_odCarregarCredenciais();
+}
+async function _odCarregarEventos(){
+  const el=document.getElementById('od-ev-lista');if(!el)return;
+  const st=document.getElementById('od-ev-filtro')?.value||null;
+  const r=await _odRpc('od_admin_listar_eventos',{p_status:st,p_limite:100});
+  if(!r.ok){el.innerHTML=`<div style="color:#ef4444;font-size:13px">${_escHtml(r.error)}</div>`;return;}
+  const lista=Array.isArray(r.data)?r.data:[];
+  if(!lista.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhum Evento.</div>';return;}
+  const cor={pendente:'#3b82f6',enviando:'#8b5cf6',enviado:'#10b981',falhou:'#f59e0b',descartado:'#ef4444'};
+  el.innerHTML=`<table style="width:100%;min-width:820px"><thead><tr><th>Pedido</th><th>Loja</th><th>Evento</th><th>Situação</th><th>Tentativas</th><th>Último HTTP / Erro</th><th>Próxima</th><th></th></tr></thead><tbody>${lista.map(e=>`<tr>
+    <td style="font-size:12px">#${_escHtml(e.pedido||'')}${e.teste?' <span style="color:#f59e0b;font-size:11px">(teste)</span>':''}</td>
+    <td style="font-size:12px">${_escHtml(e.loja||'')}</td>
+    <td style="font-family:monospace;font-size:12px">${_escHtml(e.evento)} <span style="color:var(--text3)">#${e.seq}</span></td>
+    <td style="font-size:12px"><span style="color:${cor[e.status]||'var(--text)'} !important;font-weight:700">${_escHtml(e.status)}</span></td>
+    <td style="font-size:12px">${e.tentativas}</td>
+    <td style="font-size:11px;color:var(--text3)">${e.ultimo_http??'—'} ${_escHtml(e.ultimo_erro||'')}</td>
+    <td style="font-size:11px;color:var(--text3)">${['pendente','falhou'].includes(e.status)&&e.proxima_tentativa?formatarDataHora(e.proxima_tentativa):'—'}</td>
+    <td>${['falhou','descartado'].includes(e.status)?_odBtn('#475569','Reenviar',`_odReenviar(${e.id})`):''}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+async function _odReenviar(id){
+  const r=await _odRpc('od_admin_reenviar_evento',{p_evento_id:id});
+  if(!r.ok){showNotif('Erro',r.error,'var(--red)');return;}
+  showNotif('Evento Reenfileirado','Sai No Próximo Minuto');_odCarregarEventos();
+}
 function _renderConfigCliente(){
   const _dis='opacity:.45;pointer-events:none';
   document.getElementById('config-content').innerHTML=`
