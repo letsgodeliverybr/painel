@@ -1,12 +1,16 @@
 // Open Delivery v1.7.1 — Let's Go como operador logístico (Logistics Service).
 // ETAPA 2: autenticação (POST /oauth/token).
 // ETAPA 3: POST /v1/logistics/delivery e GET /v1/logistics/delivery/{orderId}.
+// ETAPA 4: POST /interno/eventos (só o agendamento, com a chave de serviço):
+//          envia a fila od_eventos para o webhook /deliveryEvent do parceiro.
+// ETAPA 6b: POST /v1/logistics/cancel/{orderId}.
 // A loja vem SEMPRE do token. Regras de negócio e taxa ficam no banco
 // (od_criar_entrega / od_consultar_entrega). Função NOVA, separada das do iFood.
 // Base URL do parceiro: https://<projeto>.supabase.co/functions/v1/open-delivery
 // Nunca grava nem loga client_secret ou access_token: só hashes SHA-256.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { hmacSha256Hex, ipBloqueado, urlWebhookOk } from "./seguranca.ts";
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const TOKEN_TTL_SEG = 3600; // 1h; sem refresh token (especificação)
@@ -118,6 +122,76 @@ async function consultarEntrega(req: Request, auth: { credencial_id: string; loj
   return json(data.status, data.body);
 }
 
+async function cancelarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }, orderId: string): Promise<Response> {
+  let body: any = {};
+  const texto = await req.text();
+  if (texto.length > 8_000) return erro(400, "payload_too_large");
+  if (texto) { try { body = JSON.parse(texto); } catch { return erro(400, "invalid_json"); } }
+  const { data, error } = await supabase.rpc("od_cancelar_entrega", {
+    p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_order_id: orderId, p_body: body, p_ip: ipDe(req),
+  });
+  if (error || !data) return erro(503, "service_unavailable");
+  return json(data.status, data.body);
+}
+
+// ── ETAPA 4: envio do webhook ────────────────────────────────────────────
+const APP_ID_LETSGO = Deno.env.get("OD_APP_ID") ?? ""; // nosso AppId (não é segredo)
+
+// Anti-SSRF: regras da URL + TODOS os IPs do DNS precisam ser públicos.
+async function destinoSeguro(url: string): Promise<string | null> {
+  const r = urlWebhookOk(url);
+  if (!r.ok) return r.motivo ?? "url_invalida";
+  const ips: string[] = [];
+  for (const tipo of ["A", "AAAA"] as const) {
+    try { ips.push(...(await Deno.resolveDns(r.host!, tipo))); } catch { /* sem registro desse tipo */ }
+  }
+  if (!ips.length) return "dns_sem_resposta";
+  if (ips.some(ipBloqueado)) return "ip_interno";
+  return null;
+}
+
+async function enviarEvento(ev: any): Promise<{ http: number; erro: string | null }> {
+  const bloqueio = await destinoSeguro(ev.webhook_url);
+  if (bloqueio) return { http: 0, erro: `destino bloqueado: ${bloqueio}` };
+  const corpo = JSON.stringify(ev.payload);
+  const assinatura = await hmacSha256Hex(ev.segredo, corpo);
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+  try {
+    const r = await fetch(ev.webhook_url, {
+      method: "POST", redirect: "manual", signal: ctl.signal,
+      headers: { "Content-Type": "application/json", "User-Agent": "LetsGo-OpenDelivery/1.0",
+        "X-App-Id": APP_ID_LETSGO, "X-App-MerchantId": ev.merchant_id, "X-App-Signature": assinatura },
+      body: corpo,
+    });
+    await r.body?.cancel();                     // corpo da resposta é ignorado
+    return { http: r.status, erro: r.status >= 300 && r.status < 400 ? "redirecionamento não é seguido" : (r.ok ? null : `HTTP ${r.status}`) };
+  } catch (e) {
+    return { http: 0, erro: (e as Error)?.name === "AbortError" ? "timeout 5s" : "falha de conexão" };
+  } finally { clearTimeout(t); }
+}
+
+// Várias passadas dentro do minuto do agendamento (0s, ~20s, ~40s)
+async function processarFila(): Promise<{ enviados: number; falhas: number }> {
+  let enviados = 0, falhas = 0;
+  const inicio = Date.now();
+  while (Date.now() - inicio < 45_000) {
+    const { data, error } = await supabase.rpc("od_eventos_reservar", { p_limite: 30 });
+    if (error) break;
+    const lote = Array.isArray(data) ? data : [];
+    // um evento por pedido por vez (a reserva já garante); pedidos diferentes em paralelo, até 5
+    for (let i = 0; i < lote.length; i += 5) {
+      await Promise.all(lote.slice(i, i + 5).map(async (ev: any) => {
+        const r = await enviarEvento(ev);
+        await supabase.rpc("od_eventos_concluir", { p_id: ev.id, p_http: r.http, p_erro: r.erro });
+        if (r.http >= 200 && r.http < 300) enviados++; else falhas++;
+      }));
+    }
+    if (Date.now() - inicio > 40_000) break;
+    await new Promise((res) => setTimeout(res, lote.length ? 2_000 : 20_000));
+  }
+  return { enviados, falhas };
+}
+
 async function oauthToken(req: Request): Promise<Response> {
   const ct = req.headers.get("content-type") ?? "";
   if (!ct.includes("application/x-www-form-urlencoded")) return erro(401, "invalid_request");
@@ -149,6 +223,17 @@ serve(async (req) => {
   try {
     const r = rota(req);
     if (req.method === "POST" && r === "/oauth/token") return await oauthToken(req);
+    if (req.method === "POST" && r === "/interno/eventos") {
+      // só o agendamento (chave de serviço no cofre); qualquer outro recebe 404
+      if ((req.headers.get("authorization") ?? "") !== `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) return erro(404, "not_found");
+      return json(200, await processarFila());
+    }
+    const mCancel = r.match(/^\/v1\/logistics\/cancel\/([^/]{1,100})$/);
+    if (req.method === "POST" && mCancel) {
+      const auth = await autenticar(req);
+      if (!auth) return erro(401, "unauthorized");
+      return await cancelarEntrega(req, auth, decodeURIComponent(mCancel[1]));
+    }
     const mGet = r.match(/^\/v1\/logistics\/delivery\/([^/]{1,100})$/);
     if ((req.method === "POST" && r === "/v1/logistics/delivery") || (req.method === "GET" && mGet)) {
       const auth = await autenticar(req);
