@@ -11842,7 +11842,11 @@ async function _buscarCobrancas(){
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,jaGeradas]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
+    // Só cobra pedido com entregador (2026-10-06): finalizado sem ninguém
+    // vinculado (ex: concluído pelo próprio iFood, ou finalizado à mão depois
+    // de desalocar) não gera cobrança. Só afeta faturas NOVAS; o detalhe das
+    // faturas já geradas (verFaturaCobranca) não muda.
+    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&or=(motoboy_id.not.is.null,entregador_id.not.is.null)&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
     db('lojas','GET',null,'?select=id,nome,tipo_cobranca'),
     db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
