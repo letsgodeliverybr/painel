@@ -87,3 +87,8 @@ verify_jwt = false
 # das functions de ação chamadas pelo app.js.
 [functions.notify-vaga]
 verify_jwt = false
+
+# Open Delivery (parceiro chama sem JWT do Supabase; autenticação própria
+# por client_id/secret -> token, ver open-delivery/index.ts).
+[functions.open-delivery]
+verify_jwt = false
