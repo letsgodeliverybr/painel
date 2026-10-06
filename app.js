@@ -2237,8 +2237,7 @@ function tocarSomPronto(){
 }
 
 async function _aplicarPrecoDinamico(p){
-  const pdC=_getPdCliente(p.loja_id);
-  const pdE=_getPdEntregador(p.loja_id);
+  const {cliente:pdC,entregador:pdE}=await _fetchPdAtual(p.loja_id);
   if(pdC<=0&&pdE<=0)return;
   // Bug real corrigido (2026-09-22, achado real via Auditoria): as duas
   // linhas abaixo chamavam _calcTaxaLoja/_calcTaxaMotoboy sem 2º argumento,
@@ -6808,95 +6807,18 @@ async function _inicializarPrecoDinamico(){
   try{_pdCidadesAplicaveisEnt=JSON.parse(raplicE[0]?.valor||'{}');}catch(e){_pdCidadesAplicaveisEnt={};}
 }
 
+// Preço dinâmico vigente (2026-10-06): a regra mora no banco
+// (preco_dinamico_vigente), a MESMA usada pela API Open Delivery — sem cópia
+// aqui. Mantém o mesmo formato de retorno de antes.
 async function _fetchPdAtual(lojaId){
-  const [rv,rvE,rts,rtsE]=await Promise.all([
-    db('configuracoes','GET',null,`?chave=eq.${_pdChave('cliente')}`),
-    db('configuracoes','GET',null,`?chave=eq.${_pdChave('entregador')}`),
-    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('cliente')}`),
-    db('configuracoes','GET',null,`?chave=eq.${_pdChaveTs('entregador')}`),
-  ]);
-  const agora=Date.now();
-  let pdC=0,pdE=0,origemC=null,origemE=null;
-  [['cliente',rv,rts],['entregador',rvE,rtsE]].forEach(([tipo,r,rt])=>{
-    const v=parseFloat(r[0]?.valor||0);
-    const tsStrDB=rt[0]?.valor||null;
-    const tsStr=tsStrDB||_precoDinTs[tipo]||localStorage.getItem(`_pdAtivadoEm_${tipo}`);
-    const expiry=tsStr?_tsUtc(tsStr)+120*60*1000:0;
-    const ativo=v>0&&expiry>agora;
-    const min=ativo?Math.round((expiry-agora)/60000):0;
-    console.log(`[PD fetch] tipo=${tipo} db_valor=${v} ts_db=${tsStrDB} ts_usado=${tsStr} expiry=${expiry} agora=${agora} ativo=${ativo} min_restantes=${min}`);
-    if(ativo){
-      _precoDinValores[tipo]=v;
-      _precoDinTs[tipo]=tsStr;
-      localStorage.setItem(`_pdAtivadoEm_${tipo}`,tsStr);
-      if(tipo==='cliente'){pdC=v;origemC='global';}else{pdE=v;origemE='global';}
-    }
-  });
-  // PD global calculado — nunca filtrado por aplicáveis de cidade
-  const pdGlobalC=pdC,pdGlobalE=pdE;
-  console.log(`[PD fetch] global => pd_cliente=${pdGlobalC}(${origemC}) pd_entregador=${pdGlobalE}(${origemE})`);
-  // verifica PD por cidade (carregado no startup) — sobrescreve global apenas se cidade PD estiver ativo E loja/entregador na lista
-  const loja=allLojas.find(l=>l.id===lojaId);
-  const cidade=loja?.cidade;
-  if(cidade){
-    const cfgC=_pdCidades[cidade];
-    const cidAtC=!!(cfgC&&cfgC.valor>0&&cfgC.ativado_em&&_tsUtc(cfgC.ativado_em)+120*60*1000>agora);
-    if(cidAtC){
-      const aplicaveisC=_pdCidadesAplicaveis[cidade]||[];
-      const aplicavel=aplicaveisC.length===0||aplicaveisC.includes(lojaId);
-      console.log(`[PD fetch] cidade=${cidade} cfgC.valor=${cfgC.valor} aplicaveisC=${JSON.stringify(aplicaveisC)} lojaId=${lojaId} aplicavel=${aplicavel} pd_global=${pdGlobalC} → ${aplicavel?'soma cidade '+cfgC.valor+' ao global':'mantém global='+pdGlobalC}`);
-      if(aplicavel){pdC=pdGlobalC+cfgC.valor;origemC=pdGlobalC>0?'Global+cidade':'cidade';}
-    }else{
-      console.log(`[PD fetch] cidade=${cidade} PD cidade inativo (cfgC.valor=${cfgC?.valor||0}) → mantém pd_global=${pdGlobalC}`);
-    }
-    const cfgE=_pdCidadesEnt[cidade];
-    if(cfgE&&cfgE.valor>0&&cfgE.ativado_em&&_tsUtc(cfgE.ativado_em)+120*60*1000>agora){pdE=pdGlobalE+cfgE.valor;origemE=pdGlobalE>0?'Global+cidade':'cidade';}
-  }else{
-    console.log(`[PD fetch] lojaId=${lojaId} sem cidade (migration pendente?) → aplica pd_global=${pdGlobalC}`);
-  }
-  const pdCidadeC=origemC&&origemC.includes('cidade')?pdC-pdGlobalC:0;
-  const pdCidadeE=origemE&&origemE.includes('cidade')?pdE-pdGlobalE:0;
-  console.log(`[PD fetch] resultado_final lojaId=${lojaId} cidade=${cidade||'—'} pd_global_cliente=${pdGlobalC} pd_cidade_cliente=${pdCidadeC} pd_total_cliente=${pdC}(${origemC}) pd_global_entregador=${pdGlobalE} pd_cidade_entregador=${pdCidadeE} pd_total_entregador=${pdE}(${origemE})`);
-  return {cliente:pdC,entregador:pdE,origemCliente:origemC,origemEntregador:origemE};
+  const r=await dbRpc('preco_dinamico_vigente',{p_loja_id:lojaId});
+  const d=(r&&!Array.isArray(r))?r:{};
+  const res={cliente:parseFloat(d.cliente)||0,entregador:parseFloat(d.entregador)||0,origemCliente:d.origem_cliente||null,origemEntregador:d.origem_entregador||null};
+  console.log(`[PD] preco_dinamico_vigente lojaId=${lojaId} cliente=${res.cliente}(${res.origemCliente}) entregador=${res.entregador}(${res.origemEntregador})`);
+  return res;
 }
 
-function _getPdCliente(lojaId){
-  const v=_precoDinValores['cliente']||0;
-  const tsStr=_precoDinTs['cliente']||localStorage.getItem('_pdAtivadoEm_cliente');
-  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
-  const ativo=v>0&&expiry>Date.now();
-  const globalPd=ativo?v:0;
-  const loja=allLojas.find(l=>l.id===lojaId);
-  const cidade=loja?.cidade;
-  let cidadePd=0;
-  if(cidade){
-    const cfg=_pdCidades[cidade];
-    if(cfg&&cfg.valor>0&&cfg.ativado_em&&_tsUtc(cfg.ativado_em)+120*60*1000>Date.now()){
-      if(!cfg.lojas||cfg.lojas.length===0||cfg.lojas.includes(lojaId)) cidadePd=cfg.valor;
-    }
-  }
-  const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
-  console.log(`[PD] _getPdCliente lojaId=${lojaId} global=${globalPd} cidade=${cidadePd} total=${globalPd+cidadePd} minutos_restantes=${minRestantes}`);
-  return globalPd+cidadePd;
-}
 
-function _getPdEntregador(lojaId){
-  const v=_precoDinValores['entregador']||0;
-  const tsStr=_precoDinTs['entregador']||localStorage.getItem('_pdAtivadoEm_entregador');
-  const expiry=tsStr?new Date(tsStr).getTime()+120*60*1000:0;
-  const ativo=v>0&&expiry>Date.now();
-  const globalPd=ativo?v:0;
-  const loja=allLojas.find(l=>l.id===lojaId);
-  const cidade=loja?.cidade;
-  let cidadePd=0;
-  if(cidade){
-    const cfg=_pdCidadesEnt[cidade];
-    if(cfg&&cfg.valor>0&&cfg.ativado_em&&_tsUtc(cfg.ativado_em)+120*60*1000>Date.now()) cidadePd=cfg.valor;
-  }
-  const minRestantes=ativo?Math.round((expiry-Date.now())/60000):0;
-  console.log(`[PD] _getPdEntregador lojaId=${lojaId} global=${globalPd} cidade=${cidadePd} total=${globalPd+cidadePd} minutos_restantes=${minRestantes}`);
-  return globalPd+cidadePd;
-}
 
 function _renderPrecoDinamicoTab(el,tipo){
   const label=tipo==='cliente'?'Cobrança Da Loja':'Pagamento Do Entregador';
