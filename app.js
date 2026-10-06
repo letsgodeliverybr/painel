@@ -2265,7 +2265,9 @@ async function _aplicarPrecoDinamico(p){
 
 async function processarAutoPronto(){
   const agora=new Date();
-  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&!_pedidoStatusLock.has(p.id));
+  // Pedido de teste do Open Delivery (od_teste) nunca vira pronto sozinho
+  // (2026-10-06): ficava visível aos entregadores e foi aceito num teste.
+  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&!p.od_teste&&!_pedidoStatusLock.has(p.id));
   for(const p of pedidosRecebidos){
     const base=p.recebido_em||p.created_at;if(!base)continue;
     const diff=(agora-new Date(base))/1000;
