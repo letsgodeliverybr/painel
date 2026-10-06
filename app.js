@@ -11260,7 +11260,7 @@ async function _calcularPagamentos(){
   const fimISO=`${dataFim}T${horaFim}:59`;
   const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
   const [pedidos,entregadores,saquesPeriodo,creditosPeriodo]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
+    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
     db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=lte.${dataFim}&data_fim=gt.${dataIni}&status=neq.cancelado`),
     db('creditos_entregadores','GET',null,`?select=entregador_id,tipo,valor&data=gte.${dataIni}&data=lte.${dataFim}&tipo=in.(credito,debito)`),
@@ -11842,7 +11842,7 @@ async function _buscarCobrancas(){
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
   const [pedidos,lojas,jaGeradas]=await Promise.all([
-    db('pedidos','GET',null,`?status=eq.finalizado&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
+    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
     db('lojas','GET',null,'?select=id,nome,tipo_cobranca'),
     db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
@@ -12066,7 +12066,7 @@ async function verFaturaCobranca(cobId){
     // cortado da fatura silenciosamente. order=finalizado_em,id garante
     // desempate determinístico entre páginas (finalizado_em pode repetir
     // valor, ou vir null e cair no fallback por updated_at do OR abaixo).
-    pedidosData=await _dbTodasLinhas('pedidos',`?loja_id=eq.${c.loja_id}&status=eq.finalizado&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta,distancia_km,com_retorno,retorno,preco_dinamico&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc,id.asc`);
+    pedidosData=await _dbTodasLinhas('pedidos',`?loja_id=eq.${c.loja_id}&status=eq.finalizado&od_teste=is.false&select=numero,finalizado_em,updated_at,endereco_entrega,endereco,taxa_entrega,gorjeta,distancia_km,com_retorno,retorno,preco_dinamico&or=(and(finalizado_em.gte.${iniISO},finalizado_em.lte.${fimISO}),and(finalizado_em.is.null,updated_at.gte.${iniISO},updated_at.lte.${fimISO}))&order=finalizado_em.asc,id.asc`);
   }
   const faixasLoja=await _getFaixasCobranca(c.loja_id);
   const totalEntregas=pedidosData.length>0
