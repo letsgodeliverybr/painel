@@ -12742,7 +12742,7 @@ async function _odModalNova(){
     ${_odCampo('od-n-url','URL Do Webhook (https)','','https://sistema-do-parceiro.com.br/deliveryEvent')}
     ${_odCampo('od-n-merchant','MerchantId Do Parceiro')}
     ${_odCampo('od-n-app','AppId Do Parceiro')}
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="od-n-teste" checked style="width:16px;height:16px"/> Modo Teste (Pedidos Não São Despachados Nem Cobrados)</label>
+    <div style="margin-top:12px;font-size:12.5px;color:#f59e0b;font-weight:600">Toda Credencial Nasce Em Modo Teste: Pedidos Não São Despachados Nem Cobrados. A Produção É Liberada Depois, Em Editar.</div>
     <div id="od-n-fb" style="margin-top:12px;font-size:13px"></div>
     <div style="margin-top:14px;text-align:right">${_odBtn('var(--accent)','Criar Credencial','_odCriar()')}</div>`);
 }
@@ -12750,7 +12750,7 @@ async function _odCriar(){
   const fb=document.getElementById('od-n-fb');const loja=document.getElementById('od-n-loja')?.value;
   if(!loja){fb.innerHTML='<span style="color:#ef4444">Selecione A Loja.</span>';return;}
   fb.innerHTML='<span style="color:var(--text3)">Criando…</span>';
-  const r=await _odRpc('od_admin_criar_credencial',{p_loja_id:loja,p_webhook_url:document.getElementById('od-n-url').value.trim(),p_merchant_id:document.getElementById('od-n-merchant').value.trim(),p_app_id:document.getElementById('od-n-app').value.trim(),p_modo_teste:document.getElementById('od-n-teste').checked});
+  const r=await _odRpc('od_admin_criar_credencial',{p_loja_id:loja,p_webhook_url:document.getElementById('od-n-url').value.trim(),p_merchant_id:document.getElementById('od-n-merchant').value.trim(),p_app_id:document.getElementById('od-n-app').value.trim(),p_modo_teste:true});
   if(!r.ok){fb.innerHTML=`<span style="color:#ef4444">${_escHtml(r.error)}</span>`;return;}
   _odFecharModal('modal-od-nova');
   // secret exibido UMA vez; ao fechar o modal, o conteúdo é apagado
@@ -12768,15 +12768,27 @@ function _odModalEditar(id){
     ${_odCampo('od-e-app','AppId Do Parceiro',c.parceiro_app_id||'')}
     ${_odCampo('od-e-dia','Limite De Pedidos Por Dia',String(c.limite_pedidos_dia||300))}
     ${_odCampo('od-e-tok','Limite De Tokens Por Minuto',String(c.limite_tokens_min||20))}
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="od-e-teste" ${c.modo_teste?'checked':''} style="width:16px;height:16px"/> Modo Teste</label>
+    <div style="margin-top:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+      ${c.modo_teste
+        ?`<b style="color:#f59e0b">Modo Teste</b> — pedidos não são despachados nem cobrados.<div style="margin-top:8px">${_odBtn('#dc2626','Liberar Produção',`_odLiberarProducao('${id}')`)}</div>`
+        :`<b style="color:#10b981">Produção</b> liberada ${c.producao_liberada_em?formatarDataHora(c.producao_liberada_em):''} ${_escHtml(c.producao_liberada_por||'')}
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer"><input type="checkbox" id="od-e-voltar-teste" style="width:16px;height:16px"/> Voltar Para Modo Teste</label>`}
+    </div>
     <div id="od-e-fb" style="margin-top:12px;font-size:13px"></div>
     <div style="margin-top:14px;text-align:right">${_odBtn('var(--accent)','Salvar',`_odSalvar('${id}')`)}</div>`);
 }
 async function _odSalvar(id){
   const fb=document.getElementById('od-e-fb');const n=v=>parseInt(v,10)||null;
-  const r=await _odRpc('od_admin_atualizar_credencial',{p_id:id,p_webhook_url:document.getElementById('od-e-url').value.trim(),p_merchant_id:document.getElementById('od-e-merchant').value.trim(),p_app_id:document.getElementById('od-e-app').value.trim(),p_modo_teste:document.getElementById('od-e-teste').checked,p_limite_dia:n(document.getElementById('od-e-dia').value),p_limite_tokens:n(document.getElementById('od-e-tok').value)});
+  const r=await _odRpc('od_admin_atualizar_credencial',{p_id:id,p_webhook_url:document.getElementById('od-e-url').value.trim(),p_merchant_id:document.getElementById('od-e-merchant').value.trim(),p_app_id:document.getElementById('od-e-app').value.trim(),p_modo_teste:!!document.getElementById('od-e-voltar-teste')?.checked,p_limite_dia:n(document.getElementById('od-e-dia').value),p_limite_tokens:n(document.getElementById('od-e-tok').value)});
   if(!r.ok){fb.innerHTML=`<span style="color:#ef4444">${_escHtml(r.error)}</span>`;return;}
   _odFecharModal('modal-od-editar');showNotif('✅ Credencial Atualizada','');_odCarregarCredenciais();
+}
+async function _odLiberarProducao(id){
+  const c=(window._odCredCache||[]).find(x=>x.id===id);
+  if(!confirm(`Liberar PRODUÇÃO Para ${c?.loja||'Esta Loja'}?\nA Partir De Agora Os Pedidos Do Parceiro Serão DESPACHADOS A Entregadores Reais E COBRADOS Na Fatura.`))return;
+  const r=await _odRpc('od_admin_liberar_producao',{p_id:id});
+  if(!r.ok){showNotif('Erro',r.error,'var(--red)');return;}
+  _odFecharModal('modal-od-editar');showNotif('Produção Liberada','');_odCarregarCredenciais();
 }
 async function _odRevogar(id){
   if(!confirm('Revogar Esta Credencial?\nOs Tokens Param Na Hora E O Parceiro Perde O Acesso. Não Dá Para Desfazer.'))return;
