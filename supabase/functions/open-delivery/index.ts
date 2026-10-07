@@ -6,7 +6,8 @@
 // ETAPA 6b: POST /v1/logistics/cancel/{orderId}.
 // A loja vem SEMPRE do token. Regras de negócio e taxa ficam no banco
 // (od_criar_entrega / od_consultar_entrega). Função NOVA, separada das do iFood.
-// Base URL do parceiro: https://<projeto>.supabase.co/functions/v1/open-delivery
+// Base URL do parceiro: https://opendelivery.letsgodelivery.com.br/functions/v1/open-delivery
+// (custom domain do Supabase; https://<projeto>.supabase.co/... continua valendo)
 // Nunca grava nem loga client_secret ou access_token: só hashes SHA-256.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -39,6 +40,13 @@ function ipDe(req: Request): string {
   const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip")
     ?? (req.headers.get("x-forwarded-for") ?? "").split(",")[0];
   return ip.trim().slice(0, 64);
+}
+
+// Host público chamado pelo parceiro (custom domain ou supabase.co). Só vai
+// para od_acessos.host, via cabeçalho x-od-host lido pelo trigger no banco.
+function hostDe(req: Request): string {
+  const h = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? new URL(req.url).host;
+  return h.split(",")[0].trim().toLowerCase().slice(0, 100);
 }
 
 // Caminho depois de /functions/v1/open-delivery (ex: "/oauth/token")
@@ -109,7 +117,7 @@ async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id
   const { data, error } = await supabase.rpc("od_criar_entrega", {
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_body: body, p_distancia_km: km,
     p_fator_reta: Number.isFinite(fator) && fator >= 1 && fator <= 3 ? fator : null, p_ip: ipDe(req),
-  });
+  }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
   return json(data.status, data.body);
 }
@@ -117,7 +125,7 @@ async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id
 async function consultarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }, orderId: string): Promise<Response> {
   const { data, error } = await supabase.rpc("od_consultar_entrega", {
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_order_id: orderId, p_ip: ipDe(req),
-  });
+  }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
   return json(data.status, data.body);
 }
@@ -129,7 +137,7 @@ async function cancelarEntrega(req: Request, auth: { credencial_id: string; loja
   if (texto) { try { body = JSON.parse(texto); } catch { return erro(400, "invalid_json"); } }
   const { data, error } = await supabase.rpc("od_cancelar_entrega", {
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_order_id: orderId, p_body: body, p_ip: ipDe(req),
-  });
+  }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
   return json(data.status, data.body);
 }
@@ -210,7 +218,7 @@ async function oauthToken(req: Request): Promise<Response> {
     p_token_hash: await sha256Hex(token),
     p_ip: ipDe(req),
     p_ttl_seg: TOKEN_TTL_SEG,
-  });
+  }).setHeader("x-od-host", hostDe(req));
   if (error) return erro(503, "service_unavailable");
   if (data?.status === 429) return erro(429, "too_many_requests");
   if (!data?.ok) return erro(401, "invalid_client");
