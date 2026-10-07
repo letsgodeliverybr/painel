@@ -135,12 +135,14 @@ function mapearVeiculoIfood(modal: string | null | undefined): string {
   }
 }
 
-async function montarCorpoAssignDriver(pedidoId: string): Promise<string | undefined> {
+// null = pedido sem entregador alocado (ex: desalocado entre a fila e o
+// envio, caso do #9120); undefined = falha ao ler o banco.
+async function montarCorpoAssignDriver(pedidoId: string): Promise<string | null | undefined> {
   const { data: pedido, error: pedidoErr } = await supabase
     .from("pedidos").select("motoboy_id, entregador_id").eq("id", pedidoId).maybeSingle();
   if (pedidoErr) { await logErro("assign_driver_buscar_pedido", { pedidoId, message: pedidoErr.message }); return undefined; }
   const entregadorId = pedido?.motoboy_id ?? pedido?.entregador_id ?? null;
-  if (!entregadorId) return undefined;
+  if (!entregadorId) return null;
   const { data: entregador, error: entErr } = await supabase
     .from("entregadores").select("nome, telefone, modal_veiculo").eq("id", entregadorId).maybeSingle();
   if (entErr) { await logErro("assign_driver_buscar_entregador", { pedidoId, entregadorId, message: entErr.message }); return undefined; }
@@ -595,6 +597,20 @@ serve(async (req) => {
     try {
       const path = endpointParaEvento(ifoodOrderId, item.evento);
       const corpo = item.evento === "assignDriver" ? await montarCorpoAssignDriver(item.pedido_id) : undefined;
+      // assignDriver sem corpo o iFood recusa (400 "No request body"): não
+      // chama. Sem entregador alocado, encerra o item (se o pedido voltar a
+      // 'aceito', o gatilho enfileira um assignDriver novo); falha de leitura
+      // do banco só gasta uma tentativa.
+      if (item.evento === "assignDriver" && !corpo) {
+        const semEntregador = corpo === null;
+        await supabase.from("ifood_status_queue").update({
+          status: "erro",
+          tentativas: semEntregador ? MAX_TENTATIVAS : item.tentativas + 1,
+          erro: semEntregador ? "sem entregador alocado" : "falha ao montar corpo do assignDriver",
+        }).eq("id", item.id);
+        comErro++;
+        continue;
+      }
       const res = await fetch(`${IFOOD_BASE_URL}${path}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
