@@ -658,10 +658,13 @@ window.fazerLogin = async function(){
   errEl.style.display='none';
   if(!email||!senha){errEl.textContent='Preencha E-mail E Senha.';errEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Verificando...';
-  const usuarios=await db('usuarios_painel','GET',null,`?email=eq.${encodeURIComponent(email)}&senha=eq.${encodeURIComponent(senha)}&ativo=eq.true`);
+  // Senha conferida DENTRO do banco (login_painel, 2026-10): vai no corpo
+  // do POST, não na URL, e a resposta nunca traz a coluna senha. Mesma regra
+  // de antes: e-mail + senha iguais e ativo=true.
+  const usuarios=await dbRpc('login_painel',{p_email:email,p_senha:senha});
   btn.disabled=false;btn.textContent='Acessar';
   if(!usuarios||usuarios.length===0){errEl.textContent='E-mail Ou Senha Incorretos.';errEl.style.display='block';return;}
-  currentUser=usuarios[0];currentPerfil=currentUser.perfil;
+  currentUser={...usuarios[0]};delete currentUser.senha;currentPerfil=currentUser.perfil;
   sessionStorage.setItem('lg_user',JSON.stringify(currentUser));
   // Bug real corrigido aqui (2026-09-17): esse override nunca chamava a
   // Auth de verdade do Supabase, só comparava a senha em texto puro
