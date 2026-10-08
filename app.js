@@ -5435,7 +5435,7 @@ async function calcularDistanciaRota(lat1,lon1,lat2,lon2,retornarPolyline=false)
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':GMAPS_KEY,
-        'X-Goog-FieldMask':retornarPolyline?'Routes.distanceMeters,routes.polyline.encodedPolyline':'Routes.distanceMeters',
+        'X-Goog-FieldMask':retornarPolyline?'routes.distanceMeters,routes.polyline.encodedPolyline':'routes.distanceMeters',
       },
       body:JSON.stringify({
         origin:{location:{latLng:{latitude:lat1,longitude:lon1}}},
