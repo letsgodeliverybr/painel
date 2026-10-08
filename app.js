@@ -2237,6 +2237,11 @@ function tocarSomPronto(){
 }
 
 async function _aplicarPrecoDinamico(p){
+  // Entrega da API Open Delivery: o preço é calculado e congelado na
+  // criação (od_criar_entrega) e é o que o parceiro recebe em deliveryPrice
+  // e na fatura. "Pronto"/desalocar não recalcula (gatilho
+  // tg_od_taxa_congelada no banco também barra).
+  if(p?.origem==='open_delivery')return;
   const {cliente:pdC,entregador:pdE}=await _fetchPdAtual(p.loja_id);
   if(pdC<=0&&pdE<=0)return;
   // Bug real corrigido (2026-09-22, achado real via Auditoria): as duas
@@ -5210,6 +5215,10 @@ async function salvarEdicaoPedido(pedidoId){
   if(_epTaxaMotoEl)update.taxa_motoboy=_epTaxaMotoEl.value!==''?parseFloat(_epTaxaMotoEl.value):null;
   if(_epGeo?.distKm){update.latitude=_epGeo.lat;update.longitude=_epGeo.lng;update.distancia_km=_epGeo.distKm;}
   if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
+  // Entrega da API Open Delivery: taxa e dinâmico ficam como na criação
+  // (ver _aplicarPrecoDinamico); a edição muda o resto, nunca o preço.
+  const _epOd=(_epPedidoAtual?.id===pedidoId?_epPedidoAtual:allPedidos.find(x=>x.id===pedidoId))?.origem==='open_delivery';
+  if(_epOd){delete update.taxa_entrega;delete update.preco_dinamico;}
   const res=await dbPatch('pedidos',update,`?id=eq.${pedidoId}`);
   if(res===null){if(fb)fb.innerHTML='<div style="color:var(--red);font-size:13px">❌ Erro Ao Salvar.</div>';showNotif('❌ Erro Ao Salvar Pedido','','var(--red)');return;}
   await logAcao('editar_pedido',{pedido_id:pedidoId});
@@ -5225,7 +5234,7 @@ async function salvarEdicaoPedido(pedidoId){
   // tinha o mesmo bug e é o principal responsável pelo padrão real.
   const _faixasCobEp=await _getFaixasCobranca(pedidoMerge.loja_id);
   const novaTaxa=_calcTaxaLoja(pedidoMerge,_faixasCobEp.length?_faixasCobEp:undefined);
-  if(novaTaxa>0){
+  if(novaTaxa>0&&!_epOd){
     await dbPatch('pedidos',{taxa_entrega:novaTaxa,updated_at:_agoraBrasilia()},`?id=eq.${pedidoId}`);
     update.taxa_entrega=novaTaxa;
   }
