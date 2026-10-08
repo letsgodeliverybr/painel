@@ -5458,6 +5458,21 @@ function calcularDistancia(lat1,lon1,lat2,lon2){
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+// Cobrança pela rota MAIS CURTA (2026-10): pede as alternativas ao Google e
+// fica com a de menor distância, desde que não demore mais de 30% que a rota
+// padrão (evita desvio longo ou estrada ruim só por ser mais curta). Pedir
+// alternativas não muda a faixa de cobrança da Routes API (segue Essentials).
+const _ROTA_TEMPO_MAX=1.3;
+function _rotaMaisCurtaAceitavel(rotas){
+  const validas=(rotas||[]).filter(x=>x?.distanceMeters>0);
+  if(!validas.length)return null;
+  const seg=x=>parseFloat(String(x?.duration||'').replace('s',''))||0;
+  const padrao=validas.find(x=>(x.routeLabels||[]).includes('DEFAULT_ROUTE'))||validas[0];
+  const limite=seg(padrao)*_ROTA_TEMPO_MAX;
+  const aceitas=limite>0?validas.filter(x=>x===padrao||(seg(x)>0&&seg(x)<=limite)):[padrao];
+  return aceitas.reduce((a,b)=>b.distanceMeters<a.distanceMeters?b:a);
+}
+
 // Distância REAL de rota (Google Routes API — computeRoutes), usada só
 // onde o valor afeta dinheiro (cobrança da loja e pagamento do motoboy) —
 // confirmado que a linha reta (calcularDistancia acima) fica ~44% menor
@@ -5475,20 +5490,21 @@ async function calcularDistanciaRota(lat1,lon1,lat2,lon2,retornarPolyline=false)
       headers:{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':GMAPS_KEY,
-        'X-Goog-FieldMask':retornarPolyline?'routes.distanceMeters,routes.polyline.encodedPolyline':'routes.distanceMeters',
+        'X-Goog-FieldMask':'routes.distanceMeters,routes.duration,routes.routeLabels'+(retornarPolyline?',routes.polyline.encodedPolyline':''),
       },
       body:JSON.stringify({
         origin:{location:{latLng:{latitude:lat1,longitude:lon1}}},
         destination:{location:{latLng:{latitude:lat2,longitude:lon2}}},
         travelMode:'DRIVE',
+        computeAlternativeRoutes:true,
       }),
     });
     clearTimeout(timeoutId);
     const d=await r.json();
-    const metros=d?.routes?.[0]?.distanceMeters;
-    if(r.ok&&metros){
-      const distKm=metros/1000;
-      return retornarPolyline?{distKm,polyline:d.routes[0]?.polyline?.encodedPolyline||null}:distKm;
+    const rota=r.ok?_rotaMaisCurtaAceitavel(d?.routes):null;
+    if(rota){
+      const distKm=rota.distanceMeters/1000;
+      return retornarPolyline?{distKm,polyline:rota.polyline?.encodedPolyline||null}:distKm;
     }
     console.error('[calcularDistanciaRota] resposta inesperada da Routes API, usando haversine como fallback:',d);
   }catch(e){
