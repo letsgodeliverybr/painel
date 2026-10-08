@@ -169,6 +169,63 @@ async function geocodificar(da: any, key: string): Promise<Geo> {
   return { lat: r.geometry.location.lat, lng: r.geometry.location.lng };
 }
 
+// Cache de 30 dias (od_geo_cache, só resultados precisos): o mesmo endereço
+// cotado várias vezes, e depois criado, chama o Google uma vez só.
+async function coordenadasDoEndereco(da: any, key: string): Promise<Geo> {
+  const { data: c } = await supabase.rpc("od_geo_cache_buscar", { p_endereco: da });
+  if (c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng))) return { lat: Number(c.lat), lng: Number(c.lng) };
+  const g = await geocodificar(da, key);
+  if (!("title" in g)) await supabase.rpc("od_geo_cache_gravar", { p_endereco: da, p_lat: g.lat, p_lng: g.lng });
+  return g;
+}
+
+const semCoordenadas = (da: any) =>
+  da && typeof da === "object" && !Array.isArray(da) && (da.latitude == null || da.longitude == null);
+
+// Distância loja -> cliente (coordenadas da loja vêm do cadastro, no banco).
+async function distanciaKm(lojaId: string, da: any): Promise<number | null> {
+  const lat = Number(da?.latitude), lng = Number(da?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const { data: loja } = await supabase.from("lojas").select("latitude,longitude").eq("id", lojaId).single();
+  if (!loja?.latitude || !loja?.longitude) return null;
+  return await distanciaRotaKm(Number(loja.latitude), Number(loja.longitude), lat, lng);
+}
+
+function fatorReta(): number | null {
+  const f = Number(Deno.env.get("OD_FATOR_RETA") ?? "");
+  return Number.isFinite(f) && f >= 1 && f <= 3 ? f : null;
+}
+
+// POST /v1/logistics/quote — mesma preparação e mesmo preço da criação,
+// sem criar pedido (grava só a cotação, válida por 10 minutos).
+async function cotarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }): Promise<Response> {
+  if (!(req.headers.get("content-type") ?? "").includes("application/json")) return erro(400, "invalid_content_type");
+  const texto = await req.text();
+  if (texto.length > 16_000) return erro(400, "payload_too_large");
+  let body: any;
+  try { body = JSON.parse(texto); } catch { return erro(400, "invalid_json"); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return erro(400, "invalid_json");
+  // limite antes de qualquer chamada ao Google (custo)
+  const { data: permitida } = await supabase.rpc("od_cotacao_permitida", { p_credencial_id: auth.credencial_id });
+  if (permitida === false) return erro(429, "quote_rate_limited");
+  veiculoComPadrao(body);
+  const geoKey = Deno.env.get("GOOGLE_GEOCODING_KEY");
+  const da = body.deliveryAddress;
+  let geocodificado = false;
+  if (geoKey && semCoordenadas(da)) {
+    const g = await coordenadasDoEndereco(da, geoKey);
+    if ("title" in g) return erro(g.status, g.title, g.detail);
+    da.latitude = g.lat; da.longitude = g.lng; geocodificado = true;
+  }
+  const km = await distanciaKm(auth.loja_id, da);
+  const { data, error } = await supabase.rpc("od_cotar_entrega", {
+    p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_body: body, p_distancia_km: km,
+    p_fator_reta: fatorReta(), p_ip: ipDe(req), p_geocodificado: geocodificado,
+  }).setHeader("x-od-host", hostDe(req));
+  if (error || !data) return erro(503, "service_unavailable");
+  return json(data.status, data.body);
+}
+
 async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }): Promise<Response> {
   if (!(req.headers.get("content-type") ?? "").includes("application/json")) return erro(400, "invalid_content_type");
   const texto = await req.text();
@@ -177,26 +234,21 @@ async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id
   try { body = JSON.parse(texto); } catch { return erro(400, "invalid_json"); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return erro(400, "invalid_json");
   veiculoComPadrao(body);
-  // Sem GOOGLE_GEOCODING_KEY nada muda: o banco responde 422
+  // Com quoteId o banco usa coordenada, distância e preço da cotação: sem
+  // Google aqui. Sem GOOGLE_GEOCODING_KEY nada muda: o banco responde 422
   // invalid_delivery_coordinates, igual a antes.
+  const comCotacao = typeof body.quoteId === "string" && body.quoteId.trim() !== "";
   const geoKey = Deno.env.get("GOOGLE_GEOCODING_KEY");
   const da = body.deliveryAddress;
-  if (geoKey && da && typeof da === "object" && !Array.isArray(da) && (da.latitude == null || da.longitude == null)) {
-    const g = await geocodificar(da, geoKey);
+  if (!comCotacao && geoKey && semCoordenadas(da)) {
+    const g = await coordenadasDoEndereco(da, geoKey);
     if ("title" in g) return erro(g.status, g.title, g.detail);
     da.latitude = g.lat; da.longitude = g.lng;
   }
-  // distância loja -> cliente (coordenadas da loja vêm do cadastro, no banco)
-  let km: number | null = null;
-  const lat = Number(body?.deliveryAddress?.latitude), lng = Number(body?.deliveryAddress?.longitude);
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    const { data: loja } = await supabase.from("lojas").select("latitude,longitude").eq("id", auth.loja_id).single();
-    if (loja?.latitude && loja?.longitude) km = await distanciaRotaKm(Number(loja.latitude), Number(loja.longitude), lat, lng);
-  }
-  const fator = Number(Deno.env.get("OD_FATOR_RETA") ?? "");
+  const km = comCotacao ? null : await distanciaKm(auth.loja_id, da);
   const { data, error } = await supabase.rpc("od_criar_entrega", {
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_body: body, p_distancia_km: km,
-    p_fator_reta: Number.isFinite(fator) && fator >= 1 && fator <= 3 ? fator : null, p_ip: ipDe(req),
+    p_fator_reta: fatorReta(), p_ip: ipDe(req),
   }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
   return json(data.status, data.body);
@@ -321,6 +373,11 @@ serve(async (req) => {
       const auth = await autenticar(req);
       if (!auth) return erro(401, "unauthorized");
       return await cancelarEntrega(req, auth, decodeURIComponent(mCancel[1]));
+    }
+    if (req.method === "POST" && r === "/v1/logistics/quote") {
+      const auth = await autenticar(req);
+      if (!auth) return erro(401, "unauthorized");
+      return await cotarEntrega(req, auth);
     }
     const mGet = r.match(/^\/v1\/logistics\/delivery\/([^/]{1,100})$/);
     if ((req.method === "POST" && r === "/v1/logistics/delivery") || (req.method === "GET" && mGet)) {
