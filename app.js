@@ -14210,6 +14210,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('integracao-cardapioweb-screen').style.display='flex';
 });
 
+// lg_user gravado pelo login de produção antigo (até 2026-10) trazia a
+// coluna senha; tira de qualquer sessão já aberta no navegador.
+try{const _u=JSON.parse(sessionStorage.getItem('lg_user')||'null');if(_u&&typeof _u==='object'&&'senha' in _u){delete _u.senha;sessionStorage.setItem('lg_user',JSON.stringify(_u));}}catch{}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   if(_rastreioIdUrl||_integracaoCardapiowebUrl)return;
   const sessao=sessionStorage.getItem('lg_user'),sessaoAuth=sessionStorage.getItem('lg_session');
