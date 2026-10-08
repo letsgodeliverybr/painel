@@ -17,8 +17,8 @@ const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPAB
 const TOKEN_TTL_SEG = 3600; // 1h; sem refresh token (especificação)
 
 // Erros no formato da especificação: { title, status }
-function erro(status: number, title: string): Response {
-  return new Response(JSON.stringify({ title, status }), {
+function erro(status: number, title: string, detail?: string): Response {
+  return new Response(JSON.stringify(detail ? { title, status, detail } : { title, status }), {
     status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
@@ -99,6 +99,76 @@ async function distanciaRotaKm(lat1: number, lng1: number, lat2: number, lng2: n
   } catch { return null; }
 }
 
+// vehicle: o Open Delivery 1.7.1 exige vehicle {type, container}, mas o
+// Let's Go só opera moto. Sem vehicle (ou sem type) assume moto com bag;
+// sem container assume NORMAL. Tipo informado e sem moto (ex: só CAR)
+// continua 422 vehicle_not_supported no od_criar_entrega.
+function veiculoComPadrao(body: any): void {
+  const v = body.vehicle;
+  if (v === undefined || v === null) { body.vehicle = { type: ["MOTORBIKE_BAG"], container: "NORMAL" }; return; }
+  if (typeof v !== "object" || Array.isArray(v)) return; // formato inválido: 400 no banco
+  const semTipo = v.type === undefined || v.type === null || (Array.isArray(v.type) && v.type.length === 0);
+  body.vehicle = { ...v, type: semTipo ? ["MOTORBIKE_BAG"] : v.type, container: v.container ?? "NORMAL" };
+}
+
+// Endereço sem latitude/longitude (opcionais no Open Delivery 1.7.1): o
+// Let's Go geocodifica pelo Google Geocoding. Só aceita resultado preciso,
+// porque a coordenada define a distância e o preço da entrega; qualquer
+// dúvida vira 422 com motivo, nunca um ponto "aproximado".
+// A chave GOOGLE_GEOCODING_KEY é segredo da função: só vai na URL da
+// chamada ao Google, nunca em log, resposta ou banco.
+const TIPOS_PRECISOS = ["street_address", "premise", "subpremise"];
+const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const componente = (r: any, tipo: string) => r.address_components?.find((c: any) => c.types?.includes(tipo));
+
+type Geo = { lat: number; lng: number } | { status: number; title: string; detail: string };
+
+async function geocodificar(da: any, key: string): Promise<Geo> {
+  const rua = String(da?.street ?? "").trim(), numero = String(da?.number ?? "").trim();
+  const cidade = String(da?.city ?? "").trim(), uf = String(da?.state ?? "").trim();
+  const cep = String(da?.postalCode ?? "").replace(/\D/g, "");
+  if (!rua || !/\d/.test(numero) || !cidade || !uf) {
+    return { status: 422, title: "address_incomplete",
+      detail: "Sem latitude/longitude, informe street, number (com dígito), city e state em deliveryAddress." };
+  }
+  const endereco = [`${rua}, ${numero}`, da?.district, cidade, uf, cep, "Brasil"].filter(Boolean).join(", ");
+  const comps = ["country:BR", cep.length === 8 ? `postal_code:${cep}` : ""].filter(Boolean).join("|");
+  let d: any;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(endereco)}` +
+      `&components=${encodeURIComponent(comps)}&region=br&language=pt-BR&key=${key}`, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    d = await r.json();
+  } catch {
+    return { status: 503, title: "geocoding_unavailable", detail: "Não foi possível localizar o endereço agora. Tente de novo ou envie latitude/longitude." };
+  }
+  // Erro do Google (limite, chave recusada) também vem sem resultados: só
+  // ZERO_RESULTS é "endereço não existe"; o resto é 503, o parceiro tenta de novo.
+  if (d?.status !== "OK" && d?.status !== "ZERO_RESULTS") {
+    return { status: 503, title: "geocoding_unavailable", detail: "Não foi possível localizar o endereço agora. Tente de novo ou envie latitude/longitude." };
+  }
+  if (!d.results?.length) {
+    return { status: 422, title: "address_not_found", detail: "Endereço não encontrado. Confira os dados ou envie latitude/longitude." };
+  }
+  const r = d.results[0];
+  const motivos: string[] = [];
+  if (d.results.length > 1) motivos.push("mais de um endereço possível");
+  if (r.partial_match) motivos.push("correspondência parcial");
+  if (!["ROOFTOP", "RANGE_INTERPOLATED"].includes(r.geometry?.location_type)) motivos.push("localização aproximada");
+  if (!r.types?.some((t: string) => TIPOS_PRECISOS.includes(t))) motivos.push("resultado não é um endereço com número");
+  const num = componente(r, "street_number")?.long_name ?? "";
+  if (num.replace(/\D/g, "") !== numero.replace(/\D/g, "")) motivos.push("número diferente do informado");
+  const cid = componente(r, "administrative_area_level_2") ?? componente(r, "locality");
+  if (!cid || semAcento(cid.long_name) !== semAcento(cidade)) motivos.push("cidade diferente da informada");
+  if (motivos.length) {
+    return { status: 422, title: "low_confidence_address",
+      detail: `Endereço localizado com baixa confiança (${motivos.join(", ")}). Envie latitude/longitude.` };
+  }
+  return { lat: r.geometry.location.lat, lng: r.geometry.location.lng };
+}
+
 async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }): Promise<Response> {
   if (!(req.headers.get("content-type") ?? "").includes("application/json")) return erro(400, "invalid_content_type");
   const texto = await req.text();
@@ -106,6 +176,16 @@ async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id
   let body: any;
   try { body = JSON.parse(texto); } catch { return erro(400, "invalid_json"); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return erro(400, "invalid_json");
+  veiculoComPadrao(body);
+  // Sem GOOGLE_GEOCODING_KEY nada muda: o banco responde 422
+  // invalid_delivery_coordinates, igual a antes.
+  const geoKey = Deno.env.get("GOOGLE_GEOCODING_KEY");
+  const da = body.deliveryAddress;
+  if (geoKey && da && typeof da === "object" && !Array.isArray(da) && (da.latitude == null || da.longitude == null)) {
+    const g = await geocodificar(da, geoKey);
+    if ("title" in g) return erro(g.status, g.title, g.detail);
+    da.latitude = g.lat; da.longitude = g.lng;
+  }
   // distância loja -> cliente (coordenadas da loja vêm do cadastro, no banco)
   let km: number | null = null;
   const lat = Number(body?.deliveryAddress?.latitude), lng = Number(body?.deliveryAddress?.longitude);
