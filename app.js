@@ -2078,21 +2078,61 @@ async function _authHeader(tokenOverride){
   if(!sessao?.access_token)return `Bearer ${SB_KEY}`;
 
   const expiraEm=(sessao.expires_at||0)*1000-Date.now();
-  if(expiraEm<60000 && sessao.refresh_token){
-    try{
-      const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`,{
-        method:'POST',
-        headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
-        body:JSON.stringify({refresh_token:sessao.refresh_token}),
-      });
-      if(r.ok){
-        const nova=await r.json();
-        sessao={access_token:nova.access_token,refresh_token:nova.refresh_token,expires_at:nova.expires_at};
-        sessionStorage.setItem('lg_session',JSON.stringify(sessao));
-      }
-    }catch(e){console.error('[auth] falha ao renovar token:',e);}
+  if(expiraEm<60000){
+    if(!sessao.refresh_token){
+      if(expiraEm<=0){_encerrarSessaoExpirada('sem_refresh_token');return `Bearer ${SB_KEY}`;}
+      return `Bearer ${sessao.access_token}`;
+    }
+    // Uma renovação por vez (E0, 2026-10): o refresh_token do Supabase é de
+    // uso único; renovações em paralelo faziam a 2ª falhar.
+    if(!_renovacaoEmAndamento){
+      const rt=sessao.refresh_token;
+      _renovacaoEmAndamento=(async()=>{
+        try{
+          const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`,{
+            method:'POST',
+            headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+            body:JSON.stringify({refresh_token:rt}),
+          });
+          if(r.ok){
+            const nova=await r.json();
+            const s={access_token:nova.access_token,refresh_token:nova.refresh_token,expires_at:nova.expires_at};
+            sessionStorage.setItem('lg_session',JSON.stringify(s));
+            return {ok:true,sessao:s};
+          }
+          return {ok:false,motivo:'http_'+r.status,definitivo:r.status>=400&&r.status<500};
+        }catch(e){console.error('[auth] falha ao renovar token:',e);return {ok:false,motivo:'rede',definitivo:false};}
+        finally{_renovacaoEmAndamento=null;}
+      })();
+    }
+    const res=await _renovacaoEmAndamento;
+    if(res.ok)return `Bearer ${res.sessao.access_token}`;
+    // Renovação recusada (ou falha de rede com o token já vencido): antes
+    // seguia mandando o token vencido e as telas vinham vazias. Agora
+    // registra e volta ao login.
+    if(res.definitivo||expiraEm<=0){_encerrarSessaoExpirada(res.motivo);return `Bearer ${SB_KEY}`;}
   }
   return `Bearer ${sessao.access_token}`;
+}
+let _renovacaoEmAndamento=null,_sessaoEncerrando=false;
+// Grava em logs_acoes direto com a chave pública, sem passar por db()/
+// _authHeader (que é justamente o que falhou). Só motivo e perfil: nunca
+// token, senha ou dado pessoal.
+async function _logSemSessao(acao,detalhes){
+  try{
+    await fetch(`${SB_URL}/rest/v1/logs_acoes`,{method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({usuario_id:currentUser?.id||null,acao,detalhes})});
+  }catch{}
+}
+function _encerrarSessaoExpirada(motivo){
+  if(_sessaoEncerrando)return;
+  _sessaoEncerrando=true;
+  _logSemSessao('sessao_renovacao_falhou',{perfil:currentPerfil||null,motivo,acao_tomada:'voltou_ao_login'});
+  try{logout();}catch{sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');}
+  const err=document.getElementById('login-error');
+  if(err){err.textContent='Sua Sessão Expirou. Entre Novamente.';err.style.display='block';}
+  setTimeout(()=>{_sessaoEncerrando=false;},3000);
 }
 
 async function db(table,method='GET',body=null,filters='',tokenOverride){
