@@ -1,0 +1,12 @@
+# GitHub Pages (Jekyll): o site serve só o que o painel em produção carrega
+# (app.js, datas_comemorativas.js, img/, docs/ e as páginas de privacidade
+# e exclusão de conta). O resto do repositório não é publicado no site.
+exclude:
+  - migrations
+  - propostas
+  - supabase
+  - hostinger
+  - "*.dart"
+  - NOTIFICACOES_MAPA.md
+  - README.md
+  - "backup_*.json"

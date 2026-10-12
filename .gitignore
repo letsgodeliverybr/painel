@@ -3,3 +3,8 @@
 
 # arquivos de controle local do Supabase CLI (mudam a cada comando)
 supabase/.temp/
+
+# propostas e configurações locais do Claude Code: ficam só no disco
+# (o repositório é público e publicado pelo GitHub Pages)
+propostas/
+.claude/
