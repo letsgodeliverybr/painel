@@ -142,7 +142,10 @@ const ICONES_LUCIDE={
   'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
   'moon':'<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
   'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
-  'user-minus':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/>'
+  'user-minus':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/>',
+  'ticket':'<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+  'lock-open':'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+  'scale':'<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
 };
 function _icone(nome,tam=18,classe=''){
   const c=ICONES_LUCIDE[nome];if(!c)return'';
@@ -10608,6 +10611,9 @@ let _rankingAba='ranking';
 async function renderRankingPage(aba){
   _rankingAba=aba||_rankingAba||'ranking';
   const abas=[{id:'ranking',icon:'trophy',label:'Ranking'},{id:'clas',icon:'crown',label:'Clãs'}];
+  // Sorteios: só adm vê a aba (e o banco recusa qualquer outro perfil de qualquer jeito)
+  if(currentPerfil==='adm')abas.push({id:'sorteios',icon:'ticket',label:'Sorteios'});
+  else if(_rankingAba==='sorteios')_rankingAba='ranking';
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
     <div class="page-header"><div class="page-title">${_icone('trophy',22)} Ranking Entregador</div></div>
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
@@ -10616,6 +10622,7 @@ async function renderRankingPage(aba){
     <div id="ranking-content"></div>
   </div>`;
   if(_rankingAba==='clas'){_renderClasTab();return;}
+  if(_rankingAba==='sorteios'){_renderSorteiosTab();return;}
   _renderRankingLista();
 }
 
@@ -10631,8 +10638,369 @@ async function _renderRankingLista(){
     <td style="font-weight:800;font-size:16px">${medalha(i)}</td>
     <td style="font-weight:600;color:var(--text)">${e.nome||e.id?.substring(0,8)||'—'}</td>
     <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
-    <td style="font-weight:700;color:#22c55e">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2)}</td>
+    <td style="font-weight:700;color:#22c55e;white-space:nowrap">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2).replace('.',',')}</td>
   </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── SORTEIOS (admin) — Parte 2 do sorteio #CadaKmUmSonho (2026-10-12) ──
+// Tudo passa por funções do banco sorteio_admin_* que exigem a SESSÃO REAL de
+// um adm (od_admin_exigir); as tabelas não têm acesso direto. Contagens de
+// números só existem aqui (o site público nunca recebe). Toda ação grava quem
+// fez e quando em logs_acoes. Modo de teste: seletor Real / Teste; o de teste
+// abre sem certificado, só testadores compram e precisa ser apagado antes de
+// ligar a venda real (regras no banco). Textos com maiúscula só na 1ª letra.
+let _stSub='resumo',_stTeste=false,_stResumo=null,_stPedFiltro='',_stPedBusca='',_stPedCache=[],_stTesCache=[];
+const _ST_STATUS_PED={aguardando_pagamento:['Aguardando','#eab308'],paga:['Aprovado','#22c55e'],expirada:['Vencido','#66707D'],cancelada:['Cancelado','#ef4444'],estornada:['Estornado (devolver Pix)','#f97316']};
+const _ST_STATUS_SORTEIO={rascunho:'Rascunho',aberto:'Aberto',encerrado:'Encerrado',apurado:'Apurado',cancelado:'Cancelado'};
+const _stR=v=>'R$ '+Number(v||0).toFixed(2).replace('.',',');
+const _stN=v=>Number(v||0).toLocaleString('pt-BR');
+const _stData=v=>v?new Date(v).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+const _stDia=v=>v?String(v).split('-').reverse().join('/'):'—';
+const _stLocal=v=>{if(!v)return'';const d=new Date(v);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);};
+const _stIso=v=>v?new Date(v).toISOString():null;
+const _stPill=(txt,cor)=>`<span style="display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;background:${cor}22;color:${cor}">${_escHtml(txt)}</span>`;
+const _stLbl=t=>`<label style="display:block;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${t}</label>`;
+const _stCard=(icone,titulo,corpo,extra='')=>`<div class="card" style="margin-bottom:16px"><div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">${_icone(icone,16)} ${titulo}</div>${extra}</div><div style="padding:18px">${corpo}</div></div>`;
+const _stErro=msg=>`<div class="card"><div style="padding:24px;color:#ef4444;font-size:13px">${_escHtml(msg)}</div></div>`;
+
+async function _renderSorteiosTab(){
+  const el=document.getElementById('ranking-content');if(!el)return;
+  const sub=[['resumo','Resumo'],['pedidos','Pedidos'],['sorteio','Sorteio']];
+  const seg=(on,txt,fn)=>`<button onclick="${fn}" style="padding:7px 16px;border:none;border-radius:7px;font-family:Inter,sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:${on?'var(--accent)':'none'};color:${on?'#fff':'var(--text2)'}">${txt}</button>`;
+  el.innerHTML=`<div id="st-root">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+      <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px">${sub.map(([id,t])=>seg(_stSub===id,t,`_stIr('${id}')`)).join('')}</div>
+      <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px;margin-left:auto">${seg(!_stTeste,'Real','_stModo(false)')}${seg(_stTeste,_icone('flask-conical',14,'btn-ico')+'Teste','_stModo(true)')}</div>
+    </div>
+    ${_stTeste?`<div style="background:#eab30822;color:var(--yellow,#eab308);border:1px solid #eab30855;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px">${_icone('flask-conical',16)} AMBIENTE DE TESTE · só testadores compram · apague antes da venda real</div>`:''}
+    <div id="st-conteudo"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
+  </div>`;
+  const r=await _odRpc('sorteio_admin_resumo',{p_sorteio:null,p_teste:_stTeste});
+  const box=document.getElementById('st-conteudo');if(!box)return;
+  if(!r.ok){box.innerHTML=_stErro(r.error);return;}
+  _stResumo=r.data||{};
+  if(_stSub==='pedidos'){_stRenderPedidos();return;}
+  box.innerHTML=_stSub==='sorteio'?_stHtmlSorteio():_stHtmlResumo();
+  if(_stSub==='sorteio'&&_stTeste)_stCarregarTestadores();
+}
+function _stIr(sub){_stSub=sub;_renderSorteiosTab();}
+function _stModo(teste){_stTeste=teste;_stPedFiltro='';_stPedBusca='';_renderSorteiosTab();}
+
+// ---------- Resumo
+function _stTravaHtml(){
+  const c=_stResumo.config||{},v=k=>(c[k]||'').trim()!=='';
+  if(_stTeste){
+    const lig=c.sorteio_teste_habilitado==='true',aberto=_stResumo.sorteio?.status==='aberto',tes=Number(_stResumo.testadores||0);
+    const item=(b,t)=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;color:${b?'#22c55e':'#ef4444'}">${_icone(b?'circle-check':'circle-x',14)}${t}</span>`;
+    return `<div style="display:flex;gap:10px;align-items:flex-start;padding:14px 18px;border-radius:12px;margin-bottom:18px;font-size:13px;border:1px solid ${lig?'#22c55e55':'#ef444455'};background:${lig?'#22c55e14':'#ef444414'}">${_icone(lig?'lock-open':'lock',18)}<div>
+      <div style="font-weight:700;color:var(--text);margin-bottom:6px">${lig?'Teste ligado':'Teste desligado'}</div>
+      <div style="font-size:12px">${item(aberto,'Sorteio de teste aberto')}${item(tes>0,`Testadores (${tes})`)}${item(lig,'Teste ligado')}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">O teste não precisa de certificado, mas só as contas da lista compram. Ligue em Sorteio → Modo de teste.</div></div></div>`;
+  }
+  const t={cert:v('sorteio_certificado_numero'),reg:v('sorteio_regulamento_url')&&v('sorteio_regulamento_versao'),pix:v('sorteio_pix_chave')&&v('sorteio_pix_favorecido')&&v('sorteio_pix_cidade'),wa:v('sorteio_whatsapp'),venda:c.sorteio_vendas_habilitadas==='true'};
+  const item=(b,txt)=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;color:${b?'#22c55e':'#ef4444'}">${_icone(b?'circle-check':'circle-x',14)}${txt}</span>`;
+  return `<div style="display:flex;gap:10px;align-items:flex-start;padding:14px 18px;border-radius:12px;margin-bottom:18px;font-size:13px;border:1px solid ${t.venda?'#22c55e55':'#ef444455'};background:${t.venda?'#22c55e14':'#ef444414'}">${_icone(t.venda?'lock-open':'lock',18)}<div>
+    <div style="font-weight:700;color:var(--text);margin-bottom:6px">${t.venda?'Venda liberada':'Venda bloqueada pela trava geral'}</div>
+    <div style="font-size:12px">${item(t.cert,'Certificado de autorização')}${item(t.reg,'Regulamento')}${item(t.pix,'Chave Pix')}${item(t.wa,'WhatsApp')}${item(t.venda,'Venda ligada')}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">Preencha em Sorteio → Configuração. A venda só liga com tudo preenchido, um sorteio real aberto e nenhum sorteio de teste existindo.</div></div></div>`;
+}
+function _stHtmlResumo(){
+  const r=_stResumo,s=r.sorteio;
+  if(!s)return _stTravaHtml()+`<div class="card"><div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum sorteio ${_stTeste?'de teste':'real'} criado. Crie em Sorteio.</div></div>`;
+  const n=r.numeros||{},tot=n.total||5000,pv=(n.vendidos||0)/tot*100,pr=(n.em_pedidos||0)/tot*100;
+  const card=(l,v,sub,c)=>`<div class="stat-card"><div class="stat-label" style="text-transform:none;letter-spacing:0;font-size:12px">${l}</div><div class="stat-value" style="color:${c||'var(--text)'};white-space:nowrap">${v}</div><div class="stat-sub">${sub||''}</div></div>`;
+  return _stTravaHtml()+`<div class="card" style="margin-bottom:16px"><div style="padding:18px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${_escHtml(s.titulo)} ${_stPill(_ST_STATUS_SORTEIO[s.status]||s.status,'#8F98A6')}</div>
+        <div style="font-size:13px;color:var(--text2)"><b style="font-size:22px;color:var(--accent)">${pv.toFixed(1).replace('.',',')}%</b> vendido</div></div>
+      <div style="height:12px;background:var(--surface2,#1e2029);border-radius:6px;overflow:hidden;display:flex"><div style="width:${pv}%;background:var(--accent)"></div><div style="width:${pr}%;background:#eab308aa"></div></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+        <span style="color:var(--accent)">■ Vendidos ${_stN(n.vendidos)}</span><span style="color:#eab308">■ Em pedidos aguardando ${_stN(n.em_pedidos)}</span><span>■ Livres ${_stN(n.livres)}</span><span>Total ${_stN(tot)}</span></div></div></div>
+    <div class="stats-grid">
+      ${card('Livres',_stN(n.livres),'de '+_stN(tot)+' números')}
+      ${card('Arrecadado',_stR(r.arrecadado),'Vendas aprovadas (Pix)','#22c55e')}
+      ${card('A confirmar',_stR(r.a_confirmar),'Pedidos ainda não aprovados','#eab308')}
+      ${card('Pedidos aguardando',_stN(r.pedidos_aguardando),'Aprovar ou cancelar em Pedidos','#eab308')}
+      ${card('Compradores',_stN(r.compradores),'CPFs com venda aprovada')}
+      ${card('Prêmio',_stR(s.premio_valor),'Extração '+_stDia(s.data_extracao),'var(--accent)')}
+    </div>
+    ${Number(r.estornados)>0?`<div class="card"><div style="padding:12px 18px;font-size:12px;color:#f97316;display:flex;gap:8px;align-items:center">${_icone('triangle-alert',16)} ${_stN(r.estornados)} pedido(s) estornado(s): confira se o Pix foi devolvido. Veja em Pedidos.</div></div>`:''}`;
+}
+
+// ---------- Pedidos
+async function _stRenderPedidos(){
+  const box=document.getElementById('st-conteudo');if(!box)return;
+  const s=_stResumo?.sorteio;
+  if(!s){box.innerHTML=`<div class="card"><div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Nenhum sorteio ${_stTeste?'de teste':'real'} criado.</div></div>`;return;}
+  box.innerHTML=`<div class="card"><div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">${_icone('clipboard-list',16)} Pedidos <span id="st-ped-qtd" style="color:var(--text3)"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end">
+        <select id="st-ped-filtro" onchange="_stPedFiltro=this.value;_stCarregarPedidos()" style="${_ss};width:auto;max-width:200px"><option value="">Todos os status</option>${Object.entries(_ST_STATUS_PED).map(([k,v])=>`<option value="${k}" ${_stPedFiltro===k?'selected':''}>${v[0]}</option>`).join('')}</select>
+        <input id="st-ped-busca" value="${_odAttr(_stPedBusca)}" placeholder="Buscar nome, CPF, titular do Pix ou pedido" onkeydown="if(event.key==='Enter'){_stPedBusca=this.value;_stCarregarPedidos();}" style="${_ss};max-width:300px">
+        <button class="btn-modal-primary" style="padding:9px 14px" onclick="_stPedBusca=document.getElementById('st-ped-busca').value;_stCarregarPedidos()">${_icone('search',14,'btn-ico')}Buscar</button>
+      </div></div>
+    <div id="st-ped-lista" style="overflow-x:auto"><div style="padding:28px;text-align:center;color:var(--text3)">Carregando...</div></div></div>
+    <div style="font-size:11px;color:var(--text3)">Aprovar venda = você conferiu no extrato um Pix do valor exato. Só então os números são sorteados entre os livres, sem repetir, e o comprovante é gerado.</div>`;
+  _stCarregarPedidos();
+}
+async function _stCarregarPedidos(){
+  const el=document.getElementById('st-ped-lista');if(!el)return;
+  const r=await _odRpc('sorteio_admin_pedidos',{p_sorteio:_stResumo.sorteio.id,p_status:_stPedFiltro||null,p_busca:_stPedBusca||null,p_limite:300});
+  if(!r.ok){el.innerHTML=`<div style="padding:20px;color:#ef4444;font-size:13px">${_escHtml(r.error)}</div>`;return;}
+  const lista=Array.isArray(r.data)?r.data:[];_stPedCache=lista;
+  const q=document.getElementById('st-ped-qtd');if(q)q.textContent=`(${lista.length})`;
+  if(!lista.length){el.innerHTML='<div style="padding:28px;text-align:center;color:var(--text3);font-size:13px">Nenhum pedido</div>';return;}
+  const th='style="text-transform:none;letter-spacing:0;font-size:12px"';
+  el.innerHTML=`<table style="min-width:900px"><thead><tr><th ${th}>Pedido</th><th ${th}>Comprador</th><th ${th}>Titular do Pix</th><th ${th}>Valor</th><th ${th}>Números</th><th ${th}>Status</th><th ${th}>Quem / quando</th><th ${th}></th></tr></thead><tbody>${lista.map((p,i)=>{
+    const st=_ST_STATUS_PED[p.status]||[p.status,'#8F98A6'];
+    const outro=p.pix_titular&&p.nome&&p.pix_titular.trim().toLowerCase()!==p.nome.trim().toLowerCase();
+    const quem=p.aprovado_por?`Aprovado por <b style="color:var(--text)">${_escHtml(p.aprovado_por)}</b><br>${_stData(p.aprovado_em)}`
+      :p.cancelado_por?`${p.status==='estornada'?'Estornado':'Cancelado'} por <b style="color:var(--text)">${_escHtml(p.cancelado_por)}</b><br>${_stData(p.cancelado_em)}${p.cancelamento_motivo?`<br><i>${_escHtml(p.cancelamento_motivo)}</i>`:''}`
+      :p.status==='aguardando_pagamento'?`Vence ${_stData(p.expira_em)}`:'—';
+    const podeAprovar=['aguardando_pagamento','expirada'].includes(p.status),podeCancelar=['aguardando_pagamento','expirada','paga'].includes(p.status);
+    return `<tr>
+      <td style="white-space:nowrap"><div style="font-family:ui-monospace,Menlo,monospace;color:var(--text);font-weight:700">${_escHtml(p.codigo)}</div>${_stData(p.criado_em)}</td>
+      <td><div style="font-weight:600;color:var(--text)">${_escHtml(p.nome)}</div><div style="font-family:ui-monospace,Menlo,monospace;font-size:11px">${_escHtml(p.cpf)}</div><div style="font-size:11px">${_escHtml(p.whatsapp)}</div></td>
+      <td>${_escHtml(p.pix_titular)}${outro?` <span title="Titular diferente do comprador" style="color:#f97316">${_icone('triangle-alert',13)}</span>`:''}</td>
+      <td style="font-weight:700;color:var(--text);white-space:nowrap">${_stR(p.valor)}</td><td>${_stN(p.qtd)}</td>
+      <td>${_stPill(st[0],st[1])}${p.comprovante?`<div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;margin-top:4px">Comprovante ${_escHtml(p.comprovante)}</div>`:''}</td>
+      <td style="font-size:12px">${quem}</td>
+      <td style="white-space:nowrap">${podeAprovar?_odBtn('#22c55e','Aprovar venda',`_stAprovar(${i})`)+' ':''}${podeCancelar?_odBtn('#ef4444',p.status==='paga'?'Estornar':'Cancelar',`_stCancelar(${i})`):''}</td></tr>`;}).join('')}</tbody></table>`;
+}
+async function _stAprovar(i){
+  const p=_stPedCache[i];if(!p)return;const id=p.id,codigo=p.codigo,valor=_stR(p.valor);
+  if(!confirm(`Aprovar a venda do pedido ${codigo} (${valor})?\n\nConfirme que o Pix desse valor está no extrato. Os números serão sorteados agora e não dá para desfazer sem estornar.`))return;
+  const r=await _odRpc('sorteio_admin_aprovar',{p_compra:id});
+  if(!r.ok){showNotif('❌ Não aprovado',r.error,'var(--red)');return;}
+  showNotif('✅ Venda aprovada',`${_stN(r.data?.numeros)} números entregues · comprovante ${r.data?.comprovante||''}`);
+  _renderSorteiosTab();
+}
+function _stCancelar(i){
+  const p=_stPedCache[i];if(!p)return;const id=p.id,codigo=p.codigo,paga=p.status==='paga';
+  _stModal(paga?'Estornar venda':'Cancelar pedido',
+    `<div style="font-size:12px;color:var(--text2);margin-bottom:14px">${paga?`Pedido <b>${_escHtml(codigo)}</b> já aprovado: vira <b>estornado</b>, os números voltam a ficar livres e o Pix precisa ser devolvido manualmente.`:`Pedido <b>${_escHtml(codigo)}</b> vira <b>cancelado</b>.`}</div>
+     ${_stLbl('Motivo (obrigatório)')}<textarea id="st-modal-motivo" rows="3" style="${_ss}" placeholder="Ex.: Pix não encontrado no extrato"></textarea>`,
+    paga?'Confirmar estorno':'Confirmar cancelamento',async()=>{
+      const motivo=(document.getElementById('st-modal-motivo')?.value||'').trim();
+      if(motivo.length<5){showNotif('⚠️ Informe o motivo','Pelo menos 5 letras.','var(--yellow)');return false;}
+      const r=await _odRpc('sorteio_admin_cancelar',{p_compra:id,p_motivo:motivo});
+      if(!r.ok){showNotif('❌ Não cancelado',r.error,'var(--red)');return false;}
+      showNotif(r.data?.devolver_pix?'⚠️ Venda estornada':'✅ Pedido cancelado',r.data?.devolver_pix?'Devolva o Pix ao comprador.':'',r.data?.devolver_pix?'var(--yellow)':'var(--green)');
+      _renderSorteiosTab();return true;
+    },'#ef4444');
+}
+
+// ---------- Sorteio
+function _stHtmlSorteio(){
+  const r=_stResumo,s=r.sorteio,c=r.config||{};
+  const regra=_stCard('scale','Regra da apuração',`<div style="font-size:13px;color:var(--text2);line-height:1.6">
+     1. Pega os <b style="color:var(--text)">4 últimos dígitos</b> do 1º prêmio da Loteria Federal.<br>
+     2. Se der <b style="color:var(--text)">5000 ou mais</b>, subtrai 5000.<br>
+     3. Se esse número <b style="color:var(--text)">não foi vendido</b>, vale o próximo vendido acima (depois de 4999 volta ao 0000).
+     <div style="margin-top:12px;padding:10px 12px;background:var(--surface2,#1e2029);border-radius:8px;font-family:ui-monospace,Menlo,monospace">Ex.: 1º prêmio 47.999 → 7999 → 2999<br>Ex.: 1º prêmio 12.345 → 2345</div></div>`);
+  const grid=(...cards)=>`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:16px;align-items:start">${cards.map(x=>`<div style="min-width:0">${x}</div>`).join('')}</div>`;
+  const extra=_stTeste?_stHtmlModoTeste():_stHtmlConfig(c);
+  if(!s)return grid(_stHtmlCriar(),regra)+extra;
+  return grid(_stHtmlDados(s),regra)+extra+_stHtmlApuracao(s,r.apuracao);
+}
+function _stHtmlCriar(){
+  return _stCard('plus',_stTeste?'Criar sorteio de teste':'Criar sorteio',`<div style="display:grid;gap:12px">
+    <div>${_stLbl('Título')}<input id="st-c-titulo" style="${_ss}" value="${_stTeste?'Teste ':''}#CadaKmUmSonho"></div>
+    <div>${_stLbl('Descrição do prêmio')}<input id="st-c-desc" style="${_ss}" value="R$ 200,00 em Pix"></div>
+    <div>${_stLbl('Valor do prêmio (R$)')}<input id="st-c-valor" type="number" min="1" step="0.01" style="${_ss}" value="200"></div>
+    <div style="font-size:11px;color:var(--text3)">5.000 números · bilhete R$ 0,10 · de 100 a 1.000 números por pedido · até 1.000 por CPF. Data, concurso e período de vendas você define depois de criar.</div>
+    <div><button class="btn-modal-primary" onclick="_stCriar()">${_icone('plus',16,'btn-ico')}${_stTeste?'Criar sorteio de teste':'Criar sorteio'}</button></div></div>`);
+}
+async function _stCriar(){
+  const v=id=>document.getElementById(id)?.value||'';
+  const r=await _odRpc('sorteio_admin_criar',{p_titulo:v('st-c-titulo'),p_premio_descricao:v('st-c-desc'),p_premio_valor:Number(v('st-c-valor')||200),p_teste:_stTeste});
+  if(!r.ok){showNotif('❌ Não criado',r.error,'var(--red)');return;}
+  showNotif('✅ Sorteio criado','5.000 números livres, em rascunho.');_renderSorteiosTab();
+}
+function _stHtmlDados(s){
+  const fechado=!['rascunho','aberto','encerrado'].includes(s.status);
+  const dis=fechado?'disabled':'';
+  return _stCard('calendar-days','Dados do sorteio',`<div style="display:grid;gap:12px">
+    <div style="font-size:12px;color:var(--text2)">${_escHtml(s.titulo)} · ${_stPill(_ST_STATUS_SORTEIO[s.status]||s.status,'#8F98A6')}</div>
+    <div>${_stLbl('Data da extração (Loteria Federal)')}<input id="st-d-data" type="date" ${dis} style="${_ss}" value="${_odAttr(s.data_extracao||'')}"></div>
+    <div>${_stLbl('Concurso da Federal')}<input id="st-d-conc" type="number" ${dis} style="${_ss}" placeholder="Ex.: 5900" value="${_odAttr(s.concurso_federal??'')}"></div>
+    <div>${_stLbl('Valor do prêmio (R$)')}<input id="st-d-valor" type="number" min="1" step="0.01" ${dis} style="${_ss}" value="${_odAttr(s.premio_valor)}"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+      <div>${_stLbl('Início das vendas')}<input id="st-d-ini" type="datetime-local" ${dis} style="${_ss}" value="${_stLocal(s.inicio_vendas)}"></div>
+      <div>${_stLbl('Fim das vendas')}<input id="st-d-fim" type="datetime-local" ${dis} style="${_ss}" value="${_stLocal(s.fim_vendas)}"></div></div>
+    <div style="font-size:11px;color:var(--text3)">As vendas terminam antes do dia da extração. Com vendas aprovadas, o prêmio só pode subir.</div>
+    ${fechado?'':`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-modal-primary" onclick="_stSalvarDados('${s.id}')">${_icone('save',16,'btn-ico')}Salvar</button>
+      ${s.status==='rascunho'?`<button class="btn-modal-primary" style="background:#22c55e" onclick="_stAbrir('${s.id}')">${_icone('lock-open',16,'btn-ico')}Abrir sorteio</button>`:''}</div>`}</div>`);
+}
+async function _stSalvarDados(id){
+  const v=k=>document.getElementById(k)?.value||'';
+  const r=await _odRpc('sorteio_admin_definir',{p_sorteio:id,p_data_extracao:v('st-d-data')||null,p_concurso:v('st-d-conc')?Number(v('st-d-conc')):null,
+    p_premio_valor:Number(v('st-d-valor')),p_inicio:_stIso(v('st-d-ini')),p_fim:_stIso(v('st-d-fim'))});
+  if(!r.ok){showNotif('❌ Não salvo',r.error,'var(--red)');return;}
+  showNotif('✅ Dados salvos','');_renderSorteiosTab();
+}
+async function _stAbrir(id){
+  if(!confirm(_stTeste?'Abrir o sorteio de teste?\n\nSó as contas da lista de testadores poderão comprar, e só com o teste ligado.':'Abrir o sorteio real?\n\nO certificado e o regulamento atuais ficam gravados nele. A venda só começa quando você ligar a trava geral.'))return;
+  const r=await _odRpc('sorteio_admin_abrir',{p_sorteio:id});
+  if(!r.ok){showNotif('❌ Não aberto',r.error,'var(--red)');return;}
+  showNotif('✅ Sorteio aberto','');_renderSorteiosTab();
+}
+const _ST_CFG=[['sorteio_certificado_numero','Nº do certificado de autorização',''],['sorteio_certificado_orgao','Órgão que autorizou',''],
+  ['sorteio_regulamento_url','Link do regulamento','https://...'],['sorteio_regulamento_versao','Versão do regulamento','Ex.: 1.0'],
+  ['sorteio_pix_chave','Chave Pix que recebe',''],['sorteio_pix_favorecido','Favorecido (até 25 letras)',''],['sorteio_pix_cidade','Cidade (até 15 letras)',''],
+  ['sorteio_whatsapp','WhatsApp de confirmação','55 + DDD + número'],['sorteio_pedido_validade_minutos','Validade do pedido (minutos)',''],['sorteio_limite_bilhetes_cpf','Limite de números por CPF','']];
+function _stHtmlConfig(c){
+  const lig=c.sorteio_vendas_habilitadas==='true';
+  return _stCard('settings','Configuração (trava geral)',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px">
+      ${_ST_CFG.map(([k,l,ph])=>`<div>${_stLbl(l)}<input id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" style="${_ss}" placeholder="${_odAttr(ph||'Vazio')}" value="${_odAttr(c[k]||'')}"></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn-modal-primary" onclick="_stSalvarConfig()">${_icone('save',16,'btn-ico')}Salvar configuração</button>
+      <button class="btn-modal-primary" style="background:${lig?'#ef4444':'#22c55e'}" onclick="_stTrava('sorteio_vendas_habilitadas',${!lig})">${_icone(lig?'lock':'lock-open',16,'btn-ico')}${lig?'Desligar venda':'Ligar venda'}</button>
+      <span style="font-size:11px;color:var(--text3)">Ligar só funciona com tudo preenchido, um sorteio real aberto e nenhum sorteio de teste existindo.</span></div>`,
+    `<div style="font-size:11px;color:var(--text3)">Cada alteração fica no log</div>`);
+}
+async function _stSalvarConfig(){
+  let n=0;
+  for(const [k] of _ST_CFG){
+    const el=document.getElementById('st-cfg-'+k);if(!el)continue;
+    const novo=el.value.trim();if(novo===(el.dataset.orig||''))continue;
+    const r=await _odRpc('sorteio_admin_config',{p_chave:k,p_valor:novo});
+    if(!r.ok){showNotif('❌ Não salvo',`${_ST_CFG.find(x=>x[0]===k)[1]}: ${r.error}`,'var(--red)');_renderSorteiosTab();return;}
+    n++;
+  }
+  showNotif(n?'✅ Configuração salva':'Nada mudou',n?`${n} campo(s) alterado(s).`:'');_renderSorteiosTab();
+}
+async function _stTrava(chave,ligar){
+  const teste=chave==='sorteio_teste_habilitado';
+  if(ligar&&!confirm(teste?'Ligar o teste?\n\nOs testadores da lista passam a poder fazer pedidos no sorteio de teste.':'Ligar a venda REAL?\n\nO site passa a aceitar pedidos de qualquer pessoa.'))return;
+  const r=await _odRpc('sorteio_admin_config',{p_chave:chave,p_valor:ligar?'true':'false'});
+  if(!r.ok){showNotif('❌ Não alterado',r.error,'var(--red)');return;}
+  showNotif(ligar?(teste?'✅ Teste ligado':'✅ Venda ligada'):(teste?'Teste desligado':'Venda desligada'),'');_renderSorteiosTab();
+}
+function _stHtmlModoTeste(){
+  const c=_stResumo.config||{},lig=c.sorteio_teste_habilitado==='true',s=_stResumo.sorteio;
+  return _stCard('flask-conical','Modo de teste',`
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Só as contas desta lista compram no sorteio de teste. A pessoa precisa já ter conta (criada no site); nenhuma conta é criada aqui. Aprovação e apuração seguem o mesmo fluxo do real.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+      <div style="flex:1;min-width:220px">${_stLbl('E-mail da conta do testador')}<input id="st-tes-email" type="email" style="${_ss}" placeholder="email@exemplo.com"></div>
+      <button class="btn-modal-primary" onclick="_stAddTestador()">${_icone('user-plus',16,'btn-ico')}Adicionar</button></div>
+    <div id="st-tes-lista" style="margin-bottom:16px;color:var(--text3);font-size:13px">Carregando...</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn-modal-primary" style="background:${lig?'#ef4444':'#22c55e'}" onclick="_stTrava('sorteio_teste_habilitado',${!lig})">${_icone(lig?'lock':'lock-open',16,'btn-ico')}${lig?'Desligar teste':'Ligar teste'}</button>
+      ${s?`<button class="btn-modal-primary" style="background:#ef4444" onclick="_stApagarTeste('${s.id}')">${_icone('trash-2',16,'btn-ico')}Apagar sorteio de teste</button>`:''}
+      <span style="font-size:11px;color:var(--text3)">Antes de abrir o sorteio real, apague o de teste: pedidos, números, cadastros dos testadores e a lista somem; o histórico fica no log.</span></div>`);
+}
+async function _stCarregarTestadores(){
+  const el=document.getElementById('st-tes-lista');if(!el)return;
+  const r=await _odRpc('sorteio_admin_testadores');
+  if(!r.ok){el.innerHTML=`<span style="color:#ef4444">${_escHtml(r.error)}</span>`;return;}
+  const l=Array.isArray(r.data)?r.data:[];
+  _stTesCache=l;
+  if(!l.length){el.innerHTML='Nenhum testador.';return;}
+  el.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">${l.map((t,i)=>`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;background:var(--surface2,#1e2029);border-radius:8px">
+    <span style="color:var(--text);font-weight:600;word-break:break-all">${_escHtml(t.email)}</span><span style="font-size:11px">por ${_escHtml(t.adicionado_por||'—')} · ${_stData(t.adicionado_em)}</span>
+    <span style="margin-left:auto">${_odBtn('#475569','Remover',`_stRemTestador(${i})`)}</span></div>`).join('')}</div>`;
+}
+async function _stAddTestador(){
+  const email=(document.getElementById('st-tes-email')?.value||'').trim();
+  if(!email){showNotif('⚠️ Informe o e-mail','','var(--yellow)');return;}
+  const r=await _odRpc('sorteio_admin_testador_adicionar',{p_email:email});
+  if(!r.ok){showNotif('❌ Não adicionado',r.error,'var(--red)');return;}
+  showNotif('✅ Testador adicionado',email);_renderSorteiosTab();
+}
+async function _stRemTestador(i){
+  const t=_stTesCache[i];if(!t)return;const id=t.user_id,email=t.email;
+  if(!confirm(`Remover ${email} da lista de testadores?`))return;
+  const r=await _odRpc('sorteio_admin_testador_remover',{p_user_id:id});
+  if(!r.ok){showNotif('❌ Não removido',r.error,'var(--red)');return;}
+  showNotif('Testador removido',email);_renderSorteiosTab();
+}
+function _stApagarTeste(id){
+  _stModal('Apagar sorteio de teste',`<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Apaga <b>o sorteio de teste inteiro</b>: apuração, números, pedidos, os cadastros dos testadores sem pedido real e a lista de testadores. Desliga o teste. <b>Não dá para desfazer.</b> O histórico fica no log.</div>
+    ${_stLbl('Motivo (obrigatório)')}<input id="st-modal-motivo" style="${_ss}" placeholder="Ex.: teste concluído, liberando o sorteio real">
+    <div style="margin-top:12px">${_stLbl('Digite APAGAR para confirmar')}<input id="st-modal-conf" style="${_ss}"></div>`,
+    'Apagar teste',async()=>{
+      if((document.getElementById('st-modal-conf')?.value||'').trim().toUpperCase()!=='APAGAR'){showNotif('⚠️ Digite APAGAR para confirmar','','var(--yellow)');return false;}
+      const r=await _odRpc('sorteio_admin_apagar_teste',{p_sorteio:id,p_motivo:(document.getElementById('st-modal-motivo')?.value||'').trim()});
+      if(!r.ok){showNotif('❌ Não apagado',r.error,'var(--red)');return false;}
+      const d=r.data||{};showNotif('✅ Sorteio de teste apagado',`${d.pedidos||0} pedido(s), ${d.cadastros||0} cadastro(s), ${d.testadores||0} testador(es).`);
+      _renderSorteiosTab();return true;
+    },'#ef4444');
+}
+function _stHtmlApuracao(s,a){
+  const passo=(n,ativo,feito,titulo,corpo)=>`<div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);opacity:${ativo||feito?1:.45}">
+     <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;color:#fff;background:${feito?'#22c55e':ativo?'var(--accent)':'var(--surface2,#1e2029)'}">${feito?_icone('check',14):n}</div>
+     <div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--text);margin-bottom:8px">${titulo}</div>${corpo}</div></div>`;
+  const reg=!!a,conf=!!a?.conferido_em,pago=!!a?.premio_pago_em;
+  const p1=reg?(a.eu_registrei||conf?`1º prêmio <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${_escHtml(a.premio1)}</b> → sorteado <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${String(a.numero_sorteado).padStart(4,'0')}</b> → vencedor <b style="font-family:ui-monospace,Menlo,monospace;color:#22c55e">${String(a.numero_vencedor).padStart(4,'0')}</b><br>`:'Resultado escondido até você conferir.<br>')
+    +`Registrado por <b style="color:var(--text)">${_escHtml(a.registrado_por||'—')}</b> em ${_stData(a.registrado_em)}`:'';
+  const corpo1=reg?`<div style="font-size:12px">${p1}</div>`:`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">
+      <div>${_stLbl('Concurso')}<input id="st-a-conc" type="number" style="${_ss}" value="${_odAttr(s.concurso_federal??'')}"></div>
+      <div>${_stLbl('Data')}<input id="st-a-data" type="date" style="${_ss}" value="${_odAttr(s.data_extracao||'')}"></div>
+      <div>${_stLbl('1º prêmio (5 dígitos)')}<input id="st-a-p1" maxlength="5" inputmode="numeric" style="${_ss};font-family:ui-monospace,Menlo,monospace" placeholder="47999"></div>
+      <div>${_stLbl('Link do resultado oficial')}<input id="st-a-fonte" style="${_ss}" placeholder="https://..."></div></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Só depois do fim das vendas e sem pedidos aguardando. Concurso e data precisam ser os definidos no sorteio.</div>
+    <button class="btn-modal-primary" onclick="_stApurar('${s.id}')">${_icone('send',16,'btn-ico')}Registrar apuração</button>`;
+  const corpo2=!reg?'':conf?`<div style="font-size:12px">Conferido por <b style="color:var(--text)">${_escHtml(a.conferido_por||'—')}</b> em ${_stData(a.conferido_em)}</div>`
+    :a.eu_registrei?`<div style="font-size:12px;color:#f97316">${_icone('info',12)} Aguardando outro administrador: quem registrou não pode conferir.</div>
+       <div style="margin-top:10px">${_odBtn('#475569','Descartar registro',`_stDescartar('${s.id}')`)}</div>`
+    :`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Digite o 1º prêmio olhando o resultado oficial. O número registrado fica escondido até você confirmar.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div style="max-width:200px">${_stLbl('1º prêmio')}<input id="st-a-conf" maxlength="5" inputmode="numeric" style="${_ss};font-family:ui-monospace,Menlo,monospace"></div>
+      <button class="btn-modal-primary" onclick="_stConferir('${s.id}')">${_icone('circle-check',16,'btn-ico')}Conferir</button>${_odBtn('#475569','Descartar registro',`_stDescartar('${s.id}')`)}</div>`;
+  const v=a?.vencedor;
+  const corpo3=!conf?'':`<div style="font-size:12px;margin-bottom:10px">${v?`Vencedor: <b style="color:var(--text)">${_escHtml(v.nome)}</b> · <span style="font-family:ui-monospace,Menlo,monospace">${_escHtml(v.cpf)}</span> · ${_escHtml(v.whatsapp)} · pedido ${_escHtml(v.pedido)} · comprovante <span style="font-family:ui-monospace,Menlo,monospace">${_escHtml(v.comprovante)}</span> · `:''}prêmio <b style="color:var(--text);white-space:nowrap">${_stR(s.premio_valor)}</b></div>
+    ${pago?`<div style="font-size:12px;color:#22c55e">${_icone('circle-check',13)} Pago por <b>${_escHtml(a.premio_pago_por||'—')}</b> em ${_stData(a.premio_pago_em)}${a.premio_pago_obs?` · ${_escHtml(a.premio_pago_obs)}`:''}</div>`
+      :`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div style="flex:1;min-width:200px">${_stLbl('Observação (ex.: Pix enviado, ID da transferência)')}<input id="st-a-obs" style="${_ss}"></div>
+       <button class="btn-modal-primary" style="background:#22c55e" onclick="_stPremioPago('${s.id}')">${_icone('banknote',16,'btn-ico')}Marcar prêmio pago</button></div>`}`;
+  return _stCard('circle-check','Apuração',passo(1,!reg,reg,'Registrar resultado (1º administrador)',corpo1)
+    +passo(2,reg&&!conf,conf,'Conferir (outro administrador, login diferente)',corpo2)
+    +passo(3,conf&&!pago,pago,'Pagar o prêmio',corpo3));
+}
+async function _stApurar(id){
+  const v=k=>(document.getElementById(k)?.value||'').trim();
+  if(!/^\d{5}$/.test(v('st-a-p1'))){showNotif('⚠️ 1º prêmio','Digite os 5 dígitos.','var(--yellow)');return;}
+  if(!confirm(`Registrar a apuração com o 1º prêmio ${v('st-a-p1')}?\n\nOutro administrador vai conferir sem ver este número.`))return;
+  const r=await _odRpc('sorteio_admin_apurar',{p_sorteio:id,p_concurso:Number(v('st-a-conc')),p_data:v('st-a-data')||null,p_premio1:v('st-a-p1'),p_fonte:v('st-a-fonte')||null});
+  if(!r.ok){showNotif('❌ Não registrado',r.error,'var(--red)');return;}
+  showNotif('✅ Apuração registrada','Agora outro administrador confere.');_renderSorteiosTab();
+}
+async function _stConferir(id){
+  const p1=(document.getElementById('st-a-conf')?.value||'').trim();
+  if(!/^\d{5}$/.test(p1)){showNotif('⚠️ 1º prêmio','Digite os 5 dígitos.','var(--yellow)');return;}
+  const r=await _odRpc('sorteio_admin_conferir',{p_sorteio:id,p_premio1:p1});
+  if(!r.ok){showNotif('❌ Não conferido',r.error,'var(--red)');return;}
+  if(r.data?.ok===false){showNotif('❌ Número diferente do registrado','Confira o resultado oficial. A divergência ficou no log.','var(--red)');return;}
+  showNotif('✅ Apuração conferida','');_renderSorteiosTab();
+}
+function _stDescartar(id){
+  _stModal('Descartar registro da apuração',`<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Use se o registro foi feito errado. Ele sai e a apuração pode ser registrada de novo. Fica no log.</div>${_stLbl('Motivo (obrigatório)')}<input id="st-modal-motivo" style="${_ss}">`,
+    'Descartar',async()=>{
+      const r=await _odRpc('sorteio_admin_descartar_apuracao',{p_sorteio:id,p_motivo:(document.getElementById('st-modal-motivo')?.value||'').trim()});
+      if(!r.ok){showNotif('❌ Não descartado',r.error,'var(--red)');return false;}
+      showNotif('Registro descartado','');_renderSorteiosTab();return true;
+    },'#ef4444');
+}
+async function _stPremioPago(id){
+  const obs=(document.getElementById('st-a-obs')?.value||'').trim();
+  if(!confirm('Marcar o prêmio como pago?'))return;
+  const r=await _odRpc('sorteio_admin_premio_pago',{p_sorteio:id,p_obs:obs});
+  if(!r.ok){showNotif('❌ Não marcado',r.error,'var(--red)');return;}
+  showNotif('✅ Prêmio marcado como pago','');_renderSorteiosTab();
+}
+
+// Modal simples da aba (motivo de cancelamento, apagar teste, descartar).
+function _stModal(titulo,corpo,txtOk,onOk,cor){
+  document.getElementById('st-modal')?.remove();
+  const m=document.createElement('div');m.id='st-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:460px;max-width:100%;padding:22px">
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">${titulo}</div>${corpo}
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button id="st-modal-voltar" style="background:var(--surface2,#1e2029);color:var(--text2);border:none;border-radius:7px;padding:8px 14px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Voltar</button>
+    <button id="st-modal-ok" style="background:${cor||'var(--accent)'};color:#fff;border:none;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${txtOk}</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#st-modal-voltar').onclick=()=>m.remove();
+  const ok=m.querySelector('#st-modal-ok');
+  ok.onclick=async()=>{ok.disabled=true;const fechar=await onOk();if(fechar)m.remove();else ok.disabled=false;};
 }
 
 // ── CLÃS DE ENTREGADOR ──
