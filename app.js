@@ -10649,7 +10649,10 @@ async function _renderRankingLista(){
 // fez e quando em logs_acoes. Modo de teste: seletor Real / Teste; o de teste
 // abre sem certificado, só testadores compram e precisa ser apagado antes de
 // ligar a venda real (regras no banco). Textos com maiúscula só na 1ª letra.
-let _stSub='resumo',_stTeste=false,_stResumo=null,_stPedFiltro='',_stPedBusca='',_stPedCache=[],_stTesCache=[];
+// Só teste (2026-10-13): enquanto a venda real não abre, a aba fica só no modo Teste — sem o botão Real e sem a
+// faixa amarela. Para voltar ao normal quando a venda abrir, troque para false (o código do modo Real continua aqui).
+const _ST_SO_TESTE=true;
+let _stSub='resumo',_stTeste=_ST_SO_TESTE,_stResumo=null,_stPedFiltro='',_stPedBusca='',_stPedCache=[],_stTesCache=[];
 const _ST_STATUS_PED={aguardando_pagamento:['Aguardando','#eab308'],paga:['Aprovado','#22c55e'],expirada:['Vencido','#66707D'],cancelada:['Cancelado','#ef4444'],estornada:['Estornado (devolver Pix)','#f97316']};
 const _ST_STATUS_SORTEIO={rascunho:'Rascunho',aberto:'Aberto',encerrado:'Encerrado',apurado:'Apurado',cancelado:'Cancelado'};
 const _stR=v=>'R$\u00a0'+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -10691,9 +10694,9 @@ async function _renderSorteiosTab(){
   el.innerHTML=`<div id="st-root">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
       <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px">${sub.map(([id,t])=>seg(_stSub===id,t,`_stIr('${id}')`)).join('')}</div>
-      <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px;margin-left:auto">${seg(!_stTeste,'Real','_stModo(false)')}${seg(_stTeste,_icone('flask-conical',14,'btn-ico')+'Teste','_stModo(true)')}</div>
+      <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px;margin-left:auto">${_ST_SO_TESTE?'':seg(!_stTeste,'Real','_stModo(false)')}${seg(_stTeste,_icone('flask-conical',14,'btn-ico')+'Teste','_stModo(true)')}</div>
     </div>
-    ${_stTeste?`<div style="background:#eab30822;color:var(--yellow,#eab308);border:1px solid #eab30855;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px">${_icone('flask-conical',16)} AMBIENTE DE TESTE · só testadores compram · apague antes da venda real</div>`:''}
+    ${_stTeste&&!_ST_SO_TESTE?`<div style="background:#eab30822;color:var(--yellow,#eab308);border:1px solid #eab30855;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px">${_icone('flask-conical',16)} AMBIENTE DE TESTE · só testadores compram · apague antes da venda real</div>`:''}
     <div id="st-conteudo"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div>
   </div>`;
   const r=await _odRpc('sorteio_admin_resumo',{p_sorteio:null,p_teste:_stTeste});
@@ -10817,7 +10820,8 @@ function _stHtmlSorteio(){
   const r=_stResumo,s=r.sorteio,c=r.config||{};
   const regra=_stCard('scale','Regra da apuração',`<div id="st-regra-corpo">${_stRegraHtml(s?.total_numeros||5000)}</div>`);
   const grid=(...cards)=>`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:16px;align-items:start">${cards.map(x=>`<div style="min-width:0">${x}</div>`).join('')}</div>`;
-  const extra=_stTeste?_stHtmlModoTeste():_stHtmlConfig(c);
+  // só teste: a Configuração (Pix, WhatsApp, rodapé) aparece junto, porque o Pix de teste depende dela
+  const extra=_ST_SO_TESTE?_stHtmlConfig(c)+_stHtmlModoTeste():_stTeste?_stHtmlModoTeste():_stHtmlConfig(c);
   if(!s)return grid(_stHtmlCriar(),regra)+extra;
   return grid(_stHtmlDados(s),regra)+extra+_stHtmlApuracao(s,r.apuracao);
 }
@@ -10888,8 +10892,8 @@ function _stHtmlConfig(c){
         ?`<div style="grid-column:1/-1">${_stLbl(l)}<textarea id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" rows="5" maxlength="3000" style="${_ss};resize:vertical" placeholder="Vazio">${_escHtml(c[k]||'')}</textarea></div>`
         :`<div>${_stLbl(l)}<input id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" style="${_ss}" placeholder="${_odAttr(ph||'Vazio')}" value="${_odAttr(c[k]||'')}"></div>`).join('')}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn-modal-primary" onclick="_stSalvarConfig()">${_icone('save',16,'btn-ico')}Salvar configuração</button>
-      <button class="btn-modal-primary" style="background:${lig?'#ef4444':'#22c55e'}" onclick="_stTrava('sorteio_vendas_habilitadas',${!lig})">${_icone(lig?'lock':'lock-open',16,'btn-ico')}${lig?'Desligar venda':'Ligar venda'}</button>
-      <span style="font-size:11px;color:var(--text3)">Ligar só funciona com tudo preenchido, um sorteio real aberto e nenhum sorteio de teste existindo.</span></div>`,
+      ${_ST_SO_TESTE?'':`<button class="btn-modal-primary" style="background:${lig?'#ef4444':'#22c55e'}" onclick="_stTrava('sorteio_vendas_habilitadas',${!lig})">${_icone(lig?'lock':'lock-open',16,'btn-ico')}${lig?'Desligar venda':'Ligar venda'}</button>`}
+      ${_ST_SO_TESTE?'':`<span style="font-size:11px;color:var(--text3)">Ligar só funciona com tudo preenchido, um sorteio real aberto e nenhum sorteio de teste existindo.</span>`}</div>`,
     `<div style="font-size:11px;color:var(--text3)">Cada alteração fica no log</div>`);
 }
 async function _stSalvarConfig(){
