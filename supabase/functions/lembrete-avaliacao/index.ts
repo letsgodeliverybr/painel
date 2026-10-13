@@ -22,11 +22,11 @@ const FCM_PROJECT_ID = "lets-go-delivery-df74d";
 // namespace (com.letsgodelivery.entregador), que é usado só como bundle
 // id no iOS/Firebase.
 const ANDROID_PACKAGE_ID = "br.com.letsgodelivery.parceiro";
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? crypto.randomUUID() /* sem valor reserva no código: sem a variável, nada confere */;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-webhook-secret",
+  "Access-Control-Allow-Headers": "content-type, x-webhook-secret, authorization, apikey, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -154,11 +154,31 @@ async function sendFCM(
   return res.ok;
 }
 
+// Webhook fase 1 (2026-10-12): o cron continua chamando com o segredo do
+// servidor; o botão do painel passa a chamar com a sessão real de um adm
+// (mesmo padrão de admin-reset-senha), sem o segredo no navegador.
+async function autorizado(req: Request): Promise<boolean> {
+  const secret = req.headers.get("x-webhook-secret");
+  if (secret && secret === WEBHOOK_SECRET) return true;
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!token) return false;
+  const url = Deno.env.get("SUPABASE_URL")!, srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const u = await fetch(`${url}/auth/v1/user`, { headers: { apikey: srk, Authorization: `Bearer ${token}` } });
+  if (!u.ok) return false;
+  const id = (await u.json())?.id;
+  if (!id) return false;
+  const p = await fetch(`${url}/rest/v1/usuarios_painel?id=eq.${id}&select=perfil,ativo`, {
+    headers: { apikey: srk, Authorization: `Bearer ${srk}` },
+  });
+  if (!p.ok) return false;
+  const r = (await p.json())?.[0];
+  return !!r && r.perfil === "adm" && r.ativo === true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: CORS_HEADERS });
 
-  const secret = req.headers.get("x-webhook-secret");
-  if (secret !== WEBHOOK_SECRET) return json({ error: "Unauthorized" }, 401);
+  if (!(await autorizado(req))) return json({ error: "Unauthorized" }, 401);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

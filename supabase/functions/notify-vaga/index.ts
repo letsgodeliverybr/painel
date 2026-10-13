@@ -30,7 +30,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? crypto.randomUUID() /* sem valor reserva no código: sem a variável, nada confere */;
 const FCM_SA = JSON.parse(Deno.env.get("FCM_SERVICE_ACCOUNT") ?? "{}");
 const FCM_PROJECT = FCM_SA.project_id ?? "";
 const JANELA_MS = 2 * 60 * 1000;

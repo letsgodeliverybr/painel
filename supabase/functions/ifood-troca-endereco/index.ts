@@ -15,7 +15,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // update-entregador-email/index.ts.
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? crypto.randomUUID() /* sem valor reserva no código: sem a variável, nada confere */;
 const IFOOD_CLIENT_ID = Deno.env.get("IFOOD_CLIENT_ID") ?? "";
 const IFOOD_CLIENT_SECRET = Deno.env.get("IFOOD_CLIENT_SECRET") ?? "";
 const IFOOD_BASE_URL = "https://merchant-api.ifood.com.br";

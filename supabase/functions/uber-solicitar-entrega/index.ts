@@ -16,7 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // iFood (log do erro real, corrige o campo certo).
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "letsgo2026secret";
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? crypto.randomUUID() /* sem valor reserva no código: sem a variável, nada confere */;
 const UBER_CUSTOMER_ID = Deno.env.get("UBER_CUSTOMER_ID") ?? "";
 const UBER_CLIENT_ID = Deno.env.get("UBER_CLIENT_ID") ?? "";
 const UBER_CLIENT_SECRET = Deno.env.get("UBER_CLIENT_SECRET") ?? "";

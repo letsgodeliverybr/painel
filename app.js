@@ -6498,11 +6498,18 @@ async function _setCadastroStatus(entId,novoStatus){
 
 async function excluirEntregador(id,nome){
   if(!confirm(`Excluir Permanentemente?\nO Histórico De Pedidos Será Mantido.`))return;
+  // Webhook fase 1 (2026-10-12): a Edge Function exige a sessão real de um adm
+  // (antes bastava um segredo fixo no app.js público). Apaga a conta do Auth
+  // primeiro: se for recusada, nada é apagado aqui.
+  let rAuth=null;
+  try{rAuth=await fetch(`${SB_URL}/functions/v1/delete-entregador`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':await _authHeader()},body:JSON.stringify({entregador_id:id})});}catch{}
+  if(!rAuth||!rAuth.ok){
+    const err=rAuth?(await rAuth.json().catch(()=>({}))).error:null;
+    showNotif('❌ Não Foi Possível Excluir',err||'Erro De Conexão.','var(--red)');return;
+  }
   // Nulifica saques antes de deletar para evitar FK constraint
   await db('saques','PATCH',{entregador_id:null},`?entregador_id=eq.${id}`).catch(()=>{});
   await db('entregadores','DELETE',null,`?id=eq.${id}`);
-  // Deleta auth user via Edge Function (requer service role key)
-  await fetch(`${SB_URL}/functions/v1/delete-entregador`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({entregador_id:id})}).catch(()=>{});
   showNotif('🗑️ Entregador Excluído','','var(--red)');
   renderCadastrosPage('entregadores');
 }
@@ -6676,7 +6683,7 @@ async function salvarEdicaoEntregador(entId){
     try{
       const r=await fetch(`${SB_URL}/functions/v1/update-entregador-email`,{
         method:'POST',
-        headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
+        headers:{'Content-Type':'application/json','Authorization':await _authHeader()},
         body:JSON.stringify({entregador_id:entId,email_atual:emailOriginal,novo_email:novoEmail})
       });
       const data=await r.json().catch(()=>({}));
@@ -12590,7 +12597,7 @@ async function _npChamarFn(tipo,body){
   const bodyFinal=m.chave?{...body,chave:m.chave}:body;
   const r=await fetch(`${SB_URL}/functions/v1/${m.fn}`,{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},
+    headers:{'Content-Type':'application/json','Authorization':await _authHeader()},
     body:JSON.stringify(bodyFinal),
   });
   return r.json();
