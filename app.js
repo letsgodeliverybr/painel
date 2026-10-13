@@ -10877,11 +10877,16 @@ async function _stAbrir(id){
 const _ST_CFG=[['sorteio_certificado_numero','Nº do certificado de autorização',''],['sorteio_certificado_orgao','Órgão que autorizou',''],
   ['sorteio_regulamento_url','Link do regulamento','https://...'],['sorteio_regulamento_versao','Versão do regulamento','Ex.: 1.0'],
   ['sorteio_pix_chave','Chave Pix que recebe',''],['sorteio_pix_favorecido','Favorecido (até 25 letras)',''],['sorteio_pix_cidade','Cidade (até 15 letras)',''],
-  ['sorteio_whatsapp','WhatsApp de confirmação','55 + DDD + número'],['sorteio_pedido_validade_minutos','Validade do pedido (minutos)',''],['sorteio_limite_bilhetes_cpf','Limite de números por CPF',''],['sorteio_percentual_max_cpf','Percentual máximo por CPF (1 a 50)','20']];
+  ['sorteio_whatsapp','WhatsApp de confirmação','55 + DDD + número'],['sorteio_pedido_validade_minutos','Validade do pedido (minutos)',''],['sorteio_limite_bilhetes_cpf','Limite de números por CPF',''],['sorteio_percentual_max_cpf','Percentual máximo por CPF (1 a 50)','20'],
+  // rodapé do site público (etapa A, 2026-10-12): vazio aparece como "—" no site; nada de texto pronto aqui
+  ['sorteio_rodape_processo','Rodapé do site: nº do processo',''],['sorteio_rodape_entidade','Rodapé do site: entidade beneficiária',''],
+  ['sorteio_rodape_texto','Rodapé do site: texto obrigatório (até 3.000 caracteres)','']];
 function _stHtmlConfig(c){
   const lig=c.sorteio_vendas_habilitadas==='true';
   return _stCard('settings','Configuração (trava geral)',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px">
-      ${_ST_CFG.map(([k,l,ph])=>`<div>${_stLbl(l)}<input id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" style="${_ss}" placeholder="${_odAttr(ph||'Vazio')}" value="${_odAttr(c[k]||'')}"></div>`).join('')}</div>
+      ${_ST_CFG.map(([k,l,ph])=>k==='sorteio_rodape_texto'
+        ?`<div style="grid-column:1/-1">${_stLbl(l)}<textarea id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" rows="5" maxlength="3000" style="${_ss};resize:vertical" placeholder="Vazio">${_escHtml(c[k]||'')}</textarea></div>`
+        :`<div>${_stLbl(l)}<input id="st-cfg-${k}" data-orig="${_odAttr(c[k]||'')}" style="${_ss}" placeholder="${_odAttr(ph||'Vazio')}" value="${_odAttr(c[k]||'')}"></div>`).join('')}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn-modal-primary" onclick="_stSalvarConfig()">${_icone('save',16,'btn-ico')}Salvar configuração</button>
       <button class="btn-modal-primary" style="background:${lig?'#ef4444':'#22c55e'}" onclick="_stTrava('sorteio_vendas_habilitadas',${!lig})">${_icone(lig?'lock':'lock-open',16,'btn-ico')}${lig?'Desligar venda':'Ligar venda'}</button>
       <span style="font-size:11px;color:var(--text3)">Ligar só funciona com tudo preenchido, um sorteio real aberto e nenhum sorteio de teste existindo.</span></div>`,
