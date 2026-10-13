@@ -10652,7 +10652,7 @@ async function _renderRankingLista(){
 let _stSub='resumo',_stTeste=false,_stResumo=null,_stPedFiltro='',_stPedBusca='',_stPedCache=[],_stTesCache=[];
 const _ST_STATUS_PED={aguardando_pagamento:['Aguardando','#eab308'],paga:['Aprovado','#22c55e'],expirada:['Vencido','#66707D'],cancelada:['Cancelado','#ef4444'],estornada:['Estornado (devolver Pix)','#f97316']};
 const _ST_STATUS_SORTEIO={rascunho:'Rascunho',aberto:'Aberto',encerrado:'Encerrado',apurado:'Apurado',cancelado:'Cancelado'};
-const _stR=v=>'R$ '+Number(v||0).toFixed(2).replace('.',',');
+const _stR=v=>'R$\u00a0'+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const _stN=v=>Number(v||0).toLocaleString('pt-BR');
 const _stData=v=>v?new Date(v).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
 const _stDia=v=>v?String(v).split('-').reverse().join('/'):'—';
@@ -10661,6 +10661,27 @@ const _stIso=v=>v?new Date(v).toISOString():null;
 const _stPill=(txt,cor)=>`<span style="display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;background:${cor}22;color:${cor}">${_escHtml(txt)}</span>`;
 const _stLbl=t=>`<label style="display:block;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${t}</label>`;
 const _stCard=(icone,titulo,corpo,extra='')=>`<div class="card" style="margin-bottom:16px"><div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">${_icone(icone,16)} ${titulo}</div>${extra}</div><div style="padding:18px">${corpo}</div></div>`;
+// Total variável (2026-10-12): 1.000, 2.000, 2.500, 5.000 ou 10.000. Mesma conta do banco
+// (sorteio__numero_da_federal): últimos N dígitos do 1º prêmio; se der o total ou mais, subtrai o total.
+const _ST_TOTAIS=[1000,2000,2500,5000,10000];
+const _stDig=t=>String(t-1).length;
+const _stPad=(n,t)=>String(n).padStart(_stDig(t),'0');
+const _stNumFederal=(p1,t)=>Number(String(p1).slice(-_stDig(t)))%t;
+function _stRegraHtml(t){
+  const d=_stDig(t),pot=10**d,b=x=>`<b style="color:var(--text)">${x}</b>`;
+  const passos=[`Pega os ${b(d+' últimos dígitos')} do 1º prêmio da Loteria Federal.`];
+  if(pot!==t)passos.push(pot/t===2?`Se der ${b(_stN(t)+' ou mais')}, subtrai ${_stN(t)}.`:`Enquanto der ${b(_stN(t)+' ou mais')}, subtrai ${_stN(t)}.`);
+  passos.push(`Se esse número ${b('não foi vendido')}, vale o próximo vendido acima (depois de ${_stPad(t-1,t)} volta ao ${_stPad(0,t)}).`);
+  const ex=['47999','12345'].map(p=>{const ult=p.slice(-d),n=_stNumFederal(p,t);
+    return `Ex.: 1º prêmio ${p.slice(0,2)}.${p.slice(2)} → ${ult}${Number(ult)!==n?' → '+_stPad(n,t):''}`;}).join('<br>');
+  return `<div style="font-size:13px;color:var(--text2);line-height:1.6">${passos.map((x,i)=>`${i+1}. ${x}`).join('<br>')}
+    <div style="margin-top:12px;padding:10px 12px;background:var(--surface2,#1e2029);border-radius:8px;font-family:ui-monospace,Menlo,monospace">${ex}</div></div>`;
+}
+// limites efetivos (mesma conta de sorteio__limites): nunca acima do percentual do total
+function _stLimites(t){
+  const c=_stResumo?.config||{},num=(k,d)=>Number(c[k]||d),pct=num('sorteio_percentual_max_cpf',20),cap=Math.floor(t*pct/100);
+  return{min:num('sorteio_qtd_min',100),max:Math.min(num('sorteio_qtd_max',1000),cap),cpf:Math.min(num('sorteio_limite_bilhetes_cpf',1000),cap),pct};
+}
 const _stErro=msg=>`<div class="card"><div style="padding:24px;color:#ef4444;font-size:13px">${_escHtml(msg)}</div></div>`;
 
 async function _renderSorteiosTab(){
@@ -10715,6 +10736,7 @@ function _stHtmlResumo(){
         <div style="font-size:13px;color:var(--text2)"><b style="font-size:22px;color:var(--accent)">${pv.toFixed(1).replace('.',',')}%</b> vendido</div></div>
       <div style="height:12px;background:var(--surface2,#1e2029);border-radius:6px;overflow:hidden;display:flex"><div style="width:${pv}%;background:var(--accent)"></div><div style="width:${pr}%;background:#eab308aa"></div></div>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+        <span>${(()=>{const l=s.limites||{};return `Por pedido ${_stN(l.min_pedido)} a ${_stN(l.max_pedido)} · até ${_stN(l.teto_cpf)} por CPF`;})()}</span>
         <span style="color:var(--accent)">■ Vendidos ${_stN(n.vendidos)}</span><span style="color:#eab308">■ Em pedidos aguardando ${_stN(n.em_pedidos)}</span><span>■ Livres ${_stN(n.livres)}</span><span>Total ${_stN(tot)}</span></div></div></div>
     <div class="stats-grid">
       ${card('Livres',_stN(n.livres),'de '+_stN(tot)+' números')}
@@ -10793,11 +10815,7 @@ function _stCancelar(i){
 // ---------- Sorteio
 function _stHtmlSorteio(){
   const r=_stResumo,s=r.sorteio,c=r.config||{};
-  const regra=_stCard('scale','Regra da apuração',`<div style="font-size:13px;color:var(--text2);line-height:1.6">
-     1. Pega os <b style="color:var(--text)">4 últimos dígitos</b> do 1º prêmio da Loteria Federal.<br>
-     2. Se der <b style="color:var(--text)">5000 ou mais</b>, subtrai 5000.<br>
-     3. Se esse número <b style="color:var(--text)">não foi vendido</b>, vale o próximo vendido acima (depois de 4999 volta ao 0000).
-     <div style="margin-top:12px;padding:10px 12px;background:var(--surface2,#1e2029);border-radius:8px;font-family:ui-monospace,Menlo,monospace">Ex.: 1º prêmio 47.999 → 7999 → 2999<br>Ex.: 1º prêmio 12.345 → 2345</div></div>`);
+  const regra=_stCard('scale','Regra da apuração',`<div id="st-regra-corpo">${_stRegraHtml(s?.total_numeros||5000)}</div>`);
   const grid=(...cards)=>`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:16px;align-items:start">${cards.map(x=>`<div style="min-width:0">${x}</div>`).join('')}</div>`;
   const extra=_stTeste?_stHtmlModoTeste():_stHtmlConfig(c);
   if(!s)return grid(_stHtmlCriar(),regra)+extra;
@@ -10808,20 +10826,31 @@ function _stHtmlCriar(){
     <div>${_stLbl('Título')}<input id="st-c-titulo" style="${_ss}" value="${_stTeste?'Teste ':''}#CadaKmUmSonho"></div>
     <div>${_stLbl('Descrição do prêmio')}<input id="st-c-desc" style="${_ss}" value="R$ 200,00 em Pix"></div>
     <div>${_stLbl('Valor do prêmio (R$)')}<input id="st-c-valor" type="number" min="1" step="0.01" style="${_ss}" value="200"></div>
-    <div style="font-size:11px;color:var(--text3)">5.000 números · bilhete R$ 0,10 · de 100 a 1.000 números por pedido · até 1.000 por CPF. Data, concurso e período de vendas você define depois de criar.</div>
+    <div>${_stLbl('Total de números (não muda depois de criado)')}<select id="st-c-total" onchange="_stCriarPrevia()" style="${_ss}">${_ST_TOTAIS.map(t=>`<option value="${t}" ${t===5000?'selected':''}>${_stN(t)} números (${_stPad(0,t)} a ${_stPad(t-1,t)})</option>`).join('')}</select></div>
+    <div id="st-c-previa" style="font-size:11px;color:var(--text3)">${_stCriarPreviaTxt(5000)}</div>
     <div><button class="btn-modal-primary" onclick="_stCriar()">${_icone('plus',16,'btn-ico')}${_stTeste?'Criar sorteio de teste':'Criar sorteio'}</button></div></div>`);
+}
+function _stCriarPreviaTxt(t){
+  const l=_stLimites(t);
+  return `${_stN(t)} números (${_stPad(0,t)} a ${_stPad(t-1,t)}) · bilhete R$ 0,10 · arrecadação máxima ${_stR(t*0.1)} · por pedido de ${_stN(l.min)} a ${_stN(l.max)} · até ${_stN(l.cpf)} por CPF (nunca mais que ${l.pct}% do total). Data, concurso e período de vendas você define depois de criar.`;
+}
+function _stCriarPrevia(){
+  const t=Number(document.getElementById('st-c-total')?.value||5000);
+  const p=document.getElementById('st-c-previa');if(p)p.innerHTML=_stCriarPreviaTxt(t);
+  const r=document.getElementById('st-regra-corpo');if(r)r.innerHTML=_stRegraHtml(t);
 }
 async function _stCriar(){
   const v=id=>document.getElementById(id)?.value||'';
-  const r=await _odRpc('sorteio_admin_criar',{p_titulo:v('st-c-titulo'),p_premio_descricao:v('st-c-desc'),p_premio_valor:Number(v('st-c-valor')||200),p_teste:_stTeste});
+  const r=await _odRpc('sorteio_admin_criar',{p_titulo:v('st-c-titulo'),p_premio_descricao:v('st-c-desc'),p_premio_valor:Number(v('st-c-valor')||200),p_teste:_stTeste,p_total:Number(v('st-c-total')||5000)});
   if(!r.ok){showNotif('❌ Não criado',r.error,'var(--red)');return;}
-  showNotif('✅ Sorteio criado','5.000 números livres, em rascunho.');_renderSorteiosTab();
+  showNotif('✅ Sorteio criado',`${_stN(Number(v('st-c-total')||5000))} números livres, em rascunho.`);_renderSorteiosTab();
 }
 function _stHtmlDados(s){
   const fechado=!['rascunho','aberto','encerrado'].includes(s.status);
   const dis=fechado?'disabled':'';
   return _stCard('calendar-days','Dados do sorteio',`<div style="display:grid;gap:12px">
     <div style="font-size:12px;color:var(--text2)">${_escHtml(s.titulo)} · ${_stPill(_ST_STATUS_SORTEIO[s.status]||s.status,'#8F98A6')}</div>
+    <div style="font-size:12px;color:var(--text2)">${_icone('lock',12)} Total: <b style="color:var(--text)">${_stN(s.total_numeros)} números (${_stPad(0,s.total_numeros)} a ${_stPad(s.total_numeros-1,s.total_numeros)})</b> · não muda depois de criado</div>
     <div>${_stLbl('Data da extração (Loteria Federal)')}<input id="st-d-data" type="date" ${dis} style="${_ss}" value="${_odAttr(s.data_extracao||'')}"></div>
     <div>${_stLbl('Concurso da Federal')}<input id="st-d-conc" type="number" ${dis} style="${_ss}" placeholder="Ex.: 5900" value="${_odAttr(s.concurso_federal??'')}"></div>
     <div>${_stLbl('Valor do prêmio (R$)')}<input id="st-d-valor" type="number" min="1" step="0.01" ${dis} style="${_ss}" value="${_odAttr(s.premio_valor)}"></div>
@@ -10848,7 +10877,7 @@ async function _stAbrir(id){
 const _ST_CFG=[['sorteio_certificado_numero','Nº do certificado de autorização',''],['sorteio_certificado_orgao','Órgão que autorizou',''],
   ['sorteio_regulamento_url','Link do regulamento','https://...'],['sorteio_regulamento_versao','Versão do regulamento','Ex.: 1.0'],
   ['sorteio_pix_chave','Chave Pix que recebe',''],['sorteio_pix_favorecido','Favorecido (até 25 letras)',''],['sorteio_pix_cidade','Cidade (até 15 letras)',''],
-  ['sorteio_whatsapp','WhatsApp de confirmação','55 + DDD + número'],['sorteio_pedido_validade_minutos','Validade do pedido (minutos)',''],['sorteio_limite_bilhetes_cpf','Limite de números por CPF','']];
+  ['sorteio_whatsapp','WhatsApp de confirmação','55 + DDD + número'],['sorteio_pedido_validade_minutos','Validade do pedido (minutos)',''],['sorteio_limite_bilhetes_cpf','Limite de números por CPF',''],['sorteio_percentual_max_cpf','Percentual máximo por CPF (1 a 50)','20']];
 function _stHtmlConfig(c){
   const lig=c.sorteio_vendas_habilitadas==='true';
   return _stCard('settings','Configuração (trava geral)',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px">
@@ -10931,7 +10960,7 @@ function _stHtmlApuracao(s,a){
      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;color:#fff;background:${feito?'#22c55e':ativo?'var(--accent)':'var(--surface2,#1e2029)'}">${feito?_icone('check',14):n}</div>
      <div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--text);margin-bottom:8px">${titulo}</div>${corpo}</div></div>`;
   const reg=!!a,conf=!!a?.conferido_em,pago=!!a?.premio_pago_em;
-  const p1=reg?(a.eu_registrei||conf?`1º prêmio <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${_escHtml(a.premio1)}</b> → sorteado <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${String(a.numero_sorteado).padStart(4,'0')}</b> → vencedor <b style="font-family:ui-monospace,Menlo,monospace;color:#22c55e">${String(a.numero_vencedor).padStart(4,'0')}</b><br>`:'Resultado escondido até você conferir.<br>')
+  const p1=reg?(a.eu_registrei||conf?`1º prêmio <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${_escHtml(a.premio1)}</b> → sorteado <b style="font-family:ui-monospace,Menlo,monospace;color:var(--text)">${_stPad(a.numero_sorteado,s.total_numeros)}</b> → vencedor <b style="font-family:ui-monospace,Menlo,monospace;color:#22c55e">${_stPad(a.numero_vencedor,s.total_numeros)}</b><br>`:'Resultado escondido até você conferir.<br>')
     +`Registrado por <b style="color:var(--text)">${_escHtml(a.registrado_por||'—')}</b> em ${_stData(a.registrado_em)}`:'';
   const corpo1=reg?`<div style="font-size:12px">${p1}</div>`:`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">
