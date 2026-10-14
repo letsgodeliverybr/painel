@@ -10,7 +10,25 @@ const supabase = createClient(
 const FCM_SA = JSON.parse(Deno.env.get("FCM_SERVICE_ACCOUNT") ?? "{}");
 const FCM_PROJECT = FCM_SA.project_id ?? "";
 
+// Token OAuth do FCM guardado entre pushes (e entre execuções, enquanto a
+// instância da função continuar viva). Antes, CADA push pedia um token novo
+// ao Google (assinatura RSA + 1 chamada HTTP a mais por push, em sequência).
+// O token vale 1h; renova 5 min antes. Falha ao obter não fica guardada.
+// Pushes enviados ao mesmo tempo esperam o MESMO pedido de token (_fcmTokenPedindo).
+let _fcmTokenCache: { token: string; expiraEm: number } | null = null;
+let _fcmTokenPedindo: Promise<string> | null = null;
+
 async function getFcmAccessToken(): Promise<string> {
+  if (_fcmTokenCache && _fcmTokenCache.expiraEm - 5 * 60_000 > Date.now()) return _fcmTokenCache.token;
+  if (!_fcmTokenPedindo) {
+    _fcmTokenPedindo = pedirFcmAccessToken()
+      .then((novo) => { if (novo) _fcmTokenCache = { token: novo, expiraEm: Date.now() + 3600_000 }; return novo; })
+      .finally(() => { _fcmTokenPedindo = null; });
+  }
+  return await _fcmTokenPedindo;
+}
+
+async function pedirFcmAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     iss: FCM_SA.client_email,
@@ -79,6 +97,36 @@ async function enviarPushFCM(fcmToken: string, pedidoId: string, numero: string)
   }
 }
 
+// Um push por entregador por execução: as ofertas continuam sendo gravadas
+// uma por pedido (despacho_fila), mas o push é só o "acorda" — o app mostra
+// sempre a MESMA notificação genérica (id 1001, "Pedidos na tela!") e a
+// lista de Disponíveis traz todas as ofertas. Antes, 3 pedidos prontos no
+// mesmo minuto = 3 pushes = alarme insistente recomeçando 3 vezes. O
+// payload é o do primeiro pedido ofertado ao entregador nesta execução
+// (mesmo formato de antes). O fcm_token também é lido uma vez só.
+// A lista é criada a cada execução (nunca global): duas execuções juntas na
+// mesma instância não se misturam.
+type PushPendente = { token: string | null; pedidoId: string; numero: string };
+type Pushes = Map<string, PushPendente>;
+
+async function agendarPush(pushes: Pushes, entregadorId: string, pedidoId: string, numero: string) {
+  if (pushes.has(entregadorId)) return;   // já vai receber um push nesta execução
+  const { data: ent, error } = await supabase.from("entregadores")
+    .select("fcm_token").eq("id", entregadorId).single();
+  logErr(`buscar fcm_token do entregador ${entregadorId}`, error);
+  pushes.set(entregadorId, { token: ent?.fcm_token ?? null, pedidoId, numero: String(numero ?? "") });
+}
+
+// Envia os pushes guardados, 5 por vez, e esvazia a lista. Roda no finally
+// do serve: mesmo se algo falhar no meio, as ofertas já gravadas avisam.
+async function enviarPushes(pushes: Pushes) {
+  const lista = [...pushes.values()].filter((p) => p.token);
+  pushes.clear();
+  for (let i = 0; i < lista.length; i += 5) {
+    await Promise.all(lista.slice(i, i + 5).map((p) => enviarPushFCM(p.token!, p.pedidoId, p.numero)));
+  }
+}
+
 // pedidos.pronto_em/created_at são `timestamp` SEM fuso, e o valor gravado
 // é hora de PAREDE de Brasília, não UTC — regra documentada e já corrigida
 // no painel (app.js, ver _parseUtc()/REGRA DE FUSO): quem escreve essas
@@ -134,6 +182,7 @@ function logErr(ctx: string, error: { message?: string } | null | undefined) {
 }
 
 serve(async () => {
+  const pushes: Pushes = new Map();
   try {
     const { data: configs } = await supabase
       .from("configuracoes").select("chave, valor")
@@ -299,10 +348,7 @@ serve(async () => {
             if (!filaErr) ofertasGravadas++;
           }
           if (ofertasGravadas === 0) continue;
-          const { data: ent, error: entErr } = await supabase.from("entregadores")
-            .select("fcm_token").eq("id", e.id).single();
-          logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
-          if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedidoIds[0], refP.numero || "");
+          await agendarPush(pushes, e.id, pedidoIds[0], refP.numero || "");
         }
         const { error: despachadaErr } = await supabase.from("rotas_agrupadas").update({ status: "aceita" }).eq("id", rota.id);
         logErr(`marcar rota ${rota.id} como despachada`, despachadaErr);
@@ -428,10 +474,7 @@ serve(async () => {
           });
           logErr(`inserir despacho_fila fallback (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
           if (filaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
-          const { data: ent, error: entErr } = await supabase.from("entregadores")
-            .select("fcm_token").eq("id", e.id).single();
-          logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
-          if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedido.id, pedido.numero);
+          await agendarPush(pushes, e.id, pedido.id, pedido.numero);
         }
         continue;
       }
@@ -480,10 +523,7 @@ serve(async () => {
           });
           logErr(`inserir despacho_fila (pedido ${pedido.id}, entregador ${e.id})`, filaErr);
           if (filaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
-          const { data: ent, error: entErr } = await supabase.from("entregadores")
-            .select("fcm_token").eq("id", e.id).single();
-          logErr(`buscar fcm_token do entregador ${e.id}`, entErr);
-          if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedido.id, pedido.numero);
+          await agendarPush(pushes, e.id, pedido.id, pedido.numero);
         }
       } else {
         const { error: expirarOndaErr } = await supabase.from("despacho_fila").update({ status: "expirado" })
@@ -532,15 +572,14 @@ serve(async () => {
         logErr(`inserir despacho_fila (onda ${ondaNum}, pedido ${pedido.id}, entregador ${proximo.id})`, filaOndaErr);
         if (filaOndaErr) continue; // sem oferta gravada (ex: bloqueado na loja) → sem push
 
-        const { data: ent, error: entOndaErr } = await supabase.from("entregadores")
-          .select("fcm_token").eq("id", proximo.id).single();
-        logErr(`buscar fcm_token do entregador ${proximo.id}`, entOndaErr);
-        if (ent?.fcm_token) await enviarPushFCM(ent.fcm_token, pedido.id, pedido.numero);
+        await agendarPush(pushes, proximo.id, pedido.id, pedido.numero);
       }
     }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+  } finally {
+    await enviarPushes(pushes);
   }
 });
