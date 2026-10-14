@@ -13144,6 +13144,18 @@ async function _odCarregarCredenciais(){
   const lista=Array.isArray(r.data)?r.data:[];
   if(!lista.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma Credencial Criada.</div>';return;}
   window._odCredCache=lista;
+  _odRenderCredenciais();
+}
+// Revogadas (ativo=false) ficam escondidas por padrão; só muda a exibição, nada é apagado.
+let _odMostrarRevogadas=false;
+function _odToggleRevogadas(){_odMostrarRevogadas=!_odMostrarRevogadas;_odRenderCredenciais();}
+function _odRenderCredenciais(){
+  const el=document.getElementById('od-cred-lista');if(!el)return;
+  const todas=window._odCredCache||[];
+  const nRev=todas.filter(c=>!c.ativo).length;
+  const lista=_odMostrarRevogadas?todas:todas.filter(c=>c.ativo);
+  const botao=nRev?`<div style="margin-top:10px"><button onclick="_odToggleRevogadas()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_odMostrarRevogadas?'Esconder revogadas':`Mostrar revogadas (${nRev})`}</button></div>`:'';
+  if(!lista.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhuma Credencial Ativa.</div>'+botao;return;}
   el.innerHTML=`<table style="width:100%;min-width:760px"><thead><tr><th>Loja</th><th>Client ID</th><th>Webhook</th><th>Modo</th><th>Situação</th><th>Criada</th><th></th></tr></thead><tbody>${lista.map(c=>`<tr>
     <td style="font-weight:600;color:var(--text)">${_escHtml(c.loja||'—')}</td>
     <td style="font-family:monospace;font-size:12px">${_escHtml(c.client_id)}</td>
@@ -13152,7 +13164,7 @@ async function _odCarregarCredenciais(){
     <td>${c.ativo?'<span style="color:#10b981;font-weight:700;font-size:12px">Ativa</span>':`<span style="color:#ef4444;font-size:12px">Revogada ${c.revogado_em?formatarDataHora(c.revogado_em):''}</span>`}</td>
     <td style="font-size:11px;color:var(--text3)">${c.criado_em?formatarDataHora(c.criado_em):''}<br>${_escHtml(c.criado_por||'')}</td>
     <td style="white-space:nowrap">${c.ativo?_odBtn('#475569','Editar',`_odModalEditar('${c.id}')`)+' '+_odBtn('#ef4444','Revogar',`_odRevogar('${c.id}')`):''}</td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>${botao}`;
 }
 function _odModal(id,titulo,corpo){
   let m=document.getElementById(id);if(!m){m=document.createElement('div');m.id=id;m.className='modal-overlay';document.body.appendChild(m);}
