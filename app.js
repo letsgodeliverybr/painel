@@ -6335,9 +6335,9 @@ function _renderTbodyEntregadores(){
       </tr>`).join('');
   } else {
     const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'fila');
-    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>Atualizado</th><th>Ações</th></tr>';
+    theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Status</th><th>Disponível</th><th>Cadastro</th><th>WhatsApp</th><th>Atualizado</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
-      ?'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Entregador</td></tr>'
+      ?'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--text3)">Nenhum Entregador</td></tr>'
       :filtered.map(e=>`<tr>
         <td style="font-weight:600;color:var(--text)">🛵 ${e.nome||e.id?.substring(0,8)}</td>
         <td style="text-align:center">${_fotoBtn(e.foto_perfil||e.foto||e.avatar||e.imagem)}</td>
@@ -6347,6 +6347,7 @@ function _renderTbodyEntregadores(){
         <td><span id="badge-status-${e.id}" onclick="_toggleStatusEntregador('${e.id}','${e.status||''}')" style="background:${e.status==='bloqueado'?'#EF4444':'#10B981'};color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none" title="${e.status==='bloqueado'?(_entBloqPlat.has(e.id)?_escHtml(`${_entBloqPlat.get(e.id).motivo} (${(_entBloqPlat.get(e.id).lojas_nomes||[]).join(', ')}) em ${new Date(_entBloqPlat.get(e.id).criado_em).toLocaleDateString('pt-BR')}. Clique para desbloquear`).replace(/"/g,'&quot;'):'Clique Para Desbloquear'):'Clique Para Bloquear'}">${e.status==='bloqueado'?'🚫 Bloqueado':'✅ Disponível'}</span></td>
         <td><span id="badge-disp-${e.id}" onclick="_toggleDisponivelEntregador('${e.id}',${e.disponivel})" style="background:${e.disponivel?'#10B981':'#6B7280'};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-block">${e.disponivel?'Online':'Offline'}</span></td>
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
+        <td style="text-align:center">${_entWhatsBtn(e)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
         <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="event.stopPropagation();excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td>
       </tr>`).join('');
@@ -6354,6 +6355,15 @@ function _renderTbodyEntregadores(){
 
   const thead=document.getElementById('thead-entregadores');if(thead)thead.innerHTML=theadHtml;
   const tbody=document.getElementById('tbody-entregadores');if(tbody)tbody.innerHTML=tbodyHtml;
+}
+// Cadastros > Entregadores: aviso de cadastro aprovado pelo WhatsApp (só aprovado e não bloqueado, como a aba Aprovados).
+const _ENT_MSG_APROVADO="Olá, tudo bem? Você se cadastrou na plataforma de entregas Let's Go Delivery? Seu cadastro foi aprovado. Fique online e fature mais com a Let's Go Delivery! Qualquer dúvida, entre em contato com o líder da sua região: (11) 99170-2772";
+function _entWhatsBtn(e){
+  if(e.status==='bloqueado'||!(e.aprovado===true||e.status_cadastro==='aprovado'))return'';
+  const fone=_whatsCliente(e.telefone);
+  const est='background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center';
+  if(!fone)return`<span title="Sem telefone" style="${est};color:var(--text3);opacity:.4;cursor:not-allowed">${_icone('message-circle',16)}</span>`;
+  return`<a href="https://wa.me/${fone}?text=${encodeURIComponent(_ENT_MSG_APROVADO)}" target="_blank" rel="noopener" title="Enviar aviso de cadastro aprovado pelo WhatsApp" onclick="event.stopPropagation()" style="${est};color:#25D366;text-decoration:none">${_icone('message-circle',16)}</a>`;
 }
 function _entSetBusca(v){_entBusca=v;_renderTbodyEntregadores();}
 
