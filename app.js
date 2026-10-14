@@ -8551,10 +8551,40 @@ async function _carregarDadosCeo(){
   if(pipeline.length){
     alertas.push(`<div class="ceo-alert" onclick="goTab('cadastros')"><span class="ceo-alert-dot" style="background:#eab308"></span><span class="ceo-alert-text">🟡 <b>${pipeline.length} Loja${pipeline.length===1?'':'s'}</b> Aguardando Aprovação De Cadastro</span></div>`);
   }
+
+  // Alertas de segurança (só admin; a RPC já exige od_eh_admin). Fonte:
+  // tabela alertas_seguranca (gravada só pelo servidor) + batimento de 1 min.
+  // Ver propostas/ceo_alertas_seguranca. Falha silenciosa: se a RPC não
+  // existir ou der erro, o card segue mostrando o resto normalmente.
+  const segRes=await dbRpc('ceo_alertas_seguranca').catch(()=>null);
+  const seg=segRes&&!segRes.error?segRes:null;
+  if(seg){
+    const ICON={bloqueio:'🛡️',conta_nova:'👤',login_admin_novo_ip:'🔑',mudanca_pix:'💸',mudanca_caixa:'🧰',mudanca_usuarios_painel:'⚙️',mudanca_credito:'💰',queda_sistema:'📴'};
+    const COR={alta:'#ef4444',media:'#eab308',baixa:'#9ca3af'};
+    const fmtH=t=>new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if(seg.no_ar===false){
+      alertas.unshift(`<div class="ceo-alert"><span class="ceo-alert-dot" style="background:#ef4444"></span><span class="ceo-alert-text">📴 <b>Sistema Sem Batimento</b> — Pode Estar Fora Do Ar Agora</span></div>`);
+    }
+    for(const a of (seg.alertas||[])){
+      const ip=a.ip?` · IP ${a.ip}`:'';
+      alertas.push(`<div class="ceo-alert" onclick="_ceoMarcarAlerta(${a.id})" title="Clique Para Marcar Como Visto"><span class="ceo-alert-dot" style="background:${COR[a.severidade]||'#9ca3af'}"></span><span class="ceo-alert-text">${ICON[a.tipo]||'•'} <b>${a.titulo}</b> — ${fmtH(a.quando)}${ip}</span></div>`);
+    }
+    if((seg.quedas_24h||[]).length){
+      const q=seg.quedas_24h.map(x=>`${fmtH(x.caiu)}→${fmtH(x.voltou)} (${x.minutos_fora} Min)`).join(' · ');
+      alertas.push(`<div class="ceo-alert"><span class="ceo-alert-dot" style="background:#9ca3af"></span><span class="ceo-alert-text">📴 Quedas Nas Últimas 24h: ${q}</span></div>`);
+    }
+  }
+
   _set('ceo-alertas',alertas.length?alertas.join(''):'<div style="text-align:center;padding:16px;color:#22c55e;font-size:13px;font-weight:600">✓ Tudo Sob Controle</div>');
 
   _ceoUltimaAtualizacao=Date.now();
   _ceoSetPeriodo(_ceoPeriodoAtual);
+}
+// Admin marca um alerta de segurança como visto (RPC exige od_eh_admin);
+// o alerta some do card mas fica guardado na tabela.
+async function _ceoMarcarAlerta(id){
+  await dbRpc('marcar_alerta_visto',{p_id:id}).catch(()=>{});
+  _carregarDadosCeo();
 }
 // Reaproveitado pelo bloco "Escala da Let's Go" — mesmo shape do antigo
 // _ceoEscalaItem (removido da CEO), renomeado sem prefixo porque agora
