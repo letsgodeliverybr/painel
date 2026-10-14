@@ -13363,6 +13363,17 @@ function _cardPlataforma(nome){
   </div>`;
 }
 
+// Cardápio GS (GSystem Informática): integra pelo Open Delivery, com credencial
+// por loja. "Configurar" abre a tela de credenciais Open Delivery (só adm).
+function _cardCardapioGS(){
+  const cor='#3b82f6',adm=currentPerfil==='adm';
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+    <div><div style="font-size:13px;font-weight:700;color:var(--text)">Cardápio GS</div><div style="font-size:11px;color:var(--text3)">GSystem Informática</div></div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid ${cor};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:${cor};width:fit-content">${_icone('flask-conical',12)} Em Homologação</div>
+    <button ${adm?`onclick="renderConfiguracaoPage('open-delivery')"`:'disabled'} style="background:${adm?'var(--accent)':'var(--surface)'};color:${adm?'#fff':'var(--text3)'};border:${adm?'none':'1px solid var(--border)'};border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:${adm?'pointer':'not-allowed'};font-family:Inter,sans-serif${adm?'':';opacity:.6'}">${_icone('settings',16,'btn-ico')}Configurar</button>
+  </div>`;
+}
+
 function _htmlOutrasPlataformas(){
   return `<div class="card" style="max-width:720px;margin:20px auto 0">
     <div style="padding:24px 28px">
@@ -13376,7 +13387,7 @@ function _htmlOutrasPlataformas(){
 
       <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Cardápio Digital / PDV E Gestão</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
-        ${_PLATAFORMAS_CARDAPIO_PDV.map(_cardPlataforma).join('')}
+        ${_cardCardapioGS()}${_PLATAFORMAS_CARDAPIO_PDV.map(_cardPlataforma).join('')}
       </div>
     </div>
   </div>`;
