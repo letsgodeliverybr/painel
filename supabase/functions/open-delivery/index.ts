@@ -6,8 +6,8 @@
 // ETAPA 6b: POST /v1/logistics/cancel/{orderId}.
 // A loja vem SEMPRE do token. Regras de negócio e taxa ficam no banco
 // (od_criar_entrega / od_consultar_entrega). Função NOVA, separada das do iFood.
-// Base URL do parceiro: https://opendelivery.letsgodelivery.com.br/functions/v1/open-delivery
-// (custom domain do Supabase; https://<projeto>.supabase.co/... continua valendo)
+// Base URL do parceiro: https://<projeto>.supabase.co/functions/v1/open-delivery
+// (domínio próprio ainda não configurado: exige plano Pro + complemento do Supabase)
 // Nunca grava nem loga client_secret ou access_token: só hashes SHA-256.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -16,11 +16,64 @@ import { hmacSha256Hex, ipBloqueado, urlWebhookOk } from "./seguranca.ts";
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const TOKEN_TTL_SEG = 3600; // 1h; sem refresh token (especificação)
 
-// Erros no formato da especificação: { title, status }
-function erro(status: number, title: string, detail?: string): Response {
-  return new Response(JSON.stringify(detail ? { title, status, detail } : { title, status }), {
-    status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+// Erros no formato da especificação: { title, status }, mais detail (texto) e
+// fields (caminho dos campos que falharam, ex: "deliveryAddress.number") quando houver.
+function erro(status: number, title: string, detail?: string, fields?: string[], headers?: Record<string, string>): Response {
+  const body: Record<string, unknown> = { title, status };
+  if (detail) body.detail = detail;
+  if (fields?.length) body.fields = fields;
+  return new Response(JSON.stringify(body), {
+    status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...headers },
   });
+}
+
+// Campo(s) de cada recusa vinda do banco (o código, title, não muda)
+const CAMPOS_DO_ERRO: Record<string, string[]> = {
+  invalid_delivery_coordinates: ["deliveryAddress.latitude", "deliveryAddress.longitude"],
+  distance_out_of_range: ["deliveryAddress"],
+  vehicle_not_supported: ["vehicle.type"],
+  quote_not_found: ["quoteId"], quote_expired: ["quoteId"], quote_already_used: ["quoteId"],
+  quote_address_mismatch: ["quoteId", "deliveryAddress"],
+  quote_return_mismatch: ["quoteId", "returnToMerchant"],
+  offline_method_not_supported: ["payments.offlineMethod.type"],
+  offline_amount_invalid: ["payments.offlineMethod"],
+  offline_amount_above_limit: ["payments.offlineMethod.amount.value"],
+  offline_change_invalid: ["payments.change.value"],
+  offline_change_above_limit: ["payments.change.value"],
+  invalid_reason: ["reason"],
+};
+
+// missing_required_fields: quais faltam (mesmas regras do od_criar_entrega / od_cotar_entrega)
+function camposFaltando(body: any, rotaCotacao: boolean): string[] {
+  const vazio = (v: unknown) => typeof v !== "string" || v.trim() === "";
+  const obj = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v);
+  const f: string[] = [];
+  if (!rotaCotacao) {
+    if (vazio(body?.orderId)) f.push("orderId");
+    if (vazio(body?.orderDisplayId)) f.push("orderDisplayId");
+    if (vazio(body?.customerName)) f.push("customerName");
+  }
+  if (!obj(body?.deliveryAddress)) f.push("deliveryAddress");
+  if (!rotaCotacao && !obj(body?.vehicle)) f.push("vehicle");
+  return f;
+}
+
+// Segundos até a meia-noite de Brasília (UTC-3, sem horário de verão): o limite diário zera aí
+function segundosAteMeiaNoiteBrasilia(): number {
+  const brt = Date.now() - 3 * 3600_000;
+  return Math.max(1, Math.ceil((Math.floor(brt / 86400_000 + 1) * 86400_000 - brt) / 1000));
+}
+
+// Resposta do banco ({status, body}) com fields nos 400/422 e Retry-After nos 429
+function respostaDoBanco(data: any, body: any, rotaCotacao: boolean): Response {
+  const st = Number(data.status), b = data.body ?? {};
+  const headers: Record<string, string> = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+  if ((st === 400 || st === 422) && typeof b.title === "string" && !b.fields) {
+    const f = b.title === "missing_required_fields" ? camposFaltando(body, rotaCotacao) : CAMPOS_DO_ERRO[b.title];
+    if (f?.length) b.fields = f;
+  }
+  if (st === 429) headers["Retry-After"] = String(b.title === "daily_limit_reached" ? segundosAteMeiaNoiteBrasilia() : 60);
+  return new Response(JSON.stringify(b), { status: st, headers });
 }
 
 async function sha256Hex(texto: string): Promise<string> {
@@ -121,15 +174,17 @@ const TIPOS_PRECISOS = ["street_address", "premise", "subpremise"];
 const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const componente = (r: any, tipo: string) => r.address_components?.find((c: any) => c.types?.includes(tipo));
 
-type Geo = { lat: number; lng: number } | { status: number; title: string; detail: string };
+type Geo = { lat: number; lng: number } | { status: number; title: string; detail: string; fields?: string[] };
 
 async function geocodificar(da: any, key: string): Promise<Geo> {
   const rua = String(da?.street ?? "").trim(), numero = String(da?.number ?? "").trim();
   const cidade = String(da?.city ?? "").trim(), uf = String(da?.state ?? "").trim();
   const cep = String(da?.postalCode ?? "").replace(/\D/g, "");
   if (!rua || !/\d/.test(numero) || !cidade || !uf) {
+    const fields = [!rua && "street", !/\d/.test(numero) && "number", !cidade && "city", !uf && "state"]
+      .filter(Boolean).map((c) => `deliveryAddress.${c}`);
     return { status: 422, title: "address_incomplete",
-      detail: "Sem latitude/longitude, informe street, number (com dígito), city e state em deliveryAddress." };
+      detail: "Sem latitude/longitude, informe street, number (com dígito), city e state em deliveryAddress.", fields };
   }
   const endereco = [`${rua}, ${numero}`, da?.district, cidade, uf, cep, "Brasil"].filter(Boolean).join(", ");
   const comps = ["country:BR", cep.length === 8 ? `postal_code:${cep}` : ""].filter(Boolean).join("|");
@@ -150,21 +205,23 @@ async function geocodificar(da: any, key: string): Promise<Geo> {
     return { status: 503, title: "geocoding_unavailable", detail: "Não foi possível localizar o endereço agora. Tente de novo ou envie latitude/longitude." };
   }
   if (!d.results?.length) {
-    return { status: 422, title: "address_not_found", detail: "Endereço não encontrado. Confira os dados ou envie latitude/longitude." };
+    return { status: 422, title: "address_not_found", detail: "Endereço não encontrado. Confira os dados ou envie latitude/longitude.",
+      fields: ["deliveryAddress"] };
   }
   const r = d.results[0];
-  const motivos: string[] = [];
+  const motivos: string[] = [], campos = new Set<string>();
   if (d.results.length > 1) motivos.push("mais de um endereço possível");
   if (r.partial_match) motivos.push("correspondência parcial");
   if (!["ROOFTOP", "RANGE_INTERPOLATED"].includes(r.geometry?.location_type)) motivos.push("localização aproximada");
   if (!r.types?.some((t: string) => TIPOS_PRECISOS.includes(t))) motivos.push("resultado não é um endereço com número");
   const num = componente(r, "street_number")?.long_name ?? "";
-  if (num.replace(/\D/g, "") !== numero.replace(/\D/g, "")) motivos.push("número diferente do informado");
+  if (num.replace(/\D/g, "") !== numero.replace(/\D/g, "")) { motivos.push("número diferente do informado"); campos.add("deliveryAddress.number"); }
   const cid = componente(r, "administrative_area_level_2") ?? componente(r, "locality");
-  if (!cid || semAcento(cid.long_name) !== semAcento(cidade)) motivos.push("cidade diferente da informada");
+  if (!cid || semAcento(cid.long_name) !== semAcento(cidade)) { motivos.push("cidade diferente da informada"); campos.add("deliveryAddress.city"); }
   if (motivos.length) {
     return { status: 422, title: "low_confidence_address",
-      detail: `Endereço localizado com baixa confiança (${motivos.join(", ")}). Envie latitude/longitude.` };
+      detail: `Endereço localizado com baixa confiança (${motivos.join(", ")}). Envie latitude/longitude.`,
+      fields: campos.size ? [...campos] : ["deliveryAddress"] };
   }
   return { lat: r.geometry.location.lat, lng: r.geometry.location.lng };
 }
@@ -207,14 +264,14 @@ async function cotarEntrega(req: Request, auth: { credencial_id: string; loja_id
   if (!body || typeof body !== "object" || Array.isArray(body)) return erro(400, "invalid_json");
   // limite antes de qualquer chamada ao Google (custo)
   const { data: permitida } = await supabase.rpc("od_cotacao_permitida", { p_credencial_id: auth.credencial_id });
-  if (permitida === false) return erro(429, "quote_rate_limited");
+  if (permitida === false) return erro(429, "quote_rate_limited", undefined, undefined, { "Retry-After": "60" });
   veiculoComPadrao(body);
   const geoKey = Deno.env.get("GOOGLE_GEOCODING_KEY");
   const da = body.deliveryAddress;
   let geocodificado = false;
   if (geoKey && semCoordenadas(da)) {
     const g = await coordenadasDoEndereco(da, geoKey);
-    if ("title" in g) return erro(g.status, g.title, g.detail);
+    if ("title" in g) return erro(g.status, g.title, g.detail, g.fields);
     da.latitude = g.lat; da.longitude = g.lng; geocodificado = true;
   }
   const km = await distanciaKm(auth.loja_id, da);
@@ -223,7 +280,7 @@ async function cotarEntrega(req: Request, auth: { credencial_id: string; loja_id
     p_fator_reta: fatorReta(), p_ip: ipDe(req), p_geocodificado: geocodificado,
   }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
-  return json(data.status, data.body);
+  return respostaDoBanco(data, body, true);
 }
 
 async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }): Promise<Response> {
@@ -240,18 +297,19 @@ async function criarEntrega(req: Request, auth: { credencial_id: string; loja_id
   const comCotacao = typeof body.quoteId === "string" && body.quoteId.trim() !== "";
   const geoKey = Deno.env.get("GOOGLE_GEOCODING_KEY");
   const da = body.deliveryAddress;
+  let geocodificado = false;
   if (!comCotacao && geoKey && semCoordenadas(da)) {
     const g = await coordenadasDoEndereco(da, geoKey);
-    if ("title" in g) return erro(g.status, g.title, g.detail);
-    da.latitude = g.lat; da.longitude = g.lng;
+    if ("title" in g) return erro(g.status, g.title, g.detail, g.fields);
+    da.latitude = g.lat; da.longitude = g.lng; geocodificado = true;
   }
   const km = comCotacao ? null : await distanciaKm(auth.loja_id, da);
   const { data, error } = await supabase.rpc("od_criar_entrega", {
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_body: body, p_distancia_km: km,
-    p_fator_reta: fatorReta(), p_ip: ipDe(req),
+    p_fator_reta: fatorReta(), p_ip: ipDe(req), p_geocodificado: geocodificado,
   }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
-  return json(data.status, data.body);
+  return respostaDoBanco(data, body, false);
 }
 
 async function consultarEntrega(req: Request, auth: { credencial_id: string; loja_id: string }, orderId: string): Promise<Response> {
@@ -271,7 +329,7 @@ async function cancelarEntrega(req: Request, auth: { credencial_id: string; loja
     p_credencial_id: auth.credencial_id, p_loja_id: auth.loja_id, p_order_id: orderId, p_body: body, p_ip: ipDe(req),
   }).setHeader("x-od-host", hostDe(req));
   if (error || !data) return erro(503, "service_unavailable");
-  return json(data.status, data.body);
+  return respostaDoBanco(data, body, false);
 }
 
 // ── ETAPA 4: envio do webhook ────────────────────────────────────────────
@@ -352,7 +410,7 @@ async function oauthToken(req: Request): Promise<Response> {
     p_ttl_seg: TOKEN_TTL_SEG,
   }).setHeader("x-od-host", hostDe(req));
   if (error) return erro(503, "service_unavailable");
-  if (data?.status === 429) return erro(429, "too_many_requests");
+  if (data?.status === 429) return erro(429, "too_many_requests", undefined, undefined, { "Retry-After": String(data?.retry_after ?? 60) });
   if (!data?.ok) return erro(401, "invalid_client");
   return new Response(JSON.stringify({ access_token: token, token_type: "bearer", expires_in: TOKEN_TTL_SEG }), {
     status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
