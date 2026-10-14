@@ -4434,19 +4434,21 @@ function renderMapaPage(){
   },100);
 }
 
+// Agendado → pronto agora é feito SÓ pelo banco (rotina promover-agendados,
+// a cada minuto, 15 min antes de agendado_para, com registro em logs_acoes).
+// O navegador não marca mais pronto (várias abas marcavam o mesmo pedido):
+// só lembra quais estavam agendados e avisa quando o banco os promover.
+let _agendadosVistos=new Set();
 async function _verificarAgendados(){
-  // agendado_para é timestamptz de verdade (confirmado com offset '+00:00'
-  // nos dados reais — diferente de pronto_em/updated_at, que são timestamp
-  // sem fuso) — precisa comparar contra UTC real, não _agoraBrasilia().
-  const vencidos=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
-  const agora=_agoraBrasilia();
-  for(const p of vencidos){
-    await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`);
-    idsProntoNotificados.delete(p.id);
-    tocarSomPronto();
+  const ids=[..._agendadosVistos];
+  const viraram=ids.length?await db('pedidos','GET',null,`?id=in.(${ids.join(',')})&status=eq.pronto&select=id,numero`):[];
+  for(const p of (Array.isArray(viraram)?viraram:[])){
+    if(!idsProntoNotificados.has(p.id)){idsProntoNotificados.add(p.id);tocarSomPronto();}
     showNotif(`🔔 Pedido #${p.numero||p.id.substring(0,6)} — Agendamento Ativado!`,'','var(--pink)');
   }
-  if(vencidos.length) atualizarTudo();
+  const ag=await db('pedidos','GET',null,'?status=eq.agendado&select=id');
+  _agendadosVistos=new Set((Array.isArray(ag)?ag:[]).map(p=>p.id));
+  if(Array.isArray(viraram)&&viraram.length) atualizarTudo();
 }
 // ─── TABELA DE PEDIDOS ABAIXO DO MAPA ───────────────────────────────────────
 
@@ -14719,19 +14721,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
 });
 
 // ═══════════════════════════════════════════════
-// SCHEDULER — libera pedidos agendados a cada 60s
+// SCHEDULER — agendados agora são liberados SÓ pelo banco (rotina
+// promover-agendados, 15 min antes, com registro em logs_acoes). Aqui não
+// marca mais pronto: só atualiza a tela a cada 60s. Quem avisa com som é
+// _verificarAgendados.
 // ═══════════════════════════════════════════════
 let _schedulerInterval=null;
 async function _runScheduler(){
   try{
-    // agendado_para é timestamptz de verdade — compara contra UTC real, não
-    // _agoraBrasilia() (essa é só pra pronto_em/updated_at, timestamp sem fuso).
-    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}`);
-    if(!agendados.length)return;
-    const agora=_agoraBrasilia();
-    await Promise.all(agendados.map(p=>db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:agora,updated_at:agora},`?id=eq.${p.id}`)));
-    console.log(`[scheduler] ${agendados.length} pedido(s) liberado(s) para entrega`);
-    atualizarTudo();
+    const agendados=await db('pedidos','GET',null,`?status=eq.agendado&agendado_para=lte.${new Date().toISOString()}&select=id`);
+    if(Array.isArray(agendados)&&agendados.length)atualizarTudo();
   }catch(e){console.error('[scheduler]',e);}
 }
 function iniciarScheduler(){
