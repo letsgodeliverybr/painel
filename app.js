@@ -9377,7 +9377,12 @@ async function _gravarCadastroLoja({nome,endereco,telefone,celular,responsavel,e
   if(categoria)payload.categoria=categoria;
   const lojas=await db('lojas','POST',payload);
   if(!lojas||lojas.length===0)return{ok:false,erro:'Erro Ao Enviar Cadastro.'};
-  await db('usuarios_painel','POST',{id:auth.userId,nome,email,senha,perfil:'loja',loja_id:lojas[0].id,ativo:false},'?select=id');
+  // Login do painel pela função segura (cadastrar_loja_novoparceiro): força
+  // perfil 'loja' e não deixa o anônimo gravar direto em usuarios_painel
+  // (Leva 1 do fechamento da brecha). A função confere a conta no Auth.
+  // fetch direto (não dbRpc) pra mostrar a mensagem de erro (ex.: e-mail em uso).
+  const regR=await fetch(`${SB_URL}/rest/v1/rpc/cadastrar_loja_novoparceiro`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify({p_id:auth.userId,p_nome:nome,p_email:email,p_senha:senha,p_loja_id:lojas[0].id,p_ativo:false})});
+  if(!regR.ok){const e=await regR.json().catch(()=>({}));return{ok:false,erro:e.message||'Não foi possível concluir o cadastro do login.'};}
   return{ok:true};
 }
 
