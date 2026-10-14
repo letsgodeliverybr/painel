@@ -579,6 +579,43 @@ function _tickFaturaBanner(){
   const fecharBtn=document.getElementById('alerta-fatura-loja-fechar');
   if(fecharBtn)fecharBtn.style.display=_faturaAtualLoja._diasAtraso<0?'flex':'none';
   el.style.display='flex';
+  if(_faturaAtualLoja._diasAtraso>=0)_chamarAtencaoFaturaBanner(el,_faturaAtualLoja._diasAtraso>=1);
+}
+// "Vence hoje" e "vencida": balanço + pulso na borda por ~5s quando o aviso
+// aparece (uma vez por render do Gestor) e um bip curto uma vez por sessão
+// para cada fatura/estado. Sem movimento com prefers-reduced-motion; som
+// bloqueado pelo navegador é ignorado.
+function _chamarAtencaoFaturaBanner(el,vencida){
+  if(el.dataset.atencao)return;
+  el.dataset.atencao='1';
+  if(!document.getElementById('fatura-atencao-css')){
+    const st=document.createElement('style');st.id='fatura-atencao-css';
+    st.textContent=`@keyframes faturaBalanco{0%,50%,100%{transform:translateX(-50%) rotate(0)}10%{transform:translateX(-50%) rotate(-1.6deg)}20%{transform:translateX(-50%) rotate(1.6deg)}30%{transform:translateX(-50%) rotate(-1deg)}40%{transform:translateX(-50%) rotate(1deg)}}
+@keyframes faturaPulso{0%{box-shadow:0 8px 32px rgba(0,0,0,.65),0 0 0 0 var(--fatura-pulso)}70%{box-shadow:0 8px 32px rgba(0,0,0,.65),0 0 0 12px transparent}100%{box-shadow:0 8px 32px rgba(0,0,0,.65),0 0 0 0 transparent}}
+.fatura-atencao{animation:faturaBalanco 1s ease-in-out 5,faturaPulso 1s ease-out 5}
+@media (prefers-reduced-motion:reduce){.fatura-atencao{animation:none}}`;
+    document.head.appendChild(st);
+  }
+  el.style.setProperty('--fatura-pulso',vencida?'rgba(239,68,68,.75)':'rgba(234,179,8,.75)');
+  el.classList.add('fatura-atencao');
+  setTimeout(()=>el.classList.remove('fatura-atencao'),5200);
+  const chave=`lg_fatura_som_${_faturaAtualLoja?.id||''}_${vencida?'vencida':'hoje'}`;
+  try{if(sessionStorage.getItem(chave))return;sessionStorage.setItem(chave,'1');}catch{}
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const tocar=()=>{
+      [[660,0],[880,.16]].forEach(([freq,delay])=>{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.frequency.value=freq;osc.type='sine';
+        gain.gain.setValueAtTime(.25,ctx.currentTime+delay);
+        gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+.15);
+        osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+.17);
+      });
+      setTimeout(()=>ctx.close().catch(()=>{}),800);
+    };
+    if(ctx.state==='suspended')ctx.resume().then(tocar).catch(()=>{});else tocar();
+  }catch{}
 }
 function _fecharAlertaFaturaLoja(){
   _faturaBannerFechada=true;
