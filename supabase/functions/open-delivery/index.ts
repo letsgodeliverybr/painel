@@ -35,6 +35,7 @@ const CAMPOS_DO_ERRO: Record<string, string[]> = {
   quote_not_found: ["quoteId"], quote_expired: ["quoteId"], quote_already_used: ["quoteId"],
   quote_address_mismatch: ["quoteId", "deliveryAddress"],
   quote_return_mismatch: ["quoteId", "returnToMerchant"],
+  payment_method_not_supported: ["payments.method"],
   offline_method_not_supported: ["payments.offlineMethod.type"],
   offline_amount_invalid: ["payments.offlineMethod"],
   offline_amount_above_limit: ["payments.offlineMethod.amount.value"],
