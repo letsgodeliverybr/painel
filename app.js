@@ -4715,6 +4715,16 @@ function toggleFiltroMotoboys(){
 function filtrarSidebar(val){_sidebarBusca=val.trim().toLowerCase();renderPedidosLista();}
 function toggleGrupo(key){if(_gruposColapsados.has(key))_gruposColapsados.delete(key);else _gruposColapsados.add(key);renderPedidosLista();}
 function _copiarRastreio(id){const url=window.location.origin+window.location.pathname+'?rastrear='+id;navigator.clipboard.writeText(url).then(()=>showNotif('✅ Link Copiado!',''));}
+// Abre o WhatsApp do cliente com o link de rastreio; sem telefone, copia o link como antes.
+function _whatsCliente(tel){let d=String(tel||'').replace(/\D/g,'').replace(/^0+/,'');if(d.length<10)return'';if(!((d.length===12||d.length===13)&&d.startsWith('55')))d='55'+d;return d;}
+function _enviarRastreio(id){
+  const p=allPedidos.find(x=>x.id===id)||_tabelaPedidosDia.find(x=>x.id===id)||{};
+  const url=window.location.origin+window.location.pathname+'?rastrear='+id;
+  const fone=_whatsCliente(p.telefone||p.telefone_cliente);
+  if(!fone){navigator.clipboard.writeText(url).then(()=>showNotif('⚠️ Pedido Sem Telefone','Link de rastreio copiado. Envie manualmente ao cliente.','#f59e0b'));return;}
+  const texto="Olá! Seu pedido saiu para entrega. Acompanhe o entregador da Let's Go Delivery pelo link de rastreio: "+url;
+  window.open('https://wa.me/'+fone+'?text='+encodeURIComponent(texto),'_blank');
+}
 
 function _aplicarLockStatus(lista){
   for(const [id,lock] of _pedidoStatusLock){
@@ -4922,7 +4932,7 @@ function renderPedidosLista(){
           <div style="display:flex;gap:6px;margin-bottom:8px">
             ${['retornando','chegou_destino'].includes(sk)?`<button onclick="event.stopPropagation();confirmarPagamento('${p.id}')" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('circle-dollar-sign',16,'btn-ico')}Pagamento Recebido</button>`:''}
             <button onclick="event.stopPropagation();_imprimirComanda('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('printer',16,'btn-ico')}Comanda</button>
-            <button onclick="event.stopPropagation();_copiarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('link',16,'btn-ico')}Copiar Rastreio</button>
+            <button onclick="event.stopPropagation();_enviarRastreio('${p.id}')" style="flex:1;background:var(--surface2);color:var(--sb-text2);border:1px solid var(--sb-border);border-radius:8px;padding:8px 6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('message-circle',16,'btn-ico')}Enviar link de rastreio</button>
           </div>
         </div>`:'';
       // ── CARD FECHADO ──────────────────────────────────────────────
