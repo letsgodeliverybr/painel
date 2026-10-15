@@ -6189,7 +6189,7 @@ function _renderTbodyEstabelecimentos(){
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`;
   }).join('');
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
@@ -6367,7 +6367,7 @@ function _renderTbodyEntregadores(){
         <td style="white-space:nowrap">
           <span onclick="_abrirDropdownCadastro(event,'${e.id}')" style="background:#3b82f6;color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;user-select:none;margin-right:6px">🔍 Em Análise ▾</span>
           <button onclick="abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">${_icone('pencil',16)}</button>
-          <button onclick="excluirEntregador('${e.id}','${(e.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">${_icone('trash-2',16)}</button>
+          ${_btnInativarEnt(e)}
         </td>
       </tr>`).join('');
   } else {
@@ -6386,7 +6386,7 @@ function _renderTbodyEntregadores(){
         <td><span onclick="_abrirDropdownCadastro(event,'${e.id}')" class="p-badge b-${cadBadge(e.status_cadastro)}" style="cursor:pointer;user-select:none">${e.status_cadastro||'pendente'} ▾</span></td>
         <td style="text-align:center">${_entWhatsBtn(e)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(e.updated_at)}</td>
-        <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="event.stopPropagation();excluirEntregador('${e.id}','${(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td>
+        <td style="white-space:nowrap"><button onclick="event.stopPropagation();abrirEditarEntregador('${e.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarEnt(e)}</td>
       </tr>`).join('');
   }
 
@@ -6558,31 +6558,56 @@ async function _setCadastroStatus(entId,novoStatus){
   renderCadastrosPage('entregadores');
 }
 
-async function excluirEntregador(id,nome){
-  if(!confirm(`Excluir Permanentemente?\nO Histórico De Pedidos Será Mantido.`))return;
-  // Webhook fase 1 (2026-10-12): a Edge Function exige a sessão real de um adm
-  // (antes bastava um segredo fixo no app.js público). Apaga a conta do Auth
-  // primeiro: se for recusada, nada é apagado aqui.
-  let rAuth=null;
-  try{rAuth=await fetch(`${SB_URL}/functions/v1/delete-entregador`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':await _authHeader()},body:JSON.stringify({entregador_id:id})});}catch{}
-  if(!rAuth||!rAuth.ok){
-    const err=rAuth?(await rAuth.json().catch(()=>({}))).error:null;
-    showNotif('❌ Não Foi Possível Excluir',err||'Erro De Conexão.','var(--red)');return;
-  }
-  // Nulifica saques antes de deletar para evitar FK constraint
-  await db('saques','PATCH',{entregador_id:null},`?entregador_id=eq.${id}`).catch(()=>{});
-  await db('entregadores','DELETE',null,`?id=eq.${id}`);
-  showNotif('🗑️ Entregador Excluído','','var(--red)');
+// Inativar no lugar de excluir (2026-10): mantém login e histórico; status
+// 'bloqueado' já tira o entregador do despacho (entregadores_no_raio) e do
+// saque (solicitar_saque recusa 'bloqueado'). aprovado=false por garantia.
+// A exclusão permanente deixou de existir aqui — fica só para LGPD (Edge).
+async function inativarEntregador(id,nome){
+  if(!confirm(`Inativar "${nome}"?\nEle fica bloqueado: não recebe novas ofertas nem consegue sacar. O login e o histórico são mantidos. Dá pra Reativar depois.`))return;
+  const r=await db('entregadores','PATCH',{status:'bloqueado',aprovado:false,disponivel:false},`?id=eq.${id}`);
+  if(!Array.isArray(r)||r.length===0){showNotif('❌ Não Foi Possível Inativar','','var(--red)');return;}
+  showNotif('✅ Entregador Inativado',nome||'','var(--yellow)');
   renderCadastrosPage('entregadores');
 }
+async function reativarEntregador(id,nome){
+  if(!confirm(`Reativar "${nome}"?`))return;
+  const r=await db('entregadores','PATCH',{status:'offline',aprovado:true},`?id=eq.${id}`);
+  if(!Array.isArray(r)||r.length===0){showNotif('❌ Não Foi Possível Reativar','','var(--red)');return;}
+  showNotif('✅ Entregador Reativado',nome||'','var(--green)');
+  renderCadastrosPage('entregadores');
+}
+// Botão Inativar/Reativar para uma linha de entregador
+function _btnInativarEnt(e){
+  const nome=(e.nome||e.id?.substring(0,8)||'').replace(/'/g,"\\'");
+  return e.status==='bloqueado'
+    ? `<button onclick="event.stopPropagation();reativarEntregador('${e.id}','${nome}')" title="Reativar" style="background:none;border:1px solid #22c55e;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">${_icone('refresh-cw',16)}</button>`
+    : `<button onclick="event.stopPropagation();inativarEntregador('${e.id}','${nome}')" title="Inativar" style="background:none;border:1px solid #f59e0b;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;margin-left:4px">${_icone('ban',16)}</button>`;
+}
 
-async function excluirLoja(id,nome){
-  if(!confirm(`Tem Certeza Que Deseja Excluir A Loja "${nome}"?\nEsta Ação Não Pode Ser Desfeita.`))return;
-  try{await db('logs_acoes','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: logs_acoes skip',e);}
-  try{await db('usuarios_painel','DELETE',null,`?loja_id=eq.${id}`);}catch(e){console.warn('excluirLoja: usuarios_painel skip',e);}
-  await db('lojas','DELETE',null,`?id=eq.${id}`);
-  showNotif('🗑️ Loja Excluída','','var(--red)');
+// Inativar no lugar de excluir (2026-10): desativa a loja e TAMBÉM os logins
+// dela em usuarios_painel (param do usuário), mantendo dados, logs e histórico.
+async function inativarLoja(id,nome){
+  if(!confirm(`Inativar a loja "${nome}"?\nA loja e os logins dela ficam inativos (não entram no painel). Dados e histórico são mantidos. Dá pra Reativar depois.`))return;
+  try{await db('usuarios_painel','PATCH',{ativo:false},`?loja_id=eq.${id}`);}catch(e){console.warn('inativarLoja: usuarios_painel skip',e);}
+  const r=await db('lojas','PATCH',{ativo:false},`?id=eq.${id}`);
+  if(!Array.isArray(r)||r.length===0){showNotif('❌ Não Foi Possível Inativar A Loja','','var(--red)');return;}
+  showNotif('✅ Loja Inativada',nome||'','var(--yellow)');
   _recarregarListaLojas();
+}
+async function reativarLoja(id,nome){
+  if(!confirm(`Reativar a loja "${nome}" e os logins dela?`))return;
+  try{await db('usuarios_painel','PATCH',{ativo:true},`?loja_id=eq.${id}`);}catch(e){console.warn('reativarLoja: usuarios_painel skip',e);}
+  const r=await db('lojas','PATCH',{ativo:true},`?id=eq.${id}`);
+  if(!Array.isArray(r)||r.length===0){showNotif('❌ Não Foi Possível Reativar A Loja','','var(--red)');return;}
+  showNotif('✅ Loja Reativada',nome||'','var(--green)');
+  _recarregarListaLojas();
+}
+// Botão Inativar/Reativar para uma linha de loja
+function _btnInativarLoja(l){
+  const nome=(l.nome||'').replace(/'/g,"\\'");
+  return l.ativo===false
+    ? `<button onclick="reativarLoja('${l.id}','${nome}')" title="Reativar" style="background:none;border:1px solid #22c55e;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('refresh-cw',16)}</button>`
+    : `<button onclick="inativarLoja('${l.id}','${nome}')" title="Inativar" style="background:none;border:1px solid #f59e0b;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('ban',16)}</button>`;
 }
 // Depois de editar/excluir loja: atualiza SÓ a lista de onde o usuário
 // veio, sem navegar. Antes, salvar em Editar Loja chamava renderLojasPage()
@@ -8565,9 +8590,29 @@ async function _carregarDadosCeo(){
     if(seg.no_ar===false){
       alertas.unshift(`<div class="ceo-alert"><span class="ceo-alert-dot" style="background:#ef4444"></span><span class="ceo-alert-text">📴 <b>Sistema Sem Batimento</b> — Pode Estar Fora Do Ar Agora</span></div>`);
     }
+    const TIPO_LBL={adm:'Admin',suporte:'Suporte',loja:'Loja',entregador:'Entregador',cliente:'Cliente',sorteio:'Cliente (sorteio)'};
     for(const a of (seg.alertas||[])){
       const ip=a.ip?` · IP ${a.ip}`:'';
-      alertas.push(`<div class="ceo-alert" onclick="_ceoMarcarAlerta(${a.id})" title="Clique Para Marcar Como Visto"><span class="ceo-alert-dot" style="background:${COR[a.severidade]||'#9ca3af'}"></span><span class="ceo-alert-text">${ICON[a.tipo]||'•'} <b>${a.titulo}</b> — ${fmtH(a.quando)}${ip}</span></div>`);
+      // tipo + nome por alerta (conta nova / conta alterada / login)
+      const det=(a.detalhe&&typeof a.detalhe==='object')?a.detalhe:{};
+      let quem='';
+      if(a.tipo==='mudanca_usuarios_painel'){
+        quem=[TIPO_LBL[det.perfil]||det.perfil, det.nome].filter(Boolean).map(_escHtml).join(' — ');
+      }else if(a.tipo==='conta_nova'){
+        const t=TIPO_LBL[det.origem]||'Conta';
+        const dom=(det.email_dominio||'').toLowerCase();
+        const DESC=['maxxspace.com','mailinator.com','guerrillamail.com','sharklasers.com','yopmail.com','temp-mail.org','tempmail.com','10minutemail.com','trashmail.com','getnada.com','dispostable.com','maildrop.cc','fakeinbox.com','throwawaymail.com'];
+        // regra: entregador só pelo app (origem 'entregador'), loja só pelo link (origem 'loja').
+        // origem fora do esperado ou domínio descartável = FORA DO PADRÃO (vermelho).
+        const foraPadrao = !['entregador','loja','cliente','sorteio'].includes(det.origem||'') || DESC.includes(dom);
+        const canal = det.origem==='entregador'?'via app (Flutter)':det.origem==='loja'?'via link de cadastro':det.origem==='cliente'?'app do cliente':det.origem==='sorteio'?'sorteio':'ORIGEM DESCONHECIDA';
+        const base=_escHtml(t)+(dom?` (@${_escHtml(dom)})`:'')+' · '+_escHtml(canal);
+        quem= foraPadrao ? `<span style="color:#ef4444;font-weight:700">⚠️ FORA DO PADRÃO — ${base}</span>` : base;
+      }else if(a.tipo==='login_admin_novo_ip'){
+        quem=['Admin', det.admin].filter(Boolean).map(_escHtml).join(' — ');
+      }
+      const quemHtml=quem?` · <span style="color:var(--text2)">${quem}</span>`:'';
+      alertas.push(`<div class="ceo-alert" onclick="_ceoMarcarAlerta(${a.id})" title="Clique Para Marcar Como Visto"><span class="ceo-alert-dot" style="background:${COR[a.severidade]||'#9ca3af'}"></span><span class="ceo-alert-text">${ICON[a.tipo]||'•'} <b>${a.titulo}</b>${quemHtml} — ${fmtH(a.quando)}${ip}</span></div>`);
     }
     if((seg.quedas_24h||[]).length){
       const q=seg.quedas_24h.map(x=>`${fmtH(x.caiu)}→${fmtH(x.voltou)} (${x.minutos_fora} Min)`).join(' · ');
@@ -9073,7 +9118,7 @@ async function renderLojasPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('store',22)} Lojas</div><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-lojas"></tbody></table></div></div></div>`;
   const data=await db('lojas','GET',null,'?order=created_at.desc');
   const tbody=document.getElementById('tbody-lojas');if(!tbody)return;
-  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button><button onclick="excluirLoja('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-left:4px">${_icone('trash-2',16)}</button></td></tr>`).join('');
+  tbody.innerHTML=data.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>':data.map(l=>`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':''}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`).join('');
 }
 
 // Derivada de _GRUPOS_CATEGORIA_DEF (categorias genéricas + marcas
@@ -10386,7 +10431,7 @@ async function _cpBuscar(){
   const rows=await db('contas_pagar','GET',null,qs);
   const data=Array.isArray(rows)?rows:[];
   if(!data.length){wrap.innerHTML='<div class="card"><div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma Conta Cadastrada</div></div>';return;}
-  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:`<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
+  const statusBadge=s=>s==='pago'?`<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pago</span>`:s==='cancelada'?`<span style="background:#e5e7eb;color:#6b7280;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Cancelada</span>`:`<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Pendente</span>`;
   wrap.innerHTML=`<div class="card"><div style="overflow-x:auto"><table>
     <thead><tr><th>Competência</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Vencimento</th><th>Ações</th></tr></thead>
     <tbody>${data.map(r=>`<tr>
@@ -10396,7 +10441,7 @@ async function _cpBuscar(){
       <td style="font-weight:700;color:var(--text)">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
       <td>${statusBadge(r.status)}</td>
       <td style="font-size:12px;color:var(--text3)">${r.vencimento?r.vencimento.split('-').reverse().join('/'):'—'}</td>
-      <td style="white-space:nowrap"><button onclick="_cpEditar('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;margin-right:4px">${_icone('pencil',16)}</button><button onclick="_cpExcluir('${r.id}')" style="background:none;border:1px solid #ef4444;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">${_icone('trash-2',16)}</button></td>
+      <td style="white-space:nowrap"><button onclick="_cpEditar('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;margin-right:4px">${_icone('pencil',16)}</button>${r.status==='cancelada'?`<button onclick="_cpReativar('${r.id}')" title="Reativar" style="background:none;border:1px solid #22c55e;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">${_icone('refresh-cw',16)}</button>`:`<button onclick="_cpCancelar('${r.id}')" title="Cancelar" style="background:none;border:1px solid #f59e0b;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px">${_icone('ban',16)}</button>`}</td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
@@ -10450,10 +10495,17 @@ function _cpCancelarEdicao(){
   if(g('cp-btn-salvar'))g('cp-btn-salvar').textContent='Salvar';
   if(g('cp-btn-cancelar'))g('cp-btn-cancelar').style.display='none';
 }
-async function _cpExcluir(id){
-  if(!confirm('Excluir Esta Conta A Pagar?'))return;
-  await db('contas_pagar','DELETE',null,`?id=eq.${id}`);
-  showNotif('🗑️ Conta Excluída','','var(--red)');
+// Cancelar no lugar de excluir (2026-10): marca status='cancelada', mantém a linha.
+async function _cpCancelar(id){
+  if(!confirm('Cancelar esta conta a pagar? Ela fica marcada como cancelada (não é apagada). Dá pra Reativar depois.'))return;
+  await db('contas_pagar','PATCH',{status:'cancelada'},`?id=eq.${id}`);
+  showNotif('✅ Conta Cancelada','','var(--yellow)');
+  _cpBuscar();
+}
+async function _cpReativar(id){
+  if(!confirm('Reativar esta conta a pagar (volta para pendente)?'))return;
+  await db('contas_pagar','PATCH',{status:'pendente'},`?id=eq.${id}`);
+  showNotif('✅ Conta Reativada','','var(--green)');
   _cpBuscar();
 }
 
