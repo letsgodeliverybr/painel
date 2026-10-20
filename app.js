@@ -6343,11 +6343,29 @@ function _entMatchBusca(e,termo){
 // thead muda de colunas conforme o filtro de status (em_analise tem um
 // layout diferente dos demais) — por isso é recalculado aqui também, mas
 // sem tocar no <input> de busca, que fica intacto no DOM.
+// Abre documento do entregador. Os valores em entregadores.foto_* são o CAMINHO do
+// objeto no bucket PRIVADO documentos-entregador (não URL). Gera um link ASSINADO
+// temporário (~60s) com o JWT real do admin — sem tornar o bucket público e sem
+// segredo no cliente. Em erro, avisa (não redireciona pro login). Exige a policy
+// de storage (propostas/ver_documentos/policy_storage.sql) e sessão real de admin.
+async function _verDocumento(valor){
+  if(!valor)return;
+  if(/^https?:\/\//i.test(valor)){window.open(valor,'_blank');return;} // compat: já é URL completa
+  const w=window.open('','_blank'); // abre a aba no gesto do clique (evita bloqueio de pop-up)
+  try{
+    const caminho=String(valor).split('/').map(encodeURIComponent).join('/');
+    const r=await fetch(`${SB_URL}/storage/v1/object/sign/documentos-entregador/${caminho}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify({expiresIn:60})});
+    if(!r.ok){if(w)w.close();showNotif('❌ Documento Indisponível','Sem permissão ou arquivo ausente.','var(--red)');return;}
+    const j=await r.json(),rel=j.signedURL||j.signedUrl;
+    if(!rel){if(w)w.close();showNotif('❌ Documento Indisponível','','var(--red)');return;}
+    if(w)w.location.href=`${SB_URL}/storage/v1${rel.startsWith('/')?rel:'/'+rel}`;
+  }catch(e){if(w)w.close();showNotif('❌ Erro Ao Abrir Documento','','var(--red)');}
+}
 function _renderTbodyEntregadores(){
   const filtered=_entListaFiltrada();
 
   let theadHtml,tbodyHtml;
-  const _fotoBtn=(url)=>url?`<button onclick="window.open('${url}','_blank')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
+  const _fotoBtn=(url)=>url?`<button onclick="_verDocumento('${String(url).replace(/'/g,"\\'")}')" style="padding:2px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Ver</button>`:'—';
   if(_entFiltro==='em_analise'){
     theadHtml='<tr><th>Nome</th><th>Foto</th><th>CNH</th><th>CRLV</th><th>Comp. Res.</th><th>Telefone</th><th>CPF</th><th>Veículo</th><th>Placa</th><th>Pix</th><th>Data Cadastro</th><th>Ações</th></tr>';
     tbodyHtml=filtered.length===0
