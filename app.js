@@ -11902,7 +11902,17 @@ async function _buscarPagamentos(){
     _renderHistoricoAprovarSaques();
     return;
   }
+  const _asN=saques.length;
+  const _asEnt=saques.reduce((a,s)=>a+(parseInt(s.qtd_pedidos)||0),0);
+  const _asLiq=saques.reduce((a,s)=>a+(parseFloat(s.valor_liquido||s.valor)||0),0);
   pendWrap.innerHTML=`
+    <div id="as-resumo" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:12px 16px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)">
+      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">A Aprovar</span>
+      ${_finChip('Saques',_asN)}${_finChip('Entregas',_asEnt)}${_finChip('Líquido','R$ '+_asLiq.toFixed(2),'#10b981')}
+      <div style="width:1px;height:26px;background:var(--border);margin:0 2px"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px">Selecionados</span>
+      <span id="as-resumo-sel" style="display:flex;gap:18px"></span>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="as-sel-all" onchange="_asToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todos</label>
       <button onclick="_aprovarSaquesSelecionados()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionados</button>
@@ -11914,7 +11924,7 @@ async function _buscarPagamentos(){
         const taxa=parseFloat(s.taxa||0);
         const liq=parseFloat(s.valor_liquido||s.valor||0);
         return`<tr id="saque-row-${s.id}">
-        <td><input type="checkbox" class="as-cb" value="${s.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td><input type="checkbox" class="as-cb" value="${s.id}" data-qtd="${parseInt(s.qtd_pedidos)||0}" data-liq="${liq}" onchange="_asResumoAtualizar()" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-size:12px;color:var(--text3)">${formatarDataHora(s.created_at)}</td>
         <td style="font-weight:600;color:var(--text)">${ent.nome||'—'}</td>
         <td style="font-weight:700;color:var(--text)">R$ ${bruto.toFixed(2)}</td>
@@ -11926,6 +11936,7 @@ async function _buscarPagamentos(){
         <td><button onclick="recusarSaque('${s.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
+  _asResumoAtualizar();
   _renderHistoricoAprovarSaques();
 }
 
@@ -12068,7 +12079,15 @@ async function _renderHistoricoAprovarSaques(inicio,fim){
   </div></div>`;
 }
 
-function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>cb.checked=checked);}
+function _finChip(lbl,val,cor){return `<div style="min-width:64px"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px">${lbl}</div><div style="font-size:16px;font-weight:700;color:${cor||'var(--text)'}">${val}</div></div>`;}
+function _asResumoAtualizar(){
+  const sel=[...document.querySelectorAll('.as-cb:checked')];
+  const ent=sel.reduce((a,cb)=>a+(parseInt(cb.dataset.qtd)||0),0);
+  const liq=sel.reduce((a,cb)=>a+(parseFloat(cb.dataset.liq)||0),0);
+  const box=document.getElementById('as-resumo-sel');
+  if(box)box.innerHTML=_finChip('Saques',sel.length)+_finChip('Entregas',ent)+_finChip('Líquido','R$ '+liq.toFixed(2),'#10b981');
+}
+function _asToggleAll(checked){document.querySelectorAll('.as-cb').forEach(cb=>cb.checked=checked);_asResumoAtualizar();}
 
 async function _atualizarSaldoEntregador(entregador_id,valor){
   const ent=await db('entregadores','GET',null,`?id=eq.${entregador_id}&select=*`);
@@ -12508,7 +12527,16 @@ async function _buscarCobrancasPendentes(){
     pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma Cobrança Pendente No Período</div></div>`;
     return;
   }
+  let _acN=cobrancas.length,_acPed=0,_acVal=0;
+  cobrancas.forEach(c=>{const _v=_faturaVencimentoYMD(c);const _r=_calcularJurosMultaFatura(c.valor_total,_v);_acPed+=parseInt(c.qtd_pedidos)||0;_acVal+=(_r.diasAtraso>=1?_r.valorAtualizado:(parseFloat(c.valor_total)||0));});
   pendWrap.innerHTML=`
+    <div id="ac-resumo" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:12px 16px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)">
+      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">A Aprovar</span>
+      ${_finChip('Faturas',_acN)}${_finChip('Pedidos',_acPed)}${_finChip('Valor','R$ '+_acVal.toFixed(2),'#1A56DB')}
+      <div style="width:1px;height:26px;background:var(--border);margin:0 2px"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px">Selecionadas</span>
+      <span id="ac-resumo-sel" style="display:flex;gap:18px"></span>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600"><input type="checkbox" id="ac-sel-all" onchange="_acToggleAll(this.checked)" style="width:16px;height:16px;cursor:pointer"/> Selecionar Todas</label>
       <button onclick="_aprovarCobrancasSelecionadas()" style="margin-left:auto;background:#10b981;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar Selecionadas</button>
@@ -12522,7 +12550,7 @@ async function _buscarCobrancasPendentes(){
         const vencida=diasAtraso>=1;
         const detalheVencida=`+multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}`;
         return`<tr id="cob-row-${c.id}">
-        <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
+        <td><input type="checkbox" class="ac-cb" value="${c.id}" data-qtd="${parseInt(c.qtd_pedidos)||0}" data-val="${vencida?valorAtualizado:(parseFloat(c.valor_total)||0)}" onchange="_acResumoAtualizar()" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
         <td style="font-size:12px;color:${vencida?'#ef4444':'var(--text2)'};font-weight:${vencida?'700':'400'}">${formatarDataBR(vencYMD)}${vencida?` (${diasAtraso}d)`:''}</td>
@@ -12532,6 +12560,7 @@ async function _buscarCobrancasPendentes(){
         <td style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="_aprovarCobrancaUnica('${c.id}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('check',16,'btn-ico')}Aprovar</button><button onclick="verFaturaCobranca('${c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('file-text',16,'btn-ico')}Ver Fatura</button><button onclick="recusarCobranca('${c.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">${_icone('x',16,'btn-ico')}Recusar</button></td>
       </tr>`;}).join('')}</tbody>
     </table></div>`;
+  _acResumoAtualizar();
 }
 
 async function _renderHistoricoCobrancas(inicio,fim){
@@ -12558,7 +12587,14 @@ async function _renderHistoricoCobrancas(inicio,fim){
   </div></div>`;
 }
 
-function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>cb.checked=checked);}
+function _acResumoAtualizar(){
+  const sel=[...document.querySelectorAll('.ac-cb:checked')];
+  const ped=sel.reduce((a,cb)=>a+(parseInt(cb.dataset.qtd)||0),0);
+  const val=sel.reduce((a,cb)=>a+(parseFloat(cb.dataset.val)||0),0);
+  const box=document.getElementById('ac-resumo-sel');
+  if(box)box.innerHTML=_finChip('Faturas',sel.length)+_finChip('Pedidos',ped)+_finChip('Valor','R$ '+val.toFixed(2),'#1A56DB');
+}
+function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>cb.checked=checked);_acResumoAtualizar();}
 
 // Congela o valor com multa/juros no momento da aprovação (valor_pago_final)
 // — não pode ficar sendo recalculado depois na exibição do Histórico, já
