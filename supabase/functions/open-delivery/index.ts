@@ -249,6 +249,22 @@ async function distanciaKm(lojaId: string, da: any): Promise<number | null> {
   return await distanciaRotaKm(Number(loja.latitude), Number(loja.longitude), lat, lng);
 }
 
+// Destino no mesmo ponto da loja (ex: endereço do cliente = endereço da loja):
+// o Google não devolve distância e a cotação caía em 503 route_unavailable,
+// que parece serviço fora do ar. Abaixo de 50 m em linha reta vira 422 claro.
+const DESTINO_MIN_KM = 0.05;
+
+async function distanciaRetaDaLojaKm(lojaId: string, da: any): Promise<number | null> {
+  const lat = Number(da?.latitude), lng = Number(da?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const { data: loja } = await supabase.from("lojas").select("latitude,longitude").eq("id", lojaId).single();
+  if (!loja?.latitude || !loja?.longitude) return null;
+  const rad = (g: number) => g * Math.PI / 180;
+  const dLat = rad(lat - Number(loja.latitude)), dLng = rad(lng - Number(loja.longitude));
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(Number(loja.latitude))) * Math.cos(rad(lat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
 function fatorReta(): number | null {
   const f = Number(Deno.env.get("OD_FATOR_RETA") ?? "");
   return Number.isFinite(f) && f >= 1 && f <= 3 ? f : null;
@@ -274,6 +290,15 @@ async function cotarEntrega(req: Request, auth: { credencial_id: string; loja_id
     const g = await coordenadasDoEndereco(da, geoKey);
     if ("title" in g) return erro(g.status, g.title, g.detail, g.fields);
     da.latitude = g.lat; da.longitude = g.lng; geocodificado = true;
+  }
+  const reta = await distanciaRetaDaLojaKm(auth.loja_id, da);
+  if (reta !== null && reta < DESTINO_MIN_KM) {
+    await supabase.from("od_acessos").insert({
+      credencial_id: auth.credencial_id, loja_id: auth.loja_id, rota: "/v1/logistics/quote", metodo: "POST",
+      http_status: 422, ip: ipDe(req), detalhe: "destination_equals_origin",
+    }).setHeader("x-od-host", hostDe(req));
+    return erro(422, "destination_equals_origin",
+      "Destino igual à origem: use um endereço de entrega diferente do endereço da loja.", ["deliveryAddress"]);
   }
   const km = await distanciaKm(auth.loja_id, da);
   const { data, error } = await supabase.rpc("od_cotar_entrega", {
