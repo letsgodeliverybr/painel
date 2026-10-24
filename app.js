@@ -3462,7 +3462,6 @@ function _rcgEstilos(){
   .rcg-valor{font-size:32px;font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-top:2px}
   .rcg-linha{font-size:15px;line-height:1.45;color:var(--text)}
   .rcg-linha b{color:#34d399;font-weight:800}
-  .rcg-nb{white-space:nowrap}
   .rcg-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
   .rcg-total{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;background:rgba(16,185,129,.13);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:5px 9px}
   .rcg-total b{color:#34d399;font-weight:800;font-size:18px}
@@ -3601,7 +3600,8 @@ function _rcgRenderPacotes(){
         ?`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
         <span class="rcg-total">${bonus?'Você recebe':'Com bônus:'} <b>${_rcgFmtNb(p.pago+p.bonus)}</b> em saldo</span>
         ${bonus?'':`<span class="rcg-bonus-aviso">${_rcgBonusValidade(p.pago!==maior)}</span>`}`
-        :`<span class="rcg-linha"><span class="rcg-nb">Você paga ${_rcgFmtNb(p.pago)} ·</span> <span class="rcg-nb">Você recebe <b>${_rcgFmtNb(p.pago)}</b></span></span>`}</span>
+        :`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
+        <span class="rcg-linha">Você recebe <b>${_rcgFmtNb(p.pago)}</b></span>`}</span>
     </button>`;
   };
   const p=_rcg.sel!=null?_rcg.pacotes[_rcg.sel]:null;
