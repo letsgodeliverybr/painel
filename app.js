@@ -1433,6 +1433,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
        antes da linha quando a tela é baixa (margin-top:auto vira 0). */
     .nav-loja-wrap>.nav-item~.nav-item{margin-top:0 !important;}
     .nav-loja-wrap>.nav-item:last-of-type{margin-bottom:16px !important;}
+    /* Celular (gaveta, abaixo de 700px): o HTML de produção dá height:100vh
+       ao menu, e no iPhone 100vh é maior que a área visível — o grupo de
+       baixo (Configurações, Perfil/Sair, empurrado pro fim) ficava atrás da
+       barra do navegador. Usa a altura real (100dvh), rola por dentro e
+       deixa a margem de segurança do iPhone embaixo. Computador não muda. */
+    @media (max-width:699px){
+      #nav-sidebar{height:100vh;height:100dvh;max-height:100dvh;}
+      #nav-sidebar-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:max(16px,env(safe-area-inset-bottom)) !important;}
+    }
 
     /* ── MENU FLUTUANTE DO RODAPÉ DA LOJA (Configurações / Perfil) ──
        Tem que ficar AQUI (CSS injetado pelo app.js), não no index.html:
