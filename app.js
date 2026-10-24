@@ -3462,6 +3462,12 @@ function _rcgEstilos(){
   .rcg-bonus-off{text-decoration:line-through;opacity:.55}
   .rcg-tag.off{opacity:.45;filter:grayscale(1)}
   .rcg-bonus-aviso{font-size:11.5px;font-weight:600;color:var(--text3)}
+  .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:4px;align-items:center;min-height:0;padding:18px 20px}
+  .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1;margin-bottom:0}
+  .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:30px}
+  .rcg-card.largo .rcg-recebe{grid-column:2;grid-row:1/span 2;align-self:center;font-size:14px;padding-right:28px}
+  .rcg-card.largo .rcg-recebe:has(+.rcg-bonus-aviso){grid-row:1;align-self:end}
+  .rcg-card.largo .rcg-bonus-aviso{grid-column:2;grid-row:2;align-self:start}
   .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
   .rcg-foot-info{font-size:12.5px;color:var(--text2)}
   .rcg-foot-info b{color:var(--text)}
@@ -3496,6 +3502,9 @@ function _rcgEstilos(){
     .rcg-card{min-height:118px;padding:16px 12px 12px}
     .rcg-selo{position:static;align-self:flex-start;white-space:normal;line-height:1.3;margin:-2px 0 4px;max-width:calc(100% - 26px)}
     .rcg-card.recomendado .rcg-tag-vazia{display:none}
+    .rcg-card.largo{grid-column:auto;display:flex;align-items:stretch;column-gap:0;padding:16px 12px 12px}
+    .rcg-card.largo .rcg-valor{font-size:22px}
+    .rcg-card.largo .rcg-recebe{font-size:12.5px;padding-right:0}
     .rcg-valor{font-size:22px}
     .rcg-pix{grid-template-columns:1fr}
     .rcg-qr{min-height:0}
@@ -3548,9 +3557,10 @@ function _rcgRenderPacotes(){
   const i=_rcg.info||{},bonus=_rcgBonusAtivo();
   const visiveis=_rcg.pacotes.map((p,idx)=>({p,idx})).filter(({p})=>!(i.primeira_recarga&&p.pago<(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)));
   if(_rcg.sel!=null&&!visiveis.some(v=>v.idx===_rcg.sel))_rcg.sel=null;
+  const maior=Math.max(...visiveis.map(({p})=>p.pago));
   const card=({p,idx})=>{
     const sel=_rcg.sel===idx;
-    return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
+    return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}${p.pago===maior?' largo':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
       ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal Para Começar</span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
       ${p.bonus>0?`<span class="rcg-tag${bonus?'':' off'}">${_icone('badge-percent',12)} +${p.pct}% De Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
