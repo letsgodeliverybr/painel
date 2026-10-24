@@ -1995,6 +1995,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
          invisível ocupando a tela inteira. transform desloca pra fora, width
          continua 100% (não importa, já não está mais na área visível). */
       .sb-dark.sb-minimized { transform: translateX(-100%) !important; }
+      /* Painel de pedidos no celular (2026-10-24): começava em top:0 do
+         body, por cima da barra do topo, e cobria o ☰ e o botão que o
+         esconde — sem saída visível. Agora começa abaixo da barra (o ☰ fica
+         sempre visível) e deixa uma faixa do mapa à direita: tocar ali, fora
+         do painel, ou no ✕ do cabeçalho fecha o painel. */
+      .sb-dark { top: var(--topbar-h, 56px) !important; width: calc(100% - 56px) !important; box-shadow: 8px 0 24px rgba(0,0,0,.45); }
+      .sb-fechar-mobile { display: flex !important; }
       /* Topbar (presente em toda tela logada, não só Mapa ao Vivo): relógio +
          nome do usuário + badge de perfil, juntos, não cabem depois do menu
          hambúrguer + logo + botão "Novo Pedido" em ~375px — sobravam ~80px
@@ -4402,6 +4409,7 @@ function renderMapaPage(){
         <div class="sb-header-top-dark">
           <span class="sb-title-dark">Pedidos</span>
           <div id="sb-status-bubbles" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center"></div>
+          <button class="sb-fechar-mobile" onclick="toggleSidebar(true)" aria-label="Fechar pedidos" title="Fechar" style="display:none;margin-left:auto;width:36px;height:36px;flex-shrink:0;align-items:center;justify-content:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;cursor:pointer">${_icone('x',18)}</button>
         </div>
         <input class="sb-search-dark" id="sb-busca" placeholder="Buscar Número, Loja Ou Endereço..." oninput="filtrarSidebar(this.value)">
       </div>
@@ -4758,7 +4766,17 @@ function setFilter(status,el){filterStatus=status;document.querySelectorAll('.fi
 // interrompido perto da borda esquerda, zona do "voltar" por swipe do
 // Safari iOS) — sem isso, o painel podia abrir com uma largura menor que
 // 100%, sobrando espaço vazio do lado direito da tela.
-function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
+function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const _tb=document.querySelector('#app .topbar');if(_tb&&_tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',_tb.offsetHeight+'px');const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
+// Celular: tocar fora do painel de pedidos (na faixa do mapa) fecha o
+// painel. Barra do topo, menu, janelas e o próprio botão do painel ficam de
+// fora (o ☰ continua abrindo o menu normalmente).
+document.addEventListener('pointerdown',e=>{
+  if(window.innerWidth>768)return;
+  const sb=document.getElementById('sidebar-mapa');
+  if(!sb||sb.classList.contains('sb-minimized')||sb.contains(e.target))return;
+  if(e.target.closest?.('.topbar,#nav-sidebar,#nav-overlay,.modal-overlay,[onclick="toggleSidebar()"],#sb-toggle-tab'))return;
+  toggleSidebar(true);
+},true);
 // Padrão invertido (2026-09-03, pedido do usuário): a página já abre
 // filtrada só nas lojas com pedido ativo (estado 1), não em "todas" (era
 // o estado 0 default antes). Ciclo também invertido pra bater com a
