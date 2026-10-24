@@ -3397,6 +3397,9 @@ function _rcgFmtCurto(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minim
 function _rcgFmtNb(v){return _rcgFmtCurto(v).replace(' ','\u00a0');}
 // aviso do bônus fora da janela (data vem de janela_bonus_recarga)
 function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`Bônus válido a partir de ${_rcgDM(d)}`:'Bônus válido nos 7 primeiros dias úteis do mês';}
+// prazo da próxima janela de bônus nos cartões (1º ao 7º dia útil, datas
+// de janela_bonus_recarga)
+function _rcgBonusValidade(){const j=_rcg.info?.janela;return j?.proximo_inicio&&j?.proximo_fim?`Bônus válido de ${_rcgDM(j.proximo_inicio)} até ${_rcgDM(j.proximo_fim)}`:_rcgBonusAPartir();}
 function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
 function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
 // Informação de recarga (servidor) com modo seguro.
@@ -3434,47 +3437,50 @@ function _rcgEstilos(){
   .rcg-x:hover{color:var(--text);background:var(--surface2)}
   .rcg-saldo{display:flex;gap:20px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
   .rcg-saldo-valor{flex-shrink:0}
-  .rcg-saldo-valor span{display:block;font-size:12px;font-weight:600;color:var(--text3)}
-  .rcg-saldo-valor b{display:block;font-size:26px;font-weight:800;letter-spacing:-.4px;margin-top:2px;line-height:1.1}
-  .rcg-saldo p{margin:0;font-size:13px;line-height:1.5;color:var(--text2);border-left:1px solid var(--border);padding-left:20px}
+  .rcg-saldo-valor span{display:block;font-size:14px;font-weight:700;color:var(--text)}
+  .rcg-saldo-valor b{display:block;font-size:30px;font-weight:800;letter-spacing:-.4px;margin-top:2px;line-height:1.1}
+  .rcg-saldo p{margin:0;font-size:15px;line-height:1.5;color:var(--text);border-left:1px solid var(--border);padding-left:20px}
   .rcg-body{padding:18px 24px 20px;overflow-y:auto;flex:1}
-  .rcg-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.45;margin-bottom:14px;border:1px solid}
+  .rcg-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45;margin-bottom:14px;border:1px solid}
   .rcg-aviso .icone{flex-shrink:0;margin-top:1px}
   .rcg-aviso.bonus{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.35);color:var(--text)}
-  .rcg-aviso.neutro{background:var(--surface2);border-color:var(--border);color:var(--text2)}
+  .rcg-aviso.neutro{background:var(--surface2);border-color:var(--border);color:var(--text)}
   .rcg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .rcg-card{position:relative;text-align:left;font-family:inherit;cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:16px;min-height:132px;display:flex;flex-direction:column;gap:6px;color:var(--text);transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
   .rcg-card:hover{border-color:rgba(79,126,247,.6);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.25)}
   .rcg-card:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.45)}
-  .rcg-card[aria-checked="true"]{border-color:var(--accent);background:rgba(26,86,219,.12);box-shadow:0 0 0 1px var(--accent) inset}
+  .rcg-card[aria-checked="true"]{border:3px solid #4f7ef7;background:rgba(26,86,219,.22);box-shadow:0 0 0 4px rgba(79,126,247,.35)}
   .rcg-card.recomendado{border:2px solid #10b981;background:linear-gradient(160deg,rgba(16,185,129,.16),rgba(16,185,129,.04) 60%);box-shadow:0 8px 22px rgba(16,185,129,.12)}
-  .rcg-card.recomendado[aria-checked="true"]{border-color:var(--accent);background:rgba(26,86,219,.12)}
+  .rcg-card.recomendado[aria-checked="true"]{border-color:#4f7ef7;background:rgba(26,86,219,.22)}
   .rcg-selo{position:absolute;top:-11px;left:14px;display:inline-flex;align-items:center;gap:5px;background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
-  .rcg-check{position:absolute;top:14px;right:14px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;color:transparent}
-  .rcg-card[aria-checked="true"] .rcg-check{background:var(--accent);border-color:var(--accent);color:#fff}
-  .rcg-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:#f59e0b;color:#1a1204;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;line-height:1.2}
-  .rcg-tag-vazia{height:24px}
-  .rcg-valor{font-size:28px;font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-top:2px}
-  .rcg-linha{font-size:12.5px;line-height:1.45;color:var(--text2)}
-  .rcg-linha b{color:#10b981;font-weight:700}
+  .rcg-check{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:2px solid var(--text2);display:flex;align-items:center;justify-content:center;color:transparent}
+  .rcg-card[aria-checked="true"] .rcg-check{background:#4f7ef7;border-color:#fff;color:#fff}
+  .rcg-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:#f59e0b;color:#1a1204;font-size:14px;font-weight:800;padding:5px 11px;border-radius:20px;line-height:1.2}
+  .rcg-tag-vazia{height:28px}
+  .rcg-valor{font-size:32px;font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-top:2px}
+  .rcg-linha{font-size:15px;line-height:1.45;color:var(--text)}
+  .rcg-linha b{color:#34d399;font-weight:800}
   .rcg-nb{white-space:nowrap}
-  .rcg-bonus-aviso{font-size:11.5px;font-weight:600;color:var(--text3)}
+  .rcg-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+  .rcg-total{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;background:rgba(16,185,129,.13);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:5px 9px}
+  .rcg-total b{color:#34d399;font-weight:800;font-size:18px}
+  .rcg-bonus-aviso{font-size:15px;font-weight:800;color:var(--text)}
   .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:6px;align-items:center;min-height:0;padding:18px 20px}
   .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1}
-  .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:30px;margin-top:0}
-  .rcg-card.largo .rcg-linha{grid-column:2;grid-row:1/span 2;align-self:center;font-size:14px;padding-right:30px}
-  .rcg-card.largo .rcg-linha:has(+.rcg-bonus-aviso){grid-row:1;align-self:end}
-  .rcg-card.largo .rcg-bonus-aviso{grid-column:2;grid-row:2;align-self:start}
+  .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:34px;margin-top:0}
+  .rcg-card.largo .rcg-info{grid-column:2;grid-row:1/span 2;align-self:center;padding-right:30px}
+  .rcg-card.largo .rcg-linha{font-size:15px}
   .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
-  .rcg-foot-info{font-size:13px;color:var(--text2)}
+  .rcg-foot-info{font-size:16px;color:var(--text)}
   .rcg-foot-info b{color:var(--text)}
   .rcg-selos{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
-  .rcg-selos span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--text3)}
+  .rcg-selos span{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--text)}
   .rcg-selos .icone{color:#10b981}
-  .rcg-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:12px;border:none;background:var(--accent);color:#fff;font:700 14.5px Inter,sans-serif;cursor:pointer;transition:background .15s,opacity .15s;white-space:nowrap}
+  .rcg-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 24px;border-radius:12px;border:none;background:var(--accent);color:#fff;font:700 16px Inter,sans-serif;cursor:pointer;transition:background .15s,opacity .15s;white-space:nowrap}
   .rcg-btn:hover:not([disabled]){background:#1646b5}
   .rcg-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,86,219,.45)}
-  .rcg-btn[disabled]{opacity:.45;cursor:not-allowed}
+  .rcg-btn[disabled]{opacity:.55;cursor:not-allowed}
+  .rcg-foot .rcg-btn{height:60px;font-size:18px;padding:0 30px;min-width:260px}
   .rcg-btn.whats{background:#16a34a}.rcg-btn.whats:hover{background:#15803d}
   .rcg-voltar{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font:600 13px Inter,sans-serif;cursor:pointer;padding:0;margin-bottom:14px}
   .rcg-pix{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
@@ -3504,13 +3510,20 @@ function _rcgEstilos(){
     .rcg-card{min-height:0;padding:14px 12px 12px}
     .rcg-selo{position:static;align-self:flex-start;margin:-2px 0 2px}
     .rcg-selo-extra{display:none}
-    .rcg-check{top:12px;right:10px}
+    .rcg-check{top:10px;right:10px;width:26px;height:26px}
     .rcg-card.recomendado .rcg-tag-vazia{display:none}
-    .rcg-tag{font-size:11.5px;padding:3px 8px}
-    .rcg-valor{font-size:23px}
+    .rcg-tag{font-size:13px;padding:4px 9px}
+    .rcg-valor{font-size:27px}
     .rcg-card.largo{grid-column:auto;display:flex;align-items:stretch;column-gap:0;padding:14px 12px 12px}
-    .rcg-card.largo .rcg-valor{font-size:23px}
-    .rcg-card.largo .rcg-linha{font-size:12.5px;padding-right:0}
+    .rcg-card.largo .rcg-valor{font-size:27px}
+    .rcg-card.largo .rcg-info{padding-right:0;align-self:stretch}
+    .rcg-card.largo .rcg-linha{font-size:14px}
+    .rcg-linha{font-size:14px}
+    .rcg-total{font-size:14px;padding:5px 8px}
+    .rcg-total b{font-size:17px}
+    .rcg-bonus-aviso{font-size:14px}
+    .rcg-grid{grid-template-columns:1fr}
+    .rcg-foot .rcg-btn{min-width:0}
     .rcg-pix{grid-template-columns:1fr}
     .rcg-qr{min-height:0}
   }`;
@@ -3547,7 +3560,7 @@ function _rcgCabecalho(){
     ?'Visão da equipe: a mesma tela que as lojas veem, com a janela de bônus de hoje.'
     :m==='faturamento'
     ?'No pré-pago, cada entrega é descontada do saldo, sem fatura semanal.'
-    :'Pré-pago: cada entrega é descontada do saldo. Recarregue quando quiser.';
+    :'Cada entrega é paga com o seu saldo. Coloque saldo quando quiser.';
   return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-marca">
         <img class="rcg-logo" src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go Delivery" onerror="this.style.display='none'">
         <div><span class="rcg-marca-nome">Let's Go Delivery</span><span class="rcg-titulo" id="rcg-titulo">Recarregar saldo via Pix</span></div></div>
@@ -3558,12 +3571,13 @@ function _rcgCabecalho(){
 function _rcgAvisos(){
   const i=_rcg.info||{},j=i.janela,maxPct=_rcgBonusMaxPct(_rcg.pacotes);
   let h='';
-  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus de até +${maxPct}% de saldo ativo.</b> Válido até ${_rcgDM(j.fim)}.</div></div>`;
-  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus nos 7 primeiros dias úteis de ${_rcgMes(j.proximo_inicio)}, a partir de ${_rcgDM(j.proximo_inicio)}.</div></div>`;
+  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',18)}<div><b>Bônus ativo hoje: até +${maxPct}% de saldo.</b> Vale até ${_rcgDM(j.fim)}.</div></div>`;
+  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',18)}<div>O bônus vale nos 7 primeiros dias úteis do mês. <b>Próximo: a partir de ${_rcgDM(j.proximo_inicio)}.</b></div></div>`;
   return h;
 }
-// Etiqueta do bônus sempre acesa; fora da janela, "Você recebe" mostra o
-// valor real (sem bônus) e a linha pequena traz a data da próxima janela.
+// Cartões com bônus: etiqueta e o total com bônus sempre visíveis ("Você
+// recebe" na janela; fora dela "Com bônus:" e o prazo da próxima janela
+// logo abaixo). O rodapé e a tela do QR mostram o crédito real do dia.
 function _rcgRenderPacotes(){
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
   const bonus=_rcgBonusAtivo();
@@ -3577,8 +3591,11 @@ function _rcgRenderPacotes(){
       <span class="rcg-check">${_icone('check',14)}</span>
       ${p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',13)}+${p.pct}% de saldo</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
-      <span class="rcg-linha"><span class="rcg-nb">Você paga ${_rcgFmtNb(p.pago)} ·</span> <span class="rcg-nb">Você recebe <b>${_rcgFmtNb(_rcgRecebe(p))}</b></span></span>
-      ${!bonus&&p.bonus>0?`<span class="rcg-bonus-aviso">${_rcgBonusAPartir()}</span>`:''}
+      <span class="rcg-info">${p.bonus>0
+        ?`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
+        <span class="rcg-total">${bonus?'Você recebe':'Com bônus:'} <b>${_rcgFmtNb(p.pago+p.bonus)}</b> em saldo</span>
+        ${bonus?'':`<span class="rcg-bonus-aviso">${_rcgBonusValidade()}</span>`}`
+        :`<span class="rcg-linha"><span class="rcg-nb">Você paga ${_rcgFmtNb(p.pago)} ·</span> <span class="rcg-nb">Você recebe <b>${_rcgFmtNb(p.pago)}</b></span></span>`}</span>
     </button>`;
   };
   const p=_rcg.sel!=null?_rcg.pacotes[_rcg.sel]:null;
