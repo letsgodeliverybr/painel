@@ -14114,23 +14114,27 @@ let _mcProdutos=[];
 // vídeos/tutoriais; vazio = bloco escondido.
 const LOJA_INICIO_CONTEUDOS=[];
 const _LOJA_INICIO_SLIDES=[
+  // Crédito pré-pago (2026-09-29): pra TODAS as lojas. % máximo lido dos
+  // pacotes reais; fora da janela de bônus o texto mostra a próxima (mesma
+  // função de dia útil do servidor). Botão depende do tipo de cobrança
+  // (_liPrepagoAcao / _liAtualizarSlidePrepago). Primeiro do carrossel
+  // (2026-10-24), com etiqueta em destaque (`tagDestaque`).
+  {id:'prepago',acao:'_liPrepagoAcao()',tagDestaque:true,tag:()=>`Promo · Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% De Bônus`,icone:'badge-percent',titulo:'Você Já Conhece As Vantagens Do Crédito Pré-Pago?',
+   texto:()=>`Recarregue Seu Saldo Nos 7 Primeiros Dias Úteis Do Mês E Ganhe Bônus De Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% Em Crédito. Quanto Maior A Recarga, Maior O Bônus.`,botao:'Recarregar Agora'},
   // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
   // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
   {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos Planos',icone:'bike',titulo:"Let's Go Envios: Entregas Para Os Seus Pedidos Próprios",texto:'Use Nossos Entregadores Nos Pedidos Que Você Mesmo Vende: <br class="li-br-desk">WhatsApp, Telefone, Balcão E Site Próprio.',botao:'Ver Planos'},
   // Let's Go Turbo (2026-09-29): link externo (WhatsApp comercial com
   // mensagem pronta) em vez de tela do painel; `linha` = texto pequeno
-  // abaixo do botão.
-  {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: Seu Produto Na Mão Do Cliente Em Até 10 Minutos",texto:'Tem Produto De Marca Própria? Deixe Seu Estoque Na Nossa Base Turbo Fresh Ribeirão. Pedido Aprovado, Expedição Em 1 Minuto E Entrega Em Até 10 Minutos Na Região De Ribeirão Preto. A Partir De R$ 49,90/mês + Valor Por Entrega.',botao:'Quero O Turbo',linha:'Dúvidas Sobre Cadastro E Aprovação? (11) 99170-2772'},
+  // abaixo do botão. INATIVO (2026-10-24): ainda não liberado — ativo:false
+  // esconde o slide; pra religar, apagar o ativo:false.
+  {ativo:false,url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Tenho interesse no plano Let's Go Turbo")}`,icone:'rocket',titulo:"Let's Go Turbo: Seu Produto Na Mão Do Cliente Em Até 10 Minutos",texto:'Tem Produto De Marca Própria? Deixe Seu Estoque Na Nossa Base Turbo Fresh Ribeirão. Pedido Aprovado, Expedição Em 1 Minuto E Entrega Em Até 10 Minutos Na Região De Ribeirão Preto. A Partir De R$ 49,90/mês + Valor Por Entrega.',botao:'Quero O Turbo',linha:'Dúvidas Sobre Cadastro E Aprovação? (11) 99170-2772'},
   {destino:'vagas',icone:'calendar-days',titulo:'Entrega Dedicada: Garanta Entregadores Fixos Na Sua Loja',texto:'Reserve Entregadores Exclusivos Para Os Horários De Maior Movimento E Tenha Mais Previsibilidade Nas Suas Entregas.',botao:'Conhecer Entrega Dedicada'},
-  // Crédito pré-pago (2026-09-29): pra TODAS as lojas. % máximo lido dos
-  // pacotes reais; fora da janela de bônus o texto mostra a próxima (mesma
-  // função de dia útil do servidor). Botão depende do tipo de cobrança
-  // (_liPrepagoAcao / _liAtualizarSlidePrepago).
-  {id:'prepago',acao:'_liPrepagoAcao()',tag:'Promoção',icone:'badge-percent',titulo:'Você Já Conhece As Vantagens Do Crédito Pré-Pago?',
-   texto:()=>`Recarregue Seu Saldo Nos 7 Primeiros Dias Úteis Do Mês E Ganhe Bônus De Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% Em Crédito. Quanto Maior A Recarga, Maior O Bônus.`,botao:'Recarregar Agora'},
   {destino:'loja-clientes',icone:'users',titulo:'Acompanhe Seus Clientes',texto:'Veja Quantos Clientes Você Atendeu, Quantos São Novos E Quem Pede Com Mais Frequência.',botao:'Ver Meus Clientes'},
   {destino:'metricas',icone:'chart-column',titulo:'Acompanhe Seu Desempenho',texto:'Acompanhe Os Números Da Sua Loja E A Evolução Dos Seus Pedidos Ao Longo Do Tempo.',botao:'Ver Desempenho'},
 ];
+// slides com ativo:false ficam fora do carrossel (sem apagar a definição)
+function _liSlidesAtivos(){return _LOJA_INICIO_SLIDES.filter(s=>s.ativo!==false);}
 let _liSlide=0,_liTimer=null,_liPausado=false;
 function _liEstilos(){
   if(document.getElementById('loja-inicio-styles'))return;
@@ -14145,6 +14149,7 @@ function _liEstilos(){
        quando a 1ª linha cabe inteira (~406px); abaixo disso o texto flui */
     @container (max-width:419px){.li-br-desk{display:none}}
     .li-slide-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#93b4ff;margin-bottom:10px}
+    .li-slide-tag.destaque{background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45);color:#fbbf24;padding:5px 11px;border-radius:999px;font-weight:800}
     .li-slide-titulo{font-size:22px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:10px}
     .li-slide-desc{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px;max-width:520px}
     .li-slide-arte{flex-shrink:0;width:220px;height:170px}
@@ -14187,7 +14192,7 @@ function _liArte(icone,i){
 }
 function _liIrSlide(n){
   const t=document.getElementById('li-trilho');if(!t)return;
-  const total=_LOJA_INICIO_SLIDES.length;_liSlide=(n+total)%total;
+  const total=_liSlidesAtivos().length;_liSlide=(n+total)%total;
   t.style.transform=`translateX(-${_liSlide*100}%)`;
   document.querySelectorAll('#li-carrossel .li-ponto').forEach((p,i)=>p.classList.toggle('ativo',i===_liSlide));
 }
@@ -14232,8 +14237,8 @@ async function renderLojaInicioPage(){
   if(!_chatBadgeInterval)_iniciarChatBadgeLoja();
   _carregarSaldoTopbar();
   _liSlide=0;_liPausado=false;
-  const slides=_LOJA_INICIO_SLIDES.map((s,i)=>`<div class="li-slide">
-      <div class="li-slide-texto"><div class="li-slide-tag">${_icone('sparkles',14)} ${s.tag||'Novidade Para Sua Loja'}</div>
+  const slides=_liSlidesAtivos().map((s,i)=>`<div class="li-slide">
+      <div class="li-slide-texto"><div class="li-slide-tag${s.tagDestaque?' destaque':''}">${_icone(s.tagDestaque?'badge-percent':'sparkles',14)} ${(typeof s.tag==='function'?s.tag():s.tag)||'Novidade Para Sua Loja'}</div>
         <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc"${s.id?` id="li-desc-${s.id}"`:''}>${typeof s.texto==='function'?s.texto():s.texto}</div>
         ${s.acao
           ?`<button class="li-btn"${s.id?` id="li-btn-${s.id}"`:''} onclick="${s.acao}">${s.botao} ${_icone('arrow-right',16)}</button>`
@@ -14250,7 +14255,7 @@ async function renderLojaInicioPage(){
       <div class="li-trilho" id="li-trilho">${slides}</div>
       <button class="li-seta" style="left:12px" onclick="_liIrSlide(_liSlide-1);_liIniciarTimer()" aria-label="Anterior">${_icone('chevron-left',18)}</button>
       <button class="li-seta" style="right:12px" onclick="_liIrSlide(_liSlide+1);_liIniciarTimer()" aria-label="Próximo">${_icone('chevron-right',18)}</button>
-      <div class="li-pontos">${_LOJA_INICIO_SLIDES.map((_,i)=>`<button class="li-ponto${i===0?' ativo':''}" onclick="_liIrSlide(${i});_liIniciarTimer()" aria-label="Destaque ${i+1}"></button>`).join('')}</div>
+      <div class="li-pontos">${_liSlidesAtivos().map((_,i)=>`<button class="li-ponto${i===0?' ativo':''}" onclick="_liIrSlide(${i});_liIniciarTimer()" aria-label="Destaque ${i+1}"></button>`).join('')}</div>
     </div>
     <div class="li-secao-titulo">Comece Por Aqui</div>
     <div class="li-grid2">
