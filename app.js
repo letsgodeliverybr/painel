@@ -3506,10 +3506,14 @@ function _rcgEstilos(){
   .rcg-chave b{font-size:16px;color:var(--text);word-break:break-all}
   .rcg-acoes{display:flex;flex-direction:column;gap:10px}
   .rcg-acoes .rcg-btn{width:100%}
-  @media (max-width:640px){
+  /* Celular (até 768px): altura pela área visível de verdade (100dvh — no
+     iPhone, 94vh passava da tela e escondia o rodapé com Gerar Pix atrás da
+     barra do navegador). Cabeçalho e pacotes rolam juntos; o rodapé com o
+     botão Gerar Pix fica preso embaixo, sempre à vista. */
+  @media (max-width:768px){
     #modal-recarga-pix.modal-overlay{align-items:flex-end}
-    .rcg-modal{max-width:100vw;width:100vw;max-height:94vh;border-radius:18px 18px 0 0}
-    .rcg-head{padding:16px 16px 14px}.rcg-body{padding:14px 16px 16px}.rcg-foot{padding:12px 16px;flex-direction:column;align-items:stretch}
+    .rcg-modal{max-width:100vw;width:100vw;max-height:94vh;max-height:calc(100dvh - 12px);border-radius:18px 18px 0 0;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .rcg-head{padding:16px 16px 14px;flex:none}.rcg-body{padding:14px 16px 16px;flex:none;overflow:visible}.rcg-foot{position:sticky;bottom:0;z-index:2;padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));flex-direction:column;align-items:stretch;box-shadow:0 -8px 20px rgba(0,0,0,.35)}
     .rcg-top{margin-bottom:14px}
     .rcg-logo{width:68px;height:68px;border-radius:18px}
     .rcg-marca{gap:6px;padding:0 40px}
@@ -3519,22 +3523,22 @@ function _rcgEstilos(){
     .rcg-saldo{flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px}
     .rcg-saldo p{border-left:none;padding-left:0}
     .rcg-grid{grid-template-columns:1fr 1fr;gap:10px}
-    .rcg-card{min-height:0;padding:14px 12px 12px}
+    .rcg-card{min-height:0;padding:12px 10px 12px;gap:5px}
     .rcg-selo{position:static;align-self:flex-start;margin:-2px 0 2px}
     .rcg-selo-extra{display:none}
-    .rcg-check{top:10px;right:10px;width:26px;height:26px}
+    .rcg-check{top:9px;right:9px;width:24px;height:24px}
     .rcg-card.recomendado .rcg-tag-vazia{display:none}
-    .rcg-tag{font-size:13px;padding:4px 9px}
-    .rcg-valor{font-size:27px}
-    .rcg-card.largo{grid-column:auto;display:flex;align-items:stretch;column-gap:0;padding:14px 12px 12px}
+    .rcg-tag{font-size:12.5px;padding:3px 8px}
+    .rcg-tag-vazia{height:25px}
+    .rcg-valor{font-size:25px}
+    .rcg-card.largo{grid-column:1/-1;display:flex;align-items:stretch;column-gap:0;padding:12px 12px 12px}
     .rcg-card.largo .rcg-valor{font-size:27px}
     .rcg-card.largo .rcg-info{padding-right:0;align-self:stretch}
     .rcg-card.largo .rcg-linha{font-size:14px}
     .rcg-linha{font-size:14px}
-    .rcg-total{font-size:14px;padding:5px 8px}
-    .rcg-total b{font-size:17px}
-    .rcg-bonus-aviso{font-size:14px}
-    .rcg-grid{grid-template-columns:1fr}
+    .rcg-total{font-size:13.5px;padding:5px 7px}
+    .rcg-total b{font-size:16px}
+    .rcg-bonus-aviso{font-size:13.5px}
     .rcg-foot .rcg-btn{min-width:0}
     .rcg-pix{grid-template-columns:1fr}
     .rcg-qr{min-height:0}
