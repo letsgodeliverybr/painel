@@ -3382,15 +3382,14 @@ function _gerarPixPayload(valor){
 // ── Recarga de saldo via Pix (loja pré-paga) — redesenho 2026-09-29 ──
 // Regras (valem no SERVIDOR — migrations/recarga_loja_primeira_e_bonus.sql;
 // a tela só exibe o que info_recarga_loja() devolve):
-//  • 1ª recarga (loja sem recarga anterior): mínimo R$ 300 — os pacotes de
-//    R$ 50 e R$ 100 somem, com aviso.
+//  • Todos os pacotes valem para toda loja, inclusive na 1ª recarga (o
+//    mínimo de R$ 300 na 1ª recarga saiu em 2026-10-24 —
+//    migrations/recarga_sem_minimo_primeira.sql).
 //  • Bônus dos pacotes só CREDITADO do 1º ao 7º dia útil do mês (feriados na
 //    tabela feriados). Cartões e tela do QR mostram o bônus todo dia; fora da
 //    janela, riscado e com a data da próxima janela.
 // Sem a função no banco (migration não aplicada/erro de rede), a tela cai
-// no modo seguro: 1ª recarga calculada pelos créditos já carregados e
-// nenhum bônus prometido.
-const _RCG_MINIMO_PRIMEIRA=300;
+// no modo seguro: pacotes da tela e nenhum bônus prometido.
 let _rcg={info:null,pacotes:[],sel:null,saldo:0,modo:'credito'};
 function _rcgFmt(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function _rcgFmtCurto(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});}
@@ -3404,12 +3403,7 @@ function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split
 async function _rcgCarregarInfo(lojaId){
   const r=await dbRpc('info_recarga_loja',{p_loja_id:lojaId});
   if(r&&!Array.isArray(r)&&r.janela)return r;
-  let primeira=true;
-  try{
-    const rows=await db('creditos_lojas','GET',null,`?loja_id=eq.${lojaId}&tipo=eq.credito&select=observacoes,origem`);
-    primeira=!(Array.isArray(rows)?rows:[]).some(c=>c.origem?c.origem==='recarga':!/^estorno #/i.test(c.observacoes||''));
-  }catch{}
-  return{primeira_recarga:primeira,minimo_primeira_recarga:_RCG_MINIMO_PRIMEIRA,janela:null,pacotes:null,_semServidor:true};
+  return{janela:null,pacotes:null,_semServidor:true};
 }
 // Pacotes: os do servidor (pacotes_recarga) quando houver; senão os da tela.
 function _rcgPacotes(info){
@@ -3527,7 +3521,7 @@ async function _abrirModalRecargaPix(){
   modal.classList.add('open');
   if(equipe){
     const j=await dbRpc('janela_bonus_recarga',{});
-    _rcg.info={primeira_recarga:false,minimo_primeira_recarga:_RCG_MINIMO_PRIMEIRA,janela:j&&!Array.isArray(j)&&'ativo' in j?j:null,pacotes:null};
+    _rcg.info={janela:j&&!Array.isArray(j)&&'ativo' in j?j:null,pacotes:null};
   }else _rcg.info=await _rcgCarregarInfo(currentUser.loja_id);
   _rcg.pacotes=_rcgPacotes(_rcg.info);
   _rcgRenderPacotes();
@@ -3547,15 +3541,14 @@ function _rcgCabecalho(){
 function _rcgAvisos(){
   const i=_rcg.info||{},j=i.janela,maxPct=_rcgBonusMaxPct(_rcg.pacotes);
   let h='';
-  if(i.primeira_recarga)h+=`<div class="rcg-aviso info">${_icone('info',16)}<div><b>O Primeiro Depósito É De No Mínimo ${_rcgFmtCurto(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)}.</b> Depois Da Primeira Recarga, Todos Os Pacotes Ficam Disponíveis.</div></div>`;
   if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus De Até ${maxPct}% Ativo.</b> Bônus Válido Até ${_rcgDM(j.fim)}.</div></div>`;
   else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus Nos 7 Primeiros Dias Úteis De ${_rcgMes(j.proximo_inicio)}, A Partir De ${_rcgDM(j.proximo_inicio)}.</div></div>`;
   return h;
 }
 function _rcgRenderPacotes(){
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
-  const i=_rcg.info||{},bonus=_rcgBonusAtivo();
-  const visiveis=_rcg.pacotes.map((p,idx)=>({p,idx})).filter(({p})=>!(i.primeira_recarga&&p.pago<(i.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)));
+  const bonus=_rcgBonusAtivo();
+  const visiveis=_rcg.pacotes.map((p,idx)=>({p,idx}));
   if(_rcg.sel!=null&&!visiveis.some(v=>v.idx===_rcg.sel))_rcg.sel=null;
   const maior=Math.max(...visiveis.map(({p})=>p.pago));
   const card=({p,idx})=>{
@@ -3594,7 +3587,6 @@ function _rcgTeclado(e,idx){
 function _selecionarPacotePix(i){
   const p=_rcg.pacotes[i];if(!p)return;
   const info=_rcg.info||{};
-  if(info.primeira_recarga&&p.pago<(info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA)){showNotif('Valor Abaixo Do Mínimo','O Primeiro Depósito É De No Mínimo R$ 300.','var(--yellow)');return;}
   _pixPayloadAtual=_gerarPixPayload(p.pago);
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
   const bonus=_rcgBonusAtivo()&&p.bonus>0?p.bonus:0,recebe=p.pago+bonus;
@@ -10374,8 +10366,6 @@ async function _scAtualizarPrevia(recarregar){
   const caixa=(cor,icone,html)=>`<div style="display:flex;gap:8px;align-items:flex-start;border:1px solid ${cor}55;background:${cor}14;border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.45;color:var(--text);margin-bottom:8px">${_icone(icone,15)}<div>${html}</div></div>`;
   let h='';
   if(info._semServidor)h+=caixa('#ef4444','circle-alert','<b>Função De Recarga Indisponível No Banco.</b> Aplique a migration da recarga antes de lançar recargas.');
-  const min=info.minimo_primeira_recarga||_RCG_MINIMO_PRIMEIRA;
-  if(info.primeira_recarga)h+=caixa(valor&&valor<min?'#ef4444':'#3b82f6','info',`<b>Primeira Recarga: Mínimo ${_rcgFmtCurto(min)}.</b>${valor&&valor<min?' O valor informado está abaixo do mínimo e será recusado.':''}`);
   const j=info.janela,pac=_rcgPacotes(info).find(p=>Math.abs(p.pago-valor)<0.005);
   if(j&&j.ativo){
     h+=caixa('#10b981','badge-percent',`<b>Bônus Ativo Até ${_rcgDM(j.fim)}.</b> ${!valor?'Informe o valor pago para ver o bônus.':pac&&pac.bonus>0?`Pacote ${_rcgFmtCurto(pac.pago)}: + ${_rcgFmt(pac.bonus)} de bônus. <b>Total Creditado: ${_rcgFmt(pac.pago+pac.bonus)}</b>.`:`Valor fora dos pacotes com bônus: será creditado só ${_rcgFmt(valor)}.`}`);
