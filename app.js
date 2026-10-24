@@ -2019,7 +2019,35 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
          visual (o essencial — saber quem/qual perfil — fica só no badge),
          então somem primeiro; o badge continua visível.
          Ver comentário sobre _atualizarRelogioTopbar no topo do arquivo. */
-      #topbar-relogio, #user-nome { display: none !important; }
+      #topbar-relogio { display: none !important; }
+      /* Barra do topo numa linha só (2026-10-24): o HTML de produção deixa a
+         barra quebrar linha no celular (flex-wrap:wrap) e, com o "Menu"
+         escrito ao lado do ☰, ela passou a quebrar em 2 linhas no aparelho
+         (selo caía, nome sumia). Agora não quebra: botão Menu compacto, logo
+         só ícone, botões só ícone, saldo sem o rótulo "Wallet" e o nome da
+         loja ocupando o que sobra, cortado com reticências se for longo. */
+      #app .topbar { flex-wrap: nowrap !important; height: 56px !important; min-height: 56px !important; padding: 0 8px !important; gap: 6px !important; overflow: hidden; }
+      #app .topbar .hamburger-btn.md-btn { padding: 6px 8px !important; gap: 5px !important; flex-shrink: 0; }
+      #app .topbar .md-btn .md-rotulo { font-size: 12px; }
+      #app .topbar .md-btn.md-pulsa { box-shadow: 0 0 0 1px rgba(59,130,246,.7), 0 0 8px rgba(59,130,246,.3) !important; }
+      #app .topbar .topbar-logo { flex-shrink: 0; margin: 0 !important; }
+      #app .topbar .topbar-logo img { height: 24px !important; }
+      #app .topbar .topbar-logo + div { margin-left: 0 !important; gap: 6px !important; flex-shrink: 0; }
+      #app .topbar .lg-btn { min-width: 36px !important; height: 36px; padding: 0 8px !important; }
+      #app .topbar #topbar-saldo { padding: 5px 8px !important; }
+      #app .topbar .lg-wallet-label { display: none !important; }
+      #app .topbar #tab-buttons { flex: 0 0 0 !important; min-width: 0 !important; overflow: hidden; }
+      #app .topbar .topbar-right { flex: 1 1 auto; min-width: 0; justify-content: flex-end; overflow: hidden; gap: 6px !important; }
+      #app .topbar .user-info { min-width: 0; overflow: hidden; padding-left: 6px !important; gap: 5px !important; }
+      #app .topbar #user-nome { display: block !important; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px !important; }
+      #app .topbar .user-perfil-badge { flex-shrink: 0; }
+      /* Gestor: "Pedidos" e os dois contadores numa fileira só, menores. */
+      .mapa-stats { flex-wrap: nowrap !important; padding: 3px 5px !important; max-width: calc(100% - 24px); }
+      .mapa-stats .md-btn { padding: 3px 6px !important; gap: 4px !important; margin-right: 2px !important; }
+      .mapa-stats .md-btn .md-rotulo { font-size: 12px !important; }
+      .mapa-stats .mapa-stat { padding: 2px 5px !important; gap: 3px !important; }
+      .mapa-stats .mapa-stat-val { font-size: 12px !important; }
+      .mapa-stats .mapa-stat-label { font-size: 8.5px !important; white-space: nowrap; }
       /* Modal de chat do admin/suporte (lista de lojas + conversa lado a
          lado) não cabe em 375px com os 260px fixos da lista — empilha em
          vez de espremer, lista com altura limitada (rolável) em cima,
