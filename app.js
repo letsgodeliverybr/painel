@@ -3348,6 +3348,7 @@ function _atualizarBtnCriarEntrega(){
 const PIX_CONFIG={chave:'54039529000148',nome:'GABRIEL ELIZIARIO',cidade:'RIBEIRAO PRETO'};
 const PIX_WHATSAPP='5511991702772';
 const PACOTES_RECARGA_PIX=[
+  {pago:50,credito:50,badge:null,destaque:false,discreto:true},
   {pago:100,credito:100,badge:null,destaque:false,discreto:true},
   {pago:300,credito:300,badge:'Padrão Mínimo',destaque:true,discreto:false},
   {pago:500,credito:550,badge:'10% Bônus',destaque:false,discreto:false},
@@ -3381,10 +3382,11 @@ function _gerarPixPayload(valor){
 // ── Recarga de saldo via Pix (loja pré-paga) — redesenho 2026-09-29 ──
 // Regras (valem no SERVIDOR — migrations/recarga_loja_primeira_e_bonus.sql;
 // a tela só exibe o que info_recarga_loja() devolve):
-//  • 1ª recarga (loja sem recarga anterior): mínimo R$ 300 — o pacote de
-//    R$ 100 some, com aviso.
-//  • Bônus dos pacotes só do 1º ao 7º dia útil do mês (feriados na tabela
-//    feriados). Fora da janela, sem etiqueta de bônus e com a próxima janela.
+//  • 1ª recarga (loja sem recarga anterior): mínimo R$ 300 — os pacotes de
+//    R$ 50 e R$ 100 somem, com aviso.
+//  • Bônus dos pacotes só CREDITADO do 1º ao 7º dia útil do mês (feriados na
+//    tabela feriados). Cartões e tela do QR mostram o bônus todo dia; fora da
+//    janela, riscado e com a data da próxima janela.
 // Sem a função no banco (migration não aplicada/erro de rede), a tela cai
 // no modo seguro: 1ª recarga calculada pelos créditos já carregados e
 // nenhum bônus prometido.
@@ -3392,6 +3394,10 @@ const _RCG_MINIMO_PRIMEIRA=300;
 let _rcg={info:null,pacotes:[],sel:null,saldo:0,modo:'credito'};
 function _rcgFmt(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function _rcgFmtCurto(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});}
+// "R$ 50" sem quebra de linha entre o R$ e o número
+function _rcgFmtNb(v){return _rcgFmtCurto(v).replace(' ','\u00a0');}
+// aviso do bônus fora da janela (data vem de janela_bonus_recarga)
+function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`Bônus a partir de ${_rcgDM(d)}`:'Bônus nos 7 primeiros dias úteis do mês';}
 function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
 function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
 // Informação de recarga (servidor) com modo seguro.
@@ -3453,6 +3459,9 @@ function _rcgEstilos(){
   .rcg-valor{font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
   .rcg-recebe{font-size:12.5px;color:var(--text2)}
   .rcg-recebe b{color:#10b981}
+  .rcg-bonus-off{text-decoration:line-through;opacity:.55}
+  .rcg-tag.off{opacity:.45;filter:grayscale(1)}
+  .rcg-bonus-aviso{font-size:11.5px;font-weight:600;color:var(--text3)}
   .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
   .rcg-foot-info{font-size:12.5px;color:var(--text2)}
   .rcg-foot-info b{color:var(--text)}
@@ -3544,9 +3553,10 @@ function _rcgRenderPacotes(){
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
       ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal Para Começar</span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
-      ${bonus&&p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',12)} +${p.pct}% De Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
+      ${p.bonus>0?`<span class="rcg-tag${bonus?'':' off'}">${_icone('badge-percent',12)} +${p.pct}% De Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
-      <span class="rcg-recebe">Você Recebe <b>${_rcgFmt(_rcgRecebe(p))}</b></span>
+      <span class="rcg-recebe">${p.bonus>0?`Você recebe ${_rcgFmtNb(p.pago)} + <span class="${bonus?'':'rcg-bonus-off'}">bônus ${_rcgFmtNb(p.bonus)}</span> = <b>${_rcgFmtNb(_rcgRecebe(p))}</b>`:`Você recebe <b>${_rcgFmtNb(p.pago)}</b> (sem bônus)`}</span>
+      ${!bonus&&p.bonus>0?`<span class="rcg-bonus-aviso">${_rcgBonusAPartir()}</span>`:''}
     </button>`;
   };
   const p=_rcg.sel!=null?_rcg.pacotes[_rcg.sel]:null;
@@ -3578,6 +3588,7 @@ function _selecionarPacotePix(i){
   _pixPayloadAtual=_gerarPixPayload(p.pago);
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
   const bonus=_rcgBonusAtivo()&&p.bonus>0?p.bonus:0,recebe=p.pago+bonus;
+  const bonusOff=!_rcgBonusAtivo()&&p.bonus>0?p.bonus:0; // só exibido, riscado
   const lojaNome=_rcg.modo==='equipe'?'(informar a loja)':allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||currentUser?.nome||'Minha Loja';
   const msg=`Olá! Segue o comprovante da recarga de saldo:\n\nLoja: ${lojaNome}\nValor pago: ${_rcgFmt(p.pago)}\nCrédito a receber: ${_rcgFmt(recebe)}${bonus?` (inclui ${_rcgFmt(bonus)} de bônus)`:''}`;
   const waLink=`https://wa.me/${PIX_WHATSAPP}?text=${encodeURIComponent(msg)}`;
@@ -3590,7 +3601,8 @@ function _selecionarPacotePix(i){
         <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR Indisponível No Momento — Use O Código Copia E Cola.</span></div>
         <div>
           <div class="rcg-resumo"><div><span>Valor Do Pix</span><b>${_rcgFmt(p.pago)}</b></div>
-            ${bonus?`<div><span>Bônus</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`:''}
+            ${bonus?`<div><span>Bônus</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`
+              :bonusOff?`<div><span>${_rcgBonusAPartir()}</span><b class="rcg-bonus-off" style="color:#f59e0b">+ ${_rcgFmt(bonusOff)}</b></div>`:''}
             <div class="total"><span>Você Recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
           <div class="rcg-chave"><span>Chave Pix</span><b>${PIX_CONFIG.chave}</b></div>
           <div class="rcg-acoes">
