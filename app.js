@@ -4140,6 +4140,98 @@ function renderTabs(){
 function _renderLojaEmBrevePage(icon,titulo,texto){
   document.getElementById('app-body').innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone(icon,22)} ${titulo}</div></div><div class="card" style="padding:48px 32px;text-align:center;max-width:640px"><div style="font-size:40px;margin-bottom:12px">🚧</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Em Breve</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${texto}</div></div></div>`;
 }
+// ── Destaque do botão de menu (2026-10-24) ──
+// Pra quem tem pouca familiaridade: "Menu" escrito ao lado do ☰ da barra do
+// topo, anel azul que pulsa a cada 4 s (para depois de 5 aberturas), dica
+// "Toque aqui para ver o menu" na 1ª visita (some no 1º clique e não volta)
+// e as três linhas viram X ao abrir (~250 ms). O botão do painel de pedidos
+// do Gestor ganha o mesmo tratamento, escrito "Pedidos". Contagem e dica
+// ficam no navegador (localStorage, por usuário) — nunca no banco. Sem
+// animação com prefers-reduced-motion. O ☰ vem do HTML de produção: aqui só
+// troca o conteúdo do botão, uma vez; posição e onclick continuam iguais.
+const _MD_PARAR_APOS=5;
+function _mdChave(k){return `lg_menu_${k}:${currentUser?.id||'anon'}`;}
+function _mdLer(k){try{return localStorage.getItem(_mdChave(k));}catch{return null;}}
+function _mdGravar(k,v){try{localStorage.setItem(_mdChave(k),v);}catch{}}
+function _mdLinhas(){return'<span class="md-linhas" aria-hidden="true"><i></i><i></i><i></i></span>';}
+function _mdEstilos(){
+  if(document.getElementById('md-styles'))return;
+  const st=document.createElement('style');st.id='md-styles';
+  st.textContent=`
+  .md-btn{position:relative;display:inline-flex!important;align-items:center;gap:8px;border-radius:10px!important}
+  .md-linhas{position:relative;display:inline-block;width:20px;height:16px;flex-shrink:0}
+  .md-linhas i{position:absolute;left:0;width:20px;height:2px;border-radius:2px;background:currentColor;transition:transform .25s ease,top .25s ease,opacity .2s ease}
+  .md-linhas i:nth-child(1){top:1px}.md-linhas i:nth-child(2){top:7px}.md-linhas i:nth-child(3){top:13px}
+  .md-aberto .md-linhas i:nth-child(1){top:7px;transform:rotate(45deg)}
+  .md-aberto .md-linhas i:nth-child(2){opacity:0}
+  .md-aberto .md-linhas i:nth-child(3){top:7px;transform:rotate(-45deg)}
+  .md-rotulo{font:700 14px Inter,sans-serif;letter-spacing:.2px;color:var(--text);line-height:1}
+  .md-btn-claro .md-rotulo{color:#1f2937;font-size:13px}
+  .md-pulsa{box-shadow:0 0 0 1.5px rgba(59,130,246,.75),0 0 12px rgba(59,130,246,.35)!important}
+  .md-pulsa::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:mdPulso 4s ease-out infinite}
+  @keyframes mdPulso{0%{box-shadow:0 0 0 0 rgba(59,130,246,.7)}20%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 10px rgba(59,130,246,0)}}
+  #md-dica{position:fixed;z-index:1300;max-width:230px;background:#1A56DB;color:#fff;font:700 14px/1.35 Inter,sans-serif;padding:10px 14px;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.35);cursor:pointer;animation:mdDica 1.8s ease-in-out infinite}
+  #md-dica::before{content:'';position:absolute;top:-7px;left:var(--md-seta,22px);border:7px solid transparent;border-top:0;border-bottom-color:#1A56DB}
+  @keyframes mdDica{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+  @media (max-width:420px){.md-rotulo{font-size:13px}.md-btn{gap:6px}}
+  @media (prefers-reduced-motion:reduce){.md-pulsa::after,#md-dica{animation:none!important}.md-linhas i{transition:none!important}}`;
+  document.head.appendChild(st);
+}
+// aberto = gaveta aberta (celular) ou menu expandido (computador)
+function _mdMenuAberto(){return document.body.classList.contains('nav-desktop')?!document.body.classList.contains('nav-col'):!!document.getElementById('nav-sidebar')?.classList.contains('open');}
+function _mdSyncTopo(){
+  const b=document.querySelector('#app .topbar .hamburger-btn.md-btn');if(!b)return;
+  const ab=_mdMenuAberto();b.classList.toggle('md-aberto',ab);b.setAttribute('aria-expanded',ab?'true':'false');
+}
+function _mdContar(chave,btn){
+  const n=+(_mdLer(chave)||0)+1;_mdGravar(chave,String(n));
+  if(n>=_MD_PARAR_APOS)btn.classList.remove('md-pulsa');
+}
+function _mdFecharDica(){document.getElementById('md-dica')?.remove();_mdGravar('dica_vista','1');window.removeEventListener('resize',_mdPosicionarDica);}
+function _mdPosicionarDica(){
+  const d=document.getElementById('md-dica'),b=document.querySelector('#app .topbar .hamburger-btn');if(!d||!b)return;
+  const r=b.getBoundingClientRect();
+  d.style.top=(r.bottom+12)+'px';d.style.left=Math.max(8,r.left)+'px';
+  d.style.setProperty('--md-seta',Math.max(10,r.left+r.width/2-Math.max(8,r.left)-7)+'px');
+}
+function _mdIniciar(){
+  if(!currentPerfil)return;
+  const b=document.querySelector('#app .topbar .hamburger-btn');if(!b)return;
+  _mdEstilos();
+  if(!b.dataset.md){
+    b.dataset.md='1';b.classList.add('md-btn');b.setAttribute('aria-label','Abrir menu');
+    b.innerHTML=_mdLinhas()+'<span class="md-rotulo">Menu</span>';
+    // depois do onclick do HTML (que abre/fecha): conta só quando abriu
+    b.addEventListener('click',()=>{if(document.getElementById('md-dica'))_mdFecharDica();if(_mdMenuAberto())_mdContar('aberturas',b);});
+    const sb=document.getElementById('nav-sidebar');
+    if(sb)new MutationObserver(_mdSyncTopo).observe(sb,{attributes:true,attributeFilter:['class']});
+    new MutationObserver(_mdSyncTopo).observe(document.body,{attributes:true,attributeFilter:['class']});
+  }
+  b.classList.toggle('md-pulsa',+(_mdLer('aberturas')||0)<_MD_PARAR_APOS);
+  _mdSyncTopo();
+  if(!_mdLer('dica_vista')&&!document.getElementById('md-dica')){
+    const d=document.createElement('div');d.id='md-dica';d.setAttribute('role','status');d.textContent='Toque aqui para ver o menu';
+    d.addEventListener('click',_mdFecharDica);
+    (document.getElementById('app')||document.body).appendChild(d);
+    _mdPosicionarDica();window.addEventListener('resize',_mdPosicionarDica);
+  }
+}
+// Botão do painel de pedidos (Gestor): recriado a cada render do mapa.
+function _mdBotaoPainel(){
+  const b=document.querySelector('#mapa-container-wrap button[onclick="toggleSidebar()"]');if(!b)return;
+  _mdEstilos();
+  if(!b.dataset.md){
+    b.dataset.md='1';b.classList.add('md-btn','md-btn-claro');b.setAttribute('aria-label','Mostrar pedidos');
+    b.innerHTML=_mdLinhas()+'<span class="md-rotulo">Pedidos</span>';
+    b.addEventListener('click',()=>{const sb=document.getElementById('sidebar-mapa');if(sb&&!sb.classList.contains('sb-minimized'))_mdContar('aberturas_pedidos',b);});
+  }
+  b.classList.toggle('md-pulsa',+(_mdLer('aberturas_pedidos')||0)<_MD_PARAR_APOS);
+  _mdSyncPainel();
+}
+function _mdSyncPainel(){
+  const b=document.querySelector('#mapa-container-wrap button.md-btn[onclick="toggleSidebar()"]'),sb=document.getElementById('sidebar-mapa');if(!b||!sb)return;
+  const ab=!sb.classList.contains('sb-minimized');b.classList.toggle('md-aberto',ab);b.setAttribute('aria-expanded',ab?'true':'false');
+}
 let _navUltimoLogin=null;
 function goTab(id){
   // Loja entra pela tela Início: o login (de produção e deste arquivo)
@@ -4167,6 +4259,7 @@ function goTab(id){
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
   const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
+  _mdIniciar();setTimeout(_mdBotaoPainel,0);
 }
 
 // Tela cheia de boas-vindas da loja — passe 4: layout em 2 colunas
@@ -4779,7 +4872,7 @@ function setFilter(status,el){filterStatus=status;document.querySelectorAll('.fi
 // interrompido perto da borda esquerda, zona do "voltar" por swipe do
 // Safari iOS) — sem isso, o painel podia abrir com uma largura menor que
 // 100%, sobrando espaço vazio do lado direito da tela.
-function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const _tb=document.querySelector('#app .topbar');if(_tb&&_tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',_tb.offsetHeight+'px');const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);}
+function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const _tb=document.querySelector('#app .topbar');if(_tb&&_tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',_tb.offsetHeight+'px');const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);if(typeof _mdSyncPainel==='function')_mdSyncPainel();}
 // Celular: tocar fora do painel de pedidos (na faixa do mapa) fecha o
 // painel. Barra do topo, menu, janelas e o próprio botão do painel ficam de
 // fora (o ☰ continua abrindo o menu normalmente).
