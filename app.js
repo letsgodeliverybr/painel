@@ -3396,7 +3396,7 @@ function _rcgFmtCurto(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minim
 // "R$ 50" sem quebra de linha entre o R$ e o número
 function _rcgFmtNb(v){return _rcgFmtCurto(v).replace(' ','\u00a0');}
 // aviso do bônus fora da janela (data vem de janela_bonus_recarga)
-function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`Bônus a partir de ${_rcgDM(d)}`:'Bônus nos 7 primeiros dias úteis do mês';}
+function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`Bônus válido a partir de ${_rcgDM(d)}`:'Bônus válido nos 7 primeiros dias úteis do mês';}
 function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
 function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
 // Informação de recarga (servidor) com modo seguro.
@@ -3415,61 +3415,66 @@ function _rcgBonusAtivo(){return !!_rcg.info?.janela?.ativo;}
 function _rcgRecebe(p){return p.pago+(_rcgBonusAtivo()?p.bonus:0);}
 // % máximo de bônus lido dos pacotes (sem número fixo no código)
 function _rcgBonusMaxPct(pacotes){return Math.max(0,...(pacotes||[]).map(p=>p.pct||0));}
+// % de bônus do maior pacote (etiqueta do banner da tela inicial)
+function _rcgPctMaiorPacote(pacotes){const m=(pacotes||[]).reduce((a,p)=>!a||p.pago>a.pago?p:a,null);return m?m.pct:0;}
 
 function _rcgEstilos(){
   if(document.getElementById('rcg-styles'))return;
   const st=document.createElement('style');st.id='rcg-styles';
   st.textContent=`
-  .rcg-modal{width:720px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;padding:0!important;overflow:hidden;border-radius:18px}
-  .rcg-head{padding:22px 24px 18px;border-bottom:1px solid var(--border)}
+  .rcg-modal{width:740px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;padding:0!important;overflow:hidden;border-radius:18px}
+  .rcg-modal *{box-sizing:border-box}
+  .rcg-head{padding:20px 24px 18px;border-bottom:1px solid var(--border)}
   .rcg-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-  .rcg-titulo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.2px}
-  .rcg-titulo .rcg-ico{width:36px;height:36px;border-radius:10px;background:rgba(26,86,219,.15);color:var(--accent);display:flex;align-items:center;justify-content:center}
-  .rcg-x{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .rcg-marca{display:flex;align-items:center;gap:12px;min-width:0}
+  .rcg-logo{width:40px;height:40px;border-radius:10px;object-fit:contain;background:#000;flex-shrink:0}
+  .rcg-marca-nome{display:block;font-size:11.5px;font-weight:700;letter-spacing:.3px;color:var(--text3)}
+  .rcg-titulo{display:block;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.2px;line-height:1.25}
+  .rcg-x{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .rcg-x:hover{color:var(--text);background:var(--surface2)}
-  .rcg-saldo{display:flex;gap:18px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .rcg-saldo{display:flex;gap:20px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
   .rcg-saldo-valor{flex-shrink:0}
-  .rcg-saldo-valor span{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3)}
-  .rcg-saldo-valor b{display:block;font-size:22px;font-weight:800;margin-top:2px}
-  .rcg-saldo p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text2);border-left:1px solid var(--border);padding-left:16px}
-  .rcg-body{padding:18px 24px;overflow-y:auto;flex:1}
-  .rcg-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.45;margin-bottom:12px;border:1px solid}
+  .rcg-saldo-valor span{display:block;font-size:12px;font-weight:600;color:var(--text3)}
+  .rcg-saldo-valor b{display:block;font-size:26px;font-weight:800;letter-spacing:-.4px;margin-top:2px;line-height:1.1}
+  .rcg-saldo p{margin:0;font-size:13px;line-height:1.5;color:var(--text2);border-left:1px solid var(--border);padding-left:20px}
+  .rcg-body{padding:18px 24px 20px;overflow-y:auto;flex:1}
+  .rcg-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.45;margin-bottom:14px;border:1px solid}
   .rcg-aviso .icone{flex-shrink:0;margin-top:1px}
-  .rcg-aviso.info{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35);color:var(--text)}
   .rcg-aviso.bonus{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.35);color:var(--text)}
   .rcg-aviso.neutro{background:var(--surface2);border-color:var(--border);color:var(--text2)}
-  .rcg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
-  .rcg-card{position:relative;text-align:left;font-family:inherit;cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:18px 16px 16px;min-height:132px;display:flex;flex-direction:column;gap:4px;color:var(--text);transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
+  .rcg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .rcg-card{position:relative;text-align:left;font-family:inherit;cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:16px;min-height:132px;display:flex;flex-direction:column;gap:6px;color:var(--text);transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
   .rcg-card:hover{border-color:rgba(79,126,247,.6);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.25)}
   .rcg-card:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.45)}
   .rcg-card[aria-checked="true"]{border-color:var(--accent);background:rgba(26,86,219,.12);box-shadow:0 0 0 1px var(--accent) inset}
-  .rcg-card.recomendado{border-color:rgba(16,185,129,.55)}
-  .rcg-card.recomendado[aria-checked="true"]{border-color:var(--accent)}
-  .rcg-selo{position:absolute;top:-10px;left:14px;background:#10b981;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.3px;padding:3px 10px;border-radius:20px;white-space:nowrap}
-  .rcg-check{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;color:transparent}
+  .rcg-card.recomendado{border:2px solid #10b981;background:linear-gradient(160deg,rgba(16,185,129,.16),rgba(16,185,129,.04) 60%);box-shadow:0 8px 22px rgba(16,185,129,.12)}
+  .rcg-card.recomendado[aria-checked="true"]{border-color:var(--accent);background:rgba(26,86,219,.12)}
+  .rcg-selo{position:absolute;top:-11px;left:14px;display:inline-flex;align-items:center;gap:5px;background:#10b981;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .rcg-check{position:absolute;top:14px;right:14px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;color:transparent}
   .rcg-card[aria-checked="true"] .rcg-check{background:var(--accent);border-color:var(--accent);color:#fff}
-  .rcg-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.14);color:#f59e0b;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;margin-bottom:4px}
-  .rcg-tag-vazia{height:22px;margin-bottom:4px}
-  .rcg-valor{font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
-  .rcg-recebe{font-size:12.5px;color:var(--text2)}
-  .rcg-recebe b{color:#10b981}
-  .rcg-bonus-off{text-decoration:line-through;opacity:.55}
-  .rcg-tag.off{opacity:.45;filter:grayscale(1)}
+  .rcg-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:#f59e0b;color:#1a1204;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;line-height:1.2}
+  .rcg-tag-vazia{height:24px}
+  .rcg-valor{font-size:28px;font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-top:2px}
+  .rcg-linha{font-size:12.5px;line-height:1.45;color:var(--text2)}
+  .rcg-linha b{color:#10b981;font-weight:700}
+  .rcg-nb{white-space:nowrap}
   .rcg-bonus-aviso{font-size:11.5px;font-weight:600;color:var(--text3)}
-  .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:4px;align-items:center;min-height:0;padding:18px 20px}
-  .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1;margin-bottom:0}
-  .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:30px}
-  .rcg-card.largo .rcg-recebe{grid-column:2;grid-row:1/span 2;align-self:center;font-size:14px;padding-right:28px}
-  .rcg-card.largo .rcg-recebe:has(+.rcg-bonus-aviso){grid-row:1;align-self:end}
+  .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:6px;align-items:center;min-height:0;padding:18px 20px}
+  .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1}
+  .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:30px;margin-top:0}
+  .rcg-card.largo .rcg-linha{grid-column:2;grid-row:1/span 2;align-self:center;font-size:14px;padding-right:30px}
+  .rcg-card.largo .rcg-linha:has(+.rcg-bonus-aviso){grid-row:1;align-self:end}
   .rcg-card.largo .rcg-bonus-aviso{grid-column:2;grid-row:2;align-self:start}
-  .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
-  .rcg-foot-info{font-size:12.5px;color:var(--text2)}
+  .rcg-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;border-top:1px solid var(--border);background:var(--card,var(--surface))}
+  .rcg-foot-info{font-size:13px;color:var(--text2)}
   .rcg-foot-info b{color:var(--text)}
+  .rcg-selos{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+  .rcg-selos span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--text3)}
+  .rcg-selos .icone{color:#10b981}
   .rcg-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:12px;border:none;background:var(--accent);color:#fff;font:700 14.5px Inter,sans-serif;cursor:pointer;transition:background .15s,opacity .15s;white-space:nowrap}
   .rcg-btn:hover:not([disabled]){background:#1646b5}
   .rcg-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,86,219,.45)}
   .rcg-btn[disabled]{opacity:.45;cursor:not-allowed}
-  .rcg-btn.sec{background:transparent;border:1px solid var(--border);color:var(--text)}
   .rcg-btn.whats{background:#16a34a}.rcg-btn.whats:hover{background:#15803d}
   .rcg-voltar{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font:600 13px Inter,sans-serif;cursor:pointer;padding:0;margin-bottom:14px}
   .rcg-pix{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
@@ -3480,26 +3485,32 @@ function _rcgEstilos(){
   .rcg-resumo div+div{border-top:1px solid var(--border)}
   .rcg-resumo b{color:var(--text)}
   .rcg-resumo .total b{color:#10b981;font-size:16px}
+  .rcg-resumo .rcg-bonus-off{text-decoration:line-through;opacity:.55}
   .rcg-chave{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:12px}
-  .rcg-chave span{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)}
+  .rcg-chave span{display:block;font-size:12px;font-weight:600;color:var(--text3)}
   .rcg-chave b{font-size:16px;color:var(--text);word-break:break-all}
   .rcg-acoes{display:flex;flex-direction:column;gap:10px}
   .rcg-acoes .rcg-btn{width:100%}
   @media (max-width:640px){
     #modal-recarga-pix.modal-overlay{align-items:flex-end}
     .rcg-modal{max-width:100vw;width:100vw;max-height:94vh;border-radius:18px 18px 0 0}
-    .rcg-head{padding:18px 16px 14px}.rcg-body{padding:14px 16px}.rcg-foot{padding:12px 16px;flex-direction:column;align-items:stretch}
+    .rcg-head{padding:16px 16px 14px}.rcg-body{padding:14px 16px 16px}.rcg-foot{padding:12px 16px;flex-direction:column;align-items:stretch}
+    .rcg-top{margin-bottom:12px}
+    .rcg-titulo{font-size:16.5px}
     .rcg-foot .rcg-btn{width:100%}
-    .rcg-saldo{flex-direction:column;align-items:flex-start;gap:8px}
+    .rcg-saldo{flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px}
     .rcg-saldo p{border-left:none;padding-left:0}
     .rcg-grid{grid-template-columns:1fr 1fr;gap:10px}
-    .rcg-card{min-height:118px;padding:16px 12px 12px}
-    .rcg-selo{position:static;align-self:flex-start;white-space:normal;line-height:1.3;margin:-2px 0 4px;max-width:calc(100% - 26px)}
+    .rcg-card{min-height:0;padding:14px 12px 12px}
+    .rcg-selo{position:static;align-self:flex-start;margin:-2px 0 2px}
+    .rcg-selo-extra{display:none}
+    .rcg-check{top:12px;right:10px}
     .rcg-card.recomendado .rcg-tag-vazia{display:none}
-    .rcg-card.largo{grid-column:auto;display:flex;align-items:stretch;column-gap:0;padding:16px 12px 12px}
-    .rcg-card.largo .rcg-valor{font-size:22px}
-    .rcg-card.largo .rcg-recebe{font-size:12.5px;padding-right:0}
-    .rcg-valor{font-size:22px}
+    .rcg-tag{font-size:11.5px;padding:3px 8px}
+    .rcg-valor{font-size:23px}
+    .rcg-card.largo{grid-column:auto;display:flex;align-items:stretch;column-gap:0;padding:14px 12px 12px}
+    .rcg-card.largo .rcg-valor{font-size:23px}
+    .rcg-card.largo .rcg-linha{font-size:12.5px;padding-right:0}
     .rcg-pix{grid-template-columns:1fr}
     .rcg-qr{min-height:0}
   }`;
@@ -3526,25 +3537,33 @@ async function _abrirModalRecargaPix(){
   _rcg.pacotes=_rcgPacotes(_rcg.info);
   _rcgRenderPacotes();
 }
+// Selos de confiança mostrados junto do botão principal (pacotes e QR).
+function _rcgSelos(){
+  return`<div class="rcg-selos"><span>${_icone('lock',13)}Pix seguro</span><span>${_icone('circle-check',13)}Crédito após a confirmação do pagamento</span></div>`;
+}
 function _rcgCabecalho(){
   const s=_rcg.saldo,m=_rcg.modo;
   const frase=m==='equipe'
-    ?'Visão da equipe: esta é a tela de recarga que as lojas veem, com os pacotes e a janela de bônus de hoje. O Pix gerado aqui pode ser enviado para a loja.'
+    ?'Visão da equipe: a mesma tela que as lojas veem, com a janela de bônus de hoje.'
     :m==='faturamento'
-    ?'No crédito pré-pago, cada entrega é descontada do saldo, sem fatura semanal. Recarregue via Pix e o valor entra como crédito assim que o pagamento é confirmado.'
-    :'Sua Loja Usa O Modelo Pré-Pago: Cada Entrega É Descontada Do Saldo. Recarregue Via Pix E O Valor Entra Como Crédito Assim Que O Pagamento É Confirmado.';
-  return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-titulo" id="rcg-titulo"><div class="rcg-ico">${_icone('wallet',20)}</div>Recarregar Saldo Via Pix</div>
+    ?'No pré-pago, cada entrega é descontada do saldo, sem fatura semanal.'
+    :'Pré-pago: cada entrega é descontada do saldo. Recarregue quando quiser.';
+  return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-marca">
+        <img class="rcg-logo" src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go Delivery" onerror="this.style.display='none'">
+        <div><span class="rcg-marca-nome">Let's Go Delivery</span><span class="rcg-titulo" id="rcg-titulo">Recarregar saldo via Pix</span></div></div>
       <button class="rcg-x" aria-label="Fechar" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',18)}</button></div>
-    <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo Atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
+    <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
       <p${m==='equipe'?' style="border-left:none;padding-left:0"':''}>${frase}</p></div></div>`;
 }
 function _rcgAvisos(){
   const i=_rcg.info||{},j=i.janela,maxPct=_rcgBonusMaxPct(_rcg.pacotes);
   let h='';
-  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus De Até ${maxPct}% Ativo.</b> Bônus Válido Até ${_rcgDM(j.fim)}.</div></div>`;
-  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus Nos 7 Primeiros Dias Úteis De ${_rcgMes(j.proximo_inicio)}, A Partir De ${_rcgDM(j.proximo_inicio)}.</div></div>`;
+  if(j&&j.ativo&&maxPct>0)h+=`<div class="rcg-aviso bonus">${_icone('badge-percent',16)}<div><b>Bônus de até +${maxPct}% de saldo ativo.</b> Válido até ${_rcgDM(j.fim)}.</div></div>`;
+  else if(j&&!j.ativo&&maxPct>0)h+=`<div class="rcg-aviso neutro">${_icone('calendar',16)}<div>Bônus nos 7 primeiros dias úteis de ${_rcgMes(j.proximo_inicio)}, a partir de ${_rcgDM(j.proximo_inicio)}.</div></div>`;
   return h;
 }
+// Etiqueta do bônus sempre acesa; fora da janela, "Você recebe" mostra o
+// valor real (sem bônus) e a linha pequena traz a data da próxima janela.
 function _rcgRenderPacotes(){
   const modal=document.getElementById('modal-recarga-pix');if(!modal)return;
   const bonus=_rcgBonusAtivo();
@@ -3554,11 +3573,11 @@ function _rcgRenderPacotes(){
   const card=({p,idx})=>{
     const sel=_rcg.sel===idx;
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}${p.pago===maior?' largo':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
-      ${p.recomendado?`<span class="rcg-selo">Recomendado · Ideal Para Começar</span>`:''}
+      ${p.recomendado?`<span class="rcg-selo">${_icone('sparkles',12)}Recomendado<span class="rcg-selo-extra"> · ideal para começar</span></span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
-      ${p.bonus>0?`<span class="rcg-tag${bonus?'':' off'}">${_icone('badge-percent',12)} +${p.pct}% De Bônus</span>`:'<span class="rcg-tag-vazia"></span>'}
+      ${p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',13)}+${p.pct}% de saldo</span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
-      <span class="rcg-recebe">${p.bonus>0?`Você recebe ${_rcgFmtNb(p.pago)} + <span class="${bonus?'':'rcg-bonus-off'}">bônus ${_rcgFmtNb(p.bonus)}</span> = <b>${_rcgFmtNb(_rcgRecebe(p))}</b>`:`Você recebe <b>${_rcgFmtNb(p.pago)}</b> (sem bônus)`}</span>
+      <span class="rcg-linha"><span class="rcg-nb">Você paga ${_rcgFmtNb(p.pago)} ·</span> <span class="rcg-nb">Você recebe <b>${_rcgFmtNb(_rcgRecebe(p))}</b></span></span>
       ${!bonus&&p.bonus>0?`<span class="rcg-bonus-aviso">${_rcgBonusAPartir()}</span>`:''}
     </button>`;
   };
@@ -3566,8 +3585,8 @@ function _rcgRenderPacotes(){
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">${_rcgAvisos()}
-      <div class="rcg-grid" role="radiogroup" aria-label="Valor Da Recarga">${visiveis.map(card).join('')}</div></div>
-    <div class="rcg-foot"><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha Um Valor Para Continuar'}</div>
+      <div class="rcg-grid" role="radiogroup" aria-label="Valor da recarga">${visiveis.map(card).join('')}</div></div>
+    <div class="rcg-foot"><div><div class="rcg-foot-info">${p?`Você recebe <b>${_rcgFmt(_rcgRecebe(p))}</b> em crédito`:'Escolha um valor para continuar'}</div>${_rcgSelos()}</div>
       <button class="rcg-btn" id="rcg-gerar" ${p?'':'disabled'} onclick="_selecionarPacotePix(${_rcg.sel})">${_icone('qr-code',18)}${p?`Gerar Pix de ${_rcgFmtCurto(p.pago)}`:'Gerar Pix'}</button></div>
   </div>`;
 }
@@ -3598,19 +3617,20 @@ function _selecionarPacotePix(i){
   modal.innerHTML=`<div class="modal rcg-modal" role="dialog" aria-modal="true" aria-labelledby="rcg-titulo">
     ${_rcgCabecalho()}
     <div class="rcg-body">
-      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar Aos Pacotes</button>
+      <button class="rcg-voltar" onclick="_rcgRenderPacotes()">${_icone('arrow-left',16)}Voltar aos pacotes</button>
       <div class="rcg-pix">
-        <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR Code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR Indisponível No Momento — Use O Código Copia E Cola.</span></div>
+        <div class="rcg-qr"><img src="pix-qr/pix-${p.pago}.png" alt="QR code Pix de ${_rcgFmt(p.pago)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span style="display:none;color:#b91c1c;font-size:12.5px;text-align:center">QR indisponível no momento. Use o código copia e cola.</span></div>
         <div>
-          <div class="rcg-resumo"><div><span>Valor Do Pix</span><b>${_rcgFmt(p.pago)}</b></div>
-            ${bonus?`<div><span>Bônus</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`
+          <div class="rcg-resumo"><div><span>Você paga</span><b>${_rcgFmt(p.pago)}</b></div>
+            ${bonus?`<div><span>Bônus (+${p.pct}% de saldo)</span><b style="color:#f59e0b">+ ${_rcgFmt(bonus)}</b></div>`
               :bonusOff?`<div><span>${_rcgBonusAPartir()}</span><b class="rcg-bonus-off" style="color:#f59e0b">+ ${_rcgFmt(bonusOff)}</b></div>`:''}
-            <div class="total"><span>Você Recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
+            <div class="total"><span>Você recebe</span><b>${_rcgFmt(recebe)}</b></div></div>
           <div class="rcg-chave"><span>Chave Pix</span><b>${PIX_CONFIG.chave}</b></div>
           <div class="rcg-acoes">
-            <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar Código Pix (Copia E Cola)</button>
-            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar Comprovante Pelo WhatsApp</a>
+            <button class="rcg-btn" onclick="_copiarCodigoPix()">${_icone('copy',18)}Copiar código Pix (copia e cola)</button>
+            <a class="rcg-btn whats" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none">${_icone('message-circle',18)}Enviar comprovante pelo WhatsApp</a>
           </div>
+          ${_rcgSelos()}
         </div>
       </div>
       <div class="rcg-aviso neutro" style="margin-top:16px;margin-bottom:0">${_icone('clock',16)}<div>O crédito é lançado em até 24h úteis após a confirmação do pagamento.${bonus&&j?.fim?` O bônus vale para recargas confirmadas até ${_rcgDM(j.fim)}.`:''}</div></div>
@@ -3619,7 +3639,7 @@ function _selecionarPacotePix(i){
 }
 
 function _copiarCodigoPix(){
-  navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix Copiado!','Cole No App Do Seu Banco'));
+  navigator.clipboard.writeText(_pixPayloadAtual).then(()=>showNotif('✅ Código Pix copiado','Cole no app do seu banco'));
 }
 
 async function confirmarPagamento(pedidoId){
@@ -14109,8 +14129,8 @@ const _LOJA_INICIO_SLIDES=[
   // função de dia útil do servidor). Botão depende do tipo de cobrança
   // (_liPrepagoAcao / _liAtualizarSlidePrepago). Primeiro do carrossel
   // (2026-10-24), com etiqueta em destaque (`tagDestaque`).
-  {id:'prepago',acao:'_liPrepagoAcao()',tagDestaque:true,tag:()=>`Promo · Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% De Bônus`,icone:'badge-percent',titulo:'Você Já Conhece As Vantagens Do Crédito Pré-Pago?',
-   texto:()=>`Recarregue Seu Saldo Nos 7 Primeiros Dias Úteis Do Mês E Ganhe Bônus De Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% Em Crédito. Quanto Maior A Recarga, Maior O Bônus.`,botao:'Recarregar Agora'},
+  {id:'prepago',acao:'_liPrepagoAcao()',tagDestaque:true,tag:()=>`Promo · até +${_rcgPctMaiorPacote(_rcgPacotes(null))}% de saldo`,icone:'badge-percent',titulo:'Você já conhece as vantagens do crédito pré-pago?',
+   texto:()=>`Recarregue Seu Saldo Nos 7 Primeiros Dias Úteis Do Mês E Ganhe Bônus De Até ${_rcgBonusMaxPct(_rcgPacotes(null))}% Em Crédito. Quanto Maior A Recarga, Maior O Bônus.`,botao:'Recarregar agora'},
   // Let's Go Envios (2026-09-29): planos de entrega; botão abre o WhatsApp
   // comercial com mensagem pronta. `tag` troca a etiqueta padrão do slide.
   {url:`https://wa.me/5511991702772?text=${encodeURIComponent("Olá! Quero saber mais sobre os planos de entrega Let's Go Envios")}`,tag:'Nossos Planos',icone:'bike',titulo:"Let's Go Envios: Entregas Para Os Seus Pedidos Próprios",texto:'Use Nossos Entregadores Nos Pedidos Que Você Mesmo Vende: <br class="li-br-desk">WhatsApp, Telefone, Balcão E Site Próprio.',botao:'Ver Planos'},
