@@ -8585,6 +8585,9 @@ function renderCeoPage(){
   _ceoInjectStyles();
   if(!_navModoEmpurrar())fecharNavSidebar(); // no desktop o menu empurra (não cobre) — pode ficar aberto
   const nomeUsuario=currentUser?.nome||'Administrador';
+  // cumprimento só com o primeiro nome ("Boa Noite, Gabriel"); avatar e
+  // menu do avatar continuam com o nome completo
+  const primeiroNome=nomeUsuario.trim().split(/\s+/)[0]||nomeUsuario;
   const iniciais=_ceoIniciais(nomeUsuario);
   const agora=new Date();
   const hojeFmt=agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
@@ -8593,7 +8596,7 @@ function renderCeoPage(){
   document.getElementById('app-body').innerHTML=`<div class="ceo-page">
     <div class="ceo-header">
       <div class="ceo-greeting-block">
-        <h1>${saudacao.icone} ${saudacao.texto}, ${nomeUsuario} <span class="ceo-badge-ceo">CEO</span></h1>
+        <h1>${saudacao.icone} ${saudacao.texto}, ${primeiroNome} <span class="ceo-badge-ceo">CEO</span></h1>
         <div class="ceo-subtitle">Aqui Está O Resumo Da Performance Da Let's Go Delivery Hoje.</div>
         <div class="ceo-frase">"${_ceoFraseDoDia()}"</div>
       </div>
