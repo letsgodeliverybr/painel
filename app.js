@@ -3399,7 +3399,8 @@ function _rcgFmtNb(v){return _rcgFmtCurto(v).replace(' ','\u00a0');}
 function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`Bônus válido a partir de ${_rcgDM(d)}`:'Bônus válido nos 7 primeiros dias úteis do mês';}
 // prazo da próxima janela de bônus nos cartões (1º ao 7º dia útil, datas
 // de janela_bonus_recarga)
-function _rcgBonusValidade(){const j=_rcg.info?.janela;return j?.proximo_inicio&&j?.proximo_fim?`Bônus válido de ${_rcgDM(j.proximo_inicio)} até ${_rcgDM(j.proximo_fim)}`:_rcgBonusAPartir();}
+// duasLinhas: "Bônus válido de" em cima e as datas em negrito embaixo
+function _rcgBonusValidade(duasLinhas){const j=_rcg.info?.janela;if(!(j?.proximo_inicio&&j?.proximo_fim))return _rcgBonusAPartir();const d=`${_rcgDM(j.proximo_inicio)} até ${_rcgDM(j.proximo_fim)}`;return duasLinhas?`Bônus válido de<br><b>${d}</b>`:`Bônus válido de ${d}`;}
 function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
 function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
 // Informação de recarga (servidor) com modo seguro.
@@ -3428,11 +3429,12 @@ function _rcgEstilos(){
   .rcg-modal{width:740px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;padding:0!important;overflow:hidden;border-radius:18px}
   .rcg-modal *{box-sizing:border-box}
   .rcg-head{padding:20px 24px 18px;border-bottom:1px solid var(--border)}
-  .rcg-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-  .rcg-marca{display:flex;align-items:center;gap:12px;min-width:0}
-  .rcg-logo{width:40px;height:40px;border-radius:10px;object-fit:contain;background:#000;flex-shrink:0}
-  .rcg-marca-nome{display:block;font-size:11.5px;font-weight:700;letter-spacing:.3px;color:var(--text3)}
-  .rcg-titulo{display:block;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.2px;line-height:1.25}
+  .rcg-top{position:relative;display:flex;justify-content:center;margin-bottom:18px}
+  .rcg-marca{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:0 44px}
+  .rcg-logo{width:84px;height:84px;aspect-ratio:1/1;border-radius:22px;object-fit:contain;background:#000;flex-shrink:0;border:1px solid rgba(79,126,247,.35);box-shadow:0 10px 28px rgba(26,86,219,.35)}
+  .rcg-marca-nome{display:block;font-size:26px;font-weight:800;letter-spacing:-.4px;color:var(--text);line-height:1.15;margin-top:4px}
+  .rcg-titulo{display:block;font-size:16px;font-weight:600;color:var(--text2);line-height:1.3}
+  .rcg-top .rcg-x{position:absolute;top:0;right:0}
   .rcg-x{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .rcg-x:hover{color:var(--text);background:var(--surface2)}
   .rcg-saldo{display:flex;gap:20px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
@@ -3464,7 +3466,8 @@ function _rcgEstilos(){
   .rcg-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
   .rcg-total{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;background:rgba(16,185,129,.13);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:5px 9px}
   .rcg-total b{color:#34d399;font-weight:800;font-size:18px}
-  .rcg-bonus-aviso{font-size:15px;font-weight:800;color:var(--text)}
+  .rcg-bonus-aviso{font-size:15px;font-weight:800;color:var(--text);line-height:1.35}
+  .rcg-bonus-aviso b{font-weight:800}
   .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:6px;align-items:center;min-height:0;padding:18px 20px}
   .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1}
   .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:34px;margin-top:0}
@@ -3501,8 +3504,11 @@ function _rcgEstilos(){
     #modal-recarga-pix.modal-overlay{align-items:flex-end}
     .rcg-modal{max-width:100vw;width:100vw;max-height:94vh;border-radius:18px 18px 0 0}
     .rcg-head{padding:16px 16px 14px}.rcg-body{padding:14px 16px 16px}.rcg-foot{padding:12px 16px;flex-direction:column;align-items:stretch}
-    .rcg-top{margin-bottom:12px}
-    .rcg-titulo{font-size:16.5px}
+    .rcg-top{margin-bottom:14px}
+    .rcg-logo{width:68px;height:68px;border-radius:18px}
+    .rcg-marca{gap:6px;padding:0 40px}
+    .rcg-marca-nome{font-size:22px}
+    .rcg-titulo{font-size:15px}
     .rcg-foot .rcg-btn{width:100%}
     .rcg-saldo{flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px}
     .rcg-saldo p{border-left:none;padding-left:0}
@@ -3562,7 +3568,7 @@ function _rcgCabecalho(){
     ?'No pré-pago, cada entrega é descontada do saldo, sem fatura semanal.'
     :'Cada entrega é paga com o seu saldo. Coloque saldo quando quiser.';
   return`<div class="rcg-head"><div class="rcg-top"><div class="rcg-marca">
-        <img class="rcg-logo" src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="Let's Go Delivery" onerror="this.style.display='none'">
+        <img class="rcg-logo" src="https://letsgodeliverybr.github.io/painel/img/logo.png" alt="" width="84" height="84" onerror="this.style.display='none'">
         <div><span class="rcg-marca-nome">Let's Go Delivery</span><span class="rcg-titulo" id="rcg-titulo">Recarregar saldo via Pix</span></div></div>
       <button class="rcg-x" aria-label="Fechar" onclick="document.getElementById('modal-recarga-pix').classList.remove('open')">${_icone('x',18)}</button></div>
     <div class="rcg-saldo">${m==='equipe'?'':`<div class="rcg-saldo-valor"><span>Saldo atual</span><b style="color:${s>=0?'#10b981':'#ef4444'}">${s<0?'-':''}${_rcgFmt(Math.abs(s))}</b></div>`}
@@ -3594,7 +3600,7 @@ function _rcgRenderPacotes(){
       <span class="rcg-info">${p.bonus>0
         ?`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
         <span class="rcg-total">${bonus?'Você recebe':'Com bônus:'} <b>${_rcgFmtNb(p.pago+p.bonus)}</b> em saldo</span>
-        ${bonus?'':`<span class="rcg-bonus-aviso">${_rcgBonusValidade()}</span>`}`
+        ${bonus?'':`<span class="rcg-bonus-aviso">${_rcgBonusValidade(p.pago!==maior)}</span>`}`
         :`<span class="rcg-linha"><span class="rcg-nb">Você paga ${_rcgFmtNb(p.pago)} ·</span> <span class="rcg-nb">Você recebe <b>${_rcgFmtNb(p.pago)}</b></span></span>`}</span>
     </button>`;
   };
