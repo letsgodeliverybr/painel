@@ -5533,6 +5533,11 @@ async function salvarEdicaoPedido(pedidoId){
   // Coordenadas da coleta junto com o endereço: sem elas o mapa do Gestor
   // precisava geocodificar a coleta sozinho (pedidos #6925 e #7242, 23-24/10).
   const _epAnt=_epPedidoAtual?.id===pedidoId?_epPedidoAtual:allPedidos.find(x=>x.id===pedidoId);
+  // Entrega sem coordenada válida (null ou 0,0 — pedidos do iFood até
+  // 26/10, ex. #4568) e endereço não recalculado: geocodifica ao salvar,
+  // uma vez, pra o pedido aparecer no mapa e o app medir a distância certa.
+  const _epCoordOk=(a,b)=>a!=null&&b!=null&&Number.isFinite(+a)&&Number.isFinite(+b)&&!(+a===0&&+b===0);
+  if(!_epGeo?.distKm&&update.endereco&&!_epCoordOk(_epAnt?.latitude,_epAnt?.longitude)){const _ge=await geocodificarEndereco(update.endereco).catch(()=>null);if(_ge&&_epCoordOk(_ge.lat,_ge.lng)){update.latitude=_ge.lat;update.longitude=_ge.lng;}}
   if(!update.endereco_coleta){update.latitude_coleta=null;update.longitude_coleta=null;}
   else if(update.endereco_coleta!==_epAnt?.endereco_coleta||!_epAnt?.latitude_coleta){const _gc=await geocodificarEndereco(update.endereco_coleta).catch(()=>null);update.latitude_coleta=_gc?.lat??null;update.longitude_coleta=_gc?.lng??null;}
   if(agendarOn&&agendadoParaVal){update.status='agendado';update.status_detalhado='agendado';}
