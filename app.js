@@ -3894,6 +3894,10 @@ async function _ifoodValidarCodigo(pedidoId,action,inputId){
   try{
     const r=await fetch(`${SB_URL}/functions/v1/ifood-validar-codigo`,{method:'POST',headers:{'Content-Type':'application/json','x-webhook-secret':'letsgo2026secret'},body:JSON.stringify({action,pedido_id:pedidoId,code})});
     const j=await r.json();
+    // Entrega já confirmada no iFood (ORDER_ALREADY_CONFIRMED): é sucesso,
+    // não erro — vale também antes do deploy da function, que passa a
+    // responder ok com jaConfirmado.
+    if(j.jaConfirmado||(action==='entrega'&&j.ifoodCode==='ORDER_ALREADY_CONFIRMED')){showNotif('✅ Entrega já confirmada','Não é preciso digitar o código de novo.','var(--green)');await atualizarTudo();return;}
     if(!r.ok||!j.ok){showNotif('Código Não Validado',j.error||'Confere O Código Com O Motoboy','var(--red)');return;}
     showNotif('✅ Código Validado','','var(--green)');
     await atualizarTudo();
