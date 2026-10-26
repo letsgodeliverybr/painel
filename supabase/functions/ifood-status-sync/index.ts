@@ -10,6 +10,10 @@ const IFOOD_CLIENT_ID = Deno.env.get("IFOOD_CLIENT_ID") ?? "";
 const IFOOD_CLIENT_SECRET = Deno.env.get("IFOOD_CLIENT_SECRET") ?? "";
 const IFOOD_BASE_URL = "https://merchant-api.ifood.com.br";
 const MAX_TENTATIVAS = 5;
+const MAX_TENTATIVAS_EVENTO = 10;
+
+// Runtime das Edge Functions: mantém o processamento vivo depois da resposta.
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
 async function logErro(fonte: string, detalhes: Record<string, unknown>) {
   const { error } = await supabase.from("logs_acoes").insert({
@@ -502,6 +506,11 @@ async function registrarDdcr(orderId: string, evento: any): Promise<void> {
   if (error) throw new Error(`falha ao marcar código de entrega exigido ${orderId}: ${error.message}`);
 }
 
+// Homologação: com assinatura válida o webhook responde 200 na hora,
+// sempre, e processa em segundo plano. O evento é guardado antes em
+// ifood_eventos_recebidos; o que falhar fica pendente e o cron desta
+// mesma function (1 min) tenta de novo — o iFood não reenvia mais, porque
+// recebeu 200. Assinatura inválida continua 401: não veio do iFood.
 async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<Response> {
   const rawBody = new Uint8Array(await req.arrayBuffer());
 
@@ -516,35 +525,86 @@ async function tratarWebhook(req: Request, assinaturaRecebida: string): Promise<
     payload = JSON.parse(new TextDecoder().decode(rawBody));
   } catch (e) {
     await logErro("webhook_parse", { message: String(e) });
-    return new Response(JSON.stringify({ error: "body inválido" }), { status: 400 });
+    return new Response(null, { status: 200 });
   }
 
   const eventos = Array.isArray(payload) ? payload : [payload];
-
-  try {
-    // Paralelo — precisa responder em até 5s (exigência da doc), não dá
-    // pra serializar se vier mais de um evento no mesmo webhook. Cada
-    // branch de processarEventoWebhook é idempotente por natureza (setar
-    // status pra 'cancelado'/'finalizado' de novo, ou upsert do mesmo
-    // pedido mapeado de novo, não duplica nem corrompe nada), então retry
-    // do iFood em 5xx é seguro.
-    // Confirmação roda depois de todos os eventos gravados (o PLC pode
-    // criar o pedido no mesmo Promise.all) e pula quem tem CFM no lote.
-    await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
-    const codigo = (e: any) => e?.code ?? e?.fullCode ?? null;
-    const idPedido = (e: any) => e?.orderId ?? e?.id;
-    const cfmNoLote = new Set(eventos.filter((e) => ehEvento(codigo(e), "CFM", "CONFIRMED")).map(idPedido));
-    await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
-    const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
-    await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
-    const ddcrs = eventos.filter((e) => ehEvento(codigo(e), "DDCR", "DELIVERY_DROP_CODE_REQUESTED") && idPedido(e));
-    await Promise.all(ddcrs.map((e) => registrarDdcr(idPedido(e), e)));
-  } catch (e) {
-    await logErro("webhook_processar_excecao", { message: String(e) });
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+  const linhas = eventos.filter((e) => e?.id).map((e) => ({
+    id: String(e.id),
+    order_id: e.orderId ?? null,
+    code: e.code ?? e.fullCode ?? null,
+    origem: "webhook",
+    payload: e,
+  }));
+  let guardou = linhas.length === eventos.length;
+  if (!guardou) await logErro("webhook_evento_sem_id", { eventos: eventos.filter((e) => !e?.id) });
+  if (linhas.length > 0) {
+    const { error } = await supabase.from("ifood_eventos_recebidos")
+      .upsert(linhas, { onConflict: "id", ignoreDuplicates: true });
+    if (error) {
+      guardou = false;
+      await logErro("webhook_guardar_eventos", { message: error.message });
+    }
   }
 
-  return new Response(null, { status: 202 });
+  // Se não deu para guardar, processa direto da memória (como antes), para
+  // não perder o evento; nesse caso uma falha não tem nova tentativa.
+  EdgeRuntime.waitUntil(
+    (guardou ? processarEventosWebhookPendentes() : processarLoteWebhook(eventos))
+      .catch((e) => logErro("webhook_processar_excecao", { message: String(e) })),
+  );
+  return new Response(null, { status: 200 });
+}
+
+// Mesma ordem de antes: grava todos os eventos do lote e só depois marca
+// confirmado (CFM), confirma no iFood (PLC) e registra o código (DDCR).
+async function processarLoteWebhook(eventos: any[]): Promise<void> {
+  await Promise.all(eventos.map((evento) => processarEventoWebhook(evento)));
+  const codigo = (e: any) => e?.code ?? e?.fullCode ?? null;
+  const idPedido = (e: any) => e?.orderId ?? e?.id;
+  const cfmNoLote = new Set(eventos.filter((e) => ehEvento(codigo(e), "CFM", "CONFIRMED")).map(idPedido));
+  await Promise.all([...cfmNoLote].filter(Boolean).map((orderId) => marcarConfirmado(orderId)));
+  const plcs = [...new Set(eventos.filter((e) => ehEvento(codigo(e), "PLC", "PLACED")).map(idPedido))].filter(Boolean);
+  await Promise.all(plcs.map((orderId) => confirmarPedidoSeNecessario(orderId, cfmNoLote.has(orderId))));
+  const ddcrs = eventos.filter((e) => ehEvento(codigo(e), "DDCR", "DELIVERY_DROP_CODE_REQUESTED") && idPedido(e));
+  await Promise.all(ddcrs.map((e) => registrarDdcr(idPedido(e), e)));
+}
+
+// Processa os eventos do webhook guardados e ainda pendentes (o lote que
+// acabou de chegar + falhas anteriores), um a um, marcando cada um na tabela.
+// Chamado logo depois da resposta 200 e também a cada minuto pelo cron.
+async function processarEventosWebhookPendentes(): Promise<void> {
+  const { data, error } = await supabase.from("ifood_eventos_recebidos")
+    .select("id, order_id, code, payload, tentativas")
+    .eq("origem", "webhook").is("processado_em", null).lt("tentativas", MAX_TENTATIVAS_EVENTO)
+    .order("recebido_em", { ascending: true }).limit(50);
+  if (error) { await logErro("ler_eventos_pendentes", { message: error.message }); return; }
+  const pendentes = (data || []).sort((a: any, b: any) =>
+    String(a.payload?.createdAt ?? "").localeCompare(String(b.payload?.createdAt ?? "")));
+  const erros = new Map<string, string>();
+  const tentar = async (ev: any, passo: () => Promise<void>) => {
+    if (erros.has(ev.id)) return;
+    try { await passo(); } catch (e) {
+      erros.set(ev.id, String(e));
+      await logErro("webhook_processar_excecao", { id: ev.id, orderId: ev.order_id, message: String(e) });
+    }
+  };
+  for (const ev of pendentes) await tentar(ev, () => processarEventoWebhook(ev.payload));
+  const cfmNoLote = new Set(pendentes.filter((e: any) => ehEvento(e.code, "CFM", "CONFIRMED")).map((e: any) => e.order_id));
+  for (const ev of pendentes) {
+    if (!ev.order_id) continue;
+    if (ehEvento(ev.code, "CFM", "CONFIRMED")) await tentar(ev, () => marcarConfirmado(ev.order_id));
+    else if (ehEvento(ev.code, "PLC", "PLACED")) await tentar(ev, () => confirmarPedidoSeNecessario(ev.order_id, cfmNoLote.has(ev.order_id)));
+    else if (ehEvento(ev.code, "DDCR", "DELIVERY_DROP_CODE_REQUESTED")) await tentar(ev, () => registrarDdcr(ev.order_id, ev.payload));
+  }
+  for (const ev of pendentes) {
+    const erro = erros.get(ev.id) ?? null;
+    const { error: updErr } = await supabase.from("ifood_eventos_recebidos").update(
+      erro ? { tentativas: ev.tentativas + 1, ultimo_erro: erro }
+        : { processado_em: new Date().toISOString(), tentativas: ev.tentativas + 1, ultimo_erro: null },
+    ).eq("id", ev.id);
+    if (updErr) await logErro("marcar_evento", { id: ev.id, message: updErr.message });
+  }
 }
 
 serve(async (req) => {
@@ -562,6 +622,10 @@ serve(async (req) => {
   if (authHeader !== `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) {
     return new Response(JSON.stringify({ ok: false, motivo: "não autorizado" }), { status: 401 });
   }
+
+  // Eventos do webhook que falharam em segundo plano: nova tentativa antes
+  // de enviar a fila de status (o pedido precisa existir antes do status).
+  await processarEventosWebhookPendentes().catch((e) => logErro("webhook_pendentes_cron", { message: String(e) }));
 
   const token = await getAccessToken();
   if (!token) {

@@ -510,52 +510,94 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
     return false;
   }
 
-  const acks: string[] = [];
+  // Homologação: guarda o lote e confirma o recebimento (acknowledgment)
+  // logo em seguida, antes de processar. O processamento lê da tabela
+  // ifood_eventos_recebidos; o evento que falhar fica pendente e é tentado
+  // de novo na próxima rodada, sem depender do iFood reenviar.
+  const semId = (eventos || []).filter((e) => !e?.id);
+  if (semId.length > 0) await logErro("polling_evento_sem_id", { eventos: semId });
+  const linhas = (eventos || []).filter((e) => e?.id).map((e) => ({
+    id: String(e.id),
+    order_id: e.orderId ?? null,
+    code: e.code ?? e.fullCode ?? null,
+    origem: "polling",
+    payload: e,
+  }));
+  let rateLimited = false;
+  if (linhas.length > 0) {
+    const { error } = await supabase.from("ifood_eventos_recebidos")
+      .upsert(linhas, { onConflict: "id", ignoreDuplicates: true });
+    if (error) {
+      // Sem gravar não confirma: o iFood devolve o lote no próximo polling.
+      await logErro("guardar_eventos", { message: error.message, total: linhas.length });
+      return false;
+    }
+    rateLimited = await confirmarRecebimento(linhas.map((l) => l.id), token);
+  }
+  await processarEventosPendentes(token);
+  return rateLimited;
+}
+
+// TODO confirmar path e formato exato do body esperado por
+// /events/acknowledgment (doc pública não detalha o schema do body).
+async function confirmarRecebimento(ids: string[], token: string): Promise<boolean> {
+  const ackRes = await ifoodFetch("/events/v1.0/events/acknowledgment", token, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(ids.map((id) => ({ id }))),
+  });
+  if (await logSeRateLimited("acknowledgment", ackRes)) return true;
+  if (!ackRes.ok) {
+    const body = await ackRes.text().catch(() => "");
+    await logErro("acknowledgment_http", { status: ackRes.status, body, acks: ids });
+  }
+  return false;
+}
+
+// Processa o que foi guardado e ainda não deu certo (lote atual + falhas de
+// rodadas anteriores), na ordem do createdAt do iFood. Mesma regra de antes
+// por evento; a diferença é que a falha fica marcada na tabela em vez de
+// ficar sem acknowledgment.
+const MAX_TENTATIVAS_EVENTO = 10;
+async function processarEventosPendentes(token: string): Promise<void> {
+  const { data, error } = await supabase.from("ifood_eventos_recebidos")
+    .select("id, order_id, code, payload, tentativas")
+    .eq("origem", "polling").is("processado_em", null).lt("tentativas", MAX_TENTATIVAS_EVENTO)
+    .order("recebido_em", { ascending: true }).limit(50);
+  if (error) { await logErro("ler_eventos_pendentes", { message: error.message }); return; }
+  const pendentes = (data || []).sort((a: any, b: any) =>
+    String(a.payload?.createdAt ?? "").localeCompare(String(b.payload?.createdAt ?? "")));
   // Pedidos já aceitos no Gestor de Pedidos dentro deste mesmo lote — não
   // chama /confirm pra eles mesmo que o PLC venha antes do CFM no array.
   const cfmNoLote = new Set(
-    (eventos || []).filter((e) => ehEvento(e.code ?? e.fullCode ?? null, "CFM", "CONFIRMED")).map((e) => e.orderId ?? e.id),
+    pendentes.filter((e: any) => ehEvento(e.code, "CFM", "CONFIRMED")).map((e: any) => e.order_id),
   );
 
-  for (const evento of eventos || []) {
-    const orderId = evento.orderId ?? evento.id;
-    if (!orderId) {
-      await logErro("polling_evento_sem_orderId", { evento });
-      continue; // sem ACK — se for evento real, volta no próximo polling
-    }
-    const code = evento.code ?? evento.fullCode ?? null;
-
+  for (const ev of pendentes) {
+    const orderId = ev.order_id;
+    const code = ev.code;
+    let ok = false, erro: string | null = null;
     try {
-      const ok = await processarEventoPedido(orderId, code, evento.metadata, token);
-      if (!ok) continue; // erro já logado; sem ACK, tenta de novo
-      if (ehEvento(code, "CFM", "CONFIRMED")) {
-        if (!(await marcarConfirmado(orderId))) continue;
-      } else if (ehEvento(code, "PLC", "PLACED")) {
-        if (!(await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId)))) continue;
-      } else if (ehEvento(code, "DDCR", "DELIVERY_DROP_CODE_REQUESTED")) {
-        if (!(await registrarDdcr(orderId, evento, "polling"))) continue;
+      if (!orderId) {
+        await logErro("polling_evento_sem_orderId", { evento: ev.payload });
+        ok = true; // nada a fazer com ele; não fica tentando para sempre
+      } else {
+        ok = await processarEventoPedido(orderId, code, ev.payload?.metadata, token);
+        if (ok && ehEvento(code, "CFM", "CONFIRMED")) ok = await marcarConfirmado(orderId);
+        else if (ok && ehEvento(code, "PLC", "PLACED")) ok = await confirmarPedidoSeNecessario(orderId, token, cfmNoLote.has(orderId));
+        else if (ok && ehEvento(code, "DDCR", "DELIVERY_DROP_CODE_REQUESTED")) ok = await registrarDdcr(orderId, ev.payload, "polling");
       }
-      acks.push(evento.id ?? orderId);
+      if (!ok) erro = "falhou (detalhe em logs_acoes)";
     } catch (e) {
-      await logErro("processar_evento_excecao", { orderId, message: String(e) });
+      erro = String(e);
+      await logErro("processar_evento_excecao", { orderId, message: erro });
     }
+    const { error: updErr } = await supabase.from("ifood_eventos_recebidos").update(
+      ok ? { processado_em: new Date().toISOString(), tentativas: ev.tentativas + 1, ultimo_erro: null }
+        : { tentativas: ev.tentativas + 1, ultimo_erro: erro },
+    ).eq("id", ev.id);
+    if (updErr) await logErro("marcar_evento", { id: ev.id, message: updErr.message });
   }
-
-  if (acks.length > 0) {
-    // TODO confirmar path e formato exato do body esperado por
-    // /events/acknowledgment (doc pública não detalha o schema do body).
-    const ackRes = await ifoodFetch("/events/v1.0/events/acknowledgment", token, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(acks.map((id) => ({ id }))),
-    });
-    if (await logSeRateLimited("acknowledgment", ackRes)) return true;
-    if (!ackRes.ok) {
-      const body = await ackRes.text().catch(() => "");
-      await logErro("acknowledgment_http", { status: ackRes.status, body, acks });
-    }
-  }
-  return false;
 }
 
 serve(async () => {
