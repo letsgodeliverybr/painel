@@ -3868,14 +3868,21 @@ async function _confirmarCancelamentoIfood(pedidoId){
 // volta pro iFood (POST validatePickupCode/verifyDeliveryCode) — não
 // existe UI no app do entregador pra isso ainda, então quem confirma é
 // admin/loja no painel, digitando o código que o motoboy reportou.
+// Código de entrega: o DDCR não traz o código (fica com o cliente), então
+// ifood_delivery_code vem sempre vazio. O campo aparece quando o iFood
+// exige o código (ifood_codigo_entrega_exigido_em) e só libera a partir de
+// Em Rota, depois do dispatch — antes disso o iFood recusa a validação.
 function _blocoCodigoIfood(p,action,titulo,codigo,validadoEm){
-  if(!codigo)return'';
+  const exigeEntrega=action==='entrega'&&!!p.ifood_codigo_entrega_exigido_em;
+  if(!codigo&&!exigeEntrega)return'';
   if(validadoEm)return`<div style="background:#052e1a;border:1px solid #16a34a55;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#4ade80">✓ ${titulo} — Validado</div>`;
+  if(!codigo&&!['em_rota','chegou_destino','retornando'].includes(getStatusKey(p)))
+    return`<div style="background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:var(--sb-text3)">${titulo}: o iFood exige o código na entrega. O campo libera quando o pedido estiver Em Rota.</div>`;
   const inputId=`ifood-codigo-${action}-${p.id}`;
   return`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
-    <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: <span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span></div>
+    <div style="font-size:10px;color:var(--sb-text3);font-weight:700;letter-spacing:.5px;margin-bottom:6px">${titulo}: ${codigo?`<span style="color:var(--sb-text);letter-spacing:2px;font-size:13px">${codigo}</span>`:'<span style="color:var(--sb-text);font-weight:600;letter-spacing:0">peça ao cliente</span>'}</div>
     <div style="display:flex;gap:6px">
-      <input id="${inputId}" placeholder="Código Informado Pelo Motoboy" maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
+      <input id="${inputId}" placeholder="${codigo?'Código Informado Pelo Motoboy':'Código Informado Pelo Cliente'}"${action==='entrega'?' inputmode="numeric"':''} maxlength="10" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--sb-border);background:var(--sb-bg);color:var(--sb-text);font-size:12px"/>
       <button onclick="event.stopPropagation();_ifoodValidarCodigo('${p.id}','${action}','${inputId}')" style="background:#1A56DB;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Validar</button>
     </div>
   </div>`;
