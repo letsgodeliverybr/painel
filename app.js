@@ -2040,6 +2040,10 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       #app .topbar .topbar-logo img { height: 24px !important; }
       #app .topbar .topbar-logo + div { margin-left: 0 !important; gap: 6px !important; flex-shrink: 0; }
       #app .topbar .lg-btn { min-width: 36px !important; height: 36px; padding: 0 8px !important; }
+      /* Mapa Ao Vivo com o texto ao lado do ícone também no celular
+         (2026-10-27): o HTML de produção esconde .lg-btn-label até 768px. */
+      #app .topbar #btn-ir-mapa { gap: 5px; white-space: nowrap; flex-shrink: 0; }
+      #app .topbar #btn-ir-mapa .lg-btn-label { display: inline !important; font-size: 12px; font-weight: 600; }
       #app .topbar #topbar-saldo { padding: 4px 11px !important; min-height: 40px; justify-content: center; }
       #app .topbar #topbar-saldo > div { flex-direction: column; gap: 2px !important; }
       #app .topbar #topbar-saldo > div > span:first-child { font-size: 16px !important; }
@@ -2062,6 +2066,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       .chat-admin-layout { flex-direction: column !important; }
       .chat-admin-layout #chat-lista-conversas { width: 100% !important; max-height: 140px !important; flex-shrink: 0 !important; }
       .chat-admin-layout #chat-painel-conversa { flex: 1 !important; min-height: 0 !important; }
+    }
+    /* Até 440px o texto do Mapa Ao Vivo vai em 2 linhas ("Mapa" / "Ao
+       Vivo"), ainda ao lado do ícone (2026-10-27): numa linha só, com saldo
+       de 4 dígitos (R$ 6.500,00), o Wallet saía da tela entre 360 e 430px. */
+    @media (max-width: 440px) {
+      #app .topbar #btn-ir-mapa { gap: 4px; white-space: normal; padding: 0 7px !important; }
+      #app .topbar #btn-ir-mapa .lg-btn-label { font-size: 11px; line-height: 1.1; max-width: 42px; text-align: left; }
     }
     /* Celular estreito (até 400px): com "WALLET" no saldo, espaços menores
        na barra do topo. */
