@@ -3369,7 +3369,7 @@ async function _carregarSaldoTopbar(){
       // Equipe: botão clicável abre a tela de recarga na visão da equipe.
       val.textContent='0,00';
       el.style.display='flex';
-      _lojaCreditoAtiva=false;el.style.cursor='pointer';_mdWallet(null);
+      _lojaCreditoAtiva=false;el.style.cursor='pointer';_mdWallet(null,true);
     } else {
       el.style.display='none';
       _lojaCreditoAtiva=false;
@@ -4453,19 +4453,21 @@ function _mdBotaoPainel(){
 // limite do aviso amarelo de saldo baixo); com R$ 100 ou
 // mais, volta ao estilo normal. Sem limite de aberturas (a regra antiga
 // parava depois de 5). Com "reduzir movimento", só o fundo azul.
-// _carregarSaldoTopbar passa o saldo (null = equipe, sem saldo próprio);
-// o goTab chama sem saldo e só garante a classe base.
+// _carregarSaldoTopbar passa o saldo; para a equipe (ADM, admin, suporte),
+// que não tem saldo próprio, passa sempre=true e o Wallet fica azul
+// pulsando o tempo todo (2026-10-27). O goTab chama sem saldo e só
+// garante a classe base.
 const _WALLET_SALDO_MINIMO=100;
-function _mdWallet(saldo){
+function _mdWallet(saldo,sempre){
   const b=document.getElementById('topbar-saldo');if(!b)return;
   _mdEstilos();
   if(!b.dataset.md){
     b.dataset.md='1';b.classList.add('md-wallet');b.setAttribute('role','button');b.setAttribute('aria-label','Saldo da carteira: abrir recarga');
   }
-  if(saldo===undefined)return;
-  const baixo=saldo!=null&&saldo<_WALLET_SALDO_MINIMO;
+  if(saldo===undefined&&!sempre)return;
+  const baixo=!!sempre||(saldo!=null&&saldo<_WALLET_SALDO_MINIMO);
   b.classList.toggle('md-wallet-baixo',baixo);
-  b.classList.toggle('md-wallet-neg',baixo&&saldo<0);
+  b.classList.toggle('md-wallet-neg',!sempre&&baixo&&saldo<0);
 }
 function _mdSyncPainel(){
   const b=document.querySelector('#mapa-container-wrap button.md-btn[onclick="toggleSidebar()"]'),sb=document.getElementById('sidebar-mapa');if(!b||!sb)return;
