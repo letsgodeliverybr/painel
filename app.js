@@ -2028,8 +2028,9 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
          barra quebrar linha no celular (flex-wrap:wrap) e, com o "Menu"
          escrito ao lado do ☰, ela passou a quebrar em 2 linhas no aparelho
          (selo caía, nome sumia). Agora não quebra: botão Menu compacto, logo
-         só ícone, botões só ícone, saldo sem o rótulo "Wallet" e o nome da
-         loja ocupando o que sobra, cortado com reticências se for longo. */
+         só ícone, botões só ícone, saldo com o valor em cima e "WALLET"
+         embaixo (2026-10-26; antes o rótulo sumia) e o nome da loja ocupando
+         o que sobra, cortado com reticências se for longo. */
       #app .topbar { flex-wrap: nowrap !important; height: 56px !important; min-height: 56px !important; padding: 0 8px !important; gap: 6px !important; overflow: hidden; }
       #app .topbar .hamburger-btn.md-btn { padding: 6px 8px !important; gap: 5px !important; flex-shrink: 0; }
       #app .topbar .md-btn .md-rotulo { font-size: 12px; }
@@ -2038,8 +2039,11 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       #app .topbar .topbar-logo img { height: 24px !important; }
       #app .topbar .topbar-logo + div { margin-left: 0 !important; gap: 6px !important; flex-shrink: 0; }
       #app .topbar .lg-btn { min-width: 36px !important; height: 36px; padding: 0 8px !important; }
-      #app .topbar #topbar-saldo { padding: 5px 8px !important; }
-      #app .topbar .lg-wallet-label { display: none !important; }
+      #app .topbar #topbar-saldo { padding: 3px 8px !important; }
+      #app .topbar #topbar-saldo > div { flex-direction: column; gap: 2px !important; }
+      #app .topbar #topbar-saldo > div > span:first-child { font-size: 14px !important; }
+      #app .topbar #topbar-saldo .lg-wallet-label { display: block !important; font-size: 9.5px !important; letter-spacing: .8px !important; }
+      #app .topbar #topbar-saldo.md-pulsa { box-shadow: 0 0 0 1px rgba(59,130,246,.7), 0 0 8px rgba(59,130,246,.3) !important; }
       #app .topbar #tab-buttons { flex: 0 0 0 !important; min-width: 0 !important; overflow: hidden; }
       #app .topbar .topbar-right { flex: 1 1 auto; min-width: 0; justify-content: flex-end; overflow: hidden; gap: 6px !important; }
       #app .topbar .user-info { min-width: 0; overflow: hidden; padding-left: 6px !important; gap: 5px !important; }
@@ -2060,6 +2064,18 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       .chat-admin-layout { flex-direction: column !important; }
       .chat-admin-layout #chat-lista-conversas { width: 100% !important; max-height: 140px !important; flex-shrink: 0 !important; }
       .chat-admin-layout #chat-painel-conversa { flex: 1 !important; min-height: 0 !important; }
+    }
+    /* Celular estreito (até 400px): com "WALLET" no saldo, espaços menores
+       na barra do topo pra sobrar lugar pro nome da loja ao lado do selo. */
+    @media (max-width: 400px) {
+      #app .topbar { padding: 0 6px !important; gap: 4px !important; }
+      #app .topbar .hamburger-btn.md-btn { padding: 6px !important; gap: 4px !important; }
+      #app .topbar .md-btn .md-rotulo { font-size: 11.5px; }
+      #app .topbar .topbar-logo + div { gap: 4px !important; }
+      #app .topbar .lg-btn { min-width: 32px !important; padding: 0 6px !important; }
+      #app .topbar #topbar-saldo { padding: 3px 6px !important; }
+      #app .topbar .topbar-right { gap: 4px !important; }
+      #app .topbar .user-info { padding-left: 4px !important; gap: 4px !important; }
     }
     /* ── DARK MODE GLOBAL OVERRIDES ── */
     html.dark body, html.dark #app, html.dark #app-body { background: var(--bg) !important; color: var(--text) !important; }
@@ -4216,6 +4232,9 @@ function _mdEstilos(){
   #md-dica{position:fixed;z-index:1300;max-width:230px;background:#1A56DB;color:#fff;font:700 14px/1.35 Inter,sans-serif;padding:10px 14px;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.35);cursor:pointer;animation:mdDica 1.8s ease-in-out infinite}
   #md-dica::before{content:'';position:absolute;top:-7px;left:var(--md-seta,22px);border:7px solid transparent;border-top:0;border-bottom-color:#1A56DB}
   @keyframes mdDica{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+  #topbar-saldo.md-wallet{position:relative;cursor:pointer!important}
+  #topbar-saldo.md-wallet>div>span:first-child{font-size:15px!important;font-weight:800!important;font-variant-numeric:tabular-nums}
+  #topbar-saldo.md-wallet .lg-wallet-label{font-size:11px!important;font-weight:800!important;letter-spacing:1px!important;color:#cbd5e1!important;text-transform:uppercase}
   @media (max-width:420px){.md-rotulo{font-size:13px}.md-btn{gap:6px}}
   @media (prefers-reduced-motion:reduce){.md-pulsa::after,#md-dica{animation:none!important}.md-linhas i{transition:none!important}}`;
   document.head.appendChild(st);
@@ -4271,6 +4290,17 @@ function _mdBotaoPainel(){
   b.classList.toggle('md-pulsa',+(_mdLer('aberturas_pedidos')||0)<_MD_PARAR_APOS);
   _mdSyncPainel();
 }
+// Saldo do topo (2026-10-26): mesmo anel e mesma regra do Menu — pulsa até a
+// loja abrir a recarga 5 vezes (contagem própria, no navegador).
+function _mdWallet(){
+  const b=document.getElementById('topbar-saldo');if(!b)return;
+  _mdEstilos();
+  if(!b.dataset.md){
+    b.dataset.md='1';b.classList.add('md-wallet');b.setAttribute('role','button');b.setAttribute('aria-label','Saldo da carteira: abrir recarga');
+    b.addEventListener('click',()=>_mdContar('aberturas_wallet',b));
+  }
+  b.classList.toggle('md-pulsa',+(_mdLer('aberturas_wallet')||0)<_MD_PARAR_APOS);
+}
 function _mdSyncPainel(){
   const b=document.querySelector('#mapa-container-wrap button.md-btn[onclick="toggleSidebar()"]'),sb=document.getElementById('sidebar-mapa');if(!b||!sb)return;
   const ab=!sb.classList.contains('sb-minimized');b.classList.toggle('md-aberto',ab);b.setAttribute('aria-expanded',ab?'true':'false');
@@ -4302,7 +4332,7 @@ function goTab(id){
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
   const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
-  _mdIniciar();setTimeout(_mdBotaoPainel,0);
+  _mdIniciar();_mdWallet();setTimeout(_mdBotaoPainel,0);
 }
 
 // Tela cheia de boas-vindas da loja — passe 4: layout em 2 colunas
