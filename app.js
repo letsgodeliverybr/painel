@@ -3464,7 +3464,7 @@ function _rcgBonusAPartir(){const d=_rcg.info?.janela?.proximo_inicio;return d?`
 // prazo da próxima janela de bônus nos cartões (1º ao 7º dia útil, datas
 // de janela_bonus_recarga)
 // duasLinhas: "Bônus válido de" em cima e as datas em negrito embaixo
-function _rcgBonusValidade(duasLinhas){const j=_rcg.info?.janela;if(!(j?.proximo_inicio&&j?.proximo_fim))return _rcgBonusAPartir();const d=`${_rcgDM(j.proximo_inicio)} até ${_rcgDM(j.proximo_fim)}`;return duasLinhas?`Bônus válido de<br><b>${d}</b>`:`Bônus válido de ${d}`;}
+function _rcgBonusValidade(duasLinhas){const j=_rcg.info?.janela;if(!(j?.proximo_inicio&&j?.proximo_fim))return _rcgBonusAPartir();const d=`${_rcgDM(j.proximo_inicio)} até ${_rcgDM(j.proximo_fim)}`;return duasLinhas?`Bônus válido de<br><b>${d}</b>`:`Bônus válido de <span class="rcg-nw">${d}</span>`;}
 function _rcgDM(ymd){if(!ymd)return'';const [,m,d]=String(ymd).slice(0,10).split('-');return `${d}/${m}`;}
 function _rcgMes(ymd){if(!ymd)return'';const [y,m]=String(ymd).slice(0,10).split('-').map(Number);return new Date(Date.UTC(y,m-1,15)).toLocaleDateString('pt-BR',{month:'long',timeZone:'UTC'});}
 // Informação de recarga (servidor) com modo seguro.
@@ -3531,6 +3531,7 @@ function _rcgEstilos(){
   .rcg-total b{color:#34d399;font-weight:800;font-size:18px}
   .rcg-bonus-aviso{font-size:15px;font-weight:800;color:var(--text);line-height:1.35}
   .rcg-bonus-aviso b{font-weight:800}
+  .rcg-em-saldo,.rcg-nw{white-space:nowrap}
   .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:32px;row-gap:6px;align-items:center;min-height:0;padding:18px 20px}
   .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia{grid-column:1;grid-row:1}
   .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;font-size:34px;margin-top:0}
@@ -3563,6 +3564,80 @@ function _rcgEstilos(){
   .rcg-chave b{font-size:16px;color:var(--text);word-break:break-all}
   .rcg-acoes{display:flex;flex-direction:column;gap:10px}
   .rcg-acoes .rcg-btn{width:100%}
+  /* Computador (acima de 768px, 2026-10-24): tudo cabe na janela sem
+     rolar — cabeçalho, avisos, os 7 pacotes e o botão Gerar Pix ao mesmo
+     tempo. Espaçamentos, logo e alturas acompanham a altura da janela
+     (clamp com vh); as letras dos valores não diminuem. Pacotes em 4
+     colunas: R$ 50/100/300 em cima, R$ 500/1.000/3.000 embaixo e o
+     R$ 5.000 na 4ª coluna, ocupando as duas linhas — destaque principal,
+     com borda azul e brilho azul suave. Borda sempre de 2px (o anel do
+     escolhido é sombra, fora do cartão): escolher um pacote não mexe no
+     tamanho de nada. A rolagem continua como reserva se a janela for
+     baixa demais. */
+  @media (min-width:769px){
+    .rcg-modal{width:min(1100px,96vw);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
+    .rcg-head{padding:clamp(10px,1.7vh,20px) 24px clamp(8px,1.4vh,18px)}
+    .rcg-top{margin-bottom:clamp(6px,1.2vh,18px)}
+    .rcg-marca{gap:clamp(3px,.7vh,8px)}
+    .rcg-logo{width:clamp(38px,6.6vh,84px);height:clamp(38px,6.6vh,84px);border-radius:clamp(11px,1.7vh,22px)}
+    .rcg-marca-nome{font-size:clamp(19px,2.6vh,26px);margin-top:0}
+    .rcg-titulo{font-size:clamp(13px,1.6vh,16px)}
+    .rcg-saldo{padding:clamp(7px,1.1vh,14px) 18px}
+    .rcg-saldo-valor{display:flex;align-items:baseline;gap:10px}
+    .rcg-body{padding:clamp(10px,1.5vh,18px) 24px clamp(10px,1.6vh,20px)}
+    .rcg-aviso{padding:clamp(7px,1vh,12px) 14px;margin-bottom:clamp(10px,1.6vh,16px)}
+    .rcg-grid{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.3fr);gap:clamp(8px,1.2vh,12px);padding-top:4px}
+    .rcg-card{min-height:0;padding:clamp(9px,1.4vh,16px) 14px;gap:clamp(3px,.6vh,6px);border-width:2px}
+    .rcg-card[aria-checked="true"],.rcg-card.recomendado[aria-checked="true"]{border-width:2px;border-color:#4f7ef7;box-shadow:0 0 0 3px rgba(79,126,247,.45)}
+    .rcg-card:hover{transform:none}
+    .rcg-tag-vazia{display:none}
+    .rcg-selo-extra{display:none}
+    .rcg-card.largo{grid-column:4;grid-row:1/span 2;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:8px;padding:clamp(14px,2.2vh,24px) 20px;border:2px solid #3b82f6;background:linear-gradient(160deg,rgba(59,130,246,.20),rgba(59,130,246,.05) 55%,rgba(30,32,41,1));box-shadow:0 0 0 1px rgba(96,165,250,.45),0 0 18px rgba(59,130,246,.45),0 0 48px rgba(59,130,246,.25)}
+    .rcg-card.largo[aria-checked="true"]{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.55),0 0 22px rgba(59,130,246,.6),0 0 60px rgba(59,130,246,.3)}
+    .rcg-card.largo .rcg-tag,.rcg-card.largo .rcg-tag-vazia,.rcg-card.largo .rcg-valor,.rcg-card.largo .rcg-info{grid-column:auto;grid-row:auto}
+    .rcg-card.largo .rcg-tag{align-self:flex-start}
+    .rcg-card.largo .rcg-valor{font-size:44px}
+    .rcg-card.largo .rcg-info{padding-right:0;align-self:stretch}
+    .rcg-card.largo .rcg-total{font-size:16px}
+    .rcg-card.largo .rcg-total b{font-size:21px}
+    .rcg-foot{padding:clamp(8px,1.3vh,14px) 24px}
+    .rcg-foot .rcg-btn{height:clamp(48px,6.4vh,60px)}
+  }
+  /* Janela baixa no computador (até 740px de altura: notebook de 14" com
+     zoom de 125%, ou 1366x768 com barra de favoritos): marca numa linha só
+     (logo ao lado do nome), avisos e cartões mais justos. Os valores dos
+     pacotes continuam do mesmo tamanho; o Gerar Pix fica no rodapé fixo. */
+  @media (min-width:769px) and (max-height:740px){
+    .rcg-head{padding:8px 24px 8px}
+    .rcg-top{margin-bottom:8px}
+    .rcg-marca{flex-direction:row;gap:12px;text-align:left}
+    .rcg-logo{width:40px;height:40px;border-radius:11px}
+    .rcg-marca-nome{font-size:20px}
+    .rcg-titulo{font-size:13px}
+    .rcg-saldo{padding:6px 16px}
+    .rcg-saldo-valor b{font-size:24px}
+    .rcg-body{padding:12px 24px 10px}
+    .rcg-aviso{padding:6px 12px;font-size:14px;margin-bottom:8px}
+    .rcg-grid{gap:8px}
+    .rcg-card{padding:8px 12px;gap:2px}
+    .rcg-tag{font-size:13px;padding:3px 9px}
+    .rcg-linha{font-size:14px;line-height:1.35}
+    .rcg-total{font-size:14px;padding:3px 8px}
+    .rcg-total b{font-size:16px}
+    .rcg-bonus-aviso{font-size:14px;line-height:1.3}
+    .rcg-card.largo{padding:12px 18px}
+    .rcg-foot{padding:8px 24px}
+    .rcg-foot .rcg-btn{height:48px}
+  }
+  /* Bem baixa (até 560px: 1366x768 com zoom de 125%): nos cartões menores
+     some o "Você paga R$ X", que repete o valor grande logo acima; o
+     cartão do R$ 5.000 mantém tudo. */
+  @media (min-width:769px) and (max-height:560px){
+    .rcg-logo{width:34px;height:34px;border-radius:10px}
+    .rcg-marca-nome{font-size:18px}
+    .rcg-body{padding:10px 24px 8px}
+    .rcg-card:not(.largo) .rcg-info>.rcg-linha:first-child{display:none}
+  }
   /* Celular (até 768px): altura pela área visível de verdade (100dvh — no
      iPhone, 94vh passava da tela e escondia o rodapé com Gerar Pix atrás da
      barra do navegador). Cabeçalho e pacotes rolam juntos; o rodapé com o
@@ -3599,6 +3674,86 @@ function _rcgEstilos(){
     .rcg-foot .rcg-btn{min-width:0}
     .rcg-pix{grid-template-columns:1fr}
     .rcg-qr{min-height:0}
+  }
+  /* Celular estreito (até 480px, 2026-10-27): os 7 pacotes e o Gerar Pix
+     na mesma tela, sem rolar sempre que der. Marca numa linha (logo ao
+     lado do nome), saldo numa linha, pacotes em 3 colunas — R$ 50/100/300
+     e R$ 500/1.000/3.000 — e o R$ 5.000 na linha de baixo, largo, com
+     borda azul e brilho azul (o destaque, como no computador). Nos cartões
+     pequenos some o "Você paga", que repete o valor grande. Borda sempre
+     de 2px (o anel do escolhido é sombra): escolher não mexe no tamanho de
+     nada. O prazo do bônus fica no aviso de cima e no cartão do R$ 5.000
+     (nos cartões pequenos ele repetia a mesma data em 3 linhas). Se a
+     tela for baixa demais, o miolo rola e o rodapé com o Gerar Pix
+     continua preso embaixo. */
+  @media (max-width:480px){
+    .rcg-head{padding:10px 14px}
+    .rcg-top{justify-content:flex-start;margin-bottom:8px}
+    .rcg-marca{flex-direction:row;align-items:center;text-align:left;gap:10px;padding:0 44px 0 0}
+    .rcg-logo{width:38px;height:38px;border-radius:11px;box-shadow:none}
+    .rcg-marca-nome{font-size:18px;margin-top:0}
+    .rcg-titulo{font-size:13px}
+    .rcg-saldo{flex-direction:row;align-items:center;gap:10px;padding:7px 12px;border-radius:12px}
+    .rcg-saldo-valor{display:flex;align-items:baseline;gap:8px}
+    .rcg-saldo-valor span{font-size:13px}
+    .rcg-saldo-valor b{font-size:20px;margin-top:0}
+    .rcg-saldo p{font-size:12.5px;line-height:1.35;border-left:1px solid var(--border);padding-left:10px}
+    .rcg-body{padding:10px 12px 12px}
+    .rcg-aviso{padding:7px 10px;font-size:13px;line-height:1.35;margin-bottom:10px;gap:8px;border-radius:10px}
+    .rcg-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:6px}
+    .rcg-card{padding:8px 8px 9px;gap:3px;border-radius:12px;border-width:2px}
+    .rcg-card[aria-checked="true"],.rcg-card.recomendado[aria-checked="true"]{border-width:2px;border-color:#4f7ef7;box-shadow:0 0 0 2px rgba(79,126,247,.55)}
+    .rcg-check{top:6px;right:6px;width:20px;height:20px}
+    .rcg-selo{position:absolute;top:-9px;left:6px;margin:0;font-size:10px;padding:2px 7px;gap:3px}
+    .rcg-selo .icone{display:none}
+    .rcg-card.recomendado .rcg-tag-vazia{display:block}
+    .rcg-tag{font-size:11.5px;padding:2px 7px;gap:3px}
+    .rcg-tag-extra{display:none}
+    .rcg-tag-vazia{height:20px}
+    .rcg-valor{font-size:21px;letter-spacing:-.5px;margin-top:0}
+    .rcg-info{gap:3px}
+    .rcg-card:not(.largo) .rcg-info>.rcg-linha:first-child{display:none}
+    .rcg-linha{font-size:12.5px;line-height:1.3}
+    .rcg-total{font-size:12px;padding:3px 6px;border-radius:7px;line-height:1.25}
+    .rcg-total b{font-size:14px}
+    .rcg-card:not(.largo) .rcg-em-saldo{display:none}
+    .rcg-bonus-aviso{font-size:11.5px;line-height:1.3}
+    .rcg-card:not(.largo) .rcg-bonus-aviso{display:none}
+    .rcg-card.largo{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;row-gap:3px;align-items:center;padding:10px 12px;border:2px solid #3b82f6;background:linear-gradient(160deg,rgba(59,130,246,.20),rgba(59,130,246,.05) 55%,rgba(30,32,41,1));box-shadow:0 0 0 1px rgba(96,165,250,.45),0 0 14px rgba(59,130,246,.45),0 0 30px rgba(59,130,246,.2)}
+    .rcg-card.largo[aria-checked="true"]{border-color:#93c5fd;box-shadow:0 0 0 2px rgba(147,197,253,.6),0 0 18px rgba(59,130,246,.6),0 0 36px rgba(59,130,246,.3)}
+    .rcg-card.largo .rcg-tag{grid-column:1;grid-row:1;justify-self:start;align-self:end}
+    .rcg-card.largo .rcg-valor{grid-column:1;grid-row:2;align-self:start;font-size:28px}
+    .rcg-card.largo .rcg-info{grid-column:2;grid-row:1/span 2;align-self:center;padding-right:20px}
+    .rcg-card.largo .rcg-linha{font-size:12.5px}
+    .rcg-foot{padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));gap:6px}
+    .rcg-foot-info{font-size:13.5px}
+    .rcg-selos{margin-top:2px;gap:2px 8px}
+    .rcg-selos span{font-size:11px;gap:4px}
+    .rcg-selos .icone{width:12px;height:12px}
+    .rcg-foot .rcg-btn{height:48px;font-size:16px}
+  }
+  /* Celular baixo (até 700px de altura visível): some a frase ao lado do
+     saldo e os espaços diminuem; abaixo de 600px (iPhone SE no Safari),
+     também os selos do rodapé, e logo, avisos e cartões ficam mais justos. */
+  @media (max-width:480px) and (max-height:700px){
+    .rcg-saldo p{display:none}
+    .rcg-head{padding:8px 14px}
+    .rcg-top{margin-bottom:6px}
+    .rcg-body{padding:8px 12px 10px}
+    .rcg-aviso{margin-bottom:8px}
+  }
+  @media (max-width:480px) and (max-height:600px){
+    .rcg-selos{display:none}
+    .rcg-logo{width:32px;height:32px;border-radius:9px}
+    .rcg-marca-nome{font-size:17px}
+    .rcg-saldo{padding:5px 12px}
+    .rcg-aviso{padding:5px 10px;font-size:12.5px;line-height:1.3}
+    .rcg-grid{gap:6px}
+    .rcg-card{padding:6px 8px 7px;gap:2px}
+    .rcg-card.largo{padding:8px 12px}
+    .rcg-body{padding:6px 12px 6px}
+    .rcg-foot{padding:6px 12px;padding-bottom:max(6px,env(safe-area-inset-bottom));gap:4px}
+    .rcg-foot .rcg-btn{height:46px}
   }`;
   document.head.appendChild(st);
 }
@@ -3662,11 +3817,11 @@ function _rcgRenderPacotes(){
     return`<button type="button" role="radio" aria-checked="${sel}" class="rcg-card${p.recomendado?' recomendado':''}${p.pago===maior?' largo':''}" onclick="_rcgEscolher(${idx})" onkeydown="_rcgTeclado(event,${idx})">
       ${p.recomendado?`<span class="rcg-selo">${_icone('sparkles',12)}Recomendado<span class="rcg-selo-extra"> · ideal para começar</span></span>`:''}
       <span class="rcg-check">${_icone('check',14)}</span>
-      ${p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',13)}+${p.pct}% de saldo</span>`:'<span class="rcg-tag-vazia"></span>'}
+      ${p.bonus>0?`<span class="rcg-tag">${_icone('badge-percent',13)}+${p.pct}%<span class="rcg-tag-extra"> de saldo</span></span>`:'<span class="rcg-tag-vazia"></span>'}
       <span class="rcg-valor">${_rcgFmtCurto(p.pago)}</span>
       <span class="rcg-info">${p.bonus>0
         ?`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
-        <span class="rcg-total">${bonus?'Você recebe':'Com bônus:'} <b>${_rcgFmtNb(p.pago+p.bonus)}</b> em saldo</span>
+        <span class="rcg-total">${bonus?'Você recebe':'Com bônus:'} <b>${_rcgFmtNb(p.pago+p.bonus)}</b><span class="rcg-em-saldo"> em saldo</span></span>
         ${bonus?'':`<span class="rcg-bonus-aviso">${_rcgBonusValidade(p.pago!==maior)}</span>`}`
         :`<span class="rcg-linha">Você paga ${_rcgFmtNb(p.pago)}</span>
         <span class="rcg-linha">Você recebe <b>${_rcgFmtNb(p.pago)}</b></span>`}</span>
