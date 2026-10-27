@@ -5259,8 +5259,10 @@ function renderPedidosLista(){
       return (p.numero||'').toLowerCase().includes(q)||(p.endereco||'').toLowerCase().includes(q)||(p.cliente||'').toLowerCase().includes(q)||((loja?.nome||'').toLowerCase().includes(q));
     });
   }
+  // Agendado (2026-10-27): bolinha vermelha ao lado da de Recebido, com
+  // "Agendado" no tooltip — antes o pedido agendado não entrava em nenhuma.
   const _SB_HEADER=[
-    {key:'recebido',color:'#EF4444'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
+    {key:'recebido',color:'#EF4444',label:'Recebido'},{key:'agendado',color:'#EF4444',label:'Agendado'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
     {key:'chegou_local',color:'#38BDF8'},{key:'em_rota',color:'#1A56DB'},
     {key:'chegou_destino',color:'#7C3AED'},{key:'retornando',color:'#10B981'},
   ];
@@ -5268,12 +5270,13 @@ function renderPedidosLista(){
   if(bubblesEl){
     bubblesEl.innerHTML=_SB_HEADER.map(sb=>{
       const n=allPedidos.filter(p=>getStatusKey(p)===sb.key).length;
-      return n?`<span style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
+      return n?`<span${sb.label?` title="${sb.label}"`:''} style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
     }).join('');
   }
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum Pedido</p></div>';return;}
   const STATUS_BUBBLES=[
     {key:'recebido',color:'#EF4444',label:'Recebido'},
+    {key:'agendado',color:'#EF4444',label:'Agendado'},
     {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
     {key:'chegou_local',color:'#38BDF8',label:'Chegou No Local'},
