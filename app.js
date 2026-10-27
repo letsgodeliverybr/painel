@@ -2029,8 +2029,9 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
          escrito ao lado do ☰, ela passou a quebrar em 2 linhas no aparelho
          (selo caía, nome sumia). Agora não quebra: botão Menu compacto, logo
          só ícone, botões só ícone, saldo com o valor em cima e "WALLET"
-         embaixo (2026-10-26; antes o rótulo sumia) e o nome da loja ocupando
-         o que sobra, cortado com reticências se for longo. */
+         embaixo (2026-10-26; antes o rótulo sumia). Nome do usuário e selo
+         (ADM/LOJA) não aparecem no celular (2026-10-27): o espaço fica para
+         o Wallet; no computador continuam. */
       #app .topbar { flex-wrap: nowrap !important; height: 56px !important; min-height: 56px !important; padding: 0 8px !important; gap: 6px !important; overflow: hidden; }
       #app .topbar .hamburger-btn.md-btn { padding: 6px 8px !important; gap: 5px !important; flex-shrink: 0; }
       #app .topbar .md-btn .md-rotulo { font-size: 12px; }
@@ -2039,16 +2040,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       #app .topbar .topbar-logo img { height: 24px !important; }
       #app .topbar .topbar-logo + div { margin-left: 0 !important; gap: 6px !important; flex-shrink: 0; }
       #app .topbar .lg-btn { min-width: 36px !important; height: 36px; padding: 0 8px !important; }
-      #app .topbar #topbar-saldo { padding: 3px 8px !important; }
+      #app .topbar #topbar-saldo { padding: 4px 11px !important; min-height: 40px; justify-content: center; }
       #app .topbar #topbar-saldo > div { flex-direction: column; gap: 2px !important; }
-      #app .topbar #topbar-saldo > div > span:first-child { font-size: 14px !important; }
-      #app .topbar #topbar-saldo .lg-wallet-label { display: block !important; font-size: 9.5px !important; letter-spacing: .8px !important; }
-      #app .topbar #topbar-saldo.md-pulsa { box-shadow: 0 0 0 1px rgba(59,130,246,.7), 0 0 8px rgba(59,130,246,.3) !important; }
+      #app .topbar #topbar-saldo > div > span:first-child { font-size: 16px !important; }
+      #app .topbar #topbar-saldo .lg-wallet-label { display: block !important; font-size: 10.5px !important; letter-spacing: .8px !important; }
       #app .topbar #tab-buttons { flex: 0 0 0 !important; min-width: 0 !important; overflow: hidden; }
       #app .topbar .topbar-right { flex: 1 1 auto; min-width: 0; justify-content: flex-end; overflow: hidden; gap: 6px !important; }
-      #app .topbar .user-info { min-width: 0; overflow: hidden; padding-left: 6px !important; gap: 5px !important; }
-      #app .topbar #user-nome { display: block !important; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px !important; }
-      #app .topbar .user-perfil-badge { flex-shrink: 0; }
+      #app .topbar .user-info { display: none !important; }
       /* Gestor: "Pedidos" e os dois contadores numa fileira só, menores. */
       .mapa-stats { flex-wrap: nowrap !important; padding: 3px 5px !important; max-width: calc(100% - 24px); }
       .mapa-stats .md-btn { padding: 3px 6px !important; gap: 4px !important; margin-right: 2px !important; }
@@ -2066,16 +2064,15 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
       .chat-admin-layout #chat-painel-conversa { flex: 1 !important; min-height: 0 !important; }
     }
     /* Celular estreito (até 400px): com "WALLET" no saldo, espaços menores
-       na barra do topo pra sobrar lugar pro nome da loja ao lado do selo. */
+       na barra do topo. */
     @media (max-width: 400px) {
       #app .topbar { padding: 0 6px !important; gap: 4px !important; }
       #app .topbar .hamburger-btn.md-btn { padding: 6px !important; gap: 4px !important; }
       #app .topbar .md-btn .md-rotulo { font-size: 11.5px; }
       #app .topbar .topbar-logo + div { gap: 4px !important; }
       #app .topbar .lg-btn { min-width: 32px !important; padding: 0 6px !important; }
-      #app .topbar #topbar-saldo { padding: 3px 6px !important; }
+      #app .topbar #topbar-saldo { padding: 4px 9px !important; }
       #app .topbar .topbar-right { gap: 4px !important; }
-      #app .topbar .user-info { padding-left: 4px !important; gap: 4px !important; }
     }
     /* ── DARK MODE GLOBAL OVERRIDES ── */
     html.dark body, html.dark #app, html.dark #app-body { background: var(--bg) !important; color: var(--text) !important; }
@@ -3346,7 +3343,7 @@ async function _carregarSaldoTopbar(){
         _saldoLojaAtual=_sf;_lojaCreditoAtiva=false;
         val.textContent=Math.abs(_sf).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
         val.style.color=_sf>=0?'#4ade80':'#f87171';
-        el.style.display='flex';el.style.cursor='pointer';
+        el.style.display='flex';el.style.cursor='pointer';_mdWallet(_sf);
         const _ab=document.getElementById('saldo-alerta-banner');if(_ab)_ab.style.display='none';
         _atualizarBtnCriarEntrega();return;
       }
@@ -3360,7 +3357,7 @@ async function _carregarSaldoTopbar(){
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
-      _lojaCreditoAtiva=true;el.style.cursor='pointer';
+      _lojaCreditoAtiva=true;el.style.cursor='pointer';_mdWallet(saldo);
       let alertBanner=document.getElementById('saldo-alerta-banner');
       if(saldo<100){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
@@ -3372,7 +3369,7 @@ async function _carregarSaldoTopbar(){
       // Equipe: botão clicável abre a tela de recarga na visão da equipe.
       val.textContent='0,00';
       el.style.display='flex';
-      _lojaCreditoAtiva=false;el.style.cursor='pointer';
+      _lojaCreditoAtiva=false;el.style.cursor='pointer';_mdWallet(null);
     } else {
       el.style.display='none';
       _lojaCreditoAtiva=false;
@@ -4390,8 +4387,14 @@ function _mdEstilos(){
   #topbar-saldo.md-wallet{position:relative;cursor:pointer!important}
   #topbar-saldo.md-wallet>div>span:first-child{font-size:15px!important;font-weight:800!important;font-variant-numeric:tabular-nums}
   #topbar-saldo.md-wallet .lg-wallet-label{font-size:11px!important;font-weight:800!important;letter-spacing:1px!important;color:#cbd5e1!important;text-transform:uppercase}
+  #topbar-saldo.md-wallet-baixo{background:var(--accent,#1A56DB)!important;border-color:rgba(147,197,253,.6)!important;animation:mdWalletPulso 2.4s ease-out infinite}
+  #topbar-saldo.md-wallet-baixo:hover{background:var(--accent-hover,#1649b5)!important}
+  #topbar-saldo.md-wallet-baixo>div>span:first-child,#topbar-saldo.md-wallet-baixo #saldo-valor{color:#fff!important}
+  #topbar-saldo.md-wallet-baixo.md-wallet-neg #saldo-valor{color:#fecaca!important}
+  #topbar-saldo.md-wallet-baixo .lg-wallet-label{color:#dbeafe!important}
+  @keyframes mdWalletPulso{0%{box-shadow:0 0 0 0 rgba(96,165,250,.6)}70%{box-shadow:0 0 0 6px rgba(96,165,250,0)}100%{box-shadow:0 0 0 0 rgba(96,165,250,0)}}
   @media (max-width:420px){.md-rotulo{font-size:13px}.md-btn{gap:6px}}
-  @media (prefers-reduced-motion:reduce){.md-pulsa::after,#md-dica{animation:none!important}.md-linhas i{transition:none!important}}`;
+  @media (prefers-reduced-motion:reduce){.md-pulsa::after,#md-dica,#topbar-saldo.md-wallet-baixo{animation:none!important}.md-linhas i{transition:none!important}}`;
   document.head.appendChild(st);
 }
 // aberto = gaveta aberta (celular) ou menu expandido (computador)
@@ -4445,16 +4448,24 @@ function _mdBotaoPainel(){
   b.classList.toggle('md-pulsa',+(_mdLer('aberturas_pedidos')||0)<_MD_PARAR_APOS);
   _mdSyncPainel();
 }
-// Saldo do topo (2026-10-26): mesmo anel e mesma regra do Menu — pulsa até a
-// loja abrir a recarga 5 vezes (contagem própria, no navegador).
-function _mdWallet(){
+// Saldo do topo (2026-10-27): fundo azul (o mesmo do Novo Pedido) com pulso
+// suave sempre que o saldo da loja estiver abaixo de R$ 100 (o mesmo
+// limite do aviso amarelo de saldo baixo); com R$ 100 ou
+// mais, volta ao estilo normal. Sem limite de aberturas (a regra antiga
+// parava depois de 5). Com "reduzir movimento", só o fundo azul.
+// _carregarSaldoTopbar passa o saldo (null = equipe, sem saldo próprio);
+// o goTab chama sem saldo e só garante a classe base.
+const _WALLET_SALDO_MINIMO=100;
+function _mdWallet(saldo){
   const b=document.getElementById('topbar-saldo');if(!b)return;
   _mdEstilos();
   if(!b.dataset.md){
     b.dataset.md='1';b.classList.add('md-wallet');b.setAttribute('role','button');b.setAttribute('aria-label','Saldo da carteira: abrir recarga');
-    b.addEventListener('click',()=>_mdContar('aberturas_wallet',b));
   }
-  b.classList.toggle('md-pulsa',+(_mdLer('aberturas_wallet')||0)<_MD_PARAR_APOS);
+  if(saldo===undefined)return;
+  const baixo=saldo!=null&&saldo<_WALLET_SALDO_MINIMO;
+  b.classList.toggle('md-wallet-baixo',baixo);
+  b.classList.toggle('md-wallet-neg',baixo&&saldo<0);
 }
 function _mdSyncPainel(){
   const b=document.querySelector('#mapa-container-wrap button.md-btn[onclick="toggleSidebar()"]'),sb=document.getElementById('sidebar-mapa');if(!b||!sb)return;
