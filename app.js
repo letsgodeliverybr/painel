@@ -241,7 +241,6 @@ let _faixasCachePorTabelaPag={};
 let _tabelasPrecoCache=[];
 let _saldoLojaAtual=0;
 let _lojaCreditoAtiva=false;
-let _debitosRegistrados=new Set();
 let _crLastTaxa=0;
 // Fatura em aberto (cobrancas_lojas.status='pendente') da loja logada — ver
 // bloco "FATURAS — VENCIMENTO/JUROS/BLOQUEIO" perto dos helpers de fuso.
@@ -3907,11 +3906,16 @@ async function confirmarPagamento(pedidoId){
     patch.taxa_entrega_motoboy=_calcTaxaMotoboy(_p,_faixasPagCp.length?_faixasPagCp:undefined)??parseFloat(_p.taxa_entrega||0);
   }
   await db('pedidos','PATCH',patch,`?id=eq.${pedidoId}`);
-  if(_p?.loja_id&&!_debitosRegistrados.has(pedidoId)&&await _deveDebitarSaldo(_p.loja_id)){
-    const agora=new Date().toISOString();
-    await db('creditos_lojas','POST',{loja_id:_p.loja_id,tipo:'debito',valor:parseFloat(_p.taxa_entrega)||0,observacoes:`Entrega #${_p.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
-    _debitosRegistrados.add(pedidoId);
-  }
+  // Débito único por pedido (etapa 2a, 2026-10-29): quem decide e grava é o
+  // banco (debitar_entrega: loja e taxa lidas do pedido, trava por loja).
+  // Antes o navegador gravava "Entrega #N" de novo aqui mesmo com o débito
+  // já feito na criação — a trava em memória (_debitosRegistrados) não via
+  // o débito da criação nem outra aba: 9 pedidos debitados 2× no período de
+  // crédito (R$ 218,79). Faturamento, cancelado, taxa 0 ou já debitado → a
+  // função não grava. Falha → só registra no console (pagamento segue).
+  const _rd=await _dbRpcDetalhe('debitar_entrega',{p_pedido_id:pedidoId});
+  if(!_rd.ok)console.error('[DEBITO] debitar_entrega falhou:',pedidoId,_rd.erro);
+  else if(_rd.data?.debitado)_carregarSaldoTopbar();
   await logAcao('pagamento_confirmado',{pedido_id:pedidoId});
   showNotif('✅ Pagamento Confirmado!','Entrega Finalizada Para O Motoboy');await atualizarTudo();
 }
