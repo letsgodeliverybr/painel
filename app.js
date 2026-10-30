@@ -3980,9 +3980,14 @@ function _itemTemPreco(it){return !!it&&(it.preco!=null||it.price!=null);}
 // ifood-polling grava esse texto em descricao (ALERTA_PAGAMENTO_NAO_INFORMADO)
 // e deixa pagamento_confirmado=false. Some se o ADM editar as Observações.
 // No rastreio do cliente o texto não aparece (_rastreioRenderCard).
+// Mesmo tratamento pro aviso de loja de crédito retida (2026-10-29,
+// ALERTA_LOJA_CREDITO_RETIDO no ifood-polling): vem sozinho ou depois do
+// de pagamento.
 const _ALERTA_PAGTO_IFOOD='Pagamento não informado pelo iFood';
+const _ALERTA_CREDITO_IFOOD='Loja de crédito: pedido retido';
+function _ehAvisoIfood(descricao){const d=String(descricao||'');return d.startsWith(_ALERTA_PAGTO_IFOOD)||d.startsWith(_ALERTA_CREDITO_IFOOD);}
 function _alertaPagamentoIfood(p){
-  if(p.origem!=='ifood'||!String(p.descricao||'').startsWith(_ALERTA_PAGTO_IFOOD))return'';
+  if(p.origem!=='ifood'||!_ehAvisoIfood(p.descricao))return'';
   return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;color:#92400e;font-size:12px;font-weight:600">${_icone('triangle-alert',16)}<span>${_escHtml(p.descricao)}</span></div>`;
 }
 function _blocoTrocaEndereco(p){
@@ -15210,7 +15215,7 @@ function _rastreioRenderCard(el,p,motoboy,sk){
       </div>
     </div>`:''}
     <div style="font-size:12px;color:var(--text2)">📍 ${p.endereco||'—'}</div>
-    ${p.descricao&&!String(p.descricao).startsWith(_ALERTA_PAGTO_IFOOD)?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
+    ${p.descricao&&!_ehAvisoIfood(p.descricao)?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
   `;
 }
 // Web Share API nativa quando disponível (a maioria dos navegadores mobile,
