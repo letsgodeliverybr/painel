@@ -166,7 +166,10 @@ function mapearFormaPagamento(metodo: string | null): string {
     default: return "outro";
   }
 }
+// Sem payments (/logistics não manda): forma de pagamento fica vazia em vez
+// de 'outro' — ver ALERTA_PAGAMENTO_NAO_INFORMADO em mapearPedidoIfood.
 function extrairPagamento(d: any) {
+  if (!d.payments) return { forma_pagamento: null, bandeira_cartao: null, troco_para: null };
   const metodo = d.payments?.methods?.[0] ?? null;
   return {
     forma_pagamento: mapearFormaPagamento(metodo?.method ?? metodo?.type ?? null),
@@ -214,6 +217,14 @@ function statusInicialIfood(d: any): { status: string; agendadoPara: string | nu
   };
 }
 
+// Pedido sem payments (2026-10-29, /logistics): NÃO presume que está pago.
+// Fica pagamento_confirmado=false e o aviso vai em descricao (Observações —
+// aparece no app do entregador e, com destaque, no painel; o texto é a
+// chave que o painel procura, não mudar sem mudar _alertaPagamentoIfood no
+// app.js). com_retorno/valor ficam como pedido pago online (false/0): sem
+// saber o valor, não manda o entregador cobrar nem trava a finalização.
+const ALERTA_PAGAMENTO_NAO_INFORMADO = "Pagamento não informado pelo iFood, confirmar com a loja";
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -233,7 +244,9 @@ async function mapearPedidoIfood(d: any) {
   // (sandbox do iFood só gera pedido de teste 100% pago online) — sem
   // exemplo real de pending>0 pra validar visualmente, implementado com
   // base na doc + estrutura real confirmada.
-  const pendente = d.payments?.pending ?? 0;
+  const semPagamento = !d.payments;
+  if (semPagamento) await logErro("pagamento_nao_informado", { orderId: d.id ?? d.orderId ?? null, merchantId });
+  const pendente = semPagamento ? 0 : (d.payments.pending ?? 0);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -242,7 +255,8 @@ async function mapearPedidoIfood(d: any) {
     status: statusInicial,
     status_detalhado: statusInicial,
     agendado_para: agendadoPara,
-    pagamento_confirmado: pendente <= 0,
+    pagamento_confirmado: !semPagamento && pendente <= 0,
+    ...(semPagamento ? { descricao: ALERTA_PAGAMENTO_NAO_INFORMADO } : {}),
     // Pedido pago na entrega (pending>0): nosso entregador (entrega
     // própria, não é o iFood quem entrega) coleta o valor e precisa
     // devolver pra loja — mesmo fluxo de retorno/confirmação manual já
@@ -284,22 +298,32 @@ async function mapearPedidoIfood(d: any) {
   };
 }
 
+// Detalhes do pedido (2026-10-29): /order/v1.0/orders/{id} dá 403 pra este
+// app (módulo Order não liberado — pedido de teste dd4aa63d, 28/10, nunca
+// virou pedido no painel). /logistics/v1.0/orders/{id} responde 200 com o
+// mesmo formato, mas SEM payments, benefits[], customer.documentNumber,
+// pickupCode, schedule e preço dos itens (traz merchant.merchantAddress).
+// Tenta /logistics primeiro; 403 ou 404 → /order (volta a valer quando o
+// módulo Order for liberado). Cada falha continua logada.
+const ENDPOINTS_DETALHES_PEDIDO = ["/logistics/v1.0/orders/", "/order/v1.0/orders/"];
 async function buscarDetalhesPedido(orderId: string, token: string) {
-  // Confirmado contra a doc oficial (Order API):
-  // https://developer.ifood.com.br/en-US/docs/guides/modules/order/details/
-  const res = await ifoodFetch(`/order/v1.0/orders/${orderId}`, token, { method: "GET" });
-  if (await logSeRateLimited("detalhes_pedido", res)) return null;
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    await logErro("detalhes_pedido_http", { orderId, status: res.status, body });
-    return null;
+  for (const endpoint of ENDPOINTS_DETALHES_PEDIDO) {
+    const res = await ifoodFetch(`${endpoint}${orderId}`, token, { method: "GET" });
+    if (await logSeRateLimited("detalhes_pedido", res)) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      await logErro("detalhes_pedido_http", { orderId, endpoint, status: res.status, body });
+      if (res.status === 403 || res.status === 404) continue;
+      return null;
+    }
+    try {
+      return await res.json();
+    } catch (e) {
+      await logErro("detalhes_pedido_parse", { orderId, endpoint, message: String(e) });
+      return null;
+    }
   }
-  try {
-    return await res.json();
-  } catch (e) {
-    await logErro("detalhes_pedido_parse", { orderId, message: String(e) });
-    return null;
-  }
+  return null;
 }
 
 // Códigos de evento confirmados contra a doc pública do iFood (Order
