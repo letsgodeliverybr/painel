@@ -138,7 +138,7 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
   if (!merchantId) return null;
   const { data, error } = await supabase
     .from("lojas")
-    .select("id, nome, endereco, latitude, longitude")
+    .select("id, nome, endereco, latitude, longitude, tipo_cobranca")
     .eq("ifood_merchant_id", merchantId)
     .limit(1);
   if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
@@ -225,6 +225,23 @@ function statusInicialIfood(d: any): { status: string; agendadoPara: string | nu
 // saber o valor, não manda o entregador cobrar nem trava a finalização.
 const ALERTA_PAGAMENTO_NAO_INFORMADO = "Pagamento não informado pelo iFood, confirmar com a loja";
 
+// Trava de loja de crédito (2026-10-29), até o débito automático (etapa 2b)
+// existir: o pedido entra no painel em 'recebido' com este aviso, mas o RTP
+// do iFood NÃO o leva a 'pronto' (ver processarEventoPedido) — sem isso o
+// despacho-engine mandaria pra entregador sem checar nem debitar o saldo.
+// O aviso de pagamento, quando houver, vem antes (o painel procura o texto
+// no começo das Observações).
+const ALERTA_LOJA_CREDITO_RETIDO = "Loja de crédito: pedido retido até liberar o débito automático, confirmar saldo antes de despachar";
+
+// null = não deu pra saber (erro já logado) — quem chama não libera e deixa
+// o evento pendente pra próxima rodada (na dúvida não despacha).
+async function lojaEhCredito(lojaId: string | null): Promise<boolean | null> {
+  if (!lojaId) return false;
+  const { data, error } = await supabase.from("lojas").select("tipo_cobranca").eq("id", lojaId).limit(1);
+  if (error) { await logErro("ler_tipo_cobranca_loja", { lojaId, message: error.message }); return null; }
+  return data?.[0]?.tipo_cobranca === "credito";
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -245,6 +262,9 @@ async function mapearPedidoIfood(d: any) {
   // exemplo real de pending>0 pra validar visualmente, implementado com
   // base na doc + estrutura real confirmada.
   const semPagamento = !d.payments;
+  const retidoCredito = loja?.tipo_cobranca === "credito";
+  const avisos = [semPagamento ? ALERTA_PAGAMENTO_NAO_INFORMADO : null, retidoCredito ? ALERTA_LOJA_CREDITO_RETIDO : null]
+    .filter(Boolean).join(" | ");
   if (semPagamento) await logErro("pagamento_nao_informado", { orderId: d.id ?? d.orderId ?? null, merchantId });
   const pendente = semPagamento ? 0 : (d.payments.pending ?? 0);
   return {
@@ -256,7 +276,7 @@ async function mapearPedidoIfood(d: any) {
     status_detalhado: statusInicial,
     agendado_para: agendadoPara,
     pagamento_confirmado: !semPagamento && pendente <= 0,
-    ...(semPagamento ? { descricao: ALERTA_PAGAMENTO_NAO_INFORMADO } : {}),
+    ...(avisos ? { descricao: avisos } : {}),
     // Pedido pago na entrega (pending>0): nosso entregador (entrega
     // própria, não é o iFood quem entrega) coleta o valor e precisa
     // devolver pra loja — mesmo fluxo de retorno/confirmação manual já
@@ -350,13 +370,13 @@ async function buscarDetalhesPedido(orderId: string, token: string) {
 async function processarEventoPedido(orderId: string, code: string | null, metadata: any, token: string): Promise<boolean> {
   const { data: existente, error: existeErr } = await supabase
     .from("pedidos")
-    .select("id, status")
+    .select("id, status, loja_id")
     .eq("ifood_order_id", orderId)
     .limit(1);
   if (existeErr) { await logErro("checar_pedido_existente", { orderId, message: existeErr.message }); return false; }
 
   if (existente && existente[0]) {
-    const atual = existente[0] as { id: string; status: string | null };
+    const atual = existente[0] as { id: string; status: string | null; loja_id: string | null };
     if (code === "CAN" && atual.status !== "cancelado") {
       const { error } = await supabase.from("pedidos").update({
         status: "cancelado", status_detalhado: "cancelado", updated_at: agoraBrasiliaNaive(),
@@ -368,6 +388,14 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_concluido", { orderId, message: error.message }); return false; }
     } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      // Loja de crédito fica em 'recebido' (trava acima). Erro ao ler o tipo:
+      // não libera e o RTP fica pendente, tentado de novo na próxima rodada.
+      const credito = await lojaEhCredito(atual.loja_id);
+      if (credito === null) return false;
+      if (credito) {
+        await logErro("loja_credito_retido", { orderId, pedidoId: atual.id, lojaId: atual.loja_id });
+        return true;
+      }
       // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
       // pronto" nos pedidos próprios. Só isso libera o pedido pro
       // despacho-engine (que só olha status='pronto').
@@ -519,7 +547,9 @@ async function pollOnce(token: string, merchantIds: string[] | null): Promise<bo
   const res = await ifoodFetch("/events/v1.0/events:polling?excludeHeartbeat=true", token, { method: "GET", headers });
 
   if (await logSeRateLimited("polling", res)) return true;
-  if (res.status === 204) return false;
+  // 204 = nada novo no iFood; mesmo assim reprocessa os pendentes (ex.: RTP
+  // que falhou ao ler a loja) — antes só eram tentados quando chegava evento.
+  if (res.status === 204) { await processarEventosPendentes(token); return false; }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     await logErro("polling_http", { status: res.status, body });
