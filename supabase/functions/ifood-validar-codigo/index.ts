@@ -122,6 +122,28 @@ async function montarCorpoAssignDriver(pedidoId: string): Promise<string | undef
   });
 }
 
+// verifyDeliveryCode (2026-10-29): /order/v1.0 é do módulo Order, que dá 403
+// pra este app (GET de detalhes confirmado em 29/10); o módulo Logistics lista
+// POST /logistics/v1.0/orders/{id}/verifyDeliveryCode. Tenta logística
+// primeiro; 403 ou 404 → /order, como antes (a falha da primeira fica no log).
+// validatePickupCode continua só em /order (sem equivalente confirmado em
+// logística).
+async function postCodigoIfood(ifoodOrderId: string, endpoint: string, code: string, token: string, pedidoId: string): Promise<Response> {
+  const bases = endpoint === "verifyDeliveryCode" ? ["/logistics/v1.0/orders/", "/order/v1.0/orders/"] : ["/order/v1.0/orders/"];
+  let res: Response | null = null;
+  for (let i = 0; i < bases.length; i++) {
+    res = await fetch(`${IFOOD_BASE_URL}${bases[i]}${ifoodOrderId}/${endpoint}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    if (i === bases.length - 1 || (res.status !== 403 && res.status !== 404)) break;
+    const bodyText = await res.text().catch(() => "");
+    await logErro("validar_codigo_fallback", { pedidoId, endpoint, base: bases[i], status: res.status, body: bodyText });
+  }
+  return res!;
+}
+
 async function enviarFilaPendente(pedidoId: string, ifoodOrderId: string, token: string): Promise<{ evento: string; erro: string } | null> {
   const { data: fila, error } = await supabase
     .from("ifood_status_queue").select("id, evento, tentativas")
@@ -249,15 +271,21 @@ serve(async (req) => {
 
     const endpoint = action === "coleta" ? "validatePickupCode" : "verifyDeliveryCode";
     const codeEnviado = String(code).trim();
-    const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${pedido.ifood_order_id}/${endpoint}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ code: codeEnviado }),
-    });
+    const res = await postCodigoIfood(pedido.ifood_order_id, endpoint, codeEnviado, token, pedido_id);
     if (res.status === 429) return json({ error: "Rate limit do iFood — tenta de novo em instantes" }, 429);
     if (!res.ok) {
       const bodyText = await res.text().catch(() => "");
       const traduzido = traduzirErroIfood(res.status, bodyText);
+      // Código de entrega já validado antes (2026-10-26, pedido #1942: o
+      // iFood respondeu 422 ORDER_ALREADY_CONFIRMED a cada nova tentativa).
+      // Não é erro: a entrega está confirmada no iFood. Grava a validação se
+      // ainda faltava e responde ok — o painel mostra em verde e o app do
+      // entregador segue e finaliza, sem pedir o código de novo.
+      if (action === "entrega" && traduzido.ifoodCode === "ORDER_ALREADY_CONFIRMED") {
+        await supabase.from("pedidos").update({ ifood_entrega_validada_em: new Date().toISOString() })
+          .eq("id", pedido.id).is("ifood_entrega_validada_em", null);
+        return json({ ok: true, jaConfirmado: true, mensagem: "Entrega já confirmada. Não é preciso digitar o código de novo." });
+      }
       await logErro("validar_codigo_http", {
         pedidoId: pedido_id, action, status: res.status, body: bodyText, codeEnviado, tipoCode: typeof code,
       });
