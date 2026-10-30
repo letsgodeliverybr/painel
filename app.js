@@ -3973,6 +3973,18 @@ function _indicadorPrazoPedido(p){
 // rejeitou automaticamente do lado dele, então só mostra o aviso — os
 // botões continuam clicáveis mas a function no backend também recusa e
 // limpa o estado (dupla checagem, front e back).
+// Item sem preço (2026-10-29): pedido do iFood buscado em /logistics não
+// traz preço por item — esconde o valor em vez de mostrar "R$ 0,00".
+function _itemTemPreco(it){return !!it&&(it.preco!=null||it.price!=null);}
+// Pedido do iFood que chegou sem forma de pagamento (2026-10-29): o
+// ifood-polling grava esse texto em descricao (ALERTA_PAGAMENTO_NAO_INFORMADO)
+// e deixa pagamento_confirmado=false. Some se o ADM editar as Observações.
+// No rastreio do cliente o texto não aparece (_rastreioRenderCard).
+const _ALERTA_PAGTO_IFOOD='Pagamento não informado pelo iFood';
+function _alertaPagamentoIfood(p){
+  if(p.origem!=='ifood'||!String(p.descricao||'').startsWith(_ALERTA_PAGTO_IFOOD))return'';
+  return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;color:#92400e;font-size:12px;font-weight:600">${_icone('triangle-alert',16)}<span>${_escHtml(p.descricao)}</span></div>`;
+}
 function _blocoTrocaEndereco(p){
   if(!p.troca_endereco_novo||!p.troca_endereco_solicitada_em)return'';
   const solicitadoEm=_parseUtc(p.troca_endereco_solicitada_em).getTime();
@@ -4126,13 +4138,14 @@ function abrirInfoPedido(pedidoId){
         <div><div style="font-size:11px;color:var(--text3);font-weight:600">Previsão De Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
         <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
+      ${_alertaPagamentoIfood(p)}
       ${_blocoTrocaEndereco(p)}
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
         ${step(true,'Em Preparo')}${stepLine(stepsDone(sk))}${step(stepsDone(sk),'Coletado')}${stepLine(stepsA(sk))}${step(stepsA(sk),'A caminho')}${stepLine(stepsF(sk))}${step(stepsF(sk),'Entregue')}
       </div>
       ${itens.length?`<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens Do Pedido</div>
         <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
-          ${itens.map(it=>`<div style="padding:8px 12px;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span></div>${it.observations?`<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${it.observations}</div>`:''}</div>`).join('')}
+          ${itens.map(it=>`<div style="padding:8px 12px;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><span style="color:var(--text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span>${_itemTemPreco(it)?`<span style="color:#10b981;font-weight:700">R$ ${(parseFloat(it.preco||it.price||0)*((it.quantidade||1))).toFixed(2)}</span>`:''}</div>${it.observations?`<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${it.observations}</div>`:''}</div>`).join('')}
           ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:8px 12px;font-weight:700"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
         </div>
       </div>`:''}
@@ -5360,8 +5373,9 @@ function renderPedidosLista(){
       const _sec=(titulo)=>`<div style="font-size:9px;font-weight:700;color:var(--sb-text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${titulo}</div>`;
       const expandido=isExpanded?`
         <div style="margin-top:10px;border-top:1px solid var(--sb-border);padding-top:10px">
+          ${_alertaPagamentoIfood(p)}
           ${itens.length?`<div style="margin-bottom:12px">${_sec('📦 Itens Do Pedido')}
-            ${itens.map(it=>`<div style="padding:3px 0;border-bottom:1px solid var(--sb-border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span></div>${it.observations?`<div style="font-size:10px;color:var(--sb-text3);margin-top:1px">💬 ${it.observations}</div>`:''}</div>`).join('')}
+            ${itens.map(it=>`<div style="padding:3px 0;border-bottom:1px solid var(--sb-border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--sb-text)">${it.quantidade||1}x ${it.nome||it.name||'—'}</span>${_itemTemPreco(it)?`<span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||1)).toFixed(2)}</span>`:''}</div>${it.observations?`<div style="font-size:10px;color:var(--sb-text3);margin-top:1px">💬 ${it.observations}</div>`:''}</div>`).join('')}
             ${p.total_pedido?`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:5px 0"><span style="color:var(--sb-text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
             ${p.forma_pagamento?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">💳 ${p.forma_pagamento}${p.bandeira_cartao?` (${p.bandeira_cartao})`:''}${p.troco_para?` — troco para R$ ${parseFloat(p.troco_para).toFixed(2)}`:''}</div>`:''}
             ${p.cupom_valor?`<div style="font-size:11px;color:var(--sb-text3);margin-top:2px">🏷️ Cupom: R$ ${parseFloat(p.cupom_valor).toFixed(2)}${Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?` (${p.cupom_detalhes[0].sponsorshipValues.map(s=>s.name).join(', ')})`:''}</div>`:''}
@@ -13211,7 +13225,7 @@ function _imprimirComanda(pedidoId){
   if(!p)return;
   const itens=Array.isArray(p.itens)?p.itens:[];
   const dataHora=p.created_at?formatarData(p.created_at)+' '+formatarHora(p.created_at):'';
-  const itensHtml=itens.map(it=>`<div class="item"><div class="item-linha"><span>${it.quantidade||it.quantity||1}x ${_escHtml(it.nome||it.name||'—')}</span><span>R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>${it.observations?`<div class="obs">↳ ${_escHtml(it.observations)}</div>`:''}</div>`).join('');
+  const itensHtml=itens.map(it=>`<div class="item"><div class="item-linha"><span>${it.quantidade||it.quantity||1}x ${_escHtml(it.nome||it.name||'—')}</span>${_itemTemPreco(it)?`<span>R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span>`:''}</div>${it.observations?`<div class="obs">↳ ${_escHtml(it.observations)}</div>`:''}</div>`).join('');
   const pagamentoTxt=p.forma_pagamento?`${_escHtml(p.forma_pagamento)}${p.bandeira_cartao?` (${_escHtml(p.bandeira_cartao)})`:''}`:'';
   const patrocinadores=Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?p.cupom_detalhes[0].sponsorshipValues.map(s=>_escHtml(s.name)).join(', '):'';
   const w=window.open('','_blank','width=420,height=720');
@@ -15191,12 +15205,12 @@ function _rastreioRenderCard(el,p,motoboy,sk){
     ${itens.length?`<div style="margin-bottom:10px">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">📦 Itens</div>
       <div style="background:var(--surface2);border-radius:8px;overflow:hidden">
-        ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${it.quantidade||it.quantity||1}x ${it.nome||it.name||'—'}</span><span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span></div>`).join('')}
+        ${itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text)">${it.quantidade||it.quantity||1}x ${it.nome||it.name||'—'}</span>${_itemTemPreco(it)?`<span style="color:#10b981;font-weight:700">R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span>`:''}</div>`).join('')}
         ${p.total_pedido?`<div style="display:flex;justify-content:space-between;padding:6px 10px;font-weight:700;font-size:13px"><span style="color:var(--text)">Total</span><span style="color:#10b981">R$ ${parseFloat(p.total_pedido).toFixed(2)}</span></div>`:''}
       </div>
     </div>`:''}
     <div style="font-size:12px;color:var(--text2)">📍 ${p.endereco||'—'}</div>
-    ${p.descricao?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
+    ${p.descricao&&!String(p.descricao).startsWith(_ALERTA_PAGTO_IFOOD)?`<div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:6px 8px;margin-top:6px">💬 ${p.descricao}</div>`:''}
   `;
 }
 // Web Share API nativa quando disponível (a maioria dos navegadores mobile,
