@@ -242,6 +242,67 @@ async function lojaEhCredito(lojaId: string | null): Promise<boolean | null> {
   return data?.[0]?.tipo_cobranca === "credito";
 }
 
+// Km e taxas do pedido iFood (2026-10-30), do mesmo jeito do Novo Pedido do
+// painel (_criarPedidoInterno): distância de rota loja → cliente pelo Google
+// Routes (carro, com alternativas, a mais curta que não demore mais de 30% —
+// _rotaMaisCurtaAceitavel do app.js); sem resposta do Google, linha reta, como
+// o painel. Preço pela tabela de cobrança/pagamento da loja + preço dinâmico
+// vigente, via od_calcular_preco (a mesma conta do painel, já usada pelo Open
+// Delivery). Km 0 (cliente no endereço da loja) ou sem km cobra e paga a faixa
+// mínima — od_valor_faixa usa 1 km, igual ao "||1" do painel —, nunca 0.
+// Antes nada disso era gravado: distancia_km e taxa_motoboy ficavam no
+// default 0 (motoboy aparecia com R$ 0) e taxa_entrega era a taxa que o
+// cliente pagou ao iFood. Se o preço falhar, taxa_motoboy fica null (não 0)
+// e o painel recalcula pela faixa.
+const ROTA_TEMPO_MAX = 1.3;
+function kmLinhaReta(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const rad = (g: number) => g * Math.PI / 180;
+  const dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+async function kmRota(lat1: number, lng1: number, lat2: number, lng2: number): Promise<number | null> {
+  const key = Deno.env.get("GOOGLE_ROUTES_KEY");
+  if (!key) return null;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+      method: "POST", signal: ctl.signal,
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key, "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.routeLabels" },
+      body: JSON.stringify({ origin: { location: { latLng: { latitude: lat1, longitude: lng1 } } },
+        destination: { location: { latLng: { latitude: lat2, longitude: lng2 } } }, travelMode: "DRIVE", computeAlternativeRoutes: true }),
+    });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const validas = ((await r.json())?.routes || []).filter((x: any) => x?.distanceMeters > 0);
+    if (!validas.length) return null;
+    const seg = (x: any) => parseFloat(String(x?.duration || "").replace("s", "")) || 0;
+    const padrao = validas.find((x: any) => (x.routeLabels || []).includes("DEFAULT_ROUTE")) || validas[0];
+    const limite = seg(padrao) * ROTA_TEMPO_MAX;
+    const aceitas = limite > 0 ? validas.filter((x: any) => x === padrao || (seg(x) > 0 && seg(x) <= limite)) : [padrao];
+    return aceitas.reduce((a: any, b: any) => b.distanceMeters < a.distanceMeters ? b : a).distanceMeters / 1000;
+  } catch { return null; }
+}
+async function calcularKmETaxas(loja: any, lat: number | null, lng: number | null, comRetorno: boolean, orderId: string | null) {
+  if (!loja?.id) return { taxa_motoboy: null };
+  let km: number | null = null;
+  const temCoord = lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+  if (temCoord && loja.latitude != null && loja.longitude != null) {
+    const [la, lo] = [Number(loja.latitude), Number(loja.longitude)];
+    km = await kmRota(la, lo, lat!, lng!) ?? kmLinhaReta(la, lo, lat!, lng!);
+    km = Math.round(km * 100) / 100;
+  }
+  const dist = km !== null ? { distancia_km: km } : {};
+  const { data, error } = await supabase.rpc("od_calcular_preco", { p_loja_id: loja.id, p_km: km, p_retorno: comRetorno });
+  const taxa = Number(data?.taxa), moto = Number(data?.taxa_moto);
+  if (error || !Number.isFinite(taxa) || !Number.isFinite(moto)) {
+    await logErro("calcular_preco_pedido", { orderId, lojaId: loja.id, km, message: error?.message ?? "sem preço", via: "polling" });
+    return { ...dist, taxa_motoboy: null };
+  }
+  return { ...dist, taxa_entrega: taxa, taxa_motoboy: moto, taxa_entrega_motoboy: moto,
+    preco_dinamico: Number(data.pd) || 0, preco_dinamico_origem: data.pd_origem ?? null };
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -267,6 +328,8 @@ async function mapearPedidoIfood(d: any) {
     .filter(Boolean).join(" | ");
   if (semPagamento) await logErro("pagamento_nao_informado", { orderId: d.id ?? d.orderId ?? null, merchantId });
   const pendente = semPagamento ? 0 : (d.payments.pending ?? 0);
+  const precos = await calcularKmETaxas(loja, d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
+    d.delivery?.deliveryAddress?.coordinates?.longitude ?? null, pendente > 0, d.id ?? d.orderId ?? null);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -309,6 +372,7 @@ async function mapearPedidoIfood(d: any) {
     valor: pendente,
     total_pedido: d.total?.orderAmount ?? 0,
     taxa_entrega: d.total?.deliveryFee ?? 0,
+    ...precos,
     ...pagamento,
     ...cupom,
     recebido_em: statusInicial === "recebido" ? agora : null,
