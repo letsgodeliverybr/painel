@@ -2422,7 +2422,8 @@ async function processarAutoPronto(){
   const agora=new Date();
   // Pedido de teste do Open Delivery (od_teste) nunca vira pronto sozinho
   // (2026-10-06): ficava visível aos entregadores e foi aceito num teste.
-  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&!p.od_teste&&!_pedidoStatusLock.has(p.id));
+  // Pedido do iFood de loja de crédito retido também fica de fora (2026-10-29).
+  const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&!p.od_teste&&!_ifoodCreditoRetido(p)&&!_pedidoStatusLock.has(p.id));
   for(const p of pedidosRecebidos){
     const base=p.recebido_em||p.created_at;if(!base)continue;
     const diff=(agora-new Date(base))/1000;
@@ -3017,6 +3018,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
       showNotif('Pedido Já Tem Entregador','Remova O Motoboy Alocado Antes De Marcar Como Pronto De Novo.','var(--yellow)');
       return;
     }
+    if(!_confirmarProntoCreditoRetido(_pChk))return;
   }
   // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
   // ver comentário lá. Pedido com_retorno não pode finalizar por aqui sem
@@ -3275,6 +3277,7 @@ async function _confirmarEntregaParceira(parceiro,pedidoId){
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
+  if(!_confirmarProntoCreditoRetido(p))return;
   // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
   // era possível marcar "pronto" (e o pedido seguir despacho normal,
   // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
@@ -3986,6 +3989,14 @@ function _itemTemPreco(it){return !!it&&(it.preco!=null||it.price!=null);}
 const _ALERTA_PAGTO_IFOOD='Pagamento não informado pelo iFood';
 const _ALERTA_CREDITO_IFOOD='Loja de crédito: pedido retido';
 function _ehAvisoIfood(descricao){const d=String(descricao||'');return d.startsWith(_ALERTA_PAGTO_IFOOD)||d.startsWith(_ALERTA_CREDITO_IFOOD);}
+// Pedido do iFood de loja de crédito retido pelo ifood-polling (aviso sozinho
+// ou depois do de pagamento): o pronto automático não o leva a 'pronto' e os
+// caminhos manuais pedem confirmação — sem débito automático (etapa 2b)
+// ainda, 'pronto' manda pro despacho sem debitar o saldo.
+function _ifoodCreditoRetido(p){return !!p&&p.origem==='ifood'&&String(p.descricao||'').includes(_ALERTA_CREDITO_IFOOD);}
+function _confirmarProntoCreditoRetido(p){
+  return !_ifoodCreditoRetido(p)||confirm(`Pedido #${p.numero||String(p.id||'').substring(0,6)} é de loja de crédito e ainda não foi debitado.\nMarcar como pronto manda para o despacho sem debitar o saldo. Continuar?`);
+}
 function _alertaPagamentoIfood(p){
   if(p.origem!=='ifood'||!_ehAvisoIfood(p.descricao))return'';
   return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;color:#92400e;font-size:12px;font-weight:600">${_icone('triangle-alert',16)}<span>${_escHtml(p.descricao)}</span></div>`;
@@ -9581,6 +9592,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(novoStatus==='finalizado'&&p.com_retorno&&!p.pagamento_confirmado){
     return confirmarPagamento(pedidoId);
   }
+  if(novoStatus==='pronto'&&!_confirmarProntoCreditoRetido(p))return;
   if(novoStatus==='cancelado'&&!confirm(`Cancelar O Pedido #${p.numero||p.id?.substring(0,6)}?\nEsta Ação Pode Ser Revertida Alterando O Status Novamente.`))return;
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
