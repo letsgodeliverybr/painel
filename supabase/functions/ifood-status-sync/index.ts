@@ -201,7 +201,7 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
   if (!merchantId) return null;
   const { data, error } = await supabase
     .from("lojas")
-    .select("id, nome, endereco, latitude, longitude")
+    .select("id, nome, endereco, latitude, longitude, tipo_cobranca")
     .eq("ifood_merchant_id", merchantId)
     .limit(1);
   if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
@@ -233,7 +233,10 @@ function mapearFormaPagamento(metodo: string | null): string {
     default: return "outro";
   }
 }
+// Sem payments (/logistics não manda): forma de pagamento fica vazia em vez
+// de 'outro' — ver ALERTA_PAGAMENTO_NAO_INFORMADO em mapearPedidoIfood.
 function extrairPagamento(d: any) {
+  if (!d.payments) return { forma_pagamento: null, bandeira_cartao: null, troco_para: null };
   const metodo = d.payments?.methods?.[0] ?? null;
   return {
     forma_pagamento: mapearFormaPagamento(metodo?.method ?? metodo?.type ?? null),
@@ -282,6 +285,21 @@ function statusInicialIfood(d: any): { status: string; agendadoPara: string | nu
   };
 }
 
+// Mesmos avisos do ifood-polling (2026-10-29; o painel procura esses textos
+// no começo das Observações — não mudar sem mudar _ehAvisoIfood no app.js):
+// pedido sem payments não fica como pago; loja de crédito fica em
+// 'recebido' até o débito automático (etapa 2b) — o RTP não a libera.
+const ALERTA_PAGAMENTO_NAO_INFORMADO = "Pagamento não informado pelo iFood, confirmar com a loja";
+const ALERTA_LOJA_CREDITO_RETIDO = "Loja de crédito: pedido retido até liberar o débito automático, confirmar saldo antes de despachar";
+
+// null = não deu pra saber (erro já logado).
+async function lojaEhCredito(lojaId: string | null): Promise<boolean | null> {
+  if (!lojaId) return false;
+  const { data, error } = await supabase.from("lojas").select("tipo_cobranca").eq("id", lojaId).limit(1);
+  if (error) { await logErro("ler_tipo_cobranca_loja", { lojaId, message: error.message }); return null; }
+  return data?.[0]?.tipo_cobranca === "credito";
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -293,7 +311,12 @@ async function mapearPedidoIfood(d: any) {
   // Mesmo fix de ifood-polling/index.ts (ver comentário lá, 2026-09-19) —
   // pagamento_confirmado/valor/com_retorno lidos de payments.pending, não
   // presumidos sempre pago online.
-  const pendente = d.payments?.pending ?? 0;
+  const semPagamento = !d.payments;
+  const retidoCredito = loja?.tipo_cobranca === "credito";
+  const avisos = [semPagamento ? ALERTA_PAGAMENTO_NAO_INFORMADO : null, retidoCredito ? ALERTA_LOJA_CREDITO_RETIDO : null]
+    .filter(Boolean).join(" | ");
+  if (semPagamento) await logErro("pagamento_nao_informado", { orderId: d.id ?? d.orderId ?? null, merchantId, via: "webhook" });
+  const pendente = semPagamento ? 0 : (d.payments.pending ?? 0);
   return {
     ifood_order_id: d.id ?? d.orderId,
     numero: String(d.displayId ?? d.id),
@@ -302,7 +325,8 @@ async function mapearPedidoIfood(d: any) {
     status: statusInicial,
     status_detalhado: statusInicial,
     agendado_para: agendadoPara,
-    pagamento_confirmado: pendente <= 0,
+    pagamento_confirmado: !semPagamento && pendente <= 0,
+    ...(avisos ? { descricao: avisos } : {}),
     com_retorno: pendente > 0,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
@@ -336,23 +360,32 @@ async function mapearPedidoIfood(d: any) {
   };
 }
 
+// Mesma regra do ifood-polling (2026-10-29): /order/v1.0 dá 403 pra este app
+// (módulo Order não liberado — pedido 36a3a6ac, 30/10, nunca virou pedido);
+// /logistics/v1.0/orders/{id} responde com o mesmo formato, sem payments.
+// Tenta /logistics primeiro; 403 ou 404 → /order. Cada falha fica no log.
+const ENDPOINTS_DETALHES_PEDIDO = ["/logistics/v1.0/orders/", "/order/v1.0/orders/"];
 async function buscarDetalhesPedidoWebhook(orderId: string, token: string) {
-  const res = await fetch(`${IFOOD_BASE_URL}/order/v1.0/orders/${orderId}`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (await logSeRateLimited("webhook_detalhes_pedido", res)) return null;
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    await logErro("webhook_detalhes_pedido_http", { orderId, status: res.status, body });
-    return null;
+  for (const endpoint of ENDPOINTS_DETALHES_PEDIDO) {
+    const res = await fetch(`${IFOOD_BASE_URL}${endpoint}${orderId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (await logSeRateLimited("webhook_detalhes_pedido", res)) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      await logErro("webhook_detalhes_pedido_http", { orderId, endpoint, status: res.status, body });
+      if (res.status === 403 || res.status === 404) continue;
+      return null;
+    }
+    try {
+      return await res.json();
+    } catch (e) {
+      await logErro("webhook_detalhes_pedido_parse", { orderId, endpoint, message: String(e) });
+      return null;
+    }
   }
-  try {
-    return await res.json();
-  } catch (e) {
-    await logErro("webhook_detalhes_pedido_parse", { orderId, message: String(e) });
-    return null;
-  }
+  return null;
 }
 
 // Códigos de evento confirmados contra a doc pública do iFood (Order
@@ -392,13 +425,13 @@ async function processarEventoWebhook(evento: any): Promise<void> {
 
   const { data: existente, error: existeErr } = await supabase
     .from("pedidos")
-    .select("id, status")
+    .select("id, status, loja_id")
     .eq("ifood_order_id", orderId)
     .limit(1);
   if (existeErr) throw new Error(`falha ao checar pedido existente ${orderId}: ${existeErr.message}`);
 
   if (existente && existente[0]) {
-    const atual = existente[0] as { id: string; status: string | null };
+    const atual = existente[0] as { id: string; status: string | null; loja_id: string | null };
     if (code === "CAN" && atual.status !== "cancelado") {
       const { error } = await supabase.from("pedidos").update({
         status: "cancelado", status_detalhado: "cancelado", updated_at: agoraBrasiliaNaive(),
@@ -410,6 +443,14 @@ async function processarEventoWebhook(evento: any): Promise<void> {
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao concluir pedido ${orderId}: ${error.message}`);
     } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      // Loja de crédito fica em 'recebido'. Erro ao ler o tipo: exceção, o
+      // evento fica pendente e é tentado de novo.
+      const credito = await lojaEhCredito(atual.loja_id);
+      if (credito === null) throw new Error(`falha ao ler tipo de cobrança da loja do pedido ${orderId}`);
+      if (credito) {
+        await logErro("loja_credito_retido", { orderId, pedidoId: atual.id, lojaId: atual.loja_id, via: "webhook" });
+        return;
+      }
       // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
       // pronto" nos pedidos próprios. Só isso libera o pedido pro
       // despacho-engine (que só olha status='pronto').
