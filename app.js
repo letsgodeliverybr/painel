@@ -2264,6 +2264,37 @@ async function db(table,method='GET',body=null,filters='',tokenOverride){
     return[];
   }
 }
+// POST de pedido que devolve o motivo da recusa (etapa 2c): o banco recusa
+// pedido de loja de crédito sem saldo (tg_pedido_painel_checar_saldo, HINT
+// 'saldo_insuficiente') e db() engoliria a mensagem.
+async function _dbPostPedido(body){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/pedidos`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
+    const t=await r.text();let j=null;try{j=t?JSON.parse(t):null;}catch{}
+    if(!r.ok){console.error('[db] ERRO',r.status,'POST pedidos',t);return{ok:false,erro:j?.message||`Erro ${r.status}`,hint:j?.hint||null,data:[]};}
+    return{ok:true,data:Array.isArray(j)?j:[]};
+  }catch(e){console.error('[db] EXCEPTION POST pedidos',e);return{ok:false,erro:'Erro De Conexão.',hint:null,data:[]};}
+}
+// Aviso de saldo insuficiente com botão de recarga (etapa 2c). detalhe vem
+// do banco ("saldo R$ X, taxa R$ Y, faltam R$ Z") ou é montado aqui.
+function _avisoSaldoInsuficiente(detalhe){
+  document.getElementById('aviso-saldo-insuf')?.remove();
+  const ov=document.createElement('div');ov.id='aviso-saldo-insuf';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:Inter,sans-serif';
+  const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  ov.innerHTML=`<div style="background:#fff;border-radius:14px;padding:24px;max-width:380px;width:90%;text-align:center;color:#111">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Saldo Insuficiente</div>
+    <div style="font-size:14px;color:#374151;line-height:1.5;margin-bottom:6px">A entrega não foi criada: o saldo da sua carteira não cobre a taxa.</div>
+    ${detalhe?`<div style="font-size:13px;color:#6b7280;margin-bottom:16px">${esc(detalhe)}</div>`:'<div style="margin-bottom:16px"></div>'}
+    <button id="aviso-saldo-recarregar" style="width:100%;background:#1A56DB;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">Recarregar Agora</button>
+    <button id="aviso-saldo-fechar" style="width:100%;background:none;color:#6b7280;border:1px solid #e5e7eb;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">Fechar</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.querySelector('#aviso-saldo-fechar').onclick=()=>ov.remove();
+  ov.querySelector('#aviso-saldo-recarregar').onclick=()=>{ov.remove();_abrirModalRecargaPix();};
+  _carregarSaldoTopbar();
+}
 
 // Chama uma função RPC do Postgres (POST /rest/v1/rpc/<fn>) — usada quando a
 // agregação precisa rodar no banco (GROUP BY/COUNT) em vez de trazer linhas
@@ -2810,7 +2841,7 @@ async function _criarEntregaRapida(){
     return;
   }
   const _lojaGuarda=allLojas.find(l=>l.id===currentUser?.loja_id);
-  if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){showNotif('Saldo Insuficiente','Recarregue Seu Saldo Para Criar Entregas.','#f59e0b');return;}
+  if(currentPerfil==='loja'&&(_lojaGuarda?.tipo_cobranca||'faturamento')==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa))){_avisoSaldoInsuficiente(_crLastTaxa>0?`Saldo R$ ${_saldoLojaAtual.toFixed(2).replace('.',',')}, taxa da entrega R$ ${_crLastTaxa.toFixed(2).replace('.',',')}.`:'');return;}
   // Fatura vencida NÃO bloqueia mais a criação de entregas — só o aviso
   // visual (banner fixo + rótulo do botão) continua, ver
   // _atualizarBtnCriarEntrega(). Só saldo insuficiente (crédito) bloqueia
@@ -2844,15 +2875,16 @@ async function _criarEntregaRapida(){
   const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,taxa_entrega_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
-  try{result=await db('pedidos','POST',pedido);}catch(e){console.error('[CR] db() lançou exceção:',e);showNotif('Erro','Falha Ao Criar Entrega','var(--red)');return;}
+  // Etapa 2c: quem confere o saldo e debita é o banco, na gravação.
+  const _rCr=await _dbPostPedido(pedido);
+  if(!_rCr.ok&&_rCr.hint==='saldo_insuficiente'){_avisoSaldoInsuficiente(_rCr.erro);return;}
+  if(!_rCr.ok){showNotif('Erro','Falha Ao Criar Entrega','var(--red)');return;}
+  result=_rCr.data;
   console.log('[CR] resultado POST:', result);
   if(result&&result.length>0){
     showNotif('✅ Entrega Criada!',`#${numFinal}`);
-    if(currentPerfil==='loja'&&lojaId&&await _deveDebitarSaldo(lojaId)){
-      const _agora=new Date().toISOString();
-      await db('creditos_lojas','POST',{loja_id:lojaId,tipo:'debito',valor:_taxaEntrega,observacoes:`Entrega #${numFinal}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
-      _carregarSaldoTopbar();
-    }
+    // débito "Entrega #N" já gravado pelo banco (tg_pedido_painel_debitar)
+    if(lojaId&&await _deveDebitarSaldo(lojaId))_carregarSaldoTopbar();
     if(selCrEl&&!selCrEl.disabled)selCrEl.selectedIndex=0;
     const _crNpEl=document.getElementById('cr-numero-pedido');if(_crNpEl)_crNpEl.value='';
     document.getElementById('cr-cliente').value='';
@@ -6207,15 +6239,15 @@ async function _criarPedidoInterno(){
   // salvarEdicaoPedido. new Date(agendadoParaVal).toISOString() converte
   // a hora local escolhida (Brasília) pra UTC de verdade.
   if(agendarOn&&agendadoParaVal)pedido.agendado_para=new Date(agendadoParaVal).toISOString();
-  const result=await db('pedidos','POST',pedido);
+  // Etapa 2c: saldo conferido e débito gravado pelo banco, na gravação.
+  const _rNp=await _dbPostPedido(pedido);
+  if(!_rNp.ok&&_rNp.hint==='saldo_insuficiente'){if(fb)fb.innerHTML='';_avisoSaldoInsuficiente(_rNp.erro);return;}
+  const result=_rNp.data;
   await logAcao('criar_pedido',{numero,endereco,valor,origem:currentPerfil,loja_id:finalLojaId,agendado:agendarOn||false});
   if(result&&result.length>0){
     console.log('[DEBITO] perfil:', currentPerfil, 'loja:', finalLojaId, 'taxa:', taxa);
-    if(currentPerfil==='loja'&&finalLojaId&&taxa>0&&await _deveDebitarSaldo(finalLojaId)){
-      const _agora=new Date().toISOString();
-      await db('creditos_lojas','POST',{loja_id:finalLojaId,tipo:'debito',valor:taxa,observacoes:`Entrega #${numero}`,data:_dataHojeBrasilia(),created_at:_agora,updated_at:_agora});
-      _carregarSaldoTopbar();
-    }
+    // débito "Entrega #N" já gravado pelo banco (tg_pedido_painel_debitar)
+    if(finalLojaId&&taxa>0&&await _deveDebitarSaldo(finalLojaId))_carregarSaldoTopbar();
     const msgExtra=agendarOn?`⏰ ${formatarDataHora(agendadoParaVal)}`:gorjeta>0?`🎁 Gorjeta: R$ ${gorjeta.toFixed(2)}`:'⏱ Pronto Em 60s';
     if(fb)fb.innerHTML=`<div style="background:#22c55e18;border:1px solid #22c55e30;border-radius:9px;padding:12px;font-size:13px">✅ <b>Pedido #${numero} Criado!</b><br><span style="color:var(--text2)">📍 ${distKm} km • ${msgExtra}</span></div>`;
     showNotif('Pedido Criado!',agendarOn?'Agendado':'Ficará Pronto Em 60s');_npDesenharRota(null);setTimeout(()=>fecharModal('modal-pedido'),2500);
