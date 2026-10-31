@@ -290,15 +290,13 @@ function statusInicialIfood(d: any): { status: string; agendadoPara: string | nu
 // pedido sem payments não fica como pago; loja de crédito fica em
 // 'recebido' até o débito automático (etapa 2b) — o RTP não a libera.
 const ALERTA_PAGAMENTO_NAO_INFORMADO = "Pagamento não informado pelo iFood, confirmar com a loja";
-const ALERTA_LOJA_CREDITO_RETIDO = "Loja de crédito: pedido retido até liberar o débito automático, confirmar saldo antes de despachar";
+// Etapa 2b (2026-10-31): o pedido já nasce retido (credito_retido_em) e o
+// banco tenta debitar na hora (processar_credito_pedido_ifood). Se o saldo
+// cobre, o próprio banco tira este aviso; se não, troca por "saldo
+// insuficiente". O prefixo "Loja de crédito: pedido retido" é o que o painel
+// procura — não mudar sem mudar _ALERTA_CREDITO_IFOOD no app.js.
+const ALERTA_LOJA_CREDITO_RETIDO = "Loja de crédito: pedido retido, conferindo saldo";
 
-// null = não deu pra saber (erro já logado).
-async function lojaEhCredito(lojaId: string | null): Promise<boolean | null> {
-  if (!lojaId) return false;
-  const { data, error } = await supabase.from("lojas").select("tipo_cobranca").eq("id", lojaId).limit(1);
-  if (error) { await logErro("ler_tipo_cobranca_loja", { lojaId, message: error.message }); return null; }
-  return data?.[0]?.tipo_cobranca === "credito";
-}
 
 // Km e taxas do pedido iFood (2026-10-30), do mesmo jeito do Novo Pedido do
 // painel (_criarPedidoInterno): distância de rota loja → cliente pelo Google
@@ -390,6 +388,8 @@ async function mapearPedidoIfood(d: any) {
     agendado_para: agendadoPara,
     pagamento_confirmado: !semPagamento && pendente <= 0,
     ...(avisos ? { descricao: avisos } : {}),
+    // Etapa 2b: nasce retido (na dúvida não despacha); o banco libera.
+    ...(retidoCredito ? { credito_retido_em: new Date().toISOString(), credito_motivo_retencao: "aguardando_debito" } : {}),
     com_retorno: pendente > 0,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
@@ -489,13 +489,14 @@ async function processarEventoWebhook(evento: any): Promise<void> {
 
   const { data: existente, error: existeErr } = await supabase
     .from("pedidos")
-    .select("id, status, loja_id")
+    .select("id, status, loja_id, credito_retido_em, credito_liberado_em")
     .eq("ifood_order_id", orderId)
     .limit(1);
   if (existeErr) throw new Error(`falha ao checar pedido existente ${orderId}: ${existeErr.message}`);
 
   if (existente && existente[0]) {
-    const atual = existente[0] as { id: string; status: string | null; loja_id: string | null };
+    const atual = existente[0] as { id: string; status: string | null; loja_id: string | null;
+      credito_retido_em: string | null; credito_liberado_em: string | null };
     if (code === "CAN" && atual.status !== "cancelado") {
       const { error } = await supabase.from("pedidos").update({
         status: "cancelado", status_detalhado: "cancelado", updated_at: agoraBrasiliaNaive(),
@@ -507,12 +508,12 @@ async function processarEventoWebhook(evento: any): Promise<void> {
       }).eq("id", atual.id);
       if (error) throw new Error(`falha ao concluir pedido ${orderId}: ${error.message}`);
     } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
-      // Loja de crédito fica em 'recebido'. Erro ao ler o tipo: exceção, o
-      // evento fica pendente e é tentado de novo.
-      const credito = await lojaEhCredito(atual.loja_id);
-      if (credito === null) throw new Error(`falha ao ler tipo de cobrança da loja do pedido ${orderId}`);
-      if (credito) {
-        await logErro("loja_credito_retido", { orderId, pedidoId: atual.id, lojaId: atual.loja_id, via: "webhook" });
+      // Retido (loja de crédito sem débito ainda): só guarda que o RTP chegou;
+      // quando o banco liberar (débito feito), ele mesmo leva a 'pronto'.
+      if (atual.credito_retido_em && !atual.credito_liberado_em) {
+        const { error } = await supabase.from("pedidos").update({ ifood_rtp_em: new Date().toISOString() })
+          .eq("id", atual.id).is("ifood_rtp_em", null);
+        if (error) throw new Error(`falha ao registrar RTP do pedido retido ${orderId}: ${error.message}`);
         return;
       }
       // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
@@ -548,11 +549,25 @@ async function processarEventoWebhook(evento: any): Promise<void> {
   if (!detalhes) throw new Error(`falha ao buscar detalhes do pedido ${orderId}`);
 
   const pedido = await mapearPedidoIfood(detalhes);
-  const { error } = await supabase.from("pedidos").upsert(pedido, { onConflict: "ifood_order_id" });
+  // Corrida com o polling no mesmo pedido novo: quem gravar primeiro vale,
+  // o outro não sobrescreve (ver ifood-polling).
+  const { error } = await supabase.from("pedidos")
+    .upsert(pedido, { onConflict: "ifood_order_id", ignoreDuplicates: true });
   if (error) {
     await logErro("webhook_persistir_pedido", { orderId, message: error.message });
     throw new Error(`falha ao persistir pedido ${orderId}: ${error.message}`);
   }
+  if (pedido.credito_retido_em) await processarCreditoPedidoWebhook(orderId);
+}
+
+// Etapa 2b — mesmo papel de processarCreditoPedido no ifood-polling. Não
+// lança erro: o pedido já foi gravado retido e a varredura do banco tenta de novo.
+async function processarCreditoPedidoWebhook(orderId: string): Promise<void> {
+  const { data, error } = await supabase.from("pedidos").select("id").eq("ifood_order_id", orderId).limit(1);
+  if (error || !data?.[0]) { await logErro("credito_ler_pedido", { orderId, via: "webhook", message: error?.message ?? "não achou" }); return; }
+  const { data: res, error: rpcErr } = await supabase.rpc("processar_credito_pedido_ifood", { p_pedido_id: data[0].id });
+  if (rpcErr) await logErro("credito_processar_pedido", { orderId, via: "webhook", message: rpcErr.message });
+  else await supabase.from("logs_acoes").insert({ acao: "credito_ifood_processado", detalhes: { orderId, via: "webhook", res } });
 }
 
 // Confirmação automática do pedido no iFood — mesma regra de

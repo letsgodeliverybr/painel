@@ -3170,6 +3170,9 @@ async function _deveDebitarSaldo(lojaId){
 }
 async function _estornarDebitoEntrega(pedido){
   if(!pedido?.loja_id||!pedido?.numero)return;
+  // Etapa 2b: pedido do iFood é estornado pelo banco (tg_estorno_ifood_cancelado,
+  // só antes da coleta). Gravar aqui também daria estorno em dobro.
+  if(pedido.origem==='ifood')return;
   const existing=await db('creditos_lojas','GET',null,`?loja_id=eq.${pedido.loja_id}&tipo=eq.debito&observacoes=ilike.*%23${pedido.numero}&limit=1`);
   if(!existing||!existing.length)return;
   const agora=new Date().toISOString();
@@ -4025,9 +4028,20 @@ function _ehAvisoIfood(descricao){const d=String(descricao||'');return d.startsW
 // ou depois do de pagamento): o pronto automático não o leva a 'pronto' e os
 // caminhos manuais pedem confirmação — sem débito automático (etapa 2b)
 // ainda, 'pronto' manda pro despacho sem debitar o saldo.
-function _ifoodCreditoRetido(p){return !!p&&p.origem==='ifood'&&String(p.descricao||'').includes(_ALERTA_CREDITO_IFOOD);}
+// Etapa 2b (2026-10-31): a fonte é a coluna (credito_retido_em sem
+// credito_liberado_em, gravada pelo banco); o texto fica de reserva pra
+// pedido antigo. Loja não força: só ADM/suporte, com confirmação.
+function _ifoodCreditoRetido(p){
+  if(!p||p.origem!=='ifood')return false;
+  if(p.credito_retido_em!==undefined)return !!p.credito_retido_em&&!p.credito_liberado_em;
+  return String(p.descricao||'').includes(_ALERTA_CREDITO_IFOOD);
+}
 function _confirmarProntoCreditoRetido(p){
-  return !_ifoodCreditoRetido(p)||confirm(`Pedido #${p.numero||String(p.id||'').substring(0,6)} é de loja de crédito e ainda não foi debitado.\nMarcar como pronto manda para o despacho sem debitar o saldo. Continuar?`);
+  if(!_ifoodCreditoRetido(p))return true;
+  const _n=p.numero||String(p.id||'').substring(0,6);
+  if(currentPerfil==='loja'){showNotif('Pedido Retido',`#${_n}: Saldo Insuficiente. Faça Uma Recarga Para Liberar.`,'var(--yellow)');return false;}
+  const _mot=p.credito_motivo_retencao==='preco_nao_calculado'?'o preço da entrega não foi calculado':'o saldo da loja não cobre a taxa';
+  return confirm(`Pedido #${_n} é de loja de crédito e está retido: ${_mot}.\nMarcar como pronto manda para o despacho SEM debitar agora (o débito sai na finalização, mesmo com saldo negativo). Continuar?`);
 }
 function _alertaPagamentoIfood(p){
   if(p.origem!=='ifood'||!_ehAvisoIfood(p.descricao))return'';
