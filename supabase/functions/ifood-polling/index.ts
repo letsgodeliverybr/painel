@@ -445,10 +445,16 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_cancelado", { orderId, message: error.message }); return false; }
     } else if (code === "CON" && atual.status !== "cancelado" && atual.status !== "finalizado") {
+      // Retido e não liberado (loja de crédito sem débito): o iFood concluiu o
+      // pedido sem entregador nosso. Finaliza (sai da fila, nada a debitar),
+      // mas marca o motivo e registra para o ADM conferir.
+      const retidoSemDebito = !!atual.credito_retido_em && !atual.credito_liberado_em;
       const { error } = await supabase.from("pedidos").update({
         status: "finalizado", status_detalhado: "finalizado", updated_at: agoraBrasiliaNaive(),
+        ...(retidoSemDebito ? { credito_motivo_retencao: "concluido_sem_debito" } : {}),
       }).eq("id", atual.id);
       if (error) { await logErro("atualizar_status_concluido", { orderId, message: error.message }); return false; }
+      if (retidoSemDebito) await logErro("credito_retido_concluido_pelo_ifood", { orderId, pedidoId: atual.id, lojaId: atual.loja_id });
     } else if (code === "RTP" && atual.status !== "cancelado" && atual.status !== "finalizado") {
       // Retido (loja de crédito sem débito ainda): só guarda que o RTP chegou;
       // quando o banco liberar (débito feito), ele mesmo leva a 'pronto'.
