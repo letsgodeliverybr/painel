@@ -446,6 +446,7 @@ let _redeLojas=[],_redeTodas=false,_redeLojaPrincipal=null;
 const _redeAtiva=()=>currentPerfil==='loja'&&_redeLojas.length>1;
 const _redeVisaoGeral=()=>_redeAtiva()&&_redeTodas;
 const _redeIds=()=>_redeLojas.map(l=>l.loja_id).join(',');
+const _lojaEmRede=()=>currentPerfil==='loja'&&!!currentUser?.loja_id&&(_redeAtiva()||!!allLojas.find(l=>l.id===currentUser.loja_id)?.rede_credito_id);
 const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?(_redeVisaoGeral()?`&loja_id=in.(${_redeIds()})`:`&loja_id=eq.${currentUser.loja_id}`):'';
 // Igual a _lojaFiltro(), mas pra usar direto na tabela lojas — ela não tem
 // coluna loja_id, a própria chave é id. Na rede, sempre todas as lojas dela
@@ -4512,6 +4513,7 @@ async function _redeTrocar(lojaId){
 async function _redeAposTroca(){
   try{await atualizarTudo();}catch(e){console.warn('[rede] atualizarTudo',e);}
   _crPreencherLojaPerfilLoja();
+  if(_lojaEmRede()&&window.innerWidth>768&&document.getElementById('sidebar-mapa'))toggleSidebar(false);
   _carregarSaldoTopbar();
   if(_navAtivo)goTab(_navAtivo);   // antes da 1ª navegação, o goTab do login já vem com a rede carregada
 }
@@ -5267,7 +5269,7 @@ function iniciarDragSidebar(){
   // Leaflet usa z-index próprio mais alto que o da sidebar. No desktop
   // (sidebar normal, ocupa espaço em vez de sobrepor) o comportamento não
   // muda — só minimiza aqui embaixo do breakpoint.
-  if(window.innerWidth<=768)toggleSidebar(true);
+  if(window.innerWidth<=768&&!_lojaEmRede())toggleSidebar(true);
 }
 function setFilter(status,el){filterStatus=status;document.querySelectorAll('.filter-tab,.sb-filter-tab').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderPedidosLista();}
 // No mobile, limpa width/minWidth inline que pode ter ficado preso de um
@@ -5276,7 +5278,7 @@ function setFilter(status,el){filterStatus=status;document.querySelectorAll('.fi
 // interrompido perto da borda esquerda, zona do "voltar" por swipe do
 // Safari iOS) — sem isso, o painel podia abrir com uma largura menor que
 // 100%, sobrando espaço vazio do lado direito da tela.
-function toggleSidebar(minimize){const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const _tb=document.querySelector('#app .topbar');if(_tb&&_tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',_tb.offsetHeight+'px');const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);if(typeof _mdSyncPainel==='function')_mdSyncPainel();}
+function toggleSidebar(minimize){if(_lojaEmRede()&&window.innerWidth>768)minimize=false;const sb=document.getElementById('sidebar-mapa'),tab=document.getElementById('sb-toggle-tab'),arrow=document.getElementById('sb-tab-arrow');if(!sb)return;const _tb=document.querySelector('#app .topbar');if(_tb&&_tb.offsetHeight)document.documentElement.style.setProperty('--topbar-h',_tb.offsetHeight+'px');const min=minimize!==undefined?minimize:sb.classList.toggle('sb-minimized');if(minimize!==undefined)min?sb.classList.add('sb-minimized'):sb.classList.remove('sb-minimized');if(window.innerWidth<=768){sb.style.width='';sb.style.minWidth='';}if(tab)tab.style.transform=min?'translateX(0)':'translateX(-100%)';if(arrow)arrow.textContent=min?'►':'◄';if(map)setTimeout(()=>map.invalidateSize(),320);if(typeof _mdSyncPainel==='function')_mdSyncPainel();}
 // Celular: tocar fora do painel de pedidos (na faixa do mapa) fecha o
 // painel. Barra do topo, menu, janelas e o próprio botão do painel ficam de
 // fora (o ☰ continua abrindo o menu normalmente).
@@ -5446,8 +5448,17 @@ function renderPedidosLista(){
   if(bubblesEl){
     bubblesEl.innerHTML=_SB_HEADER.map(sb=>{
       const n=allPedidos.filter(p=>getStatusKey(p)===sb.key).length;
-      return n?`<span${sb.label?` title="${sb.label}"`:''} style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
+      return (n||_lojaEmRede())?`<span${sb.label?` title="${sb.label}"`:''} style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
     }).join('');
+  }
+  if(filtered.length===0&&_lojaEmRede()){
+    const ids=_redeVisaoGeral()?_redeLojas.map(l=>l.loja_id):[currentUser.loja_id];
+    lista.innerHTML=ids.map(id=>{
+      const nome=_escHtml((allLojas.find(l=>l.id===id)||_redeLojas.find(l=>l.loja_id===id)||{}).nome||(_redeLojas.find(l=>l.loja_id===id)||{}).loja_nome||'Minha Loja');
+      return`<div><div class="sb-group-dark" style="background:#1a3a5c !important"><span style="font-size:13px">🏪</span><span class="sb-group-name">${nome}</span></div>
+        <div class="pd-card" style="cursor:default"><div style="display:flex;gap:10px;align-items:center;color:var(--sb-text3)"><span style="font-size:22px">📦</span><span style="font-size:13px;font-weight:600">${_sidebarBusca||filterStatus!=='todos'?'Nenhum Pedido Neste Filtro':'Nenhum Pedido Agora'}</span></div></div></div>`;
+    }).join('');
+    return;
   }
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum Pedido</p></div>';return;}
   const STATUS_BUBBLES=[
