@@ -437,10 +437,20 @@ const _agoraBrasilia=()=>{
   const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(d).map(x=>[x.type,x.value]));
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}.${String(d.getMilliseconds()).padStart(3,'0')}`;
 };
-const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&loja_id=eq.${currentUser.loja_id}`:'';
+// Carteira de rede (2026-11-02): o login principal de uma rede vê as lojas
+// que o ADM incluiu (lista vem do banco, minha_rede). "Toda a rede" filtra
+// loja_id=in.(...); escolhendo uma loja no seletor do topo, currentUser.loja_id
+// passa a ser ela e o resto do painel segue a loja escolhida. Login comum:
+// _redeLojas vazio, nada muda.
+let _redeLojas=[],_redeTodas=false,_redeLojaPrincipal=null;
+const _redeAtiva=()=>currentPerfil==='loja'&&_redeLojas.length>1;
+const _redeVisaoGeral=()=>_redeAtiva()&&_redeTodas;
+const _redeIds=()=>_redeLojas.map(l=>l.loja_id).join(',');
+const _lojaFiltro=()=>currentPerfil==='loja'&&currentUser?.loja_id?(_redeVisaoGeral()?`&loja_id=in.(${_redeIds()})`:`&loja_id=eq.${currentUser.loja_id}`):'';
 // Igual a _lojaFiltro(), mas pra usar direto na tabela lojas — ela não tem
-// coluna loja_id, a própria chave é id.
-const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?`&id=eq.${currentUser.loja_id}`:'';
+// coluna loja_id, a própria chave é id. Na rede, sempre todas as lojas dela
+// (nome/coordenadas para o seletor e para criar entrega por qualquer loja).
+const _lojaFiltroId=()=>currentPerfil==='loja'&&currentUser?.loja_id?(_redeAtiva()?`&id=in.(${_redeIds()})`:`&id=eq.${currentUser.loja_id}`):'';
 // ⚠️ REGRA DE FUSO — LER ANTES DE MEXER EM QUALQUER FILTRO DE DATA/HORA.
 // Confirmado via information_schema (ver migrations/add_pedidos_finalizados_por_mes_rpc.sql)
 // e via inspeção direta de valores reais retornados pela API (presença/ausência
@@ -2573,6 +2583,7 @@ async function abrirModal(id){
       const lojaNome=!isAdm?(allLojas.find(l=>l.id===currentUser?.loja_id)?.nome||'Minha Loja'):'';
       const blocoLoja=isAdm
         ?`<div class="form-row full" style="margin-bottom:4px"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
+        :_redeVisaoGeral()?`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label>${_npRedeSelectHtml()}<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`
         :`<div class="form-row full" style="margin-bottom:4px"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" value="${lojaNome}" readonly style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;cursor:default"/><input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"/></div></div>`;
       modalBody.innerHTML=`
         <div style="display:flex;gap:16px;height:100%;min-height:0">
@@ -2903,6 +2914,18 @@ async function _criarEntregaRapida(){
   }
 }
 function onChangeLoja(){calcularTaxaAuto();}
+// Carteira de rede: login principal cria pedido por qualquer loja da rede.
+function _npRedeSelectHtml(){
+  return`<select id="np-rede-loja" onchange="_npRedeLoja(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box">${_redeLojas.map(l=>`<option value="${l.loja_id}"${l.loja_id===currentUser?.loja_id?' selected':''}>${_escHtml(l.loja_nome||'')}</option>`).join('')}</select>`;
+}
+function _npRedeLoja(lojaId){
+  if(!_redeLojas.some(l=>l.loja_id===lojaId))return;
+  const hid=document.getElementById('np-loja-id');if(!hid)return;
+  const l=allLojas.find(x=>x.id===lojaId);
+  hid.value=lojaId;hid.dataset.lat=l?.latitude||'';hid.dataset.lng=l?.longitude||'';
+  if(!l?.latitude)db('lojas','GET',null,`?id=eq.${lojaId}&select=id,latitude,longitude`).then(res=>{const el=document.getElementById('np-loja-id');if(el&&el.value===lojaId&&res?.[0]?.latitude){el.dataset.lat=res[0].latitude;el.dataset.lng=res[0].longitude;calcularTaxaAuto();}});
+  onChangeLoja();
+}
 function _npLojaFiltrar(val){
   const dd=document.getElementById('np-loja-dropdown');if(!dd)return;
   const q=(val||'').trim().toLowerCase();
@@ -3379,7 +3402,7 @@ async function _carregarSaldoTopbar(){
     if(!el||!val)return;
     if(currentPerfil==='loja'&&currentUser?.loja_id){
       let lojaAtualSaldo=allLojas.find(l=>l.id===currentUser?.loja_id);
-      if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
+      if(!lojaAtualSaldo){const _lr=await db('lojas','GET',null,`?id=eq.${currentUser.loja_id}&select=id,tipo_cobranca,rede_credito_id`).catch(()=>[]);lojaAtualSaldo=Array.isArray(_lr)&&_lr[0]?_lr[0]:null;}
       const _tipoCobrancaSaldo=lojaAtualSaldo?.tipo_cobranca||'faturamento';
       // Loja de faturamento: mostra o saldo de crédito e abre a mesma tela de
       // recarga (2026-09-29), mas NÃO entra na trava de criação de entregas
@@ -3400,7 +3423,10 @@ async function _carregarSaldoTopbar(){
       const totC=arr.filter(r=>r.tipo==='credito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
       const totD=arr.filter(r=>r.tipo==='debito').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
       const totB=arr.filter(r=>r.tipo==='bonus').reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-      const saldo=totC+totB-totD;
+      let saldo=totC+totB-totD;
+      // Carteira de rede: o saldo é o da rede inteira (saldo_loja soma as
+      // lojas da rede); se a chamada falhar, fica a soma da própria loja.
+      if(lojaAtualSaldo?.rede_credito_id){const _sr=await dbRpc('saldo_loja',{p_loja_id:currentUser.loja_id});if(typeof _sr==='number')saldo=_sr;}
       _saldoLojaAtual=saldo;
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
@@ -3423,6 +3449,23 @@ async function _carregarSaldoTopbar(){
       _lojaCreditoAtiva=false;
     }
   }catch(_){}
+}
+// Perfil loja: o "criar entrega" do mapa vem com a própria loja travada. Na
+// visão "Toda a rede" do login principal, escolhe entre as lojas da rede.
+function _crPreencherLojaPerfilLoja(){
+  if(currentPerfil!=='loja')return;
+  const selCr=document.getElementById('cr-loja-id');if(!selCr)return;
+  const opt=l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}"${l.id===currentUser?.loja_id?' selected':''}>${_escHtml(l.nome||'')}</option>`;
+  if(_redeVisaoGeral()){
+    const lojasRede=_redeLojas.map(r=>allLojas.find(l=>l.id===r.loja_id)||{id:r.loja_id,nome:r.loja_nome,latitude:'',longitude:''});
+    selCr.innerHTML=lojasRede.map(opt).join('');
+    selCr.disabled=false;selCr.style.opacity='';selCr.style.cursor='';
+    return;
+  }
+  const lojaAtual=allLojas.find(l=>l.id===currentUser?.loja_id)||{id:currentUser?.loja_id,nome:'Minha Loja',latitude:'',longitude:''};
+  selCr.innerHTML=opt(lojaAtual);
+  selCr.disabled=true;
+  selCr.style.opacity='0.7';selCr.style.cursor='default';
 }
 function _abrirCriarEntregaTopbar(){
   if(_navAtivo==='mapa'){
@@ -4424,6 +4467,7 @@ function logout(){
   }catch{}
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
+  _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;document.getElementById('rede-seletor')?.remove();
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();_navUltimoLogin=null;clearInterval(_liTimer);
   document.body.classList.remove('nav-desktop','nav-col');_fecharNavPopover();document.getElementById('nav-sidebar')?.classList.remove('open');document.getElementById('nav-overlay')?.classList.remove('open');
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -4435,6 +4479,41 @@ function renderTabs(){
   document.getElementById('tab-buttons').innerHTML=tabs.map(t=>`<button class="tab-btn" id="tab-${t.id}" onclick="goTab('${t.id}')"><span>${t.icon}</span>${t.label}</button>`).join('');
   const tabBar=document.getElementById('tab-buttons');
   if(tabBar)tabBar.style.display='none';
+  if(currentPerfil==='loja')_redeCarregar();
+}
+async function _redeCarregar(){
+  _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;
+  const r=await dbRpc('minha_rede');
+  if(currentPerfil!=='loja'||!Array.isArray(r)||r.length<2){_redeRenderSeletor();return;}
+  _redeLojas=r;_redeLojaPrincipal=(r.find(l=>l.principal)||{}).loja_id||currentUser.loja_id;
+  _redeTodas=true;currentUser.loja_id=_redeLojaPrincipal;
+  _redeRenderSeletor();
+  await _redeAposTroca();
+}
+// Seletor no topo, ao lado do saldo (o HTML do topo é o de produção; o
+// seletor é criado aqui).
+function _redeRenderSeletor(){
+  document.getElementById('rede-seletor')?.remove();
+  if(!_redeAtiva())return;
+  const ref=document.getElementById('topbar-saldo');if(!ref?.parentNode)return;
+  const s=document.createElement('select');s.id='rede-seletor';s.title='Loja Da Rede';
+  s.style.cssText='margin-right:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:Inter,sans-serif;font-size:13px;max-width:220px;cursor:pointer';
+  s.innerHTML='<option value="">🏬 Toda A Rede</option>'+_redeLojas.map(l=>`<option value="${l.loja_id}">${_escHtml(l.loja_nome||'')}</option>`).join('');
+  s.value=_redeTodas?'':currentUser.loja_id;
+  s.onchange=()=>_redeTrocar(s.value);
+  ref.parentNode.insertBefore(s,ref);
+}
+async function _redeTrocar(lojaId){
+  if(!_redeAtiva())return;
+  if(lojaId&&!_redeLojas.some(l=>l.loja_id===lojaId))return;
+  _redeTodas=!lojaId;currentUser.loja_id=lojaId||_redeLojaPrincipal;
+  await _redeAposTroca();
+}
+async function _redeAposTroca(){
+  try{await atualizarTudo();}catch(e){console.warn('[rede] atualizarTudo',e);}
+  _crPreencherLojaPerfilLoja();
+  _carregarSaldoTopbar();
+  if(_navAtivo)goTab(_navAtivo);   // antes da 1ª navegação, o goTab do login já vem com a rede carregada
 }
 // Tela provisória das páginas novas do rodapé da loja (Configurações /
 // Perfil) até o conteúdo de cada uma ser definido.
@@ -4957,13 +5036,7 @@ function renderMapaPage(){
     atualizarTudo();realtimeInterval=setInterval(atualizarTudo,5000);
     if(currentPerfil==='adm')_atualizarAlertaSaqueRapidoMapa();
     if(currentPerfil==='loja'){
-      const selCr=document.getElementById('cr-loja-id');
-      if(selCr){
-        const lojaAtual=allLojas.find(l=>l.id===currentUser?.loja_id)||{id:currentUser?.loja_id,nome:'Minha Loja',latitude:'',longitude:''};
-        selCr.innerHTML=`<option value="${lojaAtual.id}" data-lat="${lojaAtual.latitude||''}" data-lng="${lojaAtual.longitude||''}" selected>${lojaAtual.nome}</option>`;
-        selCr.disabled=true;
-        selCr.style.opacity='0.7';selCr.style.cursor='default';
-      }
+      _crPreencherLojaPerfilLoja();
     } else {
       db('lojas','GET',null,'?ativo=eq.true&order=nome.asc').then(lojasCr=>{const selCr=document.getElementById('cr-loja-id');if(selCr)selCr.innerHTML='<option value="">Selecione A Loja...</option>'+lojasCr.map(l=>`<option value="${l.id}" data-lat="${l.latitude||''}" data-lng="${l.longitude||''}">${l.nome}</option>`).join('');});
     }
@@ -7906,6 +7979,7 @@ async function renderNovoPedidoPage(){
   _npLojasData=lojas;
   const seletorLoja=currentPerfil==='adm'
     ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
+    :_redeVisaoGeral()?`<div class="form-row full"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label>${_npRedeSelectHtml()}<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
   document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
@@ -8124,7 +8198,7 @@ async function renderPedidosPage(){
   const fpEnt=document.getElementById('fp-entregador');
   if(fpLoja){
     fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
-    if(currentPerfil==='loja'&&currentUser?.loja_id){fpLoja.value=currentUser.loja_id;fpLoja.disabled=true;}
+    if(currentPerfil==='loja'&&currentUser?.loja_id&&!_redeVisaoGeral()){fpLoja.value=currentUser.loja_id;fpLoja.disabled=true;}
   }
   if(fpEnt)fpEnt.innerHTML='<option value="">Todos</option>'+_fpEntregadores.map(e=>`<option value="${e.id}">${e.nome||e.id?.substring(0,8)}</option>`).join('');
   _buscarPedidosAdmin();
@@ -9706,13 +9780,15 @@ ${r2(fi('E-mail',`<input id="el-email" type="text" value="${v(l.email)}" data-or
 ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false','Inativa']])),fi('Nova Senha',`<div style="position:relative"><input id="el-nova-senha" type="password" placeholder="Deixe Em Branco Para Não Alterar" autocomplete="new-password" style="${is};padding-right:40px"/><button type="button" onclick="_toggleSenhaVisivel('el-nova-senha',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px">${_icone('eye',16)}</button></div>`))}
 ${sec('Tabelas De Preço')}
 ${r2(fi('Tabela De Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela De Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
-${r2(fi('Tipo De Cobrança',`<select id="el-tipo-cobranca" style="${ss}"><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
+${r2(fi('Tipo De Cobrança',`<select id="el-tipo-cobranca" style="${ss}"${l.rede_credito_id?' disabled title="Loja Em Carteira De Rede: Tire Da Rede Antes De Mudar"':''}><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 ${r2(fi('🛵 Limite De Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
 ${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
+${currentPerfil==='adm'&&l.tipo_cobranca==='credito'?r1(fi('Carteira De Rede — Incluir Outras Lojas','<div id="el-rede"><span style="font-size:12px;color:var(--text3)">Carregando...</span></div>')):''}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo No App Let's Go Cliente</label></div></div>
 
 <div id="el-feedback" style="margin-top:10px"></div></div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-loja').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoLoja('${lojaId}')" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
+  if(currentPerfil==='adm'&&l.tipo_cobranca==='credito')_elRedeCarregar(lojaId,l);
   setTimeout(()=>iniciarAutocompleteEndereco('el-endereco','el-lat','el-lng','el-geo-feedback'),100);
 }
 // _elCarregarSaldoAtual/_elCreditarSaldo removidas — duplicavam Créditos
@@ -9736,6 +9812,83 @@ async function geocodificarLoja(){
 // Leitura/gravação só pelas funções listar_/salvar_bloqueios_loja — a
 // tabela tem RLS sem política pro painel.
 let _elBloq={sel:new Map(),orig:[],todos:[]};
+// ── Carteira de rede na edição da loja principal (só ADM, 2026-11-02) ──
+// Incluir/tirar age na hora (não espera o Salvar): prévia no banco, confirmação
+// com o saldo, e o banco refaz todas as checagens (saldo mudou, retido etc.).
+let _elRede={principal:null,dados:null,candidatas:[]};
+const _REDE_MOTIVOS={nao_credito:'A Loja Não É De Crédito.',ja_em_rede:'A Loja Já Está Em Uma Rede.',mesma_loja:'É A Própria Loja Principal.',loja_invalida:'Loja Não Encontrada.',principal_e_membro_de_outra_rede:'Esta Loja Já Faz Parte De Outra Rede.',principal_sem_login_unico:'A Loja Principal Precisa Ter Um Único Login Ativo.',tem_pedido_retido:'A Loja Tem Pedido Retido Por Crédito',tem_pedido_em_andamento:'A Loja Tem Pedido Em Andamento',principal_nao_sai:'A Loja Principal Não Sai Enquanto Houver Outras.',fora_da_rede:'A Loja Não Está Nesta Rede.'};
+// Como dbRpc, mas devolve a mensagem do banco (dbRpc engole o erro).
+async function _rpcRede(fn,args){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Content-Type':'application/json'},body:JSON.stringify(args)});
+    const t=await r.text();let j=null;try{j=t?JSON.parse(t):null;}catch{}
+    if(!r.ok)return{ok:false,msg:(j&&(j.message||j.hint))||`Erro ${r.status}`};
+    return{ok:true,data:j};
+  }catch{return{ok:false,msg:'Erro De Conexão.'};}
+}
+async function _elRedeCarregar(lojaId,l){
+  const box=document.getElementById('el-rede');if(!box)return;
+  _elRede={principal:lojaId,dados:null,candidatas:[]};
+  const r=await _rpcRede('rede_listar',{p_principal:lojaId});
+  if(!r.ok){box.innerHTML=`<span style="font-size:12px;color:#ef4444">${_escHtml(r.msg)}</span>`;return;}
+  _elRede.dados=r.data||{};
+  if(l?.rede_credito_id&&!_elRede.dados.rede_id){ // é loja incluída na rede de outra
+    const irmas=await db('lojas','GET',null,`?rede_credito_id=eq.${l.rede_credito_id}&id=neq.${lojaId}&select=nome&order=nome.asc`).catch(()=>[]);
+    box.innerHTML=`<span style="font-size:12px;color:var(--text2)">Esta Loja Faz Parte De Uma Carteira De Rede${Array.isArray(irmas)&&irmas.length?' Com '+irmas.map(x=>_escHtml(x.nome)).join(', '):''}. Para Tirar, Abra A Edição Da Loja Principal.</span>`;return;
+  }
+  const c=await db('lojas','GET',null,`?tipo_cobranca=eq.credito&ativo=eq.true&rede_credito_id=is.null&id=neq.${lojaId}&select=id,nome&order=nome.asc`).catch(()=>[]);
+  _elRede.candidatas=Array.isArray(c)?c:[];
+  _elRedeRender();
+}
+function _elRedeRender(){
+  const box=document.getElementById('el-rede');if(!box)return;
+  const d=_elRede.dados||{},lojas=(d.lojas||[]).filter(x=>!x.principal);
+  const chips=lojas.length?lojas.map(x=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#1A56DB18;border:1px solid #1A56DB55;color:var(--text);border-radius:20px;padding:4px 6px 4px 12px;font-size:12px;font-weight:600">${_escHtml(x.nome||'')}<button type="button" onclick="_elRedeTirar('${x.loja_id}')" title="Tirar Da Rede" style="background:none;border:none;color:var(--text2);cursor:pointer;display:flex;padding:2px">${_icone('x',12)}</button></span>`).join(''):'<span style="font-size:12px;color:var(--text3)">Nenhuma Loja Incluída.</span>';
+  box.innerHTML=`<div style="position:relative"><input id="el-rede-busca" type="text" autocomplete="off" placeholder="Buscar Loja De Crédito Pelo Nome" oninput="_elRedeSugerir()" onfocus="_elRedeSugerir()" onblur="setTimeout(()=>{const s=document.getElementById('el-rede-sug');if(s)s.style.display='none'},150)" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box"/>
+    <div id="el-rede-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;margin-top:4px"></div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${chips}</div>
+    ${d.rede_id?`<div style="font-size:12px;color:var(--text2);margin-top:8px">Saldo Da Carteira Da Rede: <b>${_rcgFmt(d.saldo_carteira)}</b></div>`:''}`;
+}
+function _elRedeSugerir(){
+  const inp=document.getElementById('el-rede-busca'),box=document.getElementById('el-rede-sug');if(!inp||!box)return;
+  const n=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const t=n(inp.value.trim());
+  if(!t){box.style.display='none';return;}
+  const res=_elRede.candidatas.filter(l=>n(l.nome).includes(t)).slice(0,20);
+  box.innerHTML=res.length?res.map(l=>`<div onmousedown="event.preventDefault();_elRedeIncluir('${l.id}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)">${_escHtml(l.nome||'')}</div>`).join(''):'<div style="padding:8px 12px;font-size:12px;color:var(--text3)">Nenhuma Loja De Crédito Fora De Rede Com Esse Nome.</div>';
+  box.style.display='block';
+}
+async function _elRedeIncluir(lojaId){
+  const sug=document.getElementById('el-rede-sug');if(sug)sug.style.display='none';
+  const p=await _rpcRede('rede_previa_incluir',{p_principal:_elRede.principal,p_loja:lojaId});
+  if(!p.ok){showNotif('Carteira De Rede',p.msg,'var(--red)');return;}
+  const v=p.data||{};
+  if(!v.pode){showNotif('Não Dá Para Incluir',_REDE_MOTIVOS[v.motivo]||v.motivo,'var(--red)');return;}
+  const temSaldo=Number(v.saldo_loja)!==0;
+  const msg=`Incluir ${v.loja} na carteira da rede?\n\nSaldo atual da loja: ${_rcgFmt(v.saldo_loja)}\nCarteira antes: ${_rcgFmt(v.carteira_antes)}\nCarteira depois: ${_rcgFmt(v.carteira_depois)}`
+    +(v.retidos_da_loja>0?`\nPedidos retidos da loja: ${v.retidos_da_loja} (passam a usar a carteira)`:'')
+    +`\n\n${temSaldo?'O saldo da loja vai para a carteira por dois lançamentos de ajuste (sai da loja, entra na principal). Nada é apagado.':'Saldo zero: nenhum lançamento.'}`;
+  if(!confirm(msg))return;
+  const r=await _rpcRede('rede_incluir_loja',{p_principal:_elRede.principal,p_loja:lojaId,p_saldo_confirmado:v.saldo_loja});
+  if(!r.ok){showNotif('Loja Não Incluída',r.msg,'var(--red)');return;}
+  showNotif('Carteira De Rede',`${v.loja} Incluída Na Rede.`,'var(--green)');
+  _elRedeCarregar(_elRede.principal,null);
+}
+async function _elRedeTirar(lojaId){
+  const nome=((_elRede.dados?.lojas||[]).find(x=>x.loja_id===lojaId)||{}).nome||'A Loja';
+  const p=await _rpcRede('rede_previa_tirar',{p_principal:_elRede.principal,p_loja:lojaId});
+  if(!p.ok){showNotif('Carteira De Rede',p.msg,'var(--red)');return;}
+  const v=p.data||{};
+  if(!v.pode){
+    const qtd=v.motivo==='tem_pedido_retido'?`: ${v.retidos}.`:v.motivo==='tem_pedido_em_andamento'?`: ${v.em_andamento}.`:'';
+    showNotif('Não Dá Para Tirar',(_REDE_MOTIVOS[v.motivo]||v.motivo)+qtd,'var(--red)');return;
+  }
+  if(!confirm(`Tirar ${nome} da carteira da rede?\n\n${v.explicacao}`))return;
+  const r=await _rpcRede('rede_tirar_loja',{p_principal:_elRede.principal,p_loja:lojaId});
+  if(!r.ok){showNotif('Loja Não Tirada',r.msg,'var(--red)');return;}
+  showNotif('Carteira De Rede',r.data?.rede_desfeita?`${nome} Tirada. Era A Última: A Rede Foi Desfeita.`:`${nome} Tirada Da Rede.`,'var(--green)');
+  _elRedeCarregar(_elRede.principal,null);
+}
 function _elBloqIniciar(atuais,todos){
   _elBloq={sel:new Map((Array.isArray(atuais)?atuais:[]).map(b=>[b.entregador_id,{nome:b.nome,telefone:b.telefone}])),orig:[],todos:Array.isArray(todos)?todos:[]};
   _elBloq.orig=[..._elBloq.sel.keys()].sort();
@@ -11168,12 +11321,22 @@ async function renderFaturasLojaPage(lojaIdEquipe){
     </div>
   </div>`;
   // extrato (todas as linhas da loja; saldo após = acumulado cronológico)
-  let rows=await _dbTodasLinhas('creditos_lojas',`?loja_id=eq.${lojaId}&select=id,tipo,valor,observacoes,data,created_at,origem&order=created_at.asc,id.asc`);
+  // Carteira de rede: o principal em "Toda a rede" vê as linhas de todas as
+  // lojas (com o nome da loja); loja da rede vista sozinha (login antigo,
+  // loja escolhida no seletor ou equipe) vê só as próprias linhas, e o saldo
+  // do topo é o da carteira (o "saldo após" de cada linha não vale aí).
+  const _visaoRede=!equipe&&_redeVisaoGeral();
+  let rows=await _dbTodasLinhas('creditos_lojas',`?loja_id=${_visaoRede?`in.(${_redeIds()})`:`eq.${lojaId}`}&select=id,loja_id,tipo,valor,observacoes,data,created_at,origem&order=created_at.asc,id.asc`);
   if(!Array.isArray(rows))rows=[];
   if(loja.credito_desde)rows=rows.filter(r=>r.created_at>=loja.credito_desde);
   let acc=0;
   _fin.linhas=rows.map(r=>{acc=Math.round((acc+_finSinal(r)*(parseFloat(r.valor)||0))*100)/100;return{...r,_t:_finTipo(r),_saldo:acc};});
-  _finRenderTopo(acc);
+  _fin.lojasNome=_visaoRede?Object.fromEntries(_redeLojas.map(l=>[l.loja_id,l.loja_nome])):null;
+  _fin.parcial=!_visaoRede&&!!loja.rede_credito_id;
+  _fin.rede=_visaoRede||_fin.parcial;
+  let _saldoTopo=acc;
+  if(_fin.parcial){const _sr=await dbRpc('saldo_loja',{p_loja_id:lojaId});if(typeof _sr==='number')_saldoTopo=_sr;}
+  _finRenderTopo(_saldoTopo);
   _finFiltrar();
   // faturas antigas (lojas que já faturaram)
   const fw=document.getElementById('fin-faturas-wrap');
@@ -11183,7 +11346,7 @@ async function renderFaturasLojaPage(lojaIdEquipe){
 function _finRenderTopo(saldo){
   const el=document.getElementById('fin-topo');if(!el)return;
   const cor=saldo>=0?'#10b981':'#ef4444';
-  el.innerHTML=`<div class="fin-saldo"><span>Saldo Do Crédito</span><b style="color:${cor}">${saldo<0?'-':''}${_rcgFmt(Math.abs(saldo))}</b>
+  el.innerHTML=`<div class="fin-saldo"><span>${_fin.rede?'Saldo Da Carteira Da Rede':'Saldo Do Crédito'}</span><b style="color:${cor}">${saldo<0?'-':''}${_rcgFmt(Math.abs(saldo))}</b>
       <small>${saldo<=0?'Recarregue Para Continuar Pedindo Entregas.':'Cada Entrega É Descontada Deste Saldo.'}</small></div>
     <button class="fin-btn" onclick="_abrirModalRecargaPix()">${_icone('wallet',18)}Recarregar</button>`;
 }
@@ -11217,7 +11380,8 @@ function _finRenderExtrato(){
   if(_fin.pagina>=pags)_fin.pagina=pags-1;
   const ini=_fin.pagina*_FIN_POR_PAGINA,pag=_fin.grupos.slice(ini,ini+_FIN_POR_PAGINA);
   const cor={recarga:'#10b981',bonus:'#f59e0b',entrega:'#ef4444',estorno:'#3b82f6',ajuste:'#94a3b8'};
-  const sal=v=>v<0?`<span style="color:#ef4444">-${_rcgFmt(-v)}</span>`:_rcgFmt(v);
+  const sal=v=>_fin.parcial?'—':v<0?`<span style="color:#ef4444">-${_rcgFmt(-v)}</span>`:_rcgFmt(v);
+  const lojaTag=r=>_fin.lojasNome&&r.loja_id?`<b style="color:var(--text2);font-weight:600">${_escHtml(_fin.lojasNome[r.loja_id]||'')}</b> · `:'';
   const val=(v,sinal)=>`<span style="color:${sinal<0?'#ef4444':'#10b981'}">${sinal<0?'−':'+'} ${_rcgFmt(Math.abs(v))}</span>`;
   const linha=g=>{
     if(g.entrega){
@@ -11225,10 +11389,10 @@ function _finRenderExtrato(){
       return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor.entrega}"></i>Débito De Entrega</span>
         <span class="fin-desc">${n} entrega${n>1?'s':''} no dia <button class="fin-exp" aria-expanded="${aberto}" onclick="_finToggle('${g.id}')">${aberto?'Ocultar':'Ver Pedidos'} ${_icone(aberto?'chevron-up':'chevron-down',14)}</button></span>
         <span class="v">${val(g.valor,-1)}</span><span class="s">${sal(g._saldo)}</span></div>
-        ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
+        ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${lojaTag(r)}${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
     }
     return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor[g._t]}"></i>${_finRotulo(g._t)}</span>
-      <span class="fin-desc" title="${_escHtml(g.observacoes||'').replace(/"/g,'&quot;')}">${_escHtml(g.observacoes||'—')}</span>
+      <span class="fin-desc" title="${_escHtml(g.observacoes||'').replace(/"/g,'&quot;')}">${lojaTag(g)}${_escHtml(g.observacoes||'—')}</span>
       <span class="v">${val(g.valor,_finSinal(g))}</span><span class="s">${sal(g._saldo)}</span></div>`;
   };
   el.innerHTML=`<div class="fin-lista"><div class="fin-linha cab"><span>Data</span><span>Tipo</span><span>Descrição</span><span class="v">Valor</span><span class="s">Saldo Após</span></div>${pag.map(linha).join('')}</div>
