@@ -10917,7 +10917,8 @@ function _renderCredito(){
     <div id="modal-sc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
       <div style="background:var(--card,var(--surface));border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.4)">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px" id="sc-modal-titulo">Cadastrar</div>
-        <div style="margin-bottom:14px" id="sc-modal-entidade-wrap">${_scLabel('Entidade')}<select id="sc-m-ent" onchange="_scAtualizarPrevia(true)" style="${_scInput()}"></select></div>
+        <div style="margin-bottom:14px;position:relative" id="sc-modal-entidade-wrap">${_scLabel('Entidade')}<input id="sc-m-ent-busca" type="text" autocomplete="off" placeholder="Digite O Nome..." oninput="_scEntFiltrar(true)" onfocus="_scEntFiltrar(false)" onblur="setTimeout(()=>{const s=document.getElementById('sc-m-ent-sug');if(s)s.style.display='none'},150)" style="${_scInput()}"/><input type="hidden" id="sc-m-ent"/>
+          <div id="sc-m-ent-sug" style="display:none;position:absolute;left:0;right:0;z-index:5;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div>
         <div style="margin-bottom:14px;display:none" id="sc-m-motivo-wrap">${_scLabel('Lançamento')}<select id="sc-m-motivo" onchange="_scAtualizarPrevia()" style="${_scInput()}"><option value="recarga">Recarga Pix (Valor Pago Pela Loja)</option><option value="ajuste">Ajuste Manual (Crédito Ou Débito)</option></select></div>
         <div style="margin-bottom:14px" id="sc-m-data-wrap">${_scLabel('Data')}<input type="date" id="sc-m-data" value="${hoje}" style="${_scInput()}"/></div>
         <div style="margin-bottom:14px" id="sc-m-tipo-wrap">${_scLabel('Tipo')}<select id="sc-m-tipo" style="${_scInput()}"><option value="credito">Credito</option><option value="debito">Debito</option><option value="bonus">Bônus</option></select></div>
@@ -10997,11 +10998,13 @@ async function _scBuscar(){
 async function _scAbrirModal(id){
   const isLojas=_scSubAba==='lojas';
   const entidades=await db(isLojas?'lojas':'entregadores','GET',null,'?select=id,nome&order=nome.asc');
-  const sel=document.getElementById('sc-m-ent');
-  if(sel){
-    sel.innerHTML=(Array.isArray(entidades)?entidades:[]).map(e=>`<option value="${e.id}">${e.nome||e.id?.substring(0,8)}</option>`).join('');
-    if(id){const opt=sel.querySelector(`option[value="${id}"]`);if(opt)opt.selected=true;}
-  }
+  // Busca por nome (2026-11-02) no lugar da lista: nada vem escolhido de
+  // antemão (a lista antiga já abria com a 1ª loja marcada).
+  _scEntLista=Array.isArray(entidades)?entidades:[];
+  const sel=document.getElementById('sc-m-ent'),busca=document.getElementById('sc-m-ent-busca');
+  const ini=id?_scEntLista.find(e=>e.id===id):null;
+  if(sel)sel.value=ini?ini.id:'';
+  if(busca){busca.value=ini?(ini.nome||ini.id?.substring(0,8)):'';busca.placeholder=isLojas?'Digite O Nome Da Loja...':'Digite O Nome Do Entregador...';}
   const lblWrap=document.getElementById('sc-modal-entidade-wrap');
   if(lblWrap){const lbl=lblWrap.querySelector('label');if(lbl)lbl.textContent=isLojas?'Loja':'Entregador';}
   const titulo=document.getElementById('sc-modal-titulo');
@@ -11017,6 +11020,24 @@ async function _scAbrirModal(id){
   _scAtualizarPrevia(true);
   const modal=document.getElementById('modal-sc');
   if(modal)modal.style.display='flex';
+}
+let _scEntLista=[];
+const _scNorm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function _scEntFiltrar(digitou){
+  const busca=document.getElementById('sc-m-ent-busca'),sug=document.getElementById('sc-m-ent-sug'),sel=document.getElementById('sc-m-ent');
+  if(!busca||!sug)return;
+  // digitou depois de escolher: desfaz a escolha até escolher de novo
+  if(digitou&&sel?.value){sel.value='';_scAtualizarPrevia();}
+  const t=_scNorm(busca.value.trim());
+  const res=_scEntLista.filter(e=>!t||_scNorm(e.nome).includes(t)).slice(0,30);
+  sug.innerHTML=res.length?res.map(e=>`<div onmousedown="event.preventDefault();_scEntEscolher('${e.id}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)">${_escHtml(e.nome||e.id?.substring(0,8))}</div>`).join(''):'<div style="padding:8px 12px;font-size:12px;color:var(--text3)">Nenhum Resultado.</div>';
+  sug.style.display='block';
+}
+function _scEntEscolher(id){
+  const e=_scEntLista.find(x=>x.id===id);if(!e)return;
+  const sel=document.getElementById('sc-m-ent'),busca=document.getElementById('sc-m-ent-busca'),sug=document.getElementById('sc-m-ent-sug');
+  if(sel)sel.value=e.id;if(busca)busca.value=e.nome||e.id?.substring(0,8);if(sug)sug.style.display='none';
+  _scAtualizarPrevia(true);   // o mesmo que o onchange da lista fazia
 }
 let _scPreviaCache={};
 async function _scAtualizarPrevia(recarregar){
