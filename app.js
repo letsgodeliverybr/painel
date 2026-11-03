@@ -2472,7 +2472,7 @@ async function processarAutoPronto(){
     if(diff>=60){
       const codigo=String(Math.floor(Math.random()*9000)+1000);
       const res=await db('pedidos','PATCH',{status:'pronto',status_detalhado:'pronto',pronto_em:_agoraBrasilia(),codigo_confirmacao:codigo,updated_at:_agoraBrasilia()},`?id=eq.${p.id}`);
-      if(res&&(Array.isArray(res)?res.length>0:res.id)){
+      if(res&&(Array.isArray(res)?res.length>0&&res[0].status==='pronto':res.id)){
         _pedidoStatusLock.set(p.id,{status:'pronto',status_detalhado:'pronto',expires:Infinity});
         p.status='pronto';p.status_detalhado='pronto';
         await _aplicarPrecoDinamico(p);
@@ -3074,7 +3074,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
       showNotif('Pedido Já Tem Entregador','Remova O Motoboy Alocado Antes De Marcar Como Pronto De Novo.','var(--yellow)');
       return;
     }
-    if(!_confirmarProntoCreditoRetido(_pChk))return;
+    if(!(await _confirmarProntoCreditoRetido(_pChk)))return;
   }
   // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
   // ver comentário lá. Pedido com_retorno não pode finalizar por aqui sem
@@ -3113,6 +3113,12 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   const resultPatch=await db('pedidos','PATCH',update,filtro);
   if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
     showNotif('Pedido Já Tem Entregador','Outra Pessoa Já Alocou/Alterou Esse Pedido.','var(--yellow)');
+    await atualizarTudo();
+    return;
+  }
+  const _rowPronto=novoStatus==='pronto'&&Array.isArray(resultPatch)?resultPatch[0]:null;
+  if(novoStatus==='pronto'&&_rowPronto?.status!=='pronto'){
+    showNotif('Pedido Não Foi Para Pronto',`O Banco Manteve O Pedido Como ${STATUS_LABEL[_rowPronto?.status]||_rowPronto?.status||'Estava'}. Motoboys Não Foram Notificados.`,'var(--yellow)');
     await atualizarTudo();
     return;
   }
@@ -3336,7 +3342,7 @@ async function _confirmarEntregaParceira(parceiro,pedidoId){
 async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
-  if(!_confirmarProntoCreditoRetido(p))return;
+  if(!(await _confirmarProntoCreditoRetido(p)))return;
   // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
   // era possível marcar "pronto" (e o pedido seguir despacho normal,
   // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
@@ -3376,6 +3382,14 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   const resultPatch=await db('pedidos','PATCH',update,filtroPatch);
   if(!tinhaMotoboy&&(!resultPatch||resultPatch.length===0)){
     showNotif('Já Estava Pronto','Outra Pessoa Já Marcou Esse Pedido Como Pronto.','var(--yellow)');
+    await atualizarTudo();
+    return;
+  }
+  // O banco pode recusar em silêncio (pedido retido volta ao status de
+  // antes, tg_01_credito_retido_nao_despacha): confere a linha devolvida.
+  const _rowPronto=Array.isArray(resultPatch)?resultPatch[0]:null;
+  if(!_rowPronto||_rowPronto.status!=='pronto'){
+    showNotif('Pedido Não Foi Para Pronto',`O Banco Manteve O Pedido Como ${STATUS_LABEL[_rowPronto?.status]||_rowPronto?.status||'Estava'}. Motoboys Não Foram Notificados.`,'var(--yellow)');
     await atualizarTudo();
     return;
   }
@@ -4080,12 +4094,30 @@ function _ifoodCreditoRetido(p){
   if(p.credito_retido_em!==undefined)return !!p.credito_retido_em&&!p.credito_liberado_em;
   return String(p.descricao||'').includes(_ALERTA_CREDITO_IFOOD);
 }
-function _confirmarProntoCreditoRetido(p){
-  if(!_ifoodCreditoRetido(p))return true;
+// Pedido retido de qualquer origem: mesma condição do gatilho
+// tg_01_credito_retido_nao_despacha (credito_retido_em sem credito_liberado_em).
+function _creditoRetidoPedido(p){
+  if(!p)return false;
+  if(p.credito_retido_em!==undefined)return !!p.credito_retido_em&&!p.credito_liberado_em;
+  return _ifoodCreditoRetido(p);
+}
+// Desde a trava do banco (2026-11-02) o pronto de pedido retido é recusado
+// para todos: aqui só explica o porquê, com saldo e taxa, e não tenta o PATCH.
+async function _confirmarProntoCreditoRetido(p){
+  if(!_creditoRetidoPedido(p))return true;
   const _n=p.numero||String(p.id||'').substring(0,6);
-  if(currentPerfil==='loja'){showNotif('Pedido Retido',`#${_n}: Saldo Insuficiente. Faça Uma Recarga Para Liberar.`,'var(--yellow)');return false;}
-  const _mot=p.credito_motivo_retencao==='preco_nao_calculado'?'o preço da entrega não foi calculado':'o saldo da loja não cobre a taxa';
-  return confirm(`Pedido #${_n} é de loja de crédito e está retido: ${_mot}.\nMarcar como pronto manda para o despacho SEM debitar agora (o débito sai na finalização, mesmo com saldo negativo). Continuar?`);
+  const _r=v=>'R$ '+(Number(v)||0).toFixed(2).replace('.',',');
+  if(p.credito_motivo_retencao==='preco_nao_calculado'){
+    showNotif('Pedido Retido',`#${_n}: O Preço Da Entrega Não Foi Calculado. Ele Não Pode Ir Para Pronto Ainda.`,'var(--yellow)');
+    return false;
+  }
+  const _taxa=parseFloat(p.taxa_entrega)||0;
+  const _sr=p.loja_id?await dbRpc('saldo_loja',{p_loja_id:p.loja_id}):null;
+  const _saldo=(typeof _sr==='number'||(typeof _sr==='string'&&_sr!==''))?parseFloat(_sr):null;
+  const _txt=_saldo==null?`Taxa ${_r(_taxa)}`:`Saldo ${_r(_saldo)}, Taxa ${_r(_taxa)}, Faltam ${_r(Math.max(0,_taxa-_saldo))}`;
+  if(currentPerfil==='loja'){showNotif('Pedido Retido',`#${_n}: Saldo Insuficiente (${_txt}). Faça Uma Recarga Para Liberar.`,'var(--yellow)');return false;}
+  if(confirm(`Pedido #${_n} está retido: o saldo da loja não cobre a taxa.\n${_txt}.\n\nEle não pode ir para pronto nem para os motoboys enquanto estiver retido. Ele é liberado sozinho quando o saldo cobrir a taxa.\n\nAbrir o financeiro da loja para lançar crédito?`))abrirFinanceiroLoja(p.loja_id);
+  return false;
 }
 function _alertaPagamentoIfood(p){
   if(p.origem!=='ifood'||!_ehAvisoIfood(p.descricao))return'';
@@ -9747,7 +9779,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(novoStatus==='finalizado'&&p.com_retorno&&!p.pagamento_confirmado){
     return confirmarPagamento(pedidoId);
   }
-  if(novoStatus==='pronto'&&!_confirmarProntoCreditoRetido(p))return;
+  if(novoStatus==='pronto'&&!(await _confirmarProntoCreditoRetido(p)))return;
   if(novoStatus==='cancelado'&&!confirm(`Cancelar O Pedido #${p.numero||p.id?.substring(0,6)}?\nEsta Ação Pode Ser Revertida Alterando O Status Novamente.`))return;
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
@@ -9757,7 +9789,9 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='cancelado'&&currentPerfil==='loja')_estornarDebitoEntrega(p);
   try{
-    await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+    const _rowRel=await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+    const _rowPronto=Array.isArray(_rowRel)?_rowRel[0]:null;
+    if(novoStatus==='pronto'&&_rowPronto?.status!=='pronto'){showNotif('Pedido Não Foi Para Pronto',`O Banco Manteve O Pedido Como ${STATUS_LABEL[_rowPronto?.status]||_rowPronto?.status||'Estava'}. Motoboys Não Foram Notificados.`,'var(--yellow)');_buscarPedidosAdmin();return;}
     Object.assign(p,update);
     await logAcao('alterar_status_relatorio',{pedido_id:pedidoId,novo_status:novoStatus});
     showNotif('✅ Status Alterado',STATUS_LABEL[novoStatus]||novoStatus,'var(--green)');
