@@ -3105,12 +3105,13 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
   if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='cancelado'){showNotif('❌ Pedido Cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
+  if(novoStatus==='cancelado'){showNotif('❌ Pedido Cancelado','','var(--red)');}
   // Backend: só aplica o PATCH pra 'pronto' se ainda não tiver motoboy —
   // cobre a corrida entre abas que a checagem acima (dado em memória) não
   // pega sozinha.
   const filtro=novoStatus==='pronto'?`?id=eq.${pedidoId}&motoboy_id=is.null&entregador_id=is.null`:`?id=eq.${pedidoId}`;
   const resultPatch=await db('pedidos','PATCH',update,filtro);
+  if(novoStatus==='cancelado'&&currentPerfil==='loja'&&Array.isArray(resultPatch)&&resultPatch[0]?.status==='cancelado')_estornarDebitoEntrega(resultPatch[0]);
   if(novoStatus==='pronto'&&(!resultPatch||resultPatch.length===0)){
     showNotif('Pedido Já Tem Entregador','Outra Pessoa Já Alocou/Alterou Esse Pedido.','var(--yellow)');
     await atualizarTudo();
@@ -3177,8 +3178,9 @@ async function alterarStatusPedido(pedidoId,novoStatus){
   if(novoStatus==='em_rota'){update.em_rota_em=agora;_dispararWhatsappEmRota(pedidoId);}
   if(novoStatus==='retornando')update.retornando_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;if(novoStatus==='recebido')update.recebido_em=agora;
-  if(novoStatus==='cancelado'){showNotif('❌ Pedido Cancelado','','var(--red)');if(currentPerfil==='loja'){const _pCan=allPedidos.find(x=>x.id===pedidoId);if(_pCan)_estornarDebitoEntrega(_pCan);}}
+  if(novoStatus==='cancelado')showNotif('❌ Pedido Cancelado','','var(--red)');
   const resultPatch=await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+  if(novoStatus==='cancelado'&&currentPerfil==='loja'&&Array.isArray(resultPatch)&&resultPatch[0]?.status==='cancelado')_estornarDebitoEntrega(resultPatch[0]);
   // Trava o status local por 5s para o Realtime não sobrescrever
   _pedidoStatusLock.set(pedidoId,{status:novoStatus,status_detalhado:novoStatus,expires:Infinity});
   const _pl=allPedidos.find(x=>x.id===pedidoId);
@@ -3198,15 +3200,17 @@ async function _deveDebitarSaldo(lojaId){
   if(!l?.tipo_cobranca){const r=await db('lojas','GET',null,`?id=eq.${lojaId}&select=id,tipo_cobranca`).catch(()=>null);l=Array.isArray(r)&&r[0]?r[0]:null;}
   return l?.tipo_cobranca==='credito';
 }
+// Estorno de pedido cancelado pela loja (2026-11-02): pela função
+// devolver_entrega (devolve o que foi debitado, uma vez só, só loja de
+// crédito, só pedido já cancelado). Antes o painel gravava o crédito direto
+// em creditos_lojas, o que impede fechar a gravação direta na tabela.
 async function _estornarDebitoEntrega(pedido){
-  if(!pedido?.loja_id||!pedido?.numero)return;
+  if(!pedido?.id)return;
   // Etapa 2b: pedido do iFood é estornado pelo banco (tg_estorno_ifood_cancelado,
-  // só antes da coleta). Gravar aqui também daria estorno em dobro.
+  // só antes da coleta). Pedir aqui também seria inútil (a função não devolve duas vezes).
   if(pedido.origem==='ifood')return;
-  const existing=await db('creditos_lojas','GET',null,`?loja_id=eq.${pedido.loja_id}&tipo=eq.debito&observacoes=ilike.*%23${pedido.numero}&limit=1`);
-  if(!existing||!existing.length)return;
-  const agora=new Date().toISOString();
-  await db('creditos_lojas','POST',{loja_id:pedido.loja_id,tipo:'credito',valor:parseFloat(pedido.taxa_entrega)||0,observacoes:`Estorno #${pedido.numero}`,data:_dataHojeBrasilia(),created_at:agora,updated_at:agora});
+  const r=await _dbRpcDetalhe('devolver_entrega',{p_pedido_id:pedido.id});
+  if(!r.ok)console.warn('[estorno] devolver_entrega:',r.erro);
   _carregarSaldoTopbar();
 }
 // Seletor de entrega parceira "Sobre Demanda" (pedido do usuário,
@@ -9839,9 +9843,9 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
   if(novoStatus==='aceito')update.aceito_em=agora;
   if(novoStatus==='em_rota')update.em_rota_em=agora;
   if(novoStatus==='finalizado')update.finalizado_em=agora;
-  if(novoStatus==='cancelado'&&currentPerfil==='loja')_estornarDebitoEntrega(p);
   try{
     const _rowRel=await db('pedidos','PATCH',update,`?id=eq.${pedidoId}`);
+    if(novoStatus==='cancelado'&&currentPerfil==='loja'&&Array.isArray(_rowRel)&&_rowRel[0]?.status==='cancelado')_estornarDebitoEntrega(_rowRel[0]);
     const _rowPronto=Array.isArray(_rowRel)?_rowRel[0]:null;
     if(novoStatus==='pronto'&&_rowPronto?.status!=='pronto'){showNotif('Pedido Não Foi Para Pronto',`O Banco Manteve O Pedido Como ${STATUS_LABEL[_rowPronto?.status]||_rowPronto?.status||'Estava'}. Motoboys Não Foram Notificados.`,'var(--yellow)');_buscarPedidosAdmin();return;}
     Object.assign(p,update);
