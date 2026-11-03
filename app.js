@@ -46,7 +46,7 @@ let allPedidos=[],allMotoboys=[],allLojas=[],filterStatus='todos',selectedPedido
 let _pedidosAtivosGlobal=[];
 let idsProntoNotificados=new Set();
 const _pedidoStatusLock=new Map(); // id -> {status,status_detalhado,expires}
-let _saquesPendentesCount=0;
+let _saquesPendentesCount=0,_faturasPendentesCount=0;
 let _cadastrosEmAnaliseCount=0; // lojas com status_cadastro='em_analise' (bolinha do Cadastros, só adm)
 let _saquesRapidosPendentesCount=0;
 let _navAtivo='';
@@ -4390,7 +4390,7 @@ function renderNavSidebar(activeId){
   const items=currentPerfil==='adm'?NAV_ITEMS_ADM:currentPerfil==='loja'?NAV_ITEMS_LOJA_ADM:NAV_ITEMS_SUPORTE;
   const body=document.getElementById('nav-sidebar-body');if(!body)return;
   const _navBtn=item=>{
-    const badge=item.id==='cadastros'&&currentPerfil==='adm'&&_cadastrosEmAnaliseCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_cadastrosEmAnaliseCount}</span>`:item.id==='financeiro'&&_saquesPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
+    const badge=item.id==='cadastros'&&currentPerfil==='adm'&&_cadastrosEmAnaliseCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_cadastrosEmAnaliseCount}</span>`:item.id==='financeiro'&&(_saquesPendentesCount+_faturasPendentesCount)>0?`<span class="nav-badge" title="${_saquesPendentesCount} Pagamento(s) + ${_faturasPendentesCount} Fatura(s) A Aprovar" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesPendentesCount+_faturasPendentesCount}</span>`:item.id==='saque-rapido'&&_saquesRapidosPendentesCount>0?`<span class="nav-badge" style="background:#ef4444;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto">${_saquesRapidosPendentesCount}</span>`:'';
     if(item.submenu){
       const ativo=item.submenu.some(x=>x.id===_navAtivo);
       return`<button class="nav-item${ativo?' active':''}" id="nav-btn-${item.id}" data-label="${item.label}" aria-label="${item.label}" onclick="_abrirNavPopover(event,'${item.id}')"><span class="nav-item-icon">${_icone(item.icon)}</span><span class="nav-item-label">${item.label}</span><span class="nav-item-seta" style="margin-left:auto;display:inline-flex;opacity:.6">${_icone('chevron-right',16)}</span></button>`;
@@ -10990,8 +10990,13 @@ function _saldoBaixoAbrir(){
 }
 async function _carregarBadgeSaques(){
   _saldoBaixoIniciar();
-  const r=await db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=is.null');
+  const [r,_fp]=await Promise.all([
+    db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=is.null'),
+    db('cobrancas_lojas','GET',null,'?select=id&status=eq.pendente'),
+  ]);
   _saquesPendentesCount=Array.isArray(r)?r.length:0;
+  // Selo do Financeiro soma as faturas pendentes de aprovação (2026-11-03).
+  _faturasPendentesCount=Array.isArray(_fp)?_fp.length:0;
   renderNavSidebar(_navAtivo);
   // Chamado daqui também porque o login de produção (override da Hostinger)
   // só chama _carregarBadgeSaques — ver memória do login override.
@@ -13564,14 +13569,21 @@ async function _gerarCobranca(){
 }
 
 // ── APROVAR COBRANÇAS ──
+// Segunda-feira da semana passada (YYYY-MM-DD, Brasília): período padrão do
+// Histórico em Aprovar Faturas (2026-11-03).
+function _segundaSemanaPassadaBrasilia(){
+  const d=new Date(_dataHojeBrasilia()+'T12:00:00');
+  d.setDate(d.getDate()-((d.getDay()+6)%7)-7);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function _renderAprovarCobrancas(){
   const el=document.getElementById('financeiro-content');if(!el)return;
-  const hoje=_dataHojeBrasilia();
+  const hoje=_dataHojeBrasilia(),_iniPadrao=_segundaSemanaPassadaBrasilia();
   el.innerHTML=`
     <div class="card" style="margin-bottom:20px"><div style="padding:20px">
       <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Início</label>
-          <input type="date" id="ac-data-inicio" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
+          <input type="date" id="ac-data-inicio" value="${_iniPadrao}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
         <div><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Data Fim</label>
           <input type="date" id="ac-data-fim" value="${hoje}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/></div>
         <button onclick="_buscarAprovarCobrancas()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('search',16,'btn-ico')}Buscar</button>
@@ -13580,7 +13592,7 @@ function _renderAprovarCobrancas(){
     </div></div>
     <div id="ac-historico-wrap"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando Histórico...</div></div>`;
   _buscarCobrancasPendentes();
-  _renderHistoricoCobrancas();
+  _renderHistoricoCobrancas(_iniPadrao,hoje);
 }
 
 function _buscarAprovarCobrancas(){
@@ -13590,17 +13602,18 @@ function _buscarAprovarCobrancas(){
   _renderHistoricoCobrancas(inicio,fim);
 }
 
+// Pendentes (2026-11-03): todas as faturas pendentes, sem filtro de data e
+// sem esconder loja que passou para crédito — enquanto houver fatura a aprovar,
+// ela aparece aqui. O período da tela vale só para o Histórico.
 async function _buscarCobrancasPendentes(){
-  const inicio=document.getElementById('ac-data-inicio')?.value;
-  const fim=document.getElementById('ac-data-fim')?.value;
-  if(!inicio||!fim){showNotif('Atenção','Selecione O Período','var(--yellow)');return;}
   const pendWrap=document.getElementById('ac-pendentes-wrap');
   if(pendWrap)pendWrap.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const _rawCobs=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome,tipo_cobranca)&status=eq.pendente&created_at=gte.${_inicioDiaBrasilia(inicio)}&created_at=lte.${_fimDiaBrasilia(fim)}&order=created_at.desc`);
-  const cobrancas=(Array.isArray(_rawCobs)?_rawCobs:[]).filter(c=>c.lojas?.tipo_cobranca!=='credito');
+  const _rawCobs=await db('cobrancas_lojas','GET',null,`?select=*,lojas(nome,tipo_cobranca)&status=eq.pendente&order=created_at.desc`);
+  const cobrancas=Array.isArray(_rawCobs)?_rawCobs:[];
+  if(Array.isArray(_rawCobs)&&cobrancas.length!==_faturasPendentesCount){_faturasPendentesCount=cobrancas.length;renderNavSidebar(_navAtivo);}
   if(!pendWrap)return;
   if(!cobrancas.length){
-    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma Cobrança Pendente No Período</div></div>`;
+    pendWrap.innerHTML=`<div style="padding:32px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600">Nenhuma Cobrança Pendente</div></div>`;
     return;
   }
   let _acN=cobrancas.length,_acPed=0,_acVal=0;
@@ -13624,7 +13637,7 @@ async function _buscarCobrancasPendentes(){
         const detalheVencida=`+multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}`;
         return`<tr id="cob-row-${c.id}">
         <td><input type="checkbox" class="ac-cb" value="${c.id}" style="width:16px;height:16px;cursor:pointer"/></td>
-        <td style="font-weight:600;color:var(--text)">${loja.nome||'—'}</td>
+        <td style="font-weight:600;color:var(--text)">${_escHtml(loja.nome||'—')}${loja.tipo_cobranca==='credito'?' <span style="background:#dbeafe;color:#1d4ed8;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px">Crédito</span>':''}</td>
         <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
         <td style="font-size:12px;color:${vencida?'#ef4444':'var(--text2)'};font-weight:${vencida?'700':'400'}">${formatarDataBR(vencYMD)}${vencida?` (${diasAtraso}d)`:''}</td>
         <td>${c.qtd_pedidos||'—'}</td>
