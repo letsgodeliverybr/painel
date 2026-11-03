@@ -3494,9 +3494,15 @@ async function _carregarSaldoTopbar(){
       val.textContent=Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       val.style.color=saldo>=0?'#4ade80':'#f87171';
       el.style.display='flex';
-      _lojaCreditoAtiva=true;el.style.cursor='pointer';_mdWallet(saldo);
+      _lojaCreditoAtiva=true;el.style.cursor='pointer';
+      // Saldo baixo (2026-11-03): com saldo zero, só avisa (amarelo e pulso)
+      // quem já recarregou de verdade — a regra (rede e cortesia) fica no
+      // banco, em carteira_teve_recarga. Se a consulta falhar, avisa como antes.
+      let _avisoSaldo=saldo<100;
+      if(_avisoSaldo&&Math.abs(saldo)<0.005){const _tr=await dbRpc('carteira_teve_recarga',{p_loja_id:currentUser.loja_id});_avisoSaldo=_tr!==false;}
+      _mdWallet(saldo,false,!_avisoSaldo);
       let alertBanner=document.getElementById('saldo-alerta-banner');
-      if(saldo<100){
+      if(_avisoSaldo){
         if(!alertBanner){alertBanner=document.createElement('div');alertBanner.id='saldo-alerta-banner';alertBanner.style.cssText='background:#fef3c7;color:#92400e;padding:8px 16px;text-align:center;font-size:13px;font-weight:700;font-family:Inter,sans-serif;border-bottom:2px solid #fcd34d;flex-shrink:0;';const appEl=document.getElementById('app'),bodyEl=document.getElementById('app-body');if(appEl&&bodyEl)appEl.insertBefore(alertBanner,bodyEl);}
         alertBanner.textContent='⚠️ Saldo Baixo! Recarregue Seu Saldo Para Continuar Criando Entregas.';
         alertBanner.style.display='block';
@@ -4718,14 +4724,14 @@ function _mdBotaoPainel(){
 // pulsando o tempo todo (2026-10-27). O goTab chama sem saldo e só
 // garante a classe base.
 const _WALLET_SALDO_MINIMO=100;
-function _mdWallet(saldo,sempre){
+function _mdWallet(saldo,sempre,semAviso){
   const b=document.getElementById('topbar-saldo');if(!b)return;
   _mdEstilos();
   if(!b.dataset.md){
     b.dataset.md='1';b.classList.add('md-wallet');b.setAttribute('role','button');b.setAttribute('aria-label','Saldo da carteira: abrir recarga');
   }
   if(saldo===undefined&&!sempre)return;
-  const baixo=!!sempre||(saldo!=null&&saldo<_WALLET_SALDO_MINIMO);
+  const baixo=!!sempre||(!semAviso&&saldo!=null&&saldo<_WALLET_SALDO_MINIMO);
   b.classList.toggle('md-wallet-baixo',baixo);
   b.classList.toggle('md-wallet-neg',!sempre&&baixo&&saldo<0);
 }
