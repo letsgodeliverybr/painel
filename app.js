@@ -4469,6 +4469,7 @@ function logout(){
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;document.getElementById('rede-seletor')?.remove();
+  clearInterval(_sbxTimer);_sbxTimer=null;_sbxLista=[];document.getElementById('saldo-baixo-btn')?.remove();clearInterval(_estabSaldosTimer);_estabSaldosTimer=null;
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();_navUltimoLogin=null;clearInterval(_liTimer);
   document.body.classList.remove('nav-desktop','nav-col');_fecharNavPopover();document.getElementById('nav-sidebar')?.classList.remove('open');document.getElementById('nav-overlay')?.classList.remove('open');
   document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';
@@ -6417,6 +6418,7 @@ function _estabelecimentosSetFiltro(filtro){_estabelecimentosFiltro=filtro;_rend
 // anteriores à migration add_lojas_status_cadastro.sql ainda não aplicada.
 async function _renderEstabelecimentosTab(el){
   const data=await db('lojas','GET',null,'?order=created_at.desc');
+  if(currentPerfil==='adm'){await _estabCarregarSaldos();_estabIniciarTimerSaldos();}
   _estabelecimentosDataCache=data;
   const _cTotal=data.length;
   const _cAprov=data.filter(l=>(l.status_cadastro||'aprovado')==='aprovado').length;
@@ -6435,7 +6437,7 @@ async function _renderEstabelecimentosTab(el){
     ${btnFiltro('pendentes',_icone('hourglass',14,'btn-ico')+'Pendentes',_cPend)}
     ${btnFiltro('reprovadas',_icone('circle-x',14,'btn-ico')+'Reprovadas',_cReprov)}`;
   const _buscaEsc=(_estabelecimentosBusca||'').replace(/"/g,'&quot;');
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar Loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede De Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços Em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th><th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${filtroBtns}<input type="text" id="estab-busca" placeholder="Buscar Loja..." value="${_buscaEsc}" oninput="_estabelecimentosSetBusca(this.value)" style="padding:7px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;min-width:180px;outline:none"/></div><div style="display:flex;gap:8px"><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_abrirModalImportarLojas()">${_icone('upload',16,'btn-ico')}Importar Rede De Lojas</button><button class="btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="_recalcularEnderecosDadosPendentes()">${_icone('refresh-cw',16,'btn-ico')}Recalcular Endereços Em Massa</button><button class="btn-sm btn-primary-sm" onclick="abrirModal('modal-loja')">${_icone('plus',16,'btn-ico')}Nova Loja</button></div></div><div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>E-mail Acesso</th>${currentPerfil==='adm'?'<th>Saldo Atual</th>':''}<th>Status</th><th>Cadastro</th><th>Faturas</th><th>Ações</th></tr></thead><tbody id="tbody-estabelecimentos"></tbody></table></div></div>`;
   _renderTbodyEstabelecimentos();
 }
 // Só refiltra/re-renderiza o <tbody> (não o toolbar/input inteiro) — chamado
@@ -6795,12 +6797,34 @@ function _renderTbodyEstabelecimentos(){
   if(termo)filtered=filtered.filter(l=>(l.nome||'').toLowerCase().includes(termo));
   const tbody=document.getElementById('tbody-estabelecimentos');if(!tbody)return;
   const cadBadge=(s)=>({aprovado:'em_rota',em_analise:'aceito',reprovado:'recebido',pendente:'fila'}[s]||'em_rota');
-  tbody.innerHTML=filtered.length===0?'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>':filtered.map(l=>{
+  tbody.innerHTML=filtered.length===0?`<tr><td colspan="${currentPerfil==='adm'?9:8}" style="text-align:center;padding:32px;color:var(--text3)">Nenhuma Loja</td></tr>`:filtered.map(l=>{
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td><td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td>${currentPerfil==='adm'?`<td style="white-space:nowrap">${_estabSaldoHtml(l)}</td>`:''}<td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`;
   }).join('');
+}
+// Saldo atual na lista (ADM, 2026-11-02): uma única chamada agregada
+// (saldos_lojas_adm, GROUP BY no banco) para todas as lojas; recarrega ao
+// abrir a tela e a cada 3 min enquanto ela estiver aberta.
+let _estabSaldos=new Map(),_estabSaldosTimer=null;
+async function _estabCarregarSaldos(){
+  const r=await dbRpc('saldos_lojas_adm');
+  if(Array.isArray(r)&&r.length)_estabSaldos=new Map(r.map(x=>[x.loja_id,x]));
+}
+function _estabIniciarTimerSaldos(){
+  clearInterval(_estabSaldosTimer);
+  _estabSaldosTimer=setInterval(async()=>{
+    if(currentPerfil!=='adm'||!document.getElementById('tbody-estabelecimentos')){clearInterval(_estabSaldosTimer);_estabSaldosTimer=null;return;}
+    await _estabCarregarSaldos();_renderTbodyEstabelecimentos();
+  },180000);
+}
+function _estabSaldoHtml(l){
+  if(l.tipo_cobranca!=='credito')return'<span style="color:var(--text3)">—</span>';
+  const x=_estabSaldos.get(l.id);
+  if(!x||x.saldo==null)return'<span style="color:var(--text3)">…</span>';
+  const v=parseFloat(x.saldo)||0;
+  return`<span style="font-weight:700;color:${v<100?'#ef4444':'#10b981'}">${_rcgFmt(v)}</span>${x.em_rede?' <span title="Saldo Da Carteira Da Rede" style="font-size:10px;font-weight:700;color:#1A56DB;border:1px solid #1A56DB55;border-radius:20px;padding:1px 6px">Rede</span>':''}`;
 }
 function _estabelecimentosSetBusca(v){_estabelecimentosBusca=v;_renderTbodyEstabelecimentos();}
 function _abrirDropdownCadastroLoja(event,lojaId){
@@ -10830,7 +10854,46 @@ let _histSaquesData=[];
 let _gpResultados={};
 let _gcResultados={};
 
+// Saldo baixo (< R$ 100) de loja de crédito ativa (2026-11-02): o banco abre
+// um alerta quando a carteira cruza o limite (cron a cada 5 min); o painel do
+// ADM consulta a lista a cada 5 min, avisa uma vez as novas e mostra o botão
+// "Saldo Baixo" no topo com a lista.
+let _sbxTimer=null,_sbxLista=[];
+function _saldoBaixoIniciar(){
+  if(currentPerfil!=='adm'||_sbxTimer)return;
+  _saldoBaixoVerificar();
+  _sbxTimer=setInterval(()=>{if(currentPerfil!=='adm'){clearInterval(_sbxTimer);_sbxTimer=null;document.getElementById('saldo-baixo-btn')?.remove();return;}_saldoBaixoVerificar();},300000);
+}
+async function _saldoBaixoVerificar(){
+  const r=await dbRpc('saldo_baixo_lista');
+  if(!Array.isArray(r))return;
+  _sbxLista=r;_saldoBaixoBotao();
+  const novos=r.filter(x=>!x.notificado);
+  if(!novos.length)return;
+  if(novos.length<=3)novos.forEach(x=>showNotif('⚠️ Saldo Baixo',`${x.nome}: ${_rcgFmt(x.saldo)}`,'var(--yellow)'));
+  else showNotif('⚠️ Saldo Baixo',`${novos.length} Lojas Ficaram Com Saldo Abaixo De R$ 100,00.`,'var(--yellow)');
+  await dbRpc('saldo_baixo_marcar_avisados',{p_ids:novos.map(x=>x.alerta_id)});
+}
+function _saldoBaixoBotao(){
+  let b=document.getElementById('saldo-baixo-btn');
+  if(!_sbxLista.length){b?.remove();return;}
+  const ref=document.getElementById('topbar-saldo');if(!ref?.parentNode)return;
+  if(!b){b=document.createElement('button');b.id='saldo-baixo-btn';b.onclick=_saldoBaixoAbrir;
+    b.style.cssText='margin-right:8px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b66;border-radius:8px;padding:6px 10px;font-family:Inter,sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap';
+    ref.parentNode.insertBefore(b,ref);}
+  b.textContent=`⚠️ ${_sbxLista.length} Saldo Baixo`;b.title='Lojas De Crédito Ativas Com Saldo Abaixo De R$ 100,00';
+}
+function _saldoBaixoAbrir(){
+  let m=document.getElementById('modal-saldo-baixo');
+  if(!m){m=document.createElement('div');m.id='modal-saldo-baixo';m.className='modal-overlay';document.body.appendChild(m);}
+  const linhas=_sbxLista.map(x=>`<tr><td style="font-weight:600;color:var(--text)">${_escHtml(x.nome||'')}</td><td style="font-weight:700;color:#ef4444;white-space:nowrap">${_rcgFmt(x.saldo)}</td><td style="font-size:12px;color:var(--text3);white-space:nowrap">${formatarDataHora(x.cruzou_em)}</td><td><button class="btn-sm" onclick="document.getElementById('modal-saldo-baixo').classList.remove('open');abrirFinanceiroLoja('${x.loja_id}')">Abrir</button></td></tr>`).join('');
+  m.innerHTML=`<div class="modal" style="max-width:620px"><div class="modal-header"><span class="modal-title">⚠️ Lojas Com Saldo Baixo</span><button class="modal-close" onclick="document.getElementById('modal-saldo-baixo').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-body"><div style="font-size:12px;color:var(--text3);margin-bottom:10px">Lojas De Crédito Ativas Abaixo De R$ 100,00 (Rede = Saldo Da Carteira). Atualiza A Cada 5 Minutos.</div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Loja</th><th>Saldo</th><th>Desde</th><th></th></tr></thead><tbody>${linhas||'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">Nenhuma Loja Com Saldo Baixo</td></tr>'}</tbody></table></div></div></div>`;
+  m.classList.add('open');
+}
 async function _carregarBadgeSaques(){
+  _saldoBaixoIniciar();
   const r=await db('saques','GET',null,'?select=id&status=eq.pendente&chave_pix=is.null');
   _saquesPendentesCount=Array.isArray(r)?r.length:0;
   renderNavSidebar(_navAtivo);
