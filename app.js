@@ -11693,17 +11693,14 @@ async function _reciboDeposito(id,saldoApos){
   modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';
   modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:14px;font-weight:600">Carregando Recibo...</div></div>';
   modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
-  const rr=await db('creditos_lojas','GET',null,`?id=eq.${id}&select=*,lojas(nome,email,endereco,rede_credito_id,credito_desde)&limit=1`);
+  const rr=await db('creditos_lojas','GET',null,`?id=eq.${id}&select=*,lojas(nome,email,endereco,rede_credito_id)&limit=1`);
   const r=Array.isArray(rr)?rr[0]:null;
   if(!r||_finTipo(r)!=='recarga'){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Recarga Não Encontrada</div>';return;}
   const loja=r.lojas||{};
   const br=await db('creditos_lojas','GET',null,`?loja_id=eq.${r.loja_id}&tipo=eq.bonus&origem=eq.recarga&created_at=eq.${encodeURIComponent(r.created_at)}&select=id,valor,observacoes,created_at&limit=1`);
   const bonus=Array.isArray(br)&&br[0]?br[0]:null;
-  let redeNome='';
-  if(loja.rede_credito_id){
-    const rn=await db('redes_credito','GET',null,`?id=eq.${loja.rede_credito_id}&select=nome&limit=1`);
-    redeNome=(Array.isArray(rn)&&rn[0]?.nome)||(_redeLojas.find(l=>l.principal)?.loja_nome?'Rede '+_redeLojas.find(l=>l.principal).loja_nome:'');
-  }
+  // redes_credito não é legível pelo painel; o principal tem o nome em minha_rede
+  const redeNome=loja.rede_credito_id?((_redeLojas.find(l=>l.loja_id===r.loja_id)?.rede_nome)||'Carteira De Rede'):'';
   if(saldoApos===undefined){
     // ADM: mesma conta do extrato (soma assinada em ordem), carteira inteira se for rede
     let ids=[r.loja_id];
@@ -11711,7 +11708,6 @@ async function _reciboDeposito(id,saldoApos){
     const ate=bonus?.created_at||r.created_at;
     let rows=await _dbTodasLinhas('creditos_lojas',`?loja_id=in.(${ids.join(',')})&created_at=lte.${encodeURIComponent(ate)}&select=tipo,valor,created_at&order=created_at.asc,id.asc`);
     if(!Array.isArray(rows))rows=null;
-    if(rows&&loja.credito_desde&&!loja.rede_credito_id)rows=rows.filter(x=>x.created_at>=loja.credito_desde);
     saldoApos=rows?rows.reduce((a,x)=>Math.round((a+_finSinal(x)*(parseFloat(x.valor)||0))*100)/100,0):null;
   }
   const pago=parseFloat(r.valor)||0,vb=parseFloat(bonus?.valor)||0,creditado=Math.round((pago+vb)*100)/100;
