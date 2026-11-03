@@ -4544,7 +4544,7 @@ function logout(){
   }catch{}
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
-  _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;document.getElementById('rede-seletor')?.remove();
+  _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;document.getElementById('rede-seletor')?.remove();_redeNomeTopo(true);
   _fonteAplicar(1);document.getElementById('fonte-btn')?.remove();document.getElementById('fonte-menu')?.remove();
   clearInterval(_sbxTimer);_sbxTimer=null;_sbxLista=[];document.getElementById('saldo-baixo-btn')?.remove();clearInterval(_estabSaldosTimer);_estabSaldosTimer=null;
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();_navUltimoLogin=null;clearInterval(_liTimer);
@@ -4569,18 +4569,25 @@ async function _redeCarregar(){
   _redeRenderSeletor();
   await _redeAposTroca();
 }
-// Seletor no topo, ao lado do saldo (o HTML do topo é o de produção; o
-// seletor é criado aqui).
+// Seletor no canto direito do topo, no lugar do nome do usuário e da
+// etiqueta LOJA (só login de loja em rede; o HTML do topo é o de produção,
+// o seletor é criado aqui). Fora de rede, ADM e suporte: nome e etiqueta
+// como sempre. O Aa e o relógio ficam onde estão.
+function _redeNomeTopo(mostrar){
+  ['user-nome','user-perfil-badge'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=mostrar?'':'none';});
+}
 function _redeRenderSeletor(){
   document.getElementById('rede-seletor')?.remove();
-  if(!_redeAtiva())return;
-  const ref=document.getElementById('topbar-saldo');if(!ref?.parentNode)return;
-  const s=document.createElement('select');s.id='rede-seletor';s.title='Loja Da Rede';
-  s.style.cssText='margin-right:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:Inter,sans-serif;font-size:13px;max-width:220px;cursor:pointer';
+  if(!_redeAtiva()){_redeNomeTopo(true);return;}
+  const nome=document.getElementById('user-nome');
+  const ref=nome||document.querySelector('.topbar-right .user-info');if(!ref)return;
+  const s=document.createElement('select');s.id='rede-seletor';s.title='Loja Da Rede';s.setAttribute('aria-label','Loja Da Rede');
+  s.style.cssText='background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;max-width:220px;cursor:pointer';
   s.innerHTML='<option value="">🏬 Toda A Rede</option>'+_redeLojas.map(l=>`<option value="${l.loja_id}">${_escHtml(l.loja_nome||'')}</option>`).join('');
   s.value=_redeTodas?'':currentUser.loja_id;
   s.onchange=()=>_redeTrocar(s.value);
-  ref.parentNode.insertBefore(s,ref);
+  if(nome)nome.parentNode.insertBefore(s,nome);else ref.appendChild(s);
+  _redeNomeTopo(false);
 }
 async function _redeTrocar(lojaId){
   if(!_redeAtiva())return;
