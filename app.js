@@ -11481,7 +11481,7 @@ async function renderFaturasLojaPage(lojaIdEquipe){
   body.innerHTML=`<div class="alt-page">
     ${cab}
     <div class="card" style="margin-bottom:16px"><div class="fin-topo" id="fin-topo"><div class="fin-saldo"><span>Saldo Do Crédito</span><b>—</b><small>Carregando...</small></div></div></div>
-    <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">${_icone('wallet',18)} Extrato Do Crédito</span></div>
+    <div class="card" style="margin-bottom:16px"><div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="card-title">${_icone('wallet',18)} Extrato Do Crédito</span><button class="btn-sm" id="fin-baixar-btn" onclick="_finAbrirBaixar(event)" style="display:inline-flex;align-items:center;gap:6px">${_icone('download',16)}Baixar Extrato</button></div>
       <div class="fin-filtros">
         <div><label for="fin-ini">Data Início</label><input type="date" id="fin-ini" onchange="_finFiltrar()"/></div>
         <div><label for="fin-fim">Data Fim</label><input type="date" id="fin-fim" onchange="_finFiltrar()"/></div>
@@ -11510,6 +11510,7 @@ async function renderFaturasLojaPage(lojaIdEquipe){
   _fin.rede=_visaoRede||_fin.parcial;
   let _saldoTopo=acc;
   if(_fin.parcial){const _sr=await dbRpc('saldo_loja',{p_loja_id:lojaId});if(typeof _sr==='number')_saldoTopo=_sr;}
+  _fin.saldoTopo=_saldoTopo;
   _finRenderTopo(_saldoTopo);
   _finFiltrar();
   // faturas antigas (lojas que já faturaram)
@@ -11573,6 +11574,93 @@ function _finRenderExtrato(){
     <div class="fin-pag"><span>${ini+1}–${Math.min(ini+_FIN_POR_PAGINA,tot)} de ${tot}</span><div style="display:flex;gap:8px">
       <button onclick="_finPagina(-1)" ${_fin.pagina===0?'disabled':''}>${_icone('chevron-left',14)} Mais Recentes</button>
       <button onclick="_finPagina(1)" ${_fin.pagina>=pags-1?'disabled':''}>Mais Antigos ${_icone('chevron-right',14)}</button></div></div>`;
+}
+
+// Baixar Extrato (PDF/CSV): usa _fin.linhas com o filtro aplicado na tela
+// (_finFiltrar), mais recente primeiro, uma linha por lançamento (o
+// agrupamento por dia é só visual). Saldo após = o mesmo da tela; em loja
+// de rede vista sozinha a tela mostra "—" e o arquivo também. Nada é recalculado.
+function _finLinhasExport(){
+  const f=_fin.filtro||{};
+  const nomeLoja=id=>(_fin.lojasNome&&_fin.lojasNome[id])||_fin.loja?.nome||'';
+  return _fin.linhas
+    .filter(r=>(!f.ini||String(r.data)>=f.ini)&&(!f.fim||String(r.data)<=f.fim)&&(!f.tipo||r._t===f.tipo))
+    .slice().reverse()
+    .map(r=>({data:formatarDataBR(r.data),hora:_finHora(r.created_at),tipo:_finRotulo(r._t),loja:nomeLoja(r.loja_id),descricao:r.observacoes||'',
+      valor:_finSinal(r)*(parseFloat(r.valor)||0),saldo:_fin.parcial?null:r._saldo}));
+}
+// hora do lançamento em Brasília (created_at é timestamptz)
+function _finHora(ts){
+  const d=ts?new Date(ts):null;if(!d||isNaN(d))return'';
+  return d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+}
+function _finTituloExport(){
+  return _fin.lojasNome?`Toda A Rede — ${_fin.loja?.nome||''}`:(_fin.loja?.nome||'');
+}
+function _finPeriodoExport(){
+  const f=_fin.filtro||{};
+  if(!f.ini&&!f.fim)return'Todo O Período';
+  return`${f.ini?formatarDataBR(f.ini):'Início'} a ${f.fim?formatarDataBR(f.fim):'Hoje'}`;
+}
+function _finNomeArquivo(ext){
+  const f=_fin.filtro||{};
+  const slug=String(_fin.lojasNome?'rede_'+(_fin.loja?.nome||''):(_fin.loja?.nome||'loja')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'').toLowerCase();
+  return`extrato_${slug}_${f.ini||'inicio'}_a_${f.fim||_dataHojeBrasilia()}.${ext}`;
+}
+function _finAbrirBaixar(ev){
+  ev.stopPropagation();
+  const velho=document.getElementById('fin-baixar-menu');if(velho){velho.remove();return;}
+  const b=ev.currentTarget.getBoundingClientRect();
+  const m=document.createElement('div');m.id='fin-baixar-menu';m.setAttribute('role','menu');
+  m.style.cssText=`position:fixed;top:${b.bottom+6}px;left:${Math.max(8,b.right-210)}px;width:210px;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:6px`;
+  const it=(fmt,ic,txt)=>`<button role="menuitem" onclick="_finBaixar('${fmt}')" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:none;border:none;border-radius:8px;cursor:pointer;font:600 13px Inter,sans-serif;color:var(--text);text-align:left">${_icone(ic,16)}${txt}</button>`;
+  m.innerHTML=it('pdf','file-text','PDF')+it('csv','download','Planilha CSV');
+  document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),0);
+}
+function _finBaixar(fmt){
+  document.getElementById('fin-baixar-menu')?.remove();
+  const linhas=_finLinhasExport();
+  if(!linhas.length){showNotif('Nada Para Baixar','Nenhum Lançamento No Período E Tipo Escolhidos.','var(--yellow)');return;}
+  if(fmt==='csv')return _finBaixarCsv(linhas);
+  return _finBaixarPdf(linhas);
+}
+function _finBaixarCsv(linhas){
+  const num=v=>v==null?'':(Number(v)||0).toFixed(2).replace('.',',');
+  // texto entre aspas; = + - @ no início viram texto (planilha não executa fórmula)
+  const txt=v=>{let t=String(v??'');if(/^[=+\-@\t\r]/.test(t))t="'"+t;return'"'+t.replace(/"/g,'""')+'"';};
+  const cab=['Data','Hora','Tipo','Loja','Descrição','Valor (R$)','Saldo Após (R$)'];
+  const corpo=linhas.map(r=>[txt(r.data),txt(r.hora),txt(r.tipo),txt(r.loja),txt(r.descricao),num(r.valor),num(r.saldo)].join(';'));
+  const blob=new Blob(['\uFEFF'+[cab.map(txt).join(';'),...corpo].join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=_finNomeArquivo('csv');
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+// PDF: mesma via da fatura (_imprimirFatura) — janela de impressão, "Salvar como PDF".
+function _finBaixarPdf(linhas){
+  const w=window.open('','_blank','width=900,height=720');
+  if(!w){showNotif('Janela Bloqueada','Permita Pop-Ups Do Painel Para Baixar O PDF.','var(--yellow)');return;}
+  const brl=v=>v==null?'—':(v<0?'− ':'')+_rcgFmt(Math.abs(v));
+  const sinal=v=>(v<0?'− ':'+ ')+_rcgFmt(Math.abs(v));
+  const f=_fin.filtro||{};
+  const tipoTxt=f.tipo?_finRotulo(f.tipo):'Todos Os Tipos';
+  const saldo=typeof _fin.saldoTopo==='number'?_fin.saldoTopo:null;
+  const trs=linhas.map(r=>`<tr><td>${_escHtml(r.data)}</td><td>${_escHtml(r.hora)}</td><td>${_escHtml(r.tipo)}</td><td>${_escHtml(r.loja)}</td><td>${_escHtml(r.descricao||'—')}</td><td class="n ${r.valor<0?'neg':'pos'}">${sinal(r.valor)}</td><td class="n">${brl(r.saldo)}</td></tr>`).join('');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${_escHtml(_finNomeArquivo('pdf').replace(/\.pdf$/,''))}</title><style>
+    *{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#111;padding:28px;font-size:12px}
+    h1{font-size:18px;margin-bottom:4px}.meta{color:#555;margin-bottom:14px;line-height:1.6}
+    table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}
+    th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#555;border-bottom:2px solid #999}
+    td.n,th.n{text-align:right;white-space:nowrap}.neg{color:#b91c1c}.pos{color:#047857}
+    thead{display:table-header-group}tr{page-break-inside:avoid}
+    @page{size:A4;margin:12mm}</style></head><body>
+    <h1>Extrato Do Crédito — ${_escHtml(_finTituloExport())}</h1>
+    <div class="meta">Período: ${_escHtml(_finPeriodoExport())} · Tipo: ${_escHtml(tipoTxt)} · ${linhas.length} lançamento${linhas.length>1?'s':''}<br>
+    ${saldo==null?'':`${_fin.rede?'Saldo Atual Da Carteira Da Rede':'Saldo Atual'}: ${brl(saldo)} · `}Gerado em ${_escHtml(formatarDataHora(_agoraBrasilia()))}</div>
+    <table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Loja</th><th>Descrição</th><th class="n">Valor</th><th class="n">Saldo Após</th></tr></thead><tbody>${trs}</tbody></table>
+  </body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),400);
 }
 
 // Fatura Atual = cobrança pendente mais urgente (maior atraso) da loja —
