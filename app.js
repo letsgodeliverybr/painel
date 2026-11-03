@@ -3411,7 +3411,51 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   await atualizarTudo();
 }
 
+// Tamanho do texto por usuário (2026-11-02, pedido da Novigo, monitor de 16").
+// Padrão = 100%, igual a hoje: sem escolha salva, nada muda. A escolha fica
+// neste navegador (localStorage, por id de usuário). Amplia a área da tela
+// (#app-body) e o topo com CSS zoom; o mapa volta a 100% (zoom inverso),
+// senão o Leaflet erra o ponto do clique. Janelas e menus soltos não mudam.
+const _FONTE_OPCOES=[[1,'Padrão'],[1.12,'Grande'],[1.25,'Maior']];
+function _fonteChave(){return currentUser?.id?'lg_fonte_'+currentUser.id:null;}
+function _fonteAplicar(z){
+  let st=document.getElementById('fonte-styles');
+  if(!(z>1)){st?.remove();document.body.classList.remove('fonte-ampliada');return;}
+  if(!st){st=document.createElement('style');st.id='fonte-styles';document.head.appendChild(st);}
+  st.textContent=`body.fonte-ampliada #app-body,body.fonte-ampliada .topbar{zoom:${z}}
+    body.fonte-ampliada #app-body .leaflet-container{zoom:${(1/z).toFixed(4)}}`;
+  document.body.classList.add('fonte-ampliada');
+}
+function _fonteIniciar(){
+  const k=_fonteChave();if(!k)return;
+  const z=parseFloat(localStorage.getItem(k)||'1')||1;
+  _fonteAplicar(z);
+  if(document.getElementById('fonte-btn'))return;
+  const ui=document.querySelector('.topbar-right .user-info');if(!ui)return;
+  const b=document.createElement('button');b.id='fonte-btn';b.type='button';b.title='Tamanho Do Texto';b.setAttribute('aria-label','Tamanho Do Texto');
+  b.style.cssText='background:none;border:1px solid var(--border);border-radius:8px;height:28px;padding:0 8px;cursor:pointer;color:var(--text2);font:700 13px Inter,sans-serif';
+  b.textContent='Aa';b.onclick=_fonteAbrirMenu;ui.prepend(b);
+}
+function _fonteAbrirMenu(ev){
+  ev.stopPropagation();
+  const velho=document.getElementById('fonte-menu');if(velho){velho.remove();return;}
+  const k=_fonteChave(),atual=parseFloat(localStorage.getItem(k)||'1')||1;
+  const r=ev.currentTarget.getBoundingClientRect();
+  const m=document.createElement('div');m.id='fonte-menu';m.setAttribute('role','menu');
+  m.style.cssText=`position:fixed;top:${r.bottom+6}px;left:${Math.max(8,r.right-180)}px;width:180px;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:6px`;
+  m.innerHTML=_FONTE_OPCOES.map(([z,t])=>`<button role="menuitemradio" aria-checked="${z===atual}" onclick="_fonteEscolher(${z})" style="display:flex;justify-content:space-between;width:100%;padding:9px 12px;background:${z===atual?'var(--surface2)':'none'};border:none;border-radius:8px;cursor:pointer;font:600 ${Math.round(13*z)}px Inter,sans-serif;color:var(--text)">${t}<span>${Math.round(z*100)}%</span></button>`).join('');
+  document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener('click',()=>m.remove(),{once:true}),0);
+}
+function _fonteEscolher(z){
+  const k=_fonteChave();if(!k)return;
+  if(z>1)localStorage.setItem(k,String(z));else localStorage.removeItem(k);
+  document.getElementById('fonte-menu')?.remove();
+  _fonteAplicar(z);
+  if(map&&map.invalidateSize)setTimeout(()=>map.invalidateSize(),50);
+}
 async function _carregarSaldoTopbar(){
+  _fonteIniciar();
   try{
     const el=document.getElementById('topbar-saldo'),val=document.getElementById('saldo-valor');
     if(!el||!val)return;
@@ -4501,6 +4545,7 @@ function logout(){
   clearInterval(realtimeInterval);pararRoteirizacao();clearInterval(_faturaBannerTickInterval);clearInterval(_faturaBannerRefreshInterval);clearInterval(_chatBadgeInterval);clearInterval(_chatPollInterval);_faturaAtualLoja=null;_faturaVencidaLoja=false;sessionStorage.removeItem('lg_user');sessionStorage.removeItem('lg_session');
   if(map){map.remove();map=null;}
   _redeLojas=[];_redeTodas=false;_redeLojaPrincipal=null;document.getElementById('rede-seletor')?.remove();
+  _fonteAplicar(1);document.getElementById('fonte-btn')?.remove();document.getElementById('fonte-menu')?.remove();
   clearInterval(_sbxTimer);_sbxTimer=null;_sbxLista=[];document.getElementById('saldo-baixo-btn')?.remove();clearInterval(_estabSaldosTimer);_estabSaldosTimer=null;
   currentUser=null;currentPerfil=null;idsProntoNotificados=new Set();_navUltimoLogin=null;clearInterval(_liTimer);
   document.body.classList.remove('nav-desktop','nav-col');_fecharNavPopover();document.getElementById('nav-sidebar')?.classList.remove('open');document.getElementById('nav-overlay')?.classList.remove('open');
