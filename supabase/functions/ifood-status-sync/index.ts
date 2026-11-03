@@ -359,6 +359,22 @@ async function calcularKmETaxas(loja: any, lat: number | null, lng: number | nul
     preco_dinamico: Number(data.pd) || 0, preco_dinamico_origem: data.pd_origem ?? null };
 }
 
+// Complemento e referência do iFood (2026-11-02): o formattedAddress traz só
+// rua e número; complement/reference vinham no payload e eram descartados.
+// Vão no mesmo campo pedidos.endereco, no formato dos pedidos do painel
+// ("Rua, nº - complemento"), para aparecer no painel, no mapa e no app do
+// entregador sem coluna nova. Não repete o que já estiver no endereço.
+function enderecoComComplemento(a: any): string {
+  const base = String(a?.formattedAddress ?? "").trim();
+  const comp = String(a?.complement ?? "").trim();
+  const ref = String(a?.reference ?? "").trim();
+  const low = base.toLowerCase();
+  let s = base;
+  if (comp && !low.includes(comp.toLowerCase())) s += (s ? " - " : "") + comp;
+  if (ref && !low.includes(ref.toLowerCase()) && ref.toLowerCase() !== comp.toLowerCase()) s += (s ? " " : "") + `(Ref.: ${ref})`;
+  return s;
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -393,7 +409,7 @@ async function mapearPedidoIfood(d: any) {
     com_retorno: pendente > 0,
     loja_id: loja?.id ?? null,
     retirada: d.orderType === "TAKEOUT",
-    endereco: d.delivery?.deliveryAddress?.formattedAddress ?? "",
+    endereco: enderecoComComplemento(d.delivery?.deliveryAddress),
     latitude: d.delivery?.deliveryAddress?.coordinates?.latitude ?? null,
     longitude: d.delivery?.deliveryAddress?.coordinates?.longitude ?? null,
     endereco_coleta: loja?.endereco ?? "",
