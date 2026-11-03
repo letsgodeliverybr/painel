@@ -11143,7 +11143,7 @@ async function _scBuscar(){
       <td style="font-weight:600;color:var(--text)">${r[joinField]?.nome||'—'}</td>
       <td>${tipoBadge(r.tipo)}</td>
       <td style="font-weight:700;color:${r.tipo==='credito'?'#10b981':r.tipo==='bonus'?'#7c3aed':'#ef4444'}">R$ ${(parseFloat(r.valor)||0).toFixed(2)}</td>
-      <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${r.observacoes||'—'}${isLojas&&_finTipo(r)==='recarga'?` <button onclick="_reciboDeposito('${r.id}')" style="margin-left:8px;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1px solid var(--accent);border-radius:7px;background:transparent;color:var(--accent);font:700 10.5px Inter,sans-serif;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;white-space:nowrap;vertical-align:middle">${_icone('file-text',14)}Baixar Recibo De Depósito</button>`:''}</td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
 }
@@ -11433,6 +11433,8 @@ function _finEstilos(){
   .fin-tag{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--text)}
   .fin-tag i{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
   .fin-desc{color:var(--text2);min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .fin-recibo{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--accent);border-radius:7px;background:transparent;color:var(--accent);font:700 10.5px Inter,sans-serif;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+  .fin-recibo:hover{background:rgba(26,86,219,.1)}.fin-recibo:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,86,219,.45)}
   .fin-exp{background:none;border:none;color:var(--accent);font:600 12.5px Inter,sans-serif;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:4px}
   .fin-sub{background:var(--surface2);padding:4px 18px 8px 126px;border-bottom:1px solid var(--border)}
   .fin-sub div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);padding:4px 0}
@@ -11566,6 +11568,9 @@ function _finRenderExtrato(){
         <span class="v">${val(g.valor,-1)}</span><span class="s">${sal(g._saldo)}</span></div>
         ${aberto?`<div class="fin-sub">${g.itens.slice().reverse().map(r=>`<div><span>${lojaTag(r)}${_escHtml(r.observacoes||'Entrega')}</span><span>− ${_rcgFmt(r.valor)}</span></div>`).join('')}</div>`:''}`;
     }
+    if(g._t==='recarga')return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor[g._t]}"></i>${_finRotulo(g._t)}</span>
+      <span class="fin-desc" style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_escHtml(g.observacoes||'').replace(/"/g,'&quot;')}">${lojaTag(g)}${_escHtml(g.observacoes||'—')}</span><button class="fin-recibo" onclick="_finReciboAbrir('${g.id}')">${_icone('file-text',14)}Baixar Recibo De Depósito</button></span>
+      <span class="v">${val(g.valor,_finSinal(g))}</span><span class="s">${sal(g._saldo)}</span></div>`;
     return`<div class="fin-linha"><span class="d">${formatarDataBR(g.data)}</span><span class="t fin-tag"><i style="background:${cor[g._t]}"></i>${_finRotulo(g._t)}</span>
       <span class="fin-desc" title="${_escHtml(g.observacoes||'').replace(/"/g,'&quot;')}">${lojaTag(g)}${_escHtml(g.observacoes||'—')}</span>
       <span class="v">${val(g.valor,_finSinal(g))}</span><span class="s">${sal(g._saldo)}</span></div>`;
@@ -11661,6 +11666,121 @@ function _finBaixarPdf(linhas){
     <table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Loja</th><th>Descrição</th><th class="n">Valor</th><th class="n">Saldo Após</th></tr></thead><tbody>${trs}</tbody></table>
   </body></html>`);
   w.document.close();w.focus();setTimeout(()=>w.print(),400);
+}
+
+// ── Recibo de depósito (recarga) ──
+// Mesmo visual da fatura (verFaturaCobranca), título "Recibo De Depósito" e
+// "Valor Recebido". Só lê o lançamento: valor, data/hora e observação são os
+// da linha de creditos_lojas; o bônus é a linha 'bonus' gravada junto
+// (creditar_recarga_loja: mesma loja, origem recarga, mesmo created_at).
+// Saldo após: no Financeiro, o mesmo "Saldo Após" do extrato (após o bônus);
+// em Créditos (ADM), a soma da carteira até esse lançamento, mesma conta.
+function _finReciboAbrir(id){
+  const r=_fin.linhas.find(x=>x.id===id);if(!r)return;
+  const b=_fin.linhas.find(x=>x.tipo==='bonus'&&x.loja_id===r.loja_id&&x.created_at===r.created_at);
+  _reciboDeposito(id,_fin.parcial?null:(b||r)._saldo);
+}
+async function _reciboDeposito(id,saldoApos){
+  let modal=document.getElementById('modal-recibo-deposito');
+  if(!modal){modal=document.createElement('div');modal.id='modal-recibo-deposito';document.body.appendChild(modal);}
+  modal.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px';
+  modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;text-align:center;color:#6b7280;min-width:260px"><div style="font-size:14px;font-weight:600">Carregando Recibo...</div></div>';
+  modal.onclick=e=>{if(e.target===modal)modal.style.display='none';};
+  const rr=await db('creditos_lojas','GET',null,`?id=eq.${id}&select=*,lojas(nome,email,endereco,rede_credito_id,credito_desde)&limit=1`);
+  const r=Array.isArray(rr)?rr[0]:null;
+  if(!r||_finTipo(r)!=='recarga'){modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;text-align:center;color:#ef4444">Recarga Não Encontrada</div>';return;}
+  const loja=r.lojas||{};
+  const br=await db('creditos_lojas','GET',null,`?loja_id=eq.${r.loja_id}&tipo=eq.bonus&origem=eq.recarga&created_at=eq.${encodeURIComponent(r.created_at)}&select=id,valor,observacoes,created_at&limit=1`);
+  const bonus=Array.isArray(br)&&br[0]?br[0]:null;
+  let redeNome='';
+  if(loja.rede_credito_id){
+    const rn=await db('redes_credito','GET',null,`?id=eq.${loja.rede_credito_id}&select=nome&limit=1`);
+    redeNome=(Array.isArray(rn)&&rn[0]?.nome)||(_redeLojas.find(l=>l.principal)?.loja_nome?'Rede '+_redeLojas.find(l=>l.principal).loja_nome:'');
+  }
+  if(saldoApos===undefined){
+    // ADM: mesma conta do extrato (soma assinada em ordem), carteira inteira se for rede
+    let ids=[r.loja_id];
+    if(loja.rede_credito_id){const lr=await db('lojas','GET',null,`?rede_credito_id=eq.${loja.rede_credito_id}&select=id`);if(Array.isArray(lr)&&lr.length)ids=lr.map(x=>x.id);}
+    const ate=bonus?.created_at||r.created_at;
+    let rows=await _dbTodasLinhas('creditos_lojas',`?loja_id=in.(${ids.join(',')})&created_at=lte.${encodeURIComponent(ate)}&select=tipo,valor,created_at&order=created_at.asc,id.asc`);
+    if(!Array.isArray(rows))rows=null;
+    if(rows&&loja.credito_desde&&!loja.rede_credito_id)rows=rows.filter(x=>x.created_at>=loja.credito_desde);
+    saldoApos=rows?rows.reduce((a,x)=>Math.round((a+_finSinal(x)*(parseFloat(x.valor)||0))*100)/100,0):null;
+  }
+  const pago=parseFloat(r.valor)||0,vb=parseFloat(bonus?.valor)||0,creditado=Math.round((pago+vb)*100)/100;
+  const dt=new Date(r.created_at);
+  const dataHora=isNaN(dt)?formatarDataBR(r.data):`${formatarDataBR(r.data)} às ${_finHora(r.created_at)}`;
+  const forma=/pix/i.test(r.observacoes||'')?'Pix':'Lançado Pelo ADM';
+  const numRecibo='REC-'+String(r.data||'').replace(/-/g,'')+'-'+String(r.id).slice(0,6).toUpperCase();
+  const brl=v=>'R$ '+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
+  const tdS='padding:14px 12px;font-size:14px;font-weight:600;color:#111';
+  const tdV='padding:14px 12px;text-align:right;font-size:14px;font-weight:700';
+  const lbl='font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase';
+  const doc=`<div id="recibo-doc" style="background:#ffffff;color:#111111;color-scheme:light;width:100%;max-width:760px;border-radius:14px;overflow:hidden;font-family:Inter,Arial,sans-serif;border:1px solid #e5e7eb">
+    <div style="background:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:2px solid #1A56DB">
+      <img src="https://raw.githubusercontent.com/letsgodeliverybr/painel/main/logo.jpeg" height="120" style="width:auto;max-width:300px;object-fit:contain;display:block;border-radius:8px;background:#fff;padding:4px"/>
+      <div style="text-align:right"><div style="color:#111;font-size:20px;font-weight:800;letter-spacing:-.3px">Recibo De Depósito</div><div style="color:#1A56DB;font-size:13px;font-weight:700;margin-top:3px;letter-spacing:.5px">Nº ${_escHtml(numRecibo)}</div></div>
+    </div>
+    <div style="background:#fff;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb">
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Depósito Em:</span> ${_escHtml(dataHora)}</div>
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Forma De Pagamento:</span> ${forma}</div>
+      <div style="font-size:12px;color:#374151"><span style="color:#6b7280;font-weight:600">Emitido Em:</span> ${formatarDataBR(new Date())}</div>
+    </div>
+    <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="${lbl};margin-bottom:10px">Recebido De</div>
+        <div style="font-size:18px;font-weight:800;color:#111;margin-bottom:5px">${_escHtml(loja.nome||'—')}</div>
+        ${redeNome?`<div style="font-size:13px;color:#374151;font-weight:600;margin-bottom:3px">${_escHtml(redeNome)}</div>`:''}
+        ${loja.endereco?`<div style="font-size:13px;color:#6b7280;margin-bottom:3px">📍 ${_escHtml(loja.endereco)}</div>`:''}
+        ${loja.email?`<div style="font-size:13px;color:#6b7280">✉️ ${_escHtml(loja.email)}</div>`:''}
+      </div>
+      <div style="text-align:right;min-width:140px">
+        <div style="${lbl};margin-bottom:10px">Valor Recebido</div>
+        <div style="font-size:30px;font-weight:800;color:#059669;line-height:1">${brl(pago)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:6px">${forma==='Pix'?'Pix De '+brl(pago):''}</div>
+      </div>
+    </div>
+    <div style="padding:20px 32px;background:#fff;border-bottom:1px solid #e5e7eb">
+      <div style="${lbl};margin-bottom:12px">Recebedor</div>
+      <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px">
+        <div><div style="font-size:11px;font-weight:600;color:#0369a1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Let's Go Delivery</div><div style="font-size:15px;font-weight:800;color:#0c4a6e;letter-spacing:.3px">CNPJ: 54.039.529/0001-48</div></div>
+      </div>
+    </div>
+    <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb">
+      <div style="${lbl};margin-bottom:14px">Crédito Na Carteira</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f3f4f6"><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;width:36px">#</th><th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Descrição</th><th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Valor</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">1</td><td style="${tdS}">Depósito ${forma==='Pix'?'Pix':''}</td><td style="${tdV};color:#059669">${brl(pago)}</td></tr>
+          <tr><td style="${tdN}">2</td><td style="${tdS}">Bônus${bonus?.observacoes?`<div style="font-size:12px;font-weight:400;color:#6b7280;margin-top:2px">${_escHtml(bonus.observacoes)}</div>`:''}</td><td style="${tdV};color:${vb>0?'#7c3aed':'#9ca3af'}">${brl(vb)}</td></tr>
+        </tbody>
+        <tfoot>
+          <tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="2" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">Valor Creditado</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:16px">${brl(creditado)}</td></tr>
+          <tr><td colspan="2" style="padding:12px 12px;font-weight:600;color:#374151;text-align:right;font-size:13px">${loja.rede_credito_id?'Saldo Da Carteira Da Rede Após A Recarga':'Saldo Após A Recarga'}</td><td style="padding:12px 12px;font-weight:700;color:#111;text-align:right;font-size:14px">${saldoApos==null?'—':(saldoApos<0?'− ':'')+brl(Math.abs(saldoApos))}</td></tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:14px;font-size:12px;color:#4b5563;line-height:1.5"><b>Observação:</b> ${_escHtml(r.observacoes||'—')}<br>Este documento comprova o depósito e o crédito na carteira. Não é uma cobrança.</div>
+    </div>
+    <div style="background:#fff;padding:14px 32px;border-top:1px solid #e5e7eb;text-align:center">
+      <div style="color:#111111;font-weight:700;font-size:12px;letter-spacing:.3px">#LetsGoDelivery &nbsp;&nbsp; #CadaKmUmSonho &nbsp;&nbsp; #ObrigadoPelaParceria</div>
+    </div>
+    <div id="recibo-actions" style="padding:14px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid #e5e7eb;background:#fff">
+      <button onclick="document.getElementById('modal-recibo-deposito').style.display='none'" style="padding:9px 20px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Fechar</button>
+      <button onclick="_imprimirRecibo('${_escHtml(numRecibo)}')" style="padding:9px 22px;border:none;border-radius:8px;background:#1A56DB;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('download',16,'btn-ico')}Baixar PDF</button>
+    </div>
+  </div>`;
+  modal.innerHTML=doc;
+}
+// Cópia de _imprimirFatura para o recibo (a da fatura fica intacta).
+function _imprimirRecibo(num){
+  const doc=document.getElementById('recibo-doc');if(!doc)return;
+  const clone=doc.cloneNode(true);
+  clone.querySelector('#recibo-actions')?.remove();
+  const w=window.open('','_blank','width=860,height=720');
+  if(!w){showNotif('Janela Bloqueada','Permita Pop-Ups Do Painel Para Baixar O PDF.','var(--yellow)');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibo De Depósito ${_escHtml(num||'')} — Let's Go Delivery</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;background:#f3f4f6;padding:24px}@media print{body{background:#fff;padding:0}}</style></head><body>${clone.outerHTML}</body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),600);
 }
 
 // Fatura Atual = cobrança pendente mais urgente (maior atraso) da loja —
