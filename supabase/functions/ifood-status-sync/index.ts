@@ -201,7 +201,7 @@ async function buscarLojaPorMerchantId(merchantId: string | null | undefined) {
   if (!merchantId) return null;
   const { data, error } = await supabase
     .from("lojas")
-    .select("id, nome, endereco, latitude, longitude, tipo_cobranca")
+    .select("id, nome, endereco, latitude, longitude, tipo_cobranca, pontos_padrao")
     .eq("ifood_merchant_id", merchantId)
     .limit(1);
   if (error) { await logErro("buscar_loja_merchant_id", { merchantId, message: error.message }); return null; }
@@ -375,6 +375,16 @@ function enderecoComComplemento(a: any): string {
   return s;
 }
 
+// 0800 do iFood + localizador (2026-11-04): o entregador liga no 0800 e digita
+// o localizador de 8 dígitos. Só quando o telefone é 0800 e o localizador tem
+// 8 dígitos; telefone real de cliente não vai para o entregador.
+function telefone0800(ph: any): string | null {
+  const num = String(ph?.number ?? "").trim();
+  const loc = String(ph?.localizer ?? "").replace(/\D/g, "");
+  if (!num.replace(/\D/g, "").startsWith("0800") || loc.length !== 8) return null;
+  return `${num} · ${loc}`;
+}
+
 async function mapearPedidoIfood(d: any) {
   const agora = agoraBrasiliaNaive();
   const merchantId = d.merchant?.id ?? null;
@@ -418,6 +428,12 @@ async function mapearPedidoIfood(d: any) {
     contato_coleta: loja?.nome ?? d.merchant?.name ?? null,
     cliente: d.customer?.name ?? "",
     telefone: d.customer?.phone?.number ?? null,
+    telefone_0800: telefone0800(d.customer?.phone),
+    // Pontos (2026-11-04): base da loja (lojas.pontos_padrao), como os pedidos
+    // do painel; antes valia o default 4 da coluna. Acima de 10 km o banco sobe
+    // para 1.000 (tg_pontos_distancia) e mantém a base da loja se for maior.
+    pontos: loja?.pontos_padrao ?? 4,
+    pontos_base: loja?.pontos_padrao ?? 4,
     cliente_documento: d.customer?.documentNumber ?? null,
     ifood_pickup_code: d.pickupCode ?? null,
     // Código de 8 dígitos do portal confirmacao-entrega-propria.ifood.com.br
