@@ -181,8 +181,16 @@ function logErr(ctx: string, error: { message?: string } | null | undefined) {
   if (error) console.error(`[despacho-engine] ${ctx}:`, error.message ?? error);
 }
 
-serve(async () => {
+serve(async (req) => {
   const pushes: Pushes = new Map();
+  // Disparo imediato (2026-11-04): o gatilho tg_despacho_imediato chama com
+  // {"pedido_id": ...} no instante em que o pedido vira pronto. Nesse caso
+  // processa só esse pedido (sem roterizador/rotas); o cron de 1 min continua
+  // chamando sem corpo e varrendo tudo, como reserva. Convite duplicado entre
+  // as duas chamadas é barrado pelo índice único de despacho_fila (aguardando):
+  // o insert repetido falha e não gera push.
+  let alvo: string | null = null;
+  try { const b = await req.json(); alvo = typeof b?.pedido_id === "string" ? b.pedido_id : null; } catch { /* cron: sem corpo */ }
   try {
     const { data: configs } = await supabase
       .from("configuracoes").select("chave, valor")
@@ -208,6 +216,7 @@ serve(async () => {
       { raio: parseFloat(cfg["despacho_onda_4_raio"] || "32"), maxMin: parseFloat(cfg["despacho_onda_4_max"] || "12") },
     ];
 
+    if (!alvo) {
     // ── ROTERIZADOR: agrupa pedidos em preparo, não despacha ainda ───────────
     const { data: lojasRoter } = await supabase
       .from("lojas")
@@ -365,6 +374,8 @@ serve(async () => {
     }
     // ── FIM DESPACHO DE ROTAS ─────────────────────────────────────────────────
 
+    } // fim do bloco só do cron (roterizador e rotas)
+
     // Loop de despacho normal — pedidos sem rota (incluindo recém-desagrupados)
     // loja_id: precisa pra checar exclusividade de clã em entregadores_no_raio.
     // pronto_em: ver comentário abaixo sobre segundosPassados — precisa
@@ -372,10 +383,12 @@ serve(async () => {
     // retirada=false: pedido de retirada na loja não tem entregador
     // nenhum envolvido (cliente busca pessoalmente) — nunca deveria entrar
     // em despacho_fila nem gerar push pra ninguém.
-    const { data: pedidos } = await supabase
+    let qPedidos = supabase
       .from("pedidos").select("id, numero, latitude, longitude, created_at, pronto_em, loja_id")
       .eq("status", "pronto").is("motoboy_id", null)
       .is("rota_agrupada_id", null).eq("retirada", false);
+    if (alvo) qPedidos = qPedidos.eq("id", alvo);
+    const { data: pedidos } = await qPedidos;
 
     for (const pedido of pedidos || []) {
       const agora = new Date();
