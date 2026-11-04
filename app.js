@@ -8339,6 +8339,58 @@ async function _opcoesVendedorLoja(selecionado){
   return '<option value="">— Nenhum —</option>'+vs.filter(v=>v.ativo||v.id===selecionado).map(v=>`<option value="${v.id}"${v.id===selecionado?' selected':''}>${_escHtml(v.nome)} (${v.cargo_id==='expansao'?'Expansão':'Vendedor'})</option>`).join('');
 }
 
+// Filtro de loja/entregador com busca por nome (2026-11-04), no lugar da
+// lista de rolar: digita e a lista filtra (sem acento e sem maiúscula), com
+// "Todas"/"Todos" sempre no topo. O escolhido fica num hidden com o mesmo id
+// da lista antiga (vazio = Todas/Todos), então quem lê .value não muda.
+const _fbListas={};
+const _fbNorm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+function _fbCampoHtml(id,todos,estilo){
+  _fbListas[id]={todos,itens:[],res:[],digitou:false};
+  return`<div style="position:relative"><input type="hidden" id="${id}" value=""/><input type="text" id="${id}-busca" value="${todos}" autocomplete="off" placeholder="Digite O Nome..." onfocus="this.select();_fbFiltrar('${id}')" oninput="_fbFiltrar('${id}',true)" onkeydown="if(event.key==='Enter'){event.preventDefault();_fbEnter('${id}')}else if(event.key==='Escape')this.blur()" onblur="_fbFechar('${id}')" style="${estilo}"/><div id="${id}-sug" onmousedown="event.preventDefault()" style="display:none;position:absolute;left:0;top:100%;min-width:100%;max-width:320px;margin-top:4px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div>`;
+}
+function _fbDefinir(id,itens){
+  const f=_fbListas[id];if(!f)return;
+  f.itens=(Array.isArray(itens)?itens:[]).map(e=>({id:e.id,nome:e.nome||e.id?.substring(0,8)||''}));
+}
+function _fbFiltrar(id,digitou){
+  const f=_fbListas[id],busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
+  if(!f||!busca||!sug)return;
+  // ao entrar no campo mostra a lista inteira; ao digitar, filtra
+  f.digitou=!!digitou;
+  const t=digitou?_fbNorm(busca.value.trim()):'';
+  f.res=f.itens.filter(e=>!t||_fbNorm(e.nome).includes(t));
+  const atual=document.getElementById(id)?.value||'';
+  const op=(v,txt,marcado)=>`<div onclick="_fbEscolher('${id}','${v}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);${marcado?'font-weight:700':''}">${txt}</div>`;
+  sug.innerHTML=op('',_escHtml(f.todos),!atual)+(f.res.length?f.res.map(e=>op(e.id,_escHtml(e.nome),e.id===atual)).join(''):'<div style="padding:8px 12px;font-size:12px;color:var(--text3)">Nenhum Resultado.</div>');
+  sug.style.display='block';
+}
+function _fbEscolher(id,v){
+  const f=_fbListas[id],hid=document.getElementById(id),busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
+  if(!f||!hid||!busca)return;
+  const e=v?f.itens.find(x=>x.id===v):null;
+  hid.value=e?e.id:'';
+  busca.value=e?e.nome:f.todos;
+  if(sug)sug.style.display='none';
+  f.digitou=false;
+}
+// Enter: escolhe o 1º resultado do que foi digitado (campo vazio = Todas/Todos)
+function _fbEnter(id){
+  const f=_fbListas[id],busca=document.getElementById(id+'-busca');if(!f||!busca)return;
+  if(!busca.value.trim())_fbEscolher(id,'');
+  else if(f.digitou&&f.res.length)_fbEscolher(id,f.res[0].id);
+  busca.blur();
+}
+// saiu sem escolher: volta a mostrar o que está valendo no filtro
+function _fbFechar(id){
+  const f=_fbListas[id],hid=document.getElementById(id),busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
+  if(sug)sug.style.display='none';
+  if(!f||!hid||!busca)return;
+  const e=hid.value?f.itens.find(x=>x.id===hid.value):null;
+  busca.value=e?e.nome:f.todos;
+  f.digitou=false;
+}
+
 async function renderPedidosPage(){
   const hoje=_dataHojeBrasilia();
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
@@ -8349,8 +8401,8 @@ async function renderPedidosPage(){
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('Data Início')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
         <div>${_lbl('Data Fim')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-fim" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-fim" value="23:59" style="${_is};width:86px"/></div></div>
-        <div>${_lbl('LOJA')}<select id="fp-loja" style="${_is};min-width:130px"><option value="">Todas</option></select></div>
-        <div>${_lbl('ENTREGADOR')}<select id="fp-entregador" style="${_is};min-width:130px"><option value="">Todos</option></select></div>
+        <div>${_lbl('LOJA')}${_fbCampoHtml('fp-loja','Todas',`${_is};min-width:180px`)}</div>
+        <div>${_lbl('ENTREGADOR')}${_fbCampoHtml('fp-entregador','Todos',`${_is};min-width:180px`)}</div>
         <div>${_lbl('Buscar Pedido')}<input type="text" id="fp-numero" placeholder="Nº Pedido..." style="${_is};min-width:110px"/></div>
         <button onclick="_buscarPedidosAdmin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('search',16,'btn-ico')}Buscar</button>
       </div>
@@ -8376,13 +8428,12 @@ async function renderPedidosPage(){
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th style="width:1%;min-width:56px;white-space:nowrap;text-align:center;padding-left:6px;padding-right:6px">Origem</th><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha Do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?15:currentPerfil==='suporte'?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
   [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
-  const fpLoja=document.getElementById('fp-loja');
-  const fpEnt=document.getElementById('fp-entregador');
-  if(fpLoja){
-    fpLoja.innerHTML='<option value="">Todas</option>'+_fpLojas.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
-    if(currentPerfil==='loja'&&currentUser?.loja_id&&!_redeVisaoGeral()){fpLoja.value=currentUser.loja_id;fpLoja.disabled=true;}
+  _fbDefinir('fp-loja',_fpLojas);
+  _fbDefinir('fp-entregador',_fpEntregadores);
+  if(currentPerfil==='loja'&&currentUser?.loja_id&&!_redeVisaoGeral()){
+    _fbEscolher('fp-loja',currentUser.loja_id);
+    const b=document.getElementById('fp-loja-busca');if(b)b.disabled=true;
   }
-  if(fpEnt)fpEnt.innerHTML='<option value="">Todos</option>'+_fpEntregadores.map(e=>`<option value="${e.id}">${e.nome||e.id?.substring(0,8)}</option>`).join('');
   _buscarPedidosAdmin();
 }
 async function _buscarPedidosAdmin(){
