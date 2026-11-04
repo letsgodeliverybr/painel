@@ -4619,6 +4619,7 @@ async function _redeTrocar(lojaId){
   await _redeAposTroca();
 }
 async function _redeAposTroca(){
+  _mapaJaCentralizado=false;
   try{await atualizarTudo();}catch(e){console.warn('[rede] atualizarTudo',e);}
   _crPreencherLojaPerfilLoja();
   if(_lojaEmRede()&&window.innerWidth>768&&document.getElementById('sidebar-mapa'))toggleSidebar(false);
@@ -5765,6 +5766,35 @@ async function dispararRota(){
   renderPedidosLista();
 }
 
+// Login de rede (2026-11-03): um pino azul por ponto da rede, nas duas visões
+// (Toda a rede e loja escolhida). Lojas no mesmo endereço (até 25 m — o mesmo
+// prédio às vezes geocodifica com diferença de centímetros) viram um pino só,
+// com o nome de todas no clique e ao passar o mouse. Toda a rede: zoom para
+// caber todos os pinos; loja escolhida: centraliza nela. Usa a coordenada já
+// cadastrada da loja; loja sem coordenada fica fora e é avisada no console.
+function _mapaPinosRede(lojas,svgPin){
+  const grupos=[];
+  const dist=(a,b)=>{const dLat=(a.lat-b.lat)*111320,dLng=(a.lng-b.lng)*111320*Math.cos(a.lat*Math.PI/180);return Math.sqrt(dLat*dLat+dLng*dLng);};
+  lojas.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).forEach(l=>{
+    const lat=parseFloat(l.latitude),lng=parseFloat(l.longitude);
+    if(!isFinite(lat)||!isFinite(lng)||(!lat&&!lng)){console.warn('[MAPA] loja da rede sem coordenada:',l.nome);return;}
+    const p={lat,lng},g=grupos.find(x=>dist(x,p)<=25);
+    if(g)g.lojas.push(l);else grupos.push({lat,lng,lojas:[l]});
+  });
+  const icon=L.divIcon({html:svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});
+  grupos.forEach((g,i)=>{
+    const popup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:260px">${g.lojas.map(l=>`<div style="margin-bottom:6px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:2px">🏪 ${_escHtml(l.nome||'Loja')}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:2px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${_escHtml(l.telefone)}</a></div>`:''}<div style="font-size:11px;color:#374151">${_escHtml(l.endereco||'—')}</div></div>`).join('')}</div>`;
+    lojaMarkers['rede:'+i]=L.marker([g.lat,g.lng],{icon}).addTo(map).bindPopup(popup,{maxWidth:280})
+      .bindTooltip(g.lojas.map(l=>_escHtml(l.nome||'Loja')).join('<br>'),{direction:'top',offset:[0,-44]});
+  });
+  if(_mapaJaCentralizado||!grupos.length)return;
+  const sel=grupos.find(g=>g.lojas.some(l=>l.id===currentUser?.loja_id));
+  if(!_redeVisaoGeral()&&sel)map.setView([sel.lat,sel.lng],14);
+  else if(grupos.length===1)map.setView([grupos[0].lat,grupos[0].lng],14);
+  else map.fitBounds(L.latLngBounds(grupos.map(g=>[g.lat,g.lng])),{padding:[50,50],maxZoom:14});
+  _mapaJaCentralizado=true;
+}
+
 function atualizarMarcadores(){
   // Preserva o popup do motoboy aberto (se houver) através do rebuild —
   // sem isso, o refresh de 5s (atualizarTudo/realtimeInterval) recriava
@@ -5777,7 +5807,7 @@ function atualizarMarcadores(){
   Object.values(motoboyMarkers).forEach(m=>map.removeLayer(m));Object.values(pedidoMarkers).forEach(m=>map.removeLayer(m));Object.values(lojaMarkers).forEach(m=>map.removeLayer(m));Object.values(coletaMarkers).forEach(m=>map.removeLayer(m));
   motoboyMarkers={};pedidoMarkers={};lojaMarkers={};coletaMarkers={};
   const lojasVisiveis=currentPerfil==='loja'
-    ?allLojas.filter(l=>l.id===currentUser?.loja_id)
+    ?(_redeAtiva()?allLojas.filter(l=>_redeLojas.some(r=>r.loja_id===l.id)):allLojas.filter(l=>l.id===currentUser?.loja_id))
     :_estadoLojas===2?[]:_estadoLojas===1?allLojas.filter(l=>allPedidos.some(p=>p.loja_id===l.id)):allLojas;
   console.log('[MAPA] perfil:',currentPerfil,'loja_id:',currentUser?.loja_id,'lojas visíveis:',lojasVisiveis.length);
   const _svgPin=`<svg width="38" height="48" viewBox="0 0 1272 1236" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,1236) scale(0.1,-0.1)" fill="#1A56DB" stroke="none"><path d="M6060 12169 c-456 -42 -996 -207 -1395 -426 -156 -85 -371 -227 -515 -339 -131 -101 -388 -348 -495 -474 -426 -503 -708 -1109 -810 -1741 -37 -231 -48 -380 -48 -634 1 -1054 379 -2092 1328 -3645 351 -575 771 -1203 1410 -2110 791 -1121 813 -1152 825 -1148 5 2 78 100 161 218 84 118 211 298 283 400 71 102 179 255 240 340 2066 2927 2744 4253 2862 5600 18 202 15 604 -6 775 -83 695 -316 1266 -748 1835 -199 261 -348 414 -586 597 -560 431 -1170 680 -1837 748 -157 16 -513 18 -669 4z m507 -2070 c300 -41 594 -175 832 -381 257 -222 446 -542 524 -888 18 -80 21 -128 21 -305 0 -180 -3 -225 -22 -311 -141 -648 -644 -1140 -1287 -1260 -150 -28 -422 -26 -572 4 -315 63 -597 215 -823 443 -135 137 -223 260 -310 434 -119 241 -155 397 -155 680 0 217 14 315 71 485 190 573 664 986 1249 1089 126 22 349 27 472 10z"/></g></svg>`;
@@ -5809,7 +5839,8 @@ function atualizarMarcadores(){
     grupo.sort((a,b)=>a.id<b.id?-1:1);
     grupo.forEach((l,idx)=>{_coordAjustadaLoja[l.id]=_offsetCoordDuplicada(l.latitude,l.longitude,idx,grupo.length);});
   });
-  lojasVisiveis.forEach(l=>{const c=_coordAjustadaLoja[l.id];if(!c)return;const lat=c.lat,lng=c.lng;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja'&&!_mapaJaCentralizado){map.setView([lat,lng],14);_mapaJaCentralizado=true;}});
+  if(_redeAtiva())_mapaPinosRede(lojasVisiveis,_svgPin);
+  else lojasVisiveis.forEach(l=>{const c=_coordAjustadaLoja[l.id];if(!c)return;const lat=c.lat,lng=c.lng;const icon=L.divIcon({html:_svgPin,iconSize:[38,48],iconAnchor:[19,48],className:''});const _lojaPopup=`<div style="font-family:Inter,sans-serif;background:#ffffff;color:#111827;padding:4px;min-width:160px;max-width:240px"><div style="font-weight:800;font-size:14px;color:#111827;margin-bottom:4px">🏪 ${l.nome||'Loja'}</div>${l.telefone?`<div style="font-size:11px;color:#374151;margin-bottom:4px">📞 <a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-weight:600;text-decoration:none">${l.telefone}</a></div>`:''}<div style="font-size:11px;color:#374151">${l.endereco||'—'}</div></div>`;lojaMarkers[l.id]=L.marker([lat,lng],{icon}).addTo(map).bindPopup(_lojaPopup,{maxWidth:260});if(currentPerfil==='loja'&&!_mapaJaCentralizado){map.setView([lat,lng],14);_mapaJaCentralizado=true;}});
   const _statusAtivos=['aceito','no_local','chegou_no_local','chegou_local','em_rota','chegou_destino','retornando'];
   // Checagem de "ocupado" usa _pedidosAtivosGlobal (todas as lojas) — allPedidos
   // é filtrado pela loja atual quando currentPerfil==='loja', então um entregador
