@@ -15092,6 +15092,15 @@ function _renderConfigOperacao(){
           </div>
         </div>
 
+        <div style="margin-bottom:32px" id="op-taxa-saque-wrap">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text)">
+            <input type="checkbox" id="op-taxa-saque" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer"/>
+            Taxa global saque rápido
+          </label>
+          <div style="font-size:12px;color:var(--text2);margin-top:6px">Desligada: saque grátis para todos. Ligada: cobra a taxa de sempre de todos.</div>
+          <div id="op-taxa-saque-info" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+        </div>
+
         <div id="op-feedback" style="min-height:18px;margin-bottom:12px"></div>
         <button onclick="_salvarConfigOperacao()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('save',16,'btn-ico')}Salvar Configurações</button>
       </div>
@@ -15137,6 +15146,32 @@ async function _carregarConfigOperacao(){
   _set('op-o2-raio',cfg['despacho_onda_2_raio'],'8');  _set('op-o2-min',cfg['despacho_onda_2_min'],'2');  _set('op-o2-max',cfg['despacho_onda_2_max'],'4');
   _set('op-o3-raio',cfg['despacho_onda_3_raio'],'16'); _set('op-o3-min',cfg['despacho_onda_3_min'],'4');  _set('op-o3-max',cfg['despacho_onda_3_max'],'6');
   _set('op-o4-raio',cfg['despacho_onda_4_raio'],'32'); _set('op-o4-min',cfg['despacho_onda_4_min'],'6');  _set('op-o4-max',cfg['despacho_onda_4_max'],'8');
+  _carregarTaxaSaque();
+}
+
+// Taxa global saque rápido (saque_taxa_config): a taxa é decidida no servidor
+// (solicitar_saque), vale para qualquer versão do app. Só o adm altera (RLS);
+// o banco grava quem mudou, quando e de → para (saque_taxa_historico). Só
+// muda ao clicar em Salvar. Sem a tabela (banco antigo), o bloco some.
+let _opTaxaSaqueAtual=null;
+async function _carregarTaxaSaque(){
+  const wrap=document.getElementById('op-taxa-saque-wrap'),cb=document.getElementById('op-taxa-saque'),info=document.getElementById('op-taxa-saque-info');
+  if(!wrap||!cb)return;
+  const [r,h]=await Promise.all([db('saque_taxa_config','GET',null,'?id=eq.1&select=cobrar_taxa,atualizado_em,atualizado_por_nome&limit=1'),db('saque_taxa_historico','GET',null,'?select=de,para,quem_nome,em&order=id.desc&limit=5')]);
+  const c=Array.isArray(r)?r[0]:null;
+  if(!c){wrap.style.display='none';_opTaxaSaqueAtual=null;return;}
+  _opTaxaSaqueAtual=!!c.cobrar_taxa;cb.checked=_opTaxaSaqueAtual;
+  const lig=v=>v===true?'ligada':v===false?'desligada':'—';
+  const quando=t=>new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(info)info.innerHTML=`Agora: <b>${lig(_opTaxaSaqueAtual)}</b>`+(Array.isArray(h)&&h.length?'<br>'+h.map(x=>`${quando(x.em)} · ${_escHtml(x.quem_nome)}: ${lig(x.de)} → ${lig(x.para)}`).join('<br>'):'');
+}
+async function _salvarTaxaSaque(){
+  const cb=document.getElementById('op-taxa-saque');
+  if(!cb||_opTaxaSaqueAtual===null||cb.checked===_opTaxaSaqueAtual)return true;
+  const r=await dbPatch('saque_taxa_config',{cobrar_taxa:cb.checked},'?id=eq.1&select=cobrar_taxa');
+  if(!r||!r.length)return false;
+  await _carregarTaxaSaque();
+  return true;
 }
 
 async function _salvarConfigOperacao(){
@@ -15156,6 +15191,7 @@ async function _salvarConfigOperacao(){
     _upsertConfigWa('despacho_onda_3_raio',g('op-o3-raio','16')),  _upsertConfigWa('despacho_onda_3_min',g('op-o3-min','4')),   _upsertConfigWa('despacho_onda_3_max',g('op-o3-max','6')),
     _upsertConfigWa('despacho_onda_4_raio',g('op-o4-raio','32')),  _upsertConfigWa('despacho_onda_4_min',g('op-o4-min','6')),   _upsertConfigWa('despacho_onda_4_max',g('op-o4-max','8')),
   ]);
+  if(!await _salvarTaxaSaque()){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Despacho Salvo, Mas A Taxa Global Saque Rápido Não Foi Alterada (Só ADM Altera).</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
