@@ -15197,39 +15197,28 @@ async function _salvarConfigOperacao(){
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
 }
 
-// Bases do Agendamento no Mapa Ao Vivo (adm e loja): áreas azuis tracejadas
-// numa camada própria abaixo dos entregadores e sem clique (pane com
-// pointer-events none). Só leitura: o banco só entrega à loja as bases
-// ativas com área. Liga/desliga em "Mostrar Bases" (lembrado no navegador).
-// Relê a cada 60 s, então uma edição do ADM aparece sozinha.
-let _basesMapaCamada=null,_basesMapaTimer=null,_basesMapaBtn=null;
-const _basesMapaLigado=()=>localStorage.getItem('lg_mapa_bases')!=='0';
+// Bases do Agendamento no Mapa Ao Vivo (adm e loja): "ponto de encontro" em
+// azul vivo (preenchimento translúcido, borda grossa contínua e o nome com
+// pino), sempre visível, numa camada própria abaixo dos entregadores e sem
+// clique (pane com pointer-events none). Só leitura: o banco só entrega à
+// loja as bases ativas com área. Relê a cada 60 s (edição do ADM aparece sozinha).
+let _basesMapaCamada=null,_basesMapaTimer=null;
 function _basesMapaIniciar(){
-  clearInterval(_basesMapaTimer);_basesMapaCamada=null;_basesMapaBtn=null;
+  clearInterval(_basesMapaTimer);_basesMapaCamada=null;
   if(!map||!(currentPerfil==='adm'||currentPerfil==='loja'))return;
   if(!map.getPane('basesPane')){map.createPane('basesPane');const p=map.getPane('basesPane');p.style.zIndex=350;p.style.pointerEvents='none';}
-  const ctl=L.control({position:'bottomright'});
-  ctl.onAdd=()=>{const b=L.DomUtil.create('button');_basesMapaBtn=b;
-    b.style.cssText='background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)';
-    L.DomEvent.disableClickPropagation(b);
-    b.onclick=()=>{localStorage.setItem('lg_mapa_bases',_basesMapaLigado()?'0':'1');_basesMapaCarregar();};
-    _basesMapaRotulo();return b;};
-  ctl.addTo(map);
   _basesMapaCarregar();_basesMapaTimer=setInterval(_basesMapaCarregar,60000);
 }
-function _basesMapaRotulo(){if(_basesMapaBtn)_basesMapaBtn.innerHTML=`${_icone('map-pin',14,'btn-ico')}${_basesMapaLigado()?'Ocultar Bases':'Mostrar Bases'}`;}
 async function _basesMapaCarregar(){
   if(!map||!map.getContainer().isConnected){clearInterval(_basesMapaTimer);return;}
-  _basesMapaRotulo();
-  if(!_basesMapaLigado()){_basesMapaCamada?.remove();_basesMapaCamada=null;return;}
   const r=await db('agenda_bases','GET',null,'?select=id,nome,poligono&ativo=eq.true&poligono=not.is.null&order=nome.asc');
-  if(!map||!_basesMapaLigado())return;
+  if(!map||!map.getContainer().isConnected)return;
   const arr=(Array.isArray(r)?r:[]).filter(b=>Array.isArray(b.poligono)&&b.poligono.length>=3);
   _basesMapaCamada?.remove();
   _basesMapaCamada=L.layerGroup(arr.flatMap(b=>{
     const c=[b.poligono.reduce((s,p)=>s+p[0],0)/b.poligono.length,b.poligono.reduce((s,p)=>s+p[1],0)/b.poligono.length];
-    return [L.polygon(b.poligono,{pane:'basesPane',interactive:false,color:'#3b82f6',weight:2,dashArray:'6 6',fillColor:'#3b82f6',fillOpacity:.10}),
-      L.marker(c,{pane:'basesPane',interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:null,html:`<div style="transform:translate(-50%,-50%);white-space:nowrap;font:700 12px Inter,sans-serif;color:#1d4ed8;text-shadow:0 0 3px #fff,0 0 3px #fff">${_escHtml(b.nome)}</div>`})})];
+    return [L.polygon(b.poligono,{pane:'basesPane',interactive:false,color:'#1d4ed8',weight:4,opacity:.95,fillColor:'#2563eb',fillOpacity:.22}),
+      L.marker(c,{pane:'basesPane',interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:null,html:`<div style="transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:#1d4ed8;color:#fff;border:2px solid #fff;border-radius:999px;padding:4px 10px 4px 7px;font:800 13px Inter,sans-serif;letter-spacing:.2px;box-shadow:0 2px 8px rgba(0,0,0,.35)">${_icone('map-pin',15)}${_escHtml(b.nome)}</div>`})})];
   })).addTo(map);
 }
 
