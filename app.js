@@ -159,7 +159,7 @@ function _icone(nome,tam=18,classe=''){
 // menu (a tela continua, pelo botão do topo, que fica destacado quando ela
 // está aberta — ver renderNavSidebar); nomes iguais aos da loja (Pedidos,
 // Desempenho, Entrega Dedicada). Só o texto mudou: ids/rotas iguais.
-const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança E Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
+const NAV_ITEMS_ADM=[{id:'cac',icon:'target',label:'C.A.C.'},{id:'ceo',icon:'compass',label:'Visão Executiva'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'metricas',icon:'chart-column',label:'Desempenho'},{id:'cadastros',icon:'folder-open',label:'Cadastros'},{id:'cobranca-pagamento',icon:'circle-dollar-sign',label:'Cobrança E Pagamento'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'financeiro',icon:'banknote',label:'Financeiro'},{id:'creditos',icon:'credit-card',label:'Créditos'},{id:'saque-rapido',icon:'zap',label:'Saque Rápido'},{id:'ranking',icon:'trophy',label:'Ranking Entregador'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'},{id:'agendamento',icon:'calendar',label:'Agendamento'},{id:'whatsapp',icon:'message-circle',label:'Disparo WhatsApp'},{id:'disparar-notificacoes',icon:'bell',label:'Disparar Notificações'},{id:'configuracao',icon:'settings',label:'Configuração'},{id:'auditoria',icon:'search',label:'Auditoria'},{id:'logs',icon:'scroll-text',label:'Logs'}];
 // Nomes da visão loja (2026-09-29) — só o texto exibido muda; ids/rotas
 // continuam os mesmos (pedidos/metricas/meu-cardapio/vagas/faturas).
 // Títulos das páginas seguem os mesmos nomes (ver _titulo de metricas,
@@ -4778,7 +4778,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'agendamento':renderAgendamentoPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
   _mdIniciar();_mdWallet();setTimeout(_mdBotaoPainel,0);
 }
@@ -15194,6 +15194,296 @@ async function _salvarConfigOperacao(){
   if(!await _salvarTaxaSaque()){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Despacho Salvo, Mas A Taxa Global Saque Rápido Não Foi Alterada (Só ADM Altera).</span>';return;}
   if(fb)fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';
   setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
+}
+
+// ── AGENDAMENTO (app 131, só adm) ─────────────────────────────────────────
+// Vaga única do dia, bônus por entregas (2 faixas) e chegada na base. Toda
+// regra e todo pagamento ficam no banco (funções agenda_*, tabelas agenda_*
+// com RLS: só o adm altera; o entregador só lê o que é dele). Cada mudança
+// de configuração, base, feriado ou decisão de chegada fica em
+// agenda_historico (quem, quando, de → para). O painel só lê e chama.
+let _agAba='auditoria',_agMapa=null,_agBases=[],_agBaseSel=null,_agPontos=[],_agPoli=null,_agResumo=null,_agChegMapa=null,_agChegMarcas={};
+const _agFmt=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const _agAttr=v=>_escHtml(v).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const _agHoje=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+const _agDataBr=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'';
+const _agHora=t=>t?new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
+const _AG_TIPO={semana:'Dia De Semana',fim_de_semana:'Fim De Semana',feriado:'Feriado'};
+const _AG_STATUS={pendente:['Pendente','#f59e0b'],autorizada:['Autorizada','#3b82f6'],paga:['Paga','#22c55e'],recusada:['Recusada','#ef4444']};
+const _agBtn=(txt,onclick,cor='var(--accent)')=>`<button onclick="${onclick}" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${txt}</button>`;
+const _agInp=(id,val,tipo='number',w='110px',extra='')=>`<input type="${tipo}" id="${id}" value="${_agAttr(val??'')}" ${extra} style="width:${w};padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>`;
+
+async function renderAgendamentoPage(aba){
+  if(currentPerfil!=='adm')return;
+  _agAba=aba||_agAba||'auditoria';
+  _agMapa?.remove();_agMapa=null;_agChegMapa?.remove();_agChegMapa=null;
+  const abas=[{id:'auditoria',icon:'search',label:'Pagamentos E Auditoria'},{id:'chegadas',icon:'map-pin',label:'Chegadas'},{id:'config',icon:'settings',label:'Vagas E Bônus'},{id:'bases',icon:'map',label:'Bases'},{id:'feriados',icon:'calendar-days',label:'Feriados'},{id:'historico',icon:'history',label:'Histórico'}];
+  document.getElementById('app-body').innerHTML=`<div class="alt-page">
+    <div class="page-header"><div class="page-title">${_icone('calendar',22)} Agendamento</div></div>
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap">
+      ${abas.map(a=>`<button onclick="renderAgendamentoPage('${a.id}')" style="padding:10px 18px;border:none;background:none;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid ${_agAba===a.id?'var(--accent)':'transparent'};color:${_agAba===a.id?'var(--accent)':'var(--text2)'}">${_icone(a.icon,15,'btn-ico')}${a.label}</button>`).join('')}
+    </div>
+    <div id="ag-content"></div>
+  </div>`;
+  ({auditoria:_agAuditoria,chegadas:_agChegadas,config:_agConfig,bases:_agBasesTela,feriados:_agFeriados,historico:_agHistorico})[_agAba]();
+}
+
+function _agPeriodoHtml(acao,ini,fim,extra=''){
+  return `<div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+    <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">De</div>${_agInp('ag-ini',ini,'date','150px')}</div>
+    <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Até</div>${_agInp('ag-fim',fim,'date','150px')}</div>
+    ${_agBtn(_icone('search',14,'btn-ico')+'Buscar',acao)}${extra}</div>`;
+}
+
+async function _agCarregarResumo(){
+  const hoje=_agHoje();
+  const ini=document.getElementById('ag-ini')?.value||hoje.slice(0,8)+'01';
+  const fim=document.getElementById('ag-fim')?.value||hoje;
+  const r=await dbRpc('agenda_admin_resumo',{p_ini:ini,p_fim:fim});
+  _agResumo=(r&&!Array.isArray(r))?r:null;
+  return {ini,fim};
+}
+
+// Uma linha por entregador e dia: reserva, entregas válidas, faixas pagas, chegada, total.
+function _agLinhas(){
+  const R=_agResumo;if(!R)return[];
+  const pag={};(R.pagamentos||[]).forEach(p=>{(pag[p.entregador_id+'|'+p.dia]=pag[p.entregador_id+'|'+p.dia]||{})[p.tipo]=p;});
+  const che={};(R.chegadas||[]).forEach(c=>{che[c.entregador_id+'|'+c.dia]=c;});
+  const tipoDia={};(R.dias||[]).forEach(d=>{tipoDia[d.dia]=d.tipo_dia;});
+  const linhas=[];const vistos=new Set();
+  (R.reservas||[]).forEach(r=>{
+    const k=r.entregador_id+'|'+r.dia;
+    if(r.status!=='ativa'&&(R.reservas||[]).some(x=>x.status==='ativa'&&x.entregador_id===r.entregador_id&&x.dia===r.dia))return;
+    if(vistos.has(k))return;vistos.add(k);
+    const p=pag[k]||{};const c=che[k];
+    const total=(+p.faixa1?.valor||0)+(+p.faixa2?.valor||0)+(+p.chegada?.valor||0);
+    linhas.push({dia:r.dia,tipo:tipoDia[r.dia]||'',entregador:r.entregador,status:r.status,reservada_em:r.reservada_em,cancelada_em:r.cancelada_em,contagem:r.contagem,pedidos:r.pedidos||[],f1:p.faixa1,f2:p.faixa2,ch:c,pch:p.chegada,total});
+  });
+  return linhas;
+}
+
+async function _agAuditoria(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  const hoje=_agHoje();
+  const ini=document.getElementById('ag-ini')?.value||hoje.slice(0,8)+'01',fim=document.getElementById('ag-fim')?.value||hoje;
+  el.innerHTML=_agPeriodoHtml('_agAuditoria()',ini,fim,_agBtn(_icone('download',14,'btn-ico')+'Baixar CSV','_agCsv()','#475569'))+'<div id="ag-aud" style="padding:24px;color:var(--text3)">Carregando…</div>';
+  await _agCarregarResumo();
+  const box=document.getElementById('ag-aud');if(!box)return;
+  if(!_agResumo){box.innerHTML='<div style="color:var(--red)">Não Foi Possível Carregar. Confira Se Você Entrou Como ADM.</div>';return;}
+  const L=_agLinhas();
+  const alertas=(_agResumo.alertas||[]).filter(a=>!a.resolvido_em);
+  const tot={f:0,c:0};L.forEach(l=>{tot.f+=(+l.f1?.valor||0)+(+l.f2?.valor||0);tot.c+=(+l.pch?.valor||0);});
+  const porEnt={};L.forEach(l=>{const e=porEnt[l.entregador]=porEnt[l.entregador]||{dias:0,entregas:0,bonus:0,chegada:0};e.dias++;e.entregas+=l.contagem||0;e.bonus+=(+l.f1?.valor||0)+(+l.f2?.valor||0);e.chegada+=(+l.pch?.valor||0);});
+  const faixa=p=>p?`<span style="color:#22c55e;font-weight:700" title="Pago em ${_agAttr(_agHora(p.pago_em))} · ${p.contagem} entregas na hora">✓ ${_agFmt(p.valor)}</span>`:'<span style="color:var(--text3)">—</span>';
+  const chegada=(c,p)=>{if(!c)return'<span style="color:var(--text3)">—</span>';const s=_AG_STATUS[c.status]||[c.status,'var(--text2)'];return `<span style="color:${s[1]};font-weight:700">${s[0]}${p?' '+_agFmt(p.valor):''}</span><div style="font-size:11px;color:var(--text3)">${_escHtml(c.base)}</div>`;};
+  box.innerHTML=`
+    ${alertas.length?`<div class="card" style="padding:14px 18px;margin-bottom:16px;border-color:#f59e0b">
+      <div style="font-weight:700;color:#f59e0b;margin-bottom:8px">${_icone('triangle-alert',16,'btn-ico')}Avisos Para O ADM (${alertas.length})</div>
+      ${alertas.map(a=>`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:6px 0;border-top:1px solid var(--border);font-size:13px">
+        <div><b>${_escHtml(a.entregador)}</b> · ${_agDataBr(a.dia)} · ${a.tipo==='gps_falso'?'Localização falsa no pedido de chegada (bloqueado)':`Faixa ${_escHtml(a.detalhe?.faixa)} já paga (${_agFmt(a.detalhe?.valor_pago)}), mas a contagem caiu para ${_escHtml(a.detalhe?.contagem_agora)}/${_escHtml(a.detalhe?.meta_paga)} — sem estorno automático`}</div>
+        ${_agBtn('Marcar Como Visto',`_agAlertaVisto('${a.id}')`,'#475569')}</div>`).join('')}
+    </div>`:''}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      ${[['Bônus Por Entregas',tot.f],['Chegada Na Base',tot.c],['Total Pago',tot.f+tot.c]].map(([t,v])=>`<div class="card" style="padding:14px 18px;min-width:180px"><div style="font-size:12px;color:var(--text3);font-weight:700">${t}</div><div style="font-size:20px;font-weight:800;color:var(--text)">${_agFmt(v)}</div></div>`).join('')}
+    </div>
+    <div class="card" style="margin-bottom:16px"><div style="padding:14px 18px;font-weight:700">Por Entregador E Dia</div><div style="overflow-x:auto"><table><thead><tr><th>Dia</th><th>Entregador</th><th>Vaga</th><th>Entregas</th><th>Faixa 1</th><th>Faixa 2</th><th>Chegada</th><th>Total</th><th>Pedidos</th></tr></thead><tbody>
+      ${L.length?L.map((l,i)=>`<tr>
+        <td style="white-space:nowrap">${_agDataBr(l.dia)}<div style="font-size:11px;color:var(--text3)">${_AG_TIPO[l.tipo]||''}</div></td>
+        <td style="font-weight:600">${_escHtml(l.entregador)}</td>
+        <td style="font-size:12px">${l.status==='ativa'?'Confirmada '+_agHora(l.reservada_em):'<span style="color:var(--text3)">Cancelada '+_agHora(l.cancelada_em)+'</span>'}</td>
+        <td style="font-weight:700">${l.status==='ativa'?(l.contagem??0):'—'}</td>
+        <td>${faixa(l.f1)}</td><td>${faixa(l.f2)}</td><td>${chegada(l.ch,l.pch)}</td>
+        <td style="font-weight:800">${_agFmt(l.total)}</td>
+        <td>${l.pedidos.length?`<button onclick="document.getElementById('ag-ped-${i}').style.display=document.getElementById('ag-ped-${i}').style.display==='none'?'block':'none'" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">${l.pedidos.length} Pedidos</button><div id="ag-ped-${i}" style="display:none;font-size:11px;color:var(--text2);margin-top:6px;max-width:260px">${l.pedidos.map(p=>'#'+_escHtml(p.numero)+' '+_escHtml(String(p.finalizado_em||'').slice(11,16))).join(', ')}</div>`:'—'}</td>
+      </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px">Nenhuma Vaga No Período</td></tr>'}
+    </tbody></table></div></div>
+    <div class="card"><div style="padding:14px 18px;font-weight:700">Por Entregador No Período</div><div style="overflow-x:auto"><table><thead><tr><th>Entregador</th><th>Dias Com Vaga</th><th>Entregas Contadas</th><th>Bônus</th><th>Chegada</th><th>Total</th></tr></thead><tbody>
+      ${Object.entries(porEnt).sort((a,b)=>(b[1].bonus+b[1].chegada)-(a[1].bonus+a[1].chegada)).map(([n,e])=>`<tr><td style="font-weight:600">${_escHtml(n)}</td><td>${e.dias}</td><td>${e.entregas}</td><td>${_agFmt(e.bonus)}</td><td>${_agFmt(e.chegada)}</td><td style="font-weight:800">${_agFmt(e.bonus+e.chegada)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">—</td></tr>'}
+    </tbody></table></div></div>`;
+}
+
+async function _agAlertaVisto(id){
+  const r=await dbRpc('agenda_alerta_resolver',{p_id:id});
+  if(r?.ok)showNotif('✅ Aviso Marcado Como Visto','');else showNotif('Erro','Não Foi Possível Marcar','var(--red)');
+  _agAuditoria();
+}
+
+function _agCsv(){
+  const L=_agLinhas();if(!L.length){showNotif('Atenção','Nada Para Exportar','var(--yellow)');return;}
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const n=v=>v==null?'':String(Number(v).toFixed(2)).replace('.',',');
+  const cab=['dia','tipo_dia','entregador','vaga','confirmada_em','entregas_contadas','faixa1_pago','faixa1_pago_em','faixa2_pago','faixa2_pago_em','chegada_status','chegada_base','chegada_distancia_m','chegada_pago','chegada_pago_em','total_pago','pedidos'];
+  const linhas=L.map(l=>[_agDataBr(l.dia),_AG_TIPO[l.tipo]||'',l.entregador,l.status,_agHora(l.reservada_em),l.contagem??'',n(l.f1?.valor),_agHora(l.f1?.pago_em),n(l.f2?.valor),_agHora(l.f2?.pago_em),l.ch?.status||'',l.ch?.base||'',l.ch?.distancia_m??'',n(l.pch?.valor),_agHora(l.pch?.pago_em),n(l.total),l.pedidos.map(p=>'#'+p.numero).join(' ')].map(q).join(';'));
+  const blob=new Blob(['﻿'+[cab.join(';'),...linhas].join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`agendamento_${document.getElementById('ag-ini')?.value||''}_${document.getElementById('ag-fim')?.value||''}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+// Chegadas: pendentes primeiro; ao autorizar, confirma com posição, horário e distância.
+async function _agChegadas(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  const hoje=_agHoje();
+  const ini=document.getElementById('ag-ini')?.value||hoje,fim=document.getElementById('ag-fim')?.value||hoje;
+  el.innerHTML=_agPeriodoHtml('_agChegadas()',ini,fim)+`<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start">
+    <div class="card" id="ag-cheg-lista" style="padding:16px;color:var(--text3)">Carregando…</div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="ag-cheg-mapa" style="height:460px"></div></div></div>`;
+  const [_,bases]=await Promise.all([_agCarregarResumo(),db('agenda_bases','GET',null,'?select=id,nome,poligono,ativo&order=nome.asc')]);
+  _agBases=Array.isArray(bases)?bases:[];
+  const lista=document.getElementById('ag-cheg-lista');if(!lista)return;
+  if(!_agResumo){lista.innerHTML='<div style="color:var(--red)">Não Foi Possível Carregar.</div>';return;}
+  const C=_agResumo.chegadas||[];
+  lista.innerHTML=C.length?C.map(c=>{const s=_AG_STATUS[c.status]||[c.status,'var(--text2)'];return `<div style="padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="_agChegFocar('${c.id}')">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="color:var(--text)">${_escHtml(c.entregador)}</b><span style="color:${s[1]};font-weight:700;font-size:12px">${s[0]}</span></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:4px">${_agDataBr(c.dia)} · ${_escHtml(c.base)} · pedido às ${_agHora(c.solicitada_em)}</div>
+    <div style="font-size:12px;color:var(--text2)">Posição das ${_agHora(c.posicao_em)} · ${c.distancia_m??'?'} m do centro da base · precisão ${c.precisao_m!=null?Math.round(c.precisao_m)+' m':'?'}</div>
+    ${c.decidida_em?`<div style="font-size:11px;color:var(--text3)">${c.status==='recusada'?'Recusada':'Autorizada'} por ${_escHtml(c.decidida_por||'')} em ${_agHora(c.decidida_em)}${c.motivo?' · '+_escHtml(c.motivo):''}${c.pago_em?' · creditado '+_agHora(c.pago_em):''}</div>`:''}
+    ${c.status==='pendente'||c.status==='autorizada'?`<div style="display:flex;gap:8px;margin-top:8px" onclick="event.stopPropagation()">${c.status==='pendente'?_agBtn('Autorizar',`_agChegDecidir('${c.id}',true)`,'#16a34a'):''}${_agBtn('Recusar',`_agChegDecidir('${c.id}',false)`,'#dc2626')}</div>`:''}
+  </div>`;}).join(''):'<div style="padding:16px;text-align:center">Nenhum Pedido De Chegada No Período</div>';
+  _agChegMapa?.remove();
+  _agChegMapa=L.map('ag-cheg-mapa').setView([-21.1775,-47.8103],12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_agChegMapa);
+  _agBases.filter(b=>Array.isArray(b.poligono)&&b.poligono.length>=3).forEach(b=>L.polygon(b.poligono,{color:'#3b82f6',weight:2,fillOpacity:.12}).addTo(_agChegMapa).bindTooltip(_escHtml(b.nome)));
+  _agChegMarcas={};
+  C.forEach(c=>{const s=_AG_STATUS[c.status]||['', '#94a3b8'];_agChegMarcas[c.id]=L.circleMarker([c.lat,c.lng],{radius:8,color:s[1],fillColor:s[1],fillOpacity:.8}).addTo(_agChegMapa).bindPopup(`<b>${_escHtml(c.entregador)}</b><br>${_escHtml(c.base)} · ${c.distancia_m??'?'} m<br>Posição das ${_agHora(c.posicao_em)}`);});
+  const pts=C.map(c=>[c.lat,c.lng]).concat(..._agBases.filter(b=>Array.isArray(b.poligono)).map(b=>b.poligono));
+  if(pts.length)_agChegMapa.fitBounds(pts,{padding:[30,30],maxZoom:17});
+}
+function _agChegFocar(id){const m=_agChegMarcas[id];if(m&&_agChegMapa){_agChegMapa.setView(m.getLatLng(),17);m.openPopup();}}
+async function _agChegDecidir(id,autorizar){
+  const c=(_agResumo?.chegadas||[]).find(x=>x.id===id);if(!c)return;
+  let motivo=null;
+  if(autorizar){
+    if(!confirm(`Autorizar +${_agFmt(c.valor)} de chegada para ${c.entregador}?\n\nBase: ${c.base}\nPosição das ${_agHora(c.posicao_em)}\nDistância até o centro da base: ${c.distancia_m??'?'} m\nPrecisão do GPS: ${c.precisao_m!=null?Math.round(c.precisao_m)+' m':'?'}\n\nAntes das 19:00 o crédito cai às 19:00; depois, na hora.`))return;
+  }else{
+    motivo=prompt(`Motivo da recusa da chegada de ${c.entregador}:`);if(motivo==null)return;
+    if(!motivo.trim()){showNotif('Atenção','Informe O Motivo','var(--yellow)');return;}
+  }
+  const r=await dbRpc('agenda_chegada_decidir',{p_id:id,p_autorizar:autorizar,p_motivo:motivo});
+  if(r&&r.ok)showNotif('✅ '+(r.msg||'Feito'),'');else showNotif('Erro',(r&&r.msg)||'Não Foi Possível Salvar','var(--red)');
+  _agChegadas();
+}
+
+// Vagas, metas e valores: grava em agenda_config (RLS: só adm). Histórico automático.
+const _AG_CAMPOS=[
+  ['vagas_dia','Vagas Por Dia','number','Quantos Entregadores Podem Confirmar A Vaga Do Dia. O App Mostra Só A Porcentagem Disponível.'],
+  ['inicio_contagem','Início Da Contagem','time','As Entregas Contam Daqui Até 23:59, Só Depois Da Confirmação.'],
+  ['meta1','Meta Da Faixa 1 (Entregas)','number',''],['meta2','Meta Da Faixa 2 (Entregas)','number',''],
+  ['valor1_semana','Faixa 1 — Dia De Semana (R$)','number',''],['valor2_semana','Faixa 2 — Dia De Semana (R$)','number',''],
+  ['valor1_fds','Faixa 1 — Sábado, Domingo E Feriado (R$)','number',''],['valor2_fds','Faixa 2 — Sábado, Domingo E Feriado (R$)','number',''],
+  ['chegada_valor','Chegada Na Base (R$)','number','0 Desliga A Chegada.'],['chegada_so_fds_feriado','Chegada Só Em Sábado, Domingo E Feriado','checkbox',''],
+  ['chegada_inicio','Pedido De Chegada A Partir De','time',''],['chegada_fim','Pedido De Chegada Até','time',''],
+  ['chegada_pagamento','Crédito Da Chegada Autorizada Cai Às','time','Se O ADM Autorizar Depois Desse Horário, Cai Na Hora Da Autorização.'],
+  ['gps_idade_max_seg','Sinal De GPS De Até (Segundos)','number',''],['gps_precisao_max_m','Precisão Do GPS Até (Metros)','number',''],
+  ['cidade','Cidade Dos Feriados','text','Feriado Vale Se For De Todas As Cidades Ou Desta Cidade.'],
+];
+async function _agConfig(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  el.innerHTML='<div class="card" style="padding:24px;color:var(--text3)">Carregando…</div>';
+  const r=await db('agenda_config','GET',null,'?id=eq.1&limit=1');const c=Array.isArray(r)?r[0]:null;
+  if(!c){el.innerHTML='<div class="card" style="padding:24px;color:var(--red)">Configuração Não Encontrada.</div>';return;}
+  const hm=v=>v?String(v).slice(0,5):'';
+  el.innerHTML=`<div class="card" style="padding:20px 24px;max-width:760px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px 24px">
+    ${_AG_CAMPOS.map(([k,l,t,d])=>`<div><label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">${l}</label>${d?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${d}</div>`:''}
+      ${t==='checkbox'?`<input type="checkbox" id="ag-cfg-${k}" ${c[k]?'checked':''} style="width:18px;height:18px;accent-color:var(--accent)"/>`:_agInp('ag-cfg-'+k,t==='time'?hm(c[k]):c[k],t,t==='text'?'220px':'120px',t==='number'?'step="any" min="0"':'')}</div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:16px">Última Alteração: ${_agHora(c.atualizado_em)} · Veja Quem Mudou Na Aba Histórico.</div>
+    <div id="ag-cfg-fb" style="min-height:18px;margin:12px 0"></div>
+    ${_agBtn(_icone('save',16,'btn-ico')+'Salvar Configurações','_agConfigSalvar()')}
+  </div>`;
+}
+async function _agConfigSalvar(){
+  const fb=document.getElementById('ag-cfg-fb');const body={};
+  for(const [k,,t] of _AG_CAMPOS){const e=document.getElementById('ag-cfg-'+k);if(!e)continue;
+    if(t==='checkbox')body[k]=e.checked;else if(t==='number'){if(e.value===''){fb.innerHTML='<span style="color:var(--red);font-size:12px">Preencha Todos Os Campos</span>';return;}body[k]=Number(e.value);}else body[k]=e.value.trim();}
+  if(!(body.meta2>body.meta1)){fb.innerHTML='<span style="color:var(--red);font-size:12px">A Meta Da Faixa 2 Precisa Ser Maior Que A Da Faixa 1</span>';return;}
+  if(!(body.chegada_fim>body.chegada_inicio)){fb.innerHTML='<span style="color:var(--red);font-size:12px">O Fim Do Pedido De Chegada Precisa Ser Depois Do Início</span>';return;}
+  fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
+  const r=await dbPatch('agenda_config',body,'?id=eq.1&select=id');
+  if(!r||!r.length){fb.innerHTML='<span style="color:var(--red);font-size:12px">Não Foi Salvo (Só ADM Altera; Confira Os Valores).</span>';return;}
+  fb.innerHTML='<span style="color:#22c55e;font-size:12px">✅ Salvo!</span>';setTimeout(()=>{if(fb)fb.innerHTML='';},2500);
+}
+
+// Bases: o ADM desenha a área clicando no mapa (cada clique = um ponto).
+async function _agBasesTela(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  const r=await db('agenda_bases','GET',null,'?select=id,nome,poligono,ativo,atualizado_em&order=nome.asc');
+  _agBases=Array.isArray(r)?r:[];
+  if(!_agBases.length){el.innerHTML='<div class="card" style="padding:24px;color:var(--red)">Nenhuma Base Encontrada.</div>';return;}
+  if(!_agBases.some(b=>b.id===_agBaseSel))_agBaseSel=_agBases[0].id;
+  const b=_agBases.find(x=>x.id===_agBaseSel);
+  _agPontos=Array.isArray(b.poligono)?b.poligono.map(p=>[p[0],p[1]]):[];
+  el.innerHTML=`<div class="card" style="padding:16px 20px;margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <select onchange="_agBaseSel=this.value;_agBasesTela()" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700">${_agBases.map(x=>`<option value="${x.id}" ${x.id===_agBaseSel?'selected':''}>${_escHtml(x.nome)}${Array.isArray(x.poligono)?'':' (sem área)'}</option>`).join('')}</select>
+      <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text2)"><input type="checkbox" id="ag-base-ativa" ${b.ativo?'checked':''}/> Ativa</label>
+      <span id="ag-base-n" style="font-size:12px;color:var(--text3)"></span>
+      <div style="flex:1"></div>
+      ${_agBtn('Desfazer Último Ponto','_agBaseDesfazer()','#475569')}${_agBtn('Limpar','_agBaseLimpar()','#475569')}${_agBtn(_icone('save',14,'btn-ico')+'Salvar Área','_agBaseSalvar()')}
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin:0 0 8px 4px">Clique No Mapa Para Marcar Os Cantos Da Área (Mínimo 3). Só Vale O Pedido De Chegada De Quem Estiver Dentro. Última Alteração: ${_agHora(b.atualizado_em)}.</div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="ag-base-mapa" style="height:520px"></div></div>`;
+  _agMapa?.remove();
+  _agMapa=L.map('ag-base-mapa').setView([-21.1775,-47.8103],13);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_agMapa);
+  _agBases.filter(x=>x.id!==_agBaseSel&&Array.isArray(x.poligono)).forEach(x=>L.polygon(x.poligono,{color:'#64748b',weight:1,fillOpacity:.08,dashArray:'4'}).addTo(_agMapa).bindTooltip(_escHtml(x.nome)));
+  _agMapa.on('click',e=>{_agPontos.push([+e.latlng.lat.toFixed(6),+e.latlng.lng.toFixed(6)]);_agBaseDesenhar();});
+  _agBaseDesenhar();
+  if(_agPontos.length>=3)_agMapa.fitBounds(_agPontos,{padding:[60,60],maxZoom:18});
+}
+function _agBaseDesenhar(){
+  if(!_agMapa)return;_agPoli?.remove();
+  _agPoli=_agPontos.length>=2?L.polygon(_agPontos,{color:'#3b82f6',weight:2,fillOpacity:.18}).addTo(_agMapa):L.layerGroup(_agPontos.map(p=>L.circleMarker(p,{radius:5,color:'#3b82f6'}))).addTo(_agMapa);
+  const n=document.getElementById('ag-base-n');if(n)n.textContent=_agPontos.length+' Pontos';
+}
+function _agBaseDesfazer(){_agPontos.pop();_agBaseDesenhar();}
+function _agBaseLimpar(){if(_agPontos.length&&!confirm('Apagar todos os pontos desta área (só some de verdade ao Salvar)?'))return;_agPontos=[];_agBaseDesenhar();}
+async function _agBaseSalvar(){
+  if(_agPontos.length&&_agPontos.length<3){showNotif('Atenção','A Área Precisa De Pelo Menos 3 Pontos','var(--yellow)');return;}
+  const ativo=!!document.getElementById('ag-base-ativa')?.checked;
+  const r=await dbPatch('agenda_bases',{poligono:_agPontos.length?_agPontos:null,ativo},`?id=eq.${_agBaseSel}&select=id`);
+  if(!r||!r.length){showNotif('Erro','Área Não Foi Salva (Só ADM Altera)','var(--red)');return;}
+  showNotif('✅ Área Salva','');_agBasesTela();
+}
+
+// Feriados do bônus (só mudam a faixa do Agendamento; não mexem em diária nem em faturamento).
+async function _agFeriados(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  const r=await db('feriados_bonus','GET',null,'?select=id,data,descricao,cidade&order=data.desc');
+  const F=Array.isArray(r)?r:[];
+  el.innerHTML=`<div class="card" style="padding:16px 20px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Feriado Aqui Só Muda A Faixa Do Bônus Do Agendamento Para O Valor De Fim De Semana. Não Mexe Em Diária Nem Em Vencimento De Fatura. Cidade Em Branco = Todas As Cidades.</div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Data</div>${_agInp('ag-fer-data','','date','150px')}</div>
+        <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Descrição</div>${_agInp('ag-fer-desc','','text','240px')}</div>
+        <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Cidade (Opcional)</div>${_agInp('ag-fer-cid','','text','180px','placeholder="Todas"')}</div>
+        ${_agBtn(_icone('plus',14,'btn-ico')+'Adicionar','_agFeriadoAdd()')}
+      </div></div>
+    <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Descrição</th><th>Cidade</th><th></th></tr></thead><tbody>
+    ${F.length?F.map(f=>`<tr><td>${_agDataBr(f.data)}</td><td>${_escHtml(f.descricao)}</td><td>${f.cidade?_escHtml(f.cidade):'<span style="color:var(--text3)">Todas</span>'}</td><td style="text-align:right">${_agBtn(_icone('trash-2',14),`_agFeriadoDel('${f.id}')`,'#dc2626')}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:24px">Nenhum Feriado Cadastrado</td></tr>'}
+    </tbody></table></div></div>`;
+}
+async function _agFeriadoAdd(){
+  const data=document.getElementById('ag-fer-data')?.value,descricao=document.getElementById('ag-fer-desc')?.value.trim(),cidade=document.getElementById('ag-fer-cid')?.value.trim()||null;
+  if(!data||!descricao){showNotif('Atenção','Preencha Data E Descrição','var(--yellow)');return;}
+  const r=await db('feriados_bonus','POST',{data,descricao,cidade});
+  if(!Array.isArray(r)||!r.length){showNotif('Erro','Não Foi Salvo (Já Existe Nessa Data E Cidade, Ou Sem Permissão)','var(--red)');return;}
+  showNotif('✅ Feriado Adicionado','');_agFeriados();
+}
+async function _agFeriadoDel(id){
+  if(!confirm('Remover este feriado? Fica registrado no Histórico.'))return;
+  const r=await fetch(`${SB_URL}/rest/v1/feriados_bonus?id=eq.${id}`,{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':await _authHeader(),'Prefer':'return=representation'}}).then(x=>x.ok?x.json():null).catch(()=>null);
+  if(!r||!r.length){showNotif('Erro','Não Foi Removido','var(--red)');return;}
+  showNotif('✅ Feriado Removido','');_agFeriados();
+}
+
+async function _agHistorico(){
+  const el=document.getElementById('ag-content');if(!el)return;
+  const r=await db('agenda_historico','GET',null,'?select=*&order=id.desc&limit=300');
+  const H=Array.isArray(r)?r:[];
+  const NOME={agenda_config:'Vagas E Bônus',agenda_bases:'Base',feriados_bonus:'Feriado',agenda_chegadas:'Chegada'};
+  const curto=v=>{const s=String(v??'');return s.length>80?s.slice(0,80)+'…':s;};
+  el.innerHTML=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Quando</th><th>Quem</th><th>O Quê</th><th>Campo</th><th>De</th><th>Para</th></tr></thead><tbody>
+    ${H.length?H.map(h=>`<tr><td style="white-space:nowrap">${_agHora(h.em)}</td><td>${_escHtml(h.quem_nome)}</td><td>${NOME[h.tabela]||_escHtml(h.tabela)} · ${_escHtml(h.acao)}</td><td>${_escHtml(h.campo||'')}</td><td style="font-size:12px;color:var(--text3)">${_escHtml(curto(h.de))}</td><td style="font-size:12px">${_escHtml(curto(h.para))}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Sem Alterações Ainda</td></tr>'}
+  </tbody></table></div></div>`;
 }
 
 let _tabAba='cobranca';
