@@ -15392,7 +15392,7 @@ const _AG_CAMPOS=[
   ['valor1_semana','Faixa 1 — Dia De Semana (R$)','number',''],['valor2_semana','Faixa 2 — Dia De Semana (R$)','number',''],
   ['valor1_fds','Faixa 1 — Sábado, Domingo E Feriado (R$)','number',''],['valor2_fds','Faixa 2 — Sábado, Domingo E Feriado (R$)','number',''],
   ['chegada_valor','Chegada Na Base (R$)','number','Vale Todo Dia: A 1ª Entrega Aceita Depois Do Registro Ganha Este Valor. 0 Desliga.'],
-  ['chegada_inicio','Registro Da Chegada A Partir De','time',''],['chegada_fim','Registro Da Chegada Até','time',''],
+  ['chegada_inicio','Registro Da Chegada A Partir De','time','Vale Na Hora Para Todos Os Apps: O Servidor Confere O Horário. Chegadas Já Registradas Não Mudam.'],['chegada_fim','Registro Da Chegada Até','time','Sem Incluir Este Horário: Até 18:30 Aceita Até 18:29.'],
   ['gps_idade_max_seg','Sinal De GPS De Até (Segundos)','number',''],['gps_precisao_max_m','Precisão Do GPS Até (Metros)','number',''],
   ['cidade','Cidade Dos Feriados','text','Feriado Vale Se For De Todas As Cidades Ou Desta Cidade.'],
 ];
@@ -15518,8 +15518,10 @@ async function _agHistorico(){
   const H=Array.isArray(r)?r:[];
   const NOME={agenda_config:'Vagas E Bônus',agenda_bases:'Base',feriados_bonus:'Feriado',agenda_chegadas:'Chegada'};
   const curto=v=>{const s=String(v??'');return s.length>80?s.slice(0,80)+'…':s;};
+  // Campo da config com o mesmo nome da tela Vagas E Bônus (ex.: chegada_inicio).
+  const CAMPO=Object.fromEntries(_AG_CAMPOS.map(([k,l])=>[k,l]));
   el.innerHTML=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Quando</th><th>Quem</th><th>O Quê</th><th>Campo</th><th>De</th><th>Para</th></tr></thead><tbody>
-    ${H.length?H.map(h=>`<tr><td style="white-space:nowrap">${_agHora(h.em)}</td><td>${_escHtml(h.quem_nome)}</td><td>${NOME[h.tabela]||_escHtml(h.tabela)} · ${_escHtml(h.acao)}</td><td>${_escHtml(h.campo||'')}</td><td style="font-size:12px;color:var(--text3)">${_escHtml(curto(h.de))}</td><td style="font-size:12px">${_escHtml(curto(h.para))}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Sem Alterações Ainda</td></tr>'}
+    ${H.length?H.map(h=>`<tr><td style="white-space:nowrap">${_agHora(h.em)}</td><td>${_escHtml(h.quem_nome)}</td><td>${NOME[h.tabela]||_escHtml(h.tabela)} · ${_escHtml(h.acao)}</td><td>${_escHtml((h.tabela==='agenda_config'&&CAMPO[h.campo])||h.campo||'')}</td><td style="font-size:12px;color:var(--text3)">${_escHtml(curto(h.de))}</td><td style="font-size:12px">${_escHtml(curto(h.para))}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Sem Alterações Ainda</td></tr>'}
   </tbody></table></div></div>`;
 }
 
