@@ -15209,7 +15209,7 @@ const _agHoje=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_P
 const _agDataBr=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'';
 const _agHora=t=>t?new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
 const _AG_TIPO={semana:'Dia De Semana',fim_de_semana:'Fim De Semana',feriado:'Feriado'};
-const _AG_STATUS={pendente:['Pendente','#f59e0b'],autorizada:['Autorizada','#3b82f6'],paga:['Paga','#22c55e'],recusada:['Recusada','#ef4444']};
+const _AG_STATUS={registrada:['Aguardando 1ª Entrega','#f59e0b'],paga:['Paga','#22c55e'],bloqueada:['Bloqueada','#ef4444']};
 const _agBtn=(txt,onclick,cor='var(--accent)')=>`<button onclick="${onclick}" style="background:${cor};color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${txt}</button>`;
 const _agInp=(id,val,tipo='number',w='110px',extra='')=>`<input type="${tipo}" id="${id}" value="${_agAttr(val??'')}" ${extra} style="width:${w};padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--text);font-family:Inter,sans-serif"/>`;
 
@@ -15275,7 +15275,7 @@ async function _agAuditoria(){
   const tot={f:0,c:0};L.forEach(l=>{tot.f+=(+l.f1?.valor||0)+(+l.f2?.valor||0);tot.c+=(+l.pch?.valor||0);});
   const porEnt={};L.forEach(l=>{const e=porEnt[l.entregador]=porEnt[l.entregador]||{dias:0,entregas:0,bonus:0,chegada:0};e.dias++;e.entregas+=l.contagem||0;e.bonus+=(+l.f1?.valor||0)+(+l.f2?.valor||0);e.chegada+=(+l.pch?.valor||0);});
   const faixa=p=>p?`<span style="color:#22c55e;font-weight:700" title="Pago em ${_agAttr(_agHora(p.pago_em))} · ${p.contagem} entregas na hora">✓ ${_agFmt(p.valor)}</span>`:'<span style="color:var(--text3)">—</span>';
-  const chegada=(c,p)=>{if(!c)return'<span style="color:var(--text3)">—</span>';const s=_AG_STATUS[c.status]||[c.status,'var(--text2)'];return `<span style="color:${s[1]};font-weight:700">${s[0]}${p?' '+_agFmt(p.valor):''}</span><div style="font-size:11px;color:var(--text3)">${_escHtml(c.base)}</div>`;};
+  const chegada=(c,p)=>{if(!c)return'<span style="color:var(--text3)">—</span>';const s=_AG_STATUS[c.status]||[c.status,'var(--text2)'];return `<span style="color:${s[1]};font-weight:700">${s[0]}${p?' '+_agFmt(p.valor):''}</span><div style="font-size:11px;color:var(--text3)">${_escHtml(c.base)} · ${_agHora(c.solicitada_em)}${c.pedido_numero?' · Entrega #'+_escHtml(c.pedido_numero):''}</div>`;};
   box.innerHTML=`
     ${alertas.length?`<div class="card" style="padding:14px 18px;margin-bottom:16px;border-color:#f59e0b">
       <div style="font-weight:700;color:#f59e0b;margin-bottom:8px">${_icone('triangle-alert',16,'btn-ico')}Avisos Para O ADM (${alertas.length})</div>
@@ -15312,13 +15312,14 @@ function _agCsv(){
   const L=_agLinhas();if(!L.length){showNotif('Atenção','Nada Para Exportar','var(--yellow)');return;}
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const n=v=>v==null?'':String(Number(v).toFixed(2)).replace('.',',');
-  const cab=['dia','tipo_dia','entregador','vaga','confirmada_em','entregas_contadas','faixa1_pago','faixa1_pago_em','faixa2_pago','faixa2_pago_em','chegada_status','chegada_base','chegada_distancia_m','chegada_pago','chegada_pago_em','total_pago','pedidos'];
-  const linhas=L.map(l=>[_agDataBr(l.dia),_AG_TIPO[l.tipo]||'',l.entregador,l.status,_agHora(l.reservada_em),l.contagem??'',n(l.f1?.valor),_agHora(l.f1?.pago_em),n(l.f2?.valor),_agHora(l.f2?.pago_em),l.ch?.status||'',l.ch?.base||'',l.ch?.distancia_m??'',n(l.pch?.valor),_agHora(l.pch?.pago_em),n(l.total),l.pedidos.map(p=>'#'+p.numero).join(' ')].map(q).join(';'));
+  const cab=['dia','tipo_dia','entregador','vaga','confirmada_em','entregas_contadas','faixa1_pago','faixa1_pago_em','faixa2_pago','faixa2_pago_em','chegada_status','chegada_base','chegada_registrada_em','chegada_distancia_m','chegada_entrega','chegada_pago','chegada_pago_em','total_pago','pedidos'];
+  const linhas=L.map(l=>[_agDataBr(l.dia),_AG_TIPO[l.tipo]||'',l.entregador,l.status,_agHora(l.reservada_em),l.contagem??'',n(l.f1?.valor),_agHora(l.f1?.pago_em),n(l.f2?.valor),_agHora(l.f2?.pago_em),l.ch?.status||'',l.ch?.base||'',_agHora(l.ch?.solicitada_em),l.ch?.distancia_m??'',l.ch?.pedido_numero?'#'+l.ch.pedido_numero:'',n(l.pch?.valor),_agHora(l.pch?.pago_em),n(l.total),l.pedidos.map(p=>'#'+p.numero).join(' ')].map(q).join(';'));
   const blob=new Blob(['﻿'+[cab.join(';'),...linhas].join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`agendamento_${document.getElementById('ag-ini')?.value||''}_${document.getElementById('ag-fim')?.value||''}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
-// Chegadas: pendentes primeiro; ao autorizar, confirma com posição, horário e distância.
+// Chegadas (registro automático, sem autorização): a 1ª entrega aceita depois do
+// registro paga o bônus ao finalizar. O ADM vê tudo e pode bloquear antes de pagar.
 async function _agChegadas(){
   const el=document.getElementById('ag-content');if(!el)return;
   const hoje=_agHoje();
@@ -15333,11 +15334,12 @@ async function _agChegadas(){
   const C=_agResumo.chegadas||[];
   lista.innerHTML=C.length?C.map(c=>{const s=_AG_STATUS[c.status]||[c.status,'var(--text2)'];return `<div style="padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="_agChegFocar('${c.id}')">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="color:var(--text)">${_escHtml(c.entregador)}</b><span style="color:${s[1]};font-weight:700;font-size:12px">${s[0]}</span></div>
-    <div style="font-size:12px;color:var(--text2);margin-top:4px">${_agDataBr(c.dia)} · ${_escHtml(c.base)} · pedido às ${_agHora(c.solicitada_em)}</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:4px">${_agDataBr(c.dia)} · ${_escHtml(c.base)} · registrada às ${_agHora(c.solicitada_em)}</div>
     <div style="font-size:12px;color:var(--text2)">Posição das ${_agHora(c.posicao_em)} · ${c.distancia_m??'?'} m do centro da base · precisão ${c.precisao_m!=null?Math.round(c.precisao_m)+' m':'?'}</div>
-    ${c.decidida_em?`<div style="font-size:11px;color:var(--text3)">${c.status==='recusada'?'Recusada':'Autorizada'} por ${_escHtml(c.decidida_por||'')} em ${_agHora(c.decidida_em)}${c.motivo?' · '+_escHtml(c.motivo):''}${c.pago_em?' · creditado '+_agHora(c.pago_em):''}</div>`:''}
-    ${c.status==='pendente'||c.status==='autorizada'?`<div style="display:flex;gap:8px;margin-top:8px" onclick="event.stopPropagation()">${c.status==='pendente'?_agBtn('Autorizar',`_agChegDecidir('${c.id}',true)`,'#16a34a'):''}${_agBtn('Recusar',`_agChegDecidir('${c.id}',false)`,'#dc2626')}</div>`:''}
-  </div>`;}).join(''):'<div style="padding:16px;text-align:center">Nenhum Pedido De Chegada No Período</div>';
+    ${c.pedido_numero?`<div style="font-size:12px;color:#22c55e">Pago na entrega #${_escHtml(c.pedido_numero)} (aceita ${_agHora(c.pedido_aceito_em)}, finalizada ${_agHora(c.pedido_finalizado_em)}) · creditado ${_agHora(c.pago_em)}</div>`:''}
+    ${c.decidida_em?`<div style="font-size:11px;color:var(--text3)">${c.status==='bloqueada'?'Bloqueada':'Liberada'} por ${_escHtml(c.decidida_por||'')} em ${_agHora(c.decidida_em)}${c.motivo?' · '+_escHtml(c.motivo):''}</div>`:''}
+    ${c.status!=='paga'?`<div style="display:flex;gap:8px;margin-top:8px" onclick="event.stopPropagation()">${c.status==='registrada'?_agBtn('Bloquear',`_agChegBloquear('${c.id}',true)`,'#dc2626'):_agBtn('Liberar',`_agChegBloquear('${c.id}',false)`,'#16a34a')}</div>`:''}
+  </div>`;}).join(''):'<div style="padding:16px;text-align:center">Nenhuma Chegada Registrada No Período</div>';
   _agChegMapa?.remove();
   _agChegMapa=L.map('ag-cheg-mapa').setView([-21.1775,-47.8103],12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(_agChegMapa);
@@ -15348,16 +15350,14 @@ async function _agChegadas(){
   if(pts.length)_agChegMapa.fitBounds(pts,{padding:[30,30],maxZoom:17});
 }
 function _agChegFocar(id){const m=_agChegMarcas[id];if(m&&_agChegMapa){_agChegMapa.setView(m.getLatLng(),17);m.openPopup();}}
-async function _agChegDecidir(id,autorizar){
+async function _agChegBloquear(id,bloquear){
   const c=(_agResumo?.chegadas||[]).find(x=>x.id===id);if(!c)return;
   let motivo=null;
-  if(autorizar){
-    if(!confirm(`Autorizar +${_agFmt(c.valor)} de chegada para ${c.entregador}?\n\nBase: ${c.base}\nPosição das ${_agHora(c.posicao_em)}\nDistância até o centro da base: ${c.distancia_m??'?'} m\nPrecisão do GPS: ${c.precisao_m!=null?Math.round(c.precisao_m)+' m':'?'}\n\nAntes das 19:00 o crédito cai às 19:00; depois, na hora.`))return;
-  }else{
-    motivo=prompt(`Motivo da recusa da chegada de ${c.entregador}:`);if(motivo==null)return;
+  if(bloquear){
+    motivo=prompt(`Bloquear a chegada de ${c.entregador} (${c.base}, ${_agHora(c.solicitada_em)}, ${c.distancia_m??'?'} m do centro)?\n\nNão será paga. Motivo:`);if(motivo==null)return;
     if(!motivo.trim()){showNotif('Atenção','Informe O Motivo','var(--yellow)');return;}
-  }
-  const r=await dbRpc('agenda_chegada_decidir',{p_id:id,p_autorizar:autorizar,p_motivo:motivo});
+  }else if(!confirm(`Liberar a chegada de ${c.entregador}? Ela volta a valer: a 1ª entrega aceita depois do registro paga ao finalizar.`))return;
+  const r=await dbRpc('agenda_chegada_bloquear',{p_id:id,p_bloquear:bloquear,p_motivo:motivo});
   if(r&&r.ok)showNotif('✅ '+(r.msg||'Feito'),'');else showNotif('Erro',(r&&r.msg)||'Não Foi Possível Salvar','var(--red)');
   _agChegadas();
 }
@@ -15369,9 +15369,8 @@ const _AG_CAMPOS=[
   ['meta1','Meta Da Faixa 1 (Entregas)','number',''],['meta2','Meta Da Faixa 2 (Entregas)','number',''],
   ['valor1_semana','Faixa 1 — Dia De Semana (R$)','number',''],['valor2_semana','Faixa 2 — Dia De Semana (R$)','number',''],
   ['valor1_fds','Faixa 1 — Sábado, Domingo E Feriado (R$)','number',''],['valor2_fds','Faixa 2 — Sábado, Domingo E Feriado (R$)','number',''],
-  ['chegada_valor','Chegada Na Base (R$)','number','0 Desliga A Chegada.'],['chegada_so_fds_feriado','Chegada Só Em Sábado, Domingo E Feriado','checkbox',''],
-  ['chegada_inicio','Pedido De Chegada A Partir De','time',''],['chegada_fim','Pedido De Chegada Até','time',''],
-  ['chegada_pagamento','Crédito Da Chegada Autorizada Cai Às','time','Se O ADM Autorizar Depois Desse Horário, Cai Na Hora Da Autorização.'],
+  ['chegada_valor','Chegada Na Base (R$)','number','Vale Todo Dia: A 1ª Entrega Aceita Depois Do Registro Ganha Este Valor. 0 Desliga.'],
+  ['chegada_inicio','Registro Da Chegada A Partir De','time',''],['chegada_fim','Registro Da Chegada Até','time',''],
   ['gps_idade_max_seg','Sinal De GPS De Até (Segundos)','number',''],['gps_precisao_max_m','Precisão Do GPS Até (Metros)','number',''],
   ['cidade','Cidade Dos Feriados','text','Feriado Vale Se For De Todas As Cidades Ou Desta Cidade.'],
 ];
@@ -15417,9 +15416,10 @@ async function _agBasesTela(){
       <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text2)"><input type="checkbox" id="ag-base-ativa" ${b.ativo?'checked':''}/> Ativa</label>
       <span id="ag-base-n" style="font-size:12px;color:var(--text3)"></span>
       <div style="flex:1"></div>
+      ${_agBtn(_icone('plus',14,'btn-ico')+'Nova Base','_agBaseNova()','#475569')}${_agBtn(_icone('pencil',14,'btn-ico')+'Renomear','_agBaseRenomear()','#475569')}
       ${_agBtn('Desfazer Último Ponto','_agBaseDesfazer()','#475569')}${_agBtn('Limpar','_agBaseLimpar()','#475569')}${_agBtn(_icone('save',14,'btn-ico')+'Salvar Área','_agBaseSalvar()')}
     </div>
-    <div style="font-size:12px;color:var(--text3);margin:0 0 8px 4px">Clique No Mapa Para Marcar Os Cantos Da Área (Mínimo 3). Só Vale O Pedido De Chegada De Quem Estiver Dentro. Última Alteração: ${_agHora(b.atualizado_em)}.</div>
+    <div style="font-size:12px;color:var(--text3);margin:0 0 8px 4px">Clique No Mapa Para Marcar Os Cantos Da Área (Mínimo 3). Só Registra A Chegada Quem Estiver Dentro. Os Entregadores Veem As Áreas Ativas No Mapa Do App. Última Alteração: ${_agHora(b.atualizado_em)}.</div>
     <div class="card" style="padding:0;overflow:hidden"><div id="ag-base-mapa" style="height:520px"></div></div>`;
   _agMapa?.remove();
   _agMapa=L.map('ag-base-mapa').setView([-21.1775,-47.8103],13);
@@ -15433,6 +15433,21 @@ function _agBaseDesenhar(){
   if(!_agMapa)return;_agPoli?.remove();
   _agPoli=_agPontos.length>=2?L.polygon(_agPontos,{color:'#3b82f6',weight:2,fillOpacity:.18}).addTo(_agMapa):L.layerGroup(_agPontos.map(p=>L.circleMarker(p,{radius:5,color:'#3b82f6'}))).addTo(_agMapa);
   const n=document.getElementById('ag-base-n');if(n)n.textContent=_agPontos.length+' Pontos';
+}
+// Bases novas entram depois: o ADM cria (sem área até desenhar) e renomeia. Não se apaga
+// base — desmarcar "Ativa" tira do app e do registro de chegada; fica no Histórico.
+async function _agBaseNova(){
+  const nome=(prompt('Nome da nova base:')||'').trim();if(!nome)return;
+  const r=await db('agenda_bases','POST',{nome,ativo:true});
+  if(!Array.isArray(r)||!r.length){showNotif('Erro','Base Não Foi Criada (Nome Repetido Ou Sem Permissão)','var(--red)');return;}
+  _agBaseSel=r[0].id;showNotif('✅ Base Criada','Agora Desenhe A Área E Clique Em Salvar Área.');_agBasesTela();
+}
+async function _agBaseRenomear(){
+  const b=_agBases.find(x=>x.id===_agBaseSel);if(!b)return;
+  const nome=(prompt('Novo nome da base:',b.nome)||'').trim();if(!nome||nome===b.nome)return;
+  const r=await dbPatch('agenda_bases',{nome},`?id=eq.${_agBaseSel}&select=id`);
+  if(!r||!r.length){showNotif('Erro','Não Foi Renomeada (Nome Repetido Ou Sem Permissão)','var(--red)');return;}
+  showNotif('✅ Base Renomeada','');_agBasesTela();
 }
 function _agBaseDesfazer(){_agPontos.pop();_agBaseDesenhar();}
 function _agBaseLimpar(){if(_agPontos.length&&!confirm('Apagar todos os pontos desta área (só some de verdade ao Salvar)?'))return;_agPontos=[];_agBaseDesenhar();}
