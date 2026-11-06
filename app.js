@@ -13621,15 +13621,23 @@ async function _buscarCobrancas(){
     // vinculado (ex: concluído pelo próprio iFood, ou finalizado à mão depois
     // de desalocar) não gera cobrança. Só afeta faturas NOVAS; o detalhe das
     // faturas já geradas (verFaturaCobranca) não muda.
-    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&or=(motoboy_id.not.is.null,entregador_id.not.is.null)&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=loja_id,taxa_entrega,gorjeta`),
+    db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&or=(motoboy_id.not.is.null,entregador_id.not.is.null)&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=id,loja_id,taxa_entrega,gorjeta`),
     db('lojas','GET',null,'?select=id,nome,tipo_cobranca'),
     db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
+  // Pedido já pago com crédito (loja que trocou de crédito para faturamento
+  // no meio do período) nunca entra na fatura. Sem essa lista não gera nada.
+  const pagosCredito=await dbRpc('faturamento_pedidos_pagos_credito',{p_ini:inicioISO,p_fim:fimISO});
+  if(!pagosCredito||pagosCredito.ok!==true||!Array.isArray(pagosCredito.pedidos)){
+    if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--red)">Não Foi Possível Conferir Os Pedidos Pagos Com Crédito. Tente De Novo.</div>';
+    return;
+  }
+  const pagosCreditoSet=new Set(pagosCredito.pedidos.map(r=>r.pedido_id));
   const jaGeradasSet=new Set((Array.isArray(jaGeradas)?jaGeradas:[]).map(r=>r.loja_id));
   const creditoLojas=new Set((Array.isArray(lojas)?lojas:[]).filter(l=>l.tipo_cobranca==='credito').map(l=>l.id));
   _gcResultados={};
   (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
-    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid))return;
+    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid)||pagosCreditoSet.has(p.id))return;
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
     _gcResultados[lid].qtd++;
