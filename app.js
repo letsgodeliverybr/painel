@@ -14544,10 +14544,11 @@ function _odModal(id,titulo,corpo){
 function _odFecharModal(id){const m=document.getElementById(id);if(m){m.classList.remove('open');m.innerHTML='';}}
 const _odCampo=(id,rot,val='',ph='')=>`<label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin:10px 0 4px">${rot}</label><input id="${id}" value="${_odAttr(val)}" placeholder="${_odAttr(ph)}" style="${_ss}"/>`;
 async function _odModalNova(){
-  const lojas=await db('lojas','GET',null,'?select=id,nome&tipo_cobranca=eq.faturamento&ativo=eq.true&order=nome.asc');
+  // 2026-11-07: loja de crédito também usa Open Delivery (o pedido debita do crédito pré-pago).
+  const lojas=await db('lojas','GET',null,'?select=id,nome,tipo_cobranca&tipo_cobranca=in.(faturamento,credito)&ativo=eq.true&order=nome.asc');
   _odModal('modal-od-nova',`${_icone('rocket',18)} Nova Credencial`,`
-    <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">Loja (Só Faturamento)</label>
-    <select id="od-n-loja" style="${_ss}"><option value="">Selecione…</option>${(Array.isArray(lojas)?lojas:[]).map(l=>`<option value="${l.id}">${_escHtml(l.nome)}</option>`).join('')}</select>
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">Loja (Faturamento Ou Crédito)</label>
+    <select id="od-n-loja" style="${_ss}"><option value="">Selecione…</option>${(Array.isArray(lojas)?lojas:[]).map(l=>`<option value="${l.id}">${_escHtml(l.nome)}${l.tipo_cobranca==='credito'?' · Crédito':''}</option>`).join('')}</select>
     ${_odCampo('od-n-url','URL Do Webhook (https)','','https://sistema-do-parceiro.com.br/deliveryEvent')}
     ${_odCampo('od-n-merchant','MerchantId Do Parceiro')}
     ${_odCampo('od-n-app','AppId Do Parceiro')}
