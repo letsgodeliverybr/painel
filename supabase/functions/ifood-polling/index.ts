@@ -499,11 +499,27 @@ async function processarEventoPedido(orderId: string, code: string | null, metad
       // READY_TO_PICKUP — mesmo papel de "loja clica em Marcar como
       // pronto" nos pedidos próprios. Só isso libera o pedido pro
       // despacho-engine (que só olha status='pronto').
+      // Só leva a 'pronto' quem ainda não está pronto e não tem entregador
+      // (2026-11-07, bug real): a loja marcava "pronto" no iFood com o nosso
+      // entregador já indo buscar; o pedido voltava a 'pronto',
+      // fn_reset_motoboy_on_pronto tirava o entregador sem aviso e o pedido
+      // sumia da tela dele (8 vezes no dia, DONA FRANGA). A condição vai no
+      // próprio UPDATE, sem janela entre ler e gravar; quando não muda nada,
+      // só registra o RTP ignorado.
       const agora = agoraBrasiliaNaive();
-      const { error } = await supabase.from("pedidos").update({
+      const { data: marcados, error } = await supabase.from("pedidos").update({
         status: "pronto", status_detalhado: "pronto", pronto_em: agora, updated_at: agora,
-      }).eq("id", atual.id);
+      }).eq("id", atual.id)
+        .is("motoboy_id", null).is("entregador_id", null)
+        .not("status", "in", "(pronto,cancelado,finalizado)")
+        .select("id");
       if (error) { await logErro("atualizar_status_pronto", { orderId, message: error.message }); return false; }
+      if (!marcados?.length) {
+        await supabase.from("logs_acoes").insert({
+          acao: "ifood_rtp_ignorado",
+          detalhes: { orderId, pedido_id: atual.id, status: atual.status, via: "polling" },
+        });
+      }
     } else if (code === "DAR" && metadata?.address) {
       const { error } = await supabase.from("pedidos").update({
         troca_endereco_novo: metadata.address, troca_endereco_solicitada_em: new Date().toISOString(),
