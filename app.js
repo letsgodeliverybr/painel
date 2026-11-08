@@ -2464,14 +2464,24 @@ async function _aplicarPrecoDinamico(p){
   Object.assign(p,patch);
 }
 
+// Tempo de preparo (2026-11-08): pedido com previsao_pronto_em só vira pronto
+// N minutos antes da previsão (configuracoes.despacho_toque_antes_pronto_min);
+// o banco também recusa (tg_01b_pronto_cedo). Lido a cada 5 min.
+let _toqueAntesProntoMin=10,_toqueAntesProntoLidoEm=0;
 async function processarAutoPronto(){
   const agora=new Date();
+  if(Date.now()-_toqueAntesProntoLidoEm>300000){
+    _toqueAntesProntoLidoEm=Date.now();
+    const c=await db('configuracoes','GET',null,'?chave=eq.despacho_toque_antes_pronto_min&select=valor&limit=1');
+    const n=parseInt(Array.isArray(c)&&c[0]?.valor,10);if(n>=0)_toqueAntesProntoMin=n;
+  }
   // Pedido de teste do Open Delivery (od_teste) nunca vira pronto sozinho
   // (2026-10-06): ficava visível aos entregadores e foi aceito num teste.
   // Pedido do iFood de loja de crédito retido também fica de fora (2026-10-29).
   const pedidosRecebidos=allPedidos.filter(p=>(p.status_detalhado==='recebido'||p.status==='recebido')&&!p.od_teste&&!_ifoodCreditoRetido(p)&&!_pedidoStatusLock.has(p.id));
   for(const p of pedidosRecebidos){
     const base=p.recebido_em||p.created_at;if(!base)continue;
+    if(p.previsao_pronto_em&&_parseUtc(p.previsao_pronto_em).getTime()-_toqueAntesProntoMin*60000>agora.getTime())continue;
     const diff=(agora-new Date(base))/1000;
     if(diff>=60){
       const codigo=String(Math.floor(Math.random()*9000)+1000);
@@ -4130,6 +4140,10 @@ function _indicadorPrazoPedido(p){
   // recebido/pronto ainda sem entregador aceito — espera por entregador,
   // não atraso de entrega (isso só existe depois do aceite).
   const previsaoMs=_parseUtc(p.created_at).getTime()+30*60*1000;
+  if(sk==='recebido'&&p.previsao_pronto_em&&p.recebido_em&&_parseUtc(p.previsao_pronto_em)-_parseUtc(p.recebido_em)>60000){
+    const hm=_parseUtc(p.previsao_pronto_em).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+    return{previsaoMs,cor:'#6b7280',texto:`Pronto ~${hm}`,neutro:true};
+  }
   return{previsaoMs,cor:'#6b7280',texto:'Aguardando Aceite',neutro:true};
 }
 
@@ -4630,6 +4644,57 @@ async function _redeAposTroca(){
   _carregarSaldoTopbar();
   if(_navAtivo)goTab(_navAtivo);   // antes da 1ª navegação, o goTab do login já vem com a rede carregada
 }
+// Tempo de preparo (2026-11-08): 1 a 30 min por loja (padrão 1). O ADM muda
+// de qualquer loja (Editar Loja), a loja só o dela (Perfil Da Loja); o banco
+// confere e guarda quem mudou (loja_tempo_preparo_salvar/_ver). Vale para os
+// próximos pedidos.
+const _tpBadge=l=>{const t=l.tempo_preparo_min??1;return ` <span title="Tempo De Preparo" style="background:${t>1?'#3b82f622':'var(--surface2)'};color:${t>1?'#3b82f6':'var(--text3)'};border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⏱️ ${t} min</span>`;};
+let _tpLoja=null;
+async function _tpAbrir(lojaId){
+  const r=await dbRpc('loja_tempo_preparo_ver',{p_loja:lojaId});
+  if(!r||Array.isArray(r)||r.tempo==null){showNotif('Erro','Não Foi Possível Carregar O Tempo De Preparo','var(--red)');return;}
+  _tpLoja=lojaId;
+  let modal=document.getElementById('modal-tempo-preparo');
+  if(!modal){modal=document.createElement('div');modal.id='modal-tempo-preparo';modal.className='modal-overlay';document.body.appendChild(modal);}
+  const fechar="document.getElementById('modal-tempo-preparo').classList.remove('open')";
+  const quando=t=>new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const hist=Array.isArray(r.historico)?r.historico:[];
+  modal.innerHTML=`<div class="modal" style="max-width:440px"><div class="modal-header"><span class="modal-title">${_icone('clock',18)} Tempo De Preparo</span><button class="modal-close" onclick="${fechar}">${_icone('x',16)}</button></div><div class="modal-body">
+    <div id="tp-valor" style="font-size:52px;font-weight:800;text-align:center;color:var(--accent);line-height:1.1;margin:8px 0 16px">${r.tempo} min</div>
+    <input type="range" id="tp-range" min="1" max="30" step="1" value="${r.tempo}" oninput="document.getElementById('tp-valor').textContent=this.value+' min'" style="width:100%;height:36px;accent-color:var(--accent);cursor:pointer"/>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:2px"><span>1 min</span><span>30 min</span></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:14px">O Entregador É Chamado ${r.toque_antes} Min Antes Do Pronto (Nunca Antes De 1 Min Do Pedido). Marcar Pronto Na Mão Ou Pelo iFood Chama Na Hora. Vale Para Os Próximos Pedidos.</div>
+    ${hist.length?`<details style="margin-top:12px"><summary style="font-size:12px;color:var(--text2);cursor:pointer">Histórico (${hist.length})</summary>${hist.map(h=>`<div style="font-size:11px;color:var(--text3);padding:4px 0;border-top:1px solid var(--border)">${quando(h.em)} · ${_escHtml(h.quem||'')}: ${h.de??'—'} → ${h.para} min</div>`).join('')}</details>`:''}
+  </div><div class="modal-footer"><button class="btn-modal-cancel" onclick="${fechar}">Cancelar</button><button onclick="_tpSalvar()" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
+  modal.classList.add('open');
+}
+async function _tpSalvar(){
+  const v=parseInt(document.getElementById('tp-range')?.value,10);
+  const r=await dbRpc('loja_tempo_preparo_salvar',{p_loja:_tpLoja,p_min:v});
+  if(!(r&&r.ok)){showNotif('Erro',(r&&r.msg)||'Não Foi Possível Salvar','var(--red)');return;}
+  showNotif('✅ '+(r.msg||'Salvo'),'');
+  document.getElementById('modal-tempo-preparo')?.classList.remove('open');
+  for(const lista of [allLojas,_estabelecimentosDataCache]){const l=lista.find(x=>x.id===_tpLoja);if(l)l.tempo_preparo_min=r.tempo;}
+  const b=document.getElementById('el-tp-btn');if(b)b.textContent=`${r.tempo} min — Ajustar`;
+  const a=document.getElementById('lp-tp-atual');if(a)a.textContent=`${r.tempo} min`;
+  if(document.getElementById('tbody-estabelecimentos'))_renderTbodyEstabelecimentos();
+}
+// Perfil Da Loja (a própria loja): por enquanto, o Tempo De Preparo.
+async function renderLojaPerfilPage(){
+  const lojaId=currentUser?.loja_id;
+  const body=document.getElementById('app-body');if(!body)return;
+  body.innerHTML=`<div class="alt-page"><div class="page-header"><div class="page-title">${_icone('settings',22)} Perfil Da Loja</div></div>
+    <div class="card" style="padding:20px 24px;max-width:640px">
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">⏱️ Tempo De Preparo</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Quanto Tempo Seus Pedidos Levam Para Ficar Prontos. O Entregador É Chamado Um Pouco Antes.</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div id="lp-tp-atual" style="font-size:32px;font-weight:800;color:var(--accent)">…</div>
+      ${lojaId?`<button onclick="_tpAbrir('${lojaId}')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer">${_icone('clock',16,'btn-ico')}Tempo De Preparo</button>`:''}</div>
+    </div>
+    <div class="card" style="padding:16px 24px;max-width:640px;margin-top:12px;font-size:12px;color:var(--text3)">Os Outros Dados Do Perfil Ainda Estão Sendo Construídos.</div></div>`;
+  if(!lojaId)return;
+  const r=await dbRpc('loja_tempo_preparo_ver',{p_loja:lojaId});
+  const a=document.getElementById('lp-tp-atual');if(a)a.textContent=(r&&!Array.isArray(r)&&r.tempo!=null)?`${r.tempo} min`:'—';
+}
 // Tela provisória das páginas novas do rodapé da loja (Configurações /
 // Perfil) até o conteúdo de cada uma ser definido.
 function _renderLojaEmBrevePage(icon,titulo,texto){
@@ -4782,7 +4847,7 @@ function goTab(id){
   clearInterval(_chatPollInterval);
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.getElementById('tab-'+id);if(tb)tb.classList.add('active');
-  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'agendamento':renderAgendamentoPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
+  const pages={'ceo':renderCeoPage,'mapa':renderMapaPage,'cac':renderCacPage,'loja-inicio':renderLojaInicioPage,'loja-clientes':renderLojaClientesPage,...Object.fromEntries(NAV_ITEMS_LOJA_RODAPE.flatMap(i=>i.submenu||[]).filter(x=>x.id!=='logout').map(x=>[x.id,()=>_renderLojaEmBrevePage(x.id==='loja-minha-conta'?'user':'settings',x.label,x.id==='loja-minha-conta'?'Aqui Você Vai Poder Ver Os Dados Da Sua Conta E Trocar Sua Senha.':'Essa Seção Das Configurações Da Loja Ainda Está Sendo Construída.')])),'loja-config-perfil':renderLojaPerfilPage,'pedidos':renderPedidosPage,'cadastros':renderCadastrosPage,'cobranca-pagamento':renderTabelasPrecoPage,'preco-dinamico':renderPrecoDinamicoPage,'relatorios':renderRelatoriosPage,'logs':renderLogsPage,'financeiro':renderFinanceiroPage,'creditos':renderCreditosPage,'saque-rapido':renderSaqueRapidoPage,'ranking':renderRankingPage,'vagas':renderVagasPage,'agendamento':renderAgendamentoPage,'whatsapp':renderWhatsappPage,'disparar-notificacoes':renderDisparoNotificacoesPage,'configuracao':renderConfiguracaoPage,'novo-pedido':renderNovoPedidoPage,'auditoria':renderAuditoriaPage,'meu-cardapio':renderMeuCardapioPage,'faturas':renderFaturasLojaPage,'metricas':renderMetricasPage};
   if(pages[id])pages[id]();
   _mdIniciar();_mdWallet();setTimeout(_mdBotaoPainel,0);
 }
@@ -7016,7 +7081,7 @@ function _renderTbodyEstabelecimentos(){
     const fatLabel=l.tipo_cobranca==='credito'?'💳 Crédito':'📄 Faturamento';
     const statusCad=l.status_cadastro||'aprovado';
     const pendenteBadge=_lojaDadosPendentes(l)?' <span title="Telefone Ainda É Placeholder De Importação — Edite A Loja Pra Completar" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:6px;white-space:nowrap">⚠️ Dados Pendentes</span>':'';
-    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td>${currentPerfil==='adm'?`<td style="white-space:nowrap">${_estabSaldoHtml(l)}</td>`:''}<td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`;
+    return`<tr><td style="font-weight:600;color:var(--text)">🏪 ${l.nome}${pendenteBadge}${_tpBadge(l)}</td><td>${l.telefone||'—'}</td><td>${l.endereco||'—'}</td><td style="font-size:12px;color:var(--text3)">${l.email||'—'}</td>${currentPerfil==='adm'?`<td style="white-space:nowrap">${_estabSaldoHtml(l)}</td>`:''}<td><span class="p-badge b-${l.ativo?'em_rota':'fila'}">${l.ativo?'Ativa':'Inativa'}</span></td><td><span onclick="_abrirDropdownCadastroLoja(event,'${l.id}')" class="p-badge b-${cadBadge(statusCad)}" style="cursor:pointer;user-select:none">${statusCad} ▾</span></td><td style="font-size:12px;color:var(--text2)">${fatLabel}</td><td style="white-space:nowrap"><button onclick="abrirFinanceiroLoja('${l.id}')" title="Financeiro Da Loja" aria-label="Financeiro Da Loja" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;margin-right:4px">${_icone('receipt',16)}</button><button onclick="abrirEditarLoja('${l.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">${_icone('pencil',16)}</button>${_btnInativarLoja(l)}</td></tr>`;
   }).join('');
 }
 // Saldo atual na lista (ADM, 2026-11-02): uma única chamada agregada
@@ -10086,6 +10151,7 @@ ${sec('Tabelas De Preço')}
 ${r2(fi('Tabela De Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela De Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo De Cobrança',`<select id="el-tipo-cobranca" style="${ss}"${l.rede_credito_id?' disabled title="Loja Em Carteira De Rede: Tire Da Rede Antes De Mudar"':''}><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
 ${r2(fi('🛵 Limite De Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
+${r1(fi('⏱️ Tempo De Preparo',`<button type="button" id="el-tp-btn" onclick="_tpAbrir('${lojaId}')" style="${is};text-align:left;cursor:pointer;font-weight:700">${l.tempo_preparo_min??1} min — Ajustar</button>`))}
 ${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
 ${currentPerfil==='adm'&&l.tipo_cobranca==='credito'?r1(fi('Carteira De Rede — Incluir Outras Lojas','<div id="el-rede"><span style="font-size:12px;color:var(--text3)">Carregando...</span></div>')):''}
 <div class="form-row full"><div class="fi"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="el-ativo-app" ${l.ativo_app!==false?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#1A56DB"/> Ativo No App Let's Go Cliente</label></div></div>
@@ -15251,6 +15317,14 @@ function _renderConfigOperacao(){
               <span style="font-size:13px;color:var(--text2);font-weight:600">segundos</span>
             </div>
           </div>
+          <div style="margin-top:16px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Chamar Entregador Antes Do Pronto</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Com O Tempo De Preparo Da Loja, O Toque Sai Quando Faltar Esse Tempo Para O Pronto (Nunca Antes De 1 Min Do Pedido). Vale Para Os Próximos Pedidos. Padrão: 10.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-toque-antes-pronto','10',0,30,1,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
+            </div>
+          </div>
         </div>
 
         <div style="margin-bottom:32px" id="op-taxa-saque-wrap">
@@ -15293,7 +15367,7 @@ async function _carregarConfigOperacao(){
     'despacho_onda_2_raio','despacho_onda_2_min','despacho_onda_2_max',
     'despacho_onda_3_raio','despacho_onda_3_min','despacho_onda_3_max',
     'despacho_onda_4_raio','despacho_onda_4_min','despacho_onda_4_max',
-    'despacho_teto_ativos_total','despacho_raio_em_rota_km','despacho_espera_em_rota_seg'];
+    'despacho_teto_ativos_total','despacho_raio_em_rota_km','despacho_espera_em_rota_seg','despacho_toque_antes_pronto_min'];
   const results=await Promise.all(keys.map(k=>db('configuracoes','GET',null,`?chave=eq.${k}&limit=1`)));
   const cfg={};keys.forEach((k,i)=>{cfg[k]=(Array.isArray(results[i])&&results[i][0])?results[i][0].valor:null;});
   const modoVal=cfg['modo_despacho']||'todos';
@@ -15310,6 +15384,7 @@ async function _carregarConfigOperacao(){
   _set('op-teto-ativos',cfg['despacho_teto_ativos_total'],'3');
   _set('op-raio-em-rota',cfg['despacho_raio_em_rota_km'],'2');
   _set('op-espera-em-rota',cfg['despacho_espera_em_rota_seg'],'12');
+  _set('op-toque-antes-pronto',cfg['despacho_toque_antes_pronto_min'],'10');
   _set('op-o4-raio',cfg['despacho_onda_4_raio'],'32'); _set('op-o4-min',cfg['despacho_onda_4_min'],'6');  _set('op-o4-max',cfg['despacho_onda_4_max'],'8');
   _carregarTaxaSaque();
 }
@@ -15347,6 +15422,8 @@ async function _salvarConfigOperacao(){
   const teto=parseInt(g('op-teto-ativos','3'),10),raioRota=parseFloat(g('op-raio-em-rota','2').replace(',','.')),esperaRota=parseInt(g('op-espera-em-rota','12'),10);
   if(!(teto>=1&&teto<=10)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Teto De Entregas Ativas: De 1 A 10</span>';return;}
   if(!(raioRota>=0&&raioRota<=20)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Distância Para Quem Está Em Rota: De 0 A 20 km</span>';return;}
+  const toqueAntes=parseInt(g('op-toque-antes-pronto','10'),10);
+  if(!(toqueAntes>=0&&toqueAntes<=30)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Chamar Antes Do Pronto: De 0 A 30 Minutos</span>';return;}
   if(!(esperaRota>=0&&esperaRota<=120)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Espera Para Quem Está Em Rota: De 0 A 120 Segundos</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await Promise.all([
@@ -15354,6 +15431,7 @@ async function _salvarConfigOperacao(){
     _upsertConfigWa('despacho_teto_ativos_total',teto),
     _upsertConfigWa('despacho_raio_em_rota_km',raioRota),
     _upsertConfigWa('despacho_espera_em_rota_seg',esperaRota),
+    _upsertConfigWa('despacho_toque_antes_pronto_min',toqueAntes),
     _upsertConfigWa('despacho_raio_busca_km',raio),
     _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
     _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
