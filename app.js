@@ -12750,7 +12750,7 @@ function _vagasAbrirDia(dataStr,semRolar){
             ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
             <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione A Loja Acima'}" style="${_scInput()};opacity:.7"/></div>
             <div class="fi" style="margin-bottom:10px"><label>Período</label>
-              <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','10:00–14:00')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
+              <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','09:00–15:30')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
             </div>
             <div class="fi" style="margin-bottom:14px"><label>Valor (Fixo, Por Vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
             <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:${passado?'not-allowed':'pointer'};width:100%;opacity:${passado?.5:1};display:inline-flex;align-items:center;justify-content:center">${_icone('check',16,'btn-ico')}Criar Vaga</button>
@@ -12778,7 +12778,7 @@ async function _vagasSalvar(dataStr){
   if(!lojaId||!endereco||(!almoco&&!jantar)){if(fb)fb.innerHTML='<span style="color:#ef4444">Preencha Todos Os Campos E Marque Ao Menos Um Período.</span>';return;}
   const valor=_vagasCalcularValor(dataStr);
   const periodos=[];
-  if(almoco)periodos.push({horario_inicio:'10:00',horario_fim:'14:00'});
+  if(almoco)periodos.push({horario_inicio:'09:00',horario_fim:'15:30'}); // Almoço 09:00–15:30 desde 2026-11-08 (antes 10:00–14:00); vagas já criadas não mudam
   if(jantar)periodos.push({horario_inicio:'18:00',horario_fim:'23:59'});
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando...</span>';
   let erro=false;
