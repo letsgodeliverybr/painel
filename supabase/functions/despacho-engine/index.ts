@@ -177,6 +177,13 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
 // rotas_agrupadas.status tem CHECK constraint restrita a:
 // 'pendente' | 'aceita' | 'em_rota' | 'finalizada' | 'cancelada'.
 // Qualquer outro valor falha a constraint e o UPDATE é rejeitado.
+// Status de entrega em andamento (mesma lista da trava do banco,
+// fn_limite_entregas_aceite, e do despacho em entregadores_no_raio).
+const STATUS_ATIVOS = ["aceito", "no_local", "chegou_no_local", "chegou_local", "em_rota", "chegou_destino", "retornando"];
+
+// Supabase Edge Runtime: deixa uma tarefa rodando depois da resposta.
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
 function logErr(ctx: string, error: { message?: string } | null | undefined) {
   if (error) console.error(`[despacho-engine] ${ctx}:`, error.message ?? error);
 }
@@ -201,6 +208,7 @@ serve(async (req) => {
         "despacho_onda_3_raio","despacho_onda_3_max",
         "despacho_onda_4_raio","despacho_onda_4_max",
         "despacho_tempo_reset_min","despacho_raio_busca_km",
+        "despacho_espera_em_rota_seg",
       ]);
 
     const cfg: Record<string, string> = {};
@@ -209,6 +217,11 @@ serve(async (req) => {
     const modo = cfg["modo_despacho"] || "todos";
     const tempoExibicao = parseInt(cfg["despacho_tempo_exibicao_seg"] || "29");
     const tempoReset = parseInt(cfg["despacho_tempo_reset_min"] || "12") * 60;
+    // Modo Todos (2026-11-07): quem já tem entrega ativa só recebe o toque
+    // depois desses segundos do pronto, pros livres terem a vez antes.
+    const esperaEmRota = Math.max(0, parseFloat(cfg["despacho_espera_em_rota_seg"] || "12") || 0);
+    // Disparo imediato com gente em rota esperando: segundos até chamar de novo.
+    const revisita: { em: number | null } = { em: null };
     const ondas = [
       { raio: parseFloat(cfg["despacho_onda_1_raio"] || "4"),  maxMin: parseFloat(cfg["despacho_onda_1_max"] || "3") },
       { raio: parseFloat(cfg["despacho_onda_2_raio"] || "8"),  maxMin: parseFloat(cfg["despacho_onda_2_max"] || "6") },
@@ -510,17 +523,48 @@ serve(async (req) => {
         // disponível por qualquer outro motivo) tem que poder ser
         // redespachado — checar por qualquer status histórico travaria esse
         // pedido pra sempre, mesmo já liberado de volta pro broadcast.
+        //
+        // Em rota (2026-11-07): entregadores_no_raio também devolve quem já
+        // tem entrega ativa (até o limite da loja e o teto, coleta perto da
+        // entrega dele). Esses só recebem depois de esperaEmRota segundos do
+        // pronto, mesmo que os livres já tenham recebido — e os livres
+        // continuam só na primeira leva, como antes.
         const jaEnviado = await supabase.from("despacho_fila")
-          .select("id").eq("pedido_id", pedido.id).eq("status", "aguardando").limit(1);
+          .select("entregador_id").eq("pedido_id", pedido.id).eq("status", "aguardando");
         logErr(`verificar envio existente do pedido ${pedido.id}`, jaEnviado.error);
-        if ((jaEnviado.data?.length || 0) > 0) continue;
+        if (jaEnviado.error) continue;
+        const jaNaFila = new Set((jaEnviado.data || []).map((f: any) => f.entregador_id));
 
-        const { data: entregadores, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
+        const { data: candidatos, error: entRaioErr } = await supabase.rpc("entregadores_no_raio", {
           p_lat: pedido.latitude, p_lng: pedido.longitude,
           p_raio_km: parseFloat(cfg["despacho_raio_busca_km"] || "32"),
           p_loja_id: pedido.loja_id,
         });
         logErr(`buscar entregadores no raio (pedido ${pedido.id})`, entRaioErr);
+
+        const idsCand = (candidatos || []).map((e: any) => e.id).filter((id: string) => !jaNaFila.has(id));
+        const emRota = new Set<string>();
+        if (idsCand.length) {
+          const lista = idsCand.join(",");
+          const { data: ativos, error: ativosErr } = await supabase.from("pedidos")
+            .select("motoboy_id, entregador_id")
+            .or(`motoboy_id.in.(${lista}),entregador_id.in.(${lista})`)
+            .in("status", STATUS_ATIVOS);
+          logErr(`ler entregas ativas dos candidatos (pedido ${pedido.id})`, ativosErr);
+          if (ativosErr) continue; // sem saber quem está em rota, não arrisca tocar antes da hora
+          for (const a of ativos || []) {
+            if (a.motoboy_id) emRota.add(a.motoboy_id);
+            if (a.entregador_id) emRota.add(a.entregador_id);
+          }
+        }
+        const entregadores = (candidatos || []).filter((e: any) => {
+          if (jaNaFila.has(e.id)) return false;
+          if (!emRota.has(e.id)) return jaNaFila.size === 0;
+          if (segundosPassados >= esperaEmRota) return true;
+          const falta = Math.ceil(esperaEmRota - segundosPassados);
+          revisita.em = revisita.em === null ? falta : Math.min(revisita.em, falta);
+          return false;
+        });
 
         // expira_em: coluna é NOT NULL, mas modo "Todos" não tem timeout
         // nenhum mais (pedido do usuário, 2026-09-04) — nada neste arquivo
@@ -587,6 +631,25 @@ serve(async (req) => {
 
         await agendarPush(pushes, proximo.id, pedido.id, pedido.numero);
       }
+    }
+
+    // Disparo imediato com gente em rota esperando a vez: chama a própria
+    // função de novo para este pedido quando a espera acabar (depois de
+    // responder ao gatilho). Se falhar, o cron de 1 min manda do mesmo jeito.
+    if (alvo && revisita.em !== null && typeof EdgeRuntime !== "undefined") {
+      const auth = req.headers.get("Authorization") ?? "";
+      const pedidoId = alvo;
+      const espera = (revisita.em + 1) * 1000;
+      EdgeRuntime.waitUntil(
+        new Promise((r) => setTimeout(r, espera)).then(() =>
+          fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/despacho-engine`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": auth },
+            body: JSON.stringify({ pedido_id: pedidoId }),
+          })
+        ).then((r) => { if (!r.ok) console.error(`[despacho-engine] revisita do pedido ${pedidoId}: HTTP ${r.status}`); })
+          .catch((e) => console.error(`[despacho-engine] revisita do pedido ${pedidoId}:`, e)),
+      );
     }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });

@@ -214,7 +214,11 @@ const TABELA_COBRANCA_ID='a1e291f2-f815-4f67-86bf-cd4e95fb5fb6';
 // entregador). Usado pelo limite de simultaneidade (2026-09-24):
 // alocação manual pelo admin.
 const STATUS_ATIVOS_ENTREGA=['aceito','no_local','chegou_no_local','chegou_local','em_rota','chegou_destino','retornando'];
-const LIMITE_PEDIDOS_ALOCACAO_MANUAL=4;
+// Teto de entregas ativas somando todas as lojas (2026-11-07: era fixo em 4 só
+// no painel). Vem de Configuração > Operação (despacho_teto_ativos_total), o
+// mesmo valor que o banco aplica no despacho e no aceite; relido ao abrir o
+// modal Alocar Motoboy.
+let LIMITE_PEDIDOS_ALOCACAO_MANUAL=3;
 // Pedidos atrasados/cancelados de teste anteriores a essa data saem da
 // contagem VISUAL do SLA e de Cancelados (usada só em _buscarPedidosAdmin)
 // — não apaga nada do banco. Pedidos "no prazo" continuam contando desde
@@ -6118,6 +6122,8 @@ async function abrirAlocarMotoboy(pedidoId){
   // a 150km sem nenhum aviso além do número.
   const raioCfgRes=await db('configuracoes','GET',null,'?chave=eq.despacho_raio_busca_km');
   const raioKm=parseFloat(raioCfgRes?.[0]?.valor)||32;
+  const tetoCfgRes=await db('configuracoes','GET',null,'?chave=eq.despacho_teto_ativos_total');
+  LIMITE_PEDIDOS_ALOCACAO_MANUAL=parseInt(tetoCfgRes?.[0]?.valor)||3;
   const motoboysComDist=motoboys.map(m=>({...m,_dist:(latColeta!=null&&lngColeta!=null&&m.lat!=null&&m.lng!=null)?calcularDistancia(latColeta,lngColeta,m.lat,m.lng):null}))
     .sort((a,b)=>(a._dist??Infinity)-(b._dist??Infinity));
   // Exclui só quem tem distância calculada E está fora do raio — sem
@@ -6238,6 +6244,14 @@ async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
     const _ativosAgora=await db('pedidos','GET',null,`?or=(motoboy_id.eq.${motoboyId},entregador_id.eq.${motoboyId})&status=in.(${STATUS_ATIVOS_ENTREGA.join(',')})&select=id`);
     if(Array.isArray(_ativosAgora)&&_ativosAgora.length>=LIMITE_PEDIDOS_ALOCACAO_MANUAL){
       showNotif('❌ Limite De Entregas Simultâneas',`${motoboyNome} já está com ${_ativosAgora.length} entregas ativas (limite: ${LIMITE_PEDIDOS_ALOCACAO_MANUAL}).`,'var(--red)');
+      return;
+    }
+    // Limite da loja (lojas.limite_pedidos_simultaneos, 2026-11-07): o banco
+    // também recusa (tg_zz_limite_entregas_aceite); aqui é pra mensagem certa.
+    const _limLoja=allLojas.find(l=>l.id===_p?.loja_id)?.limite_pedidos_simultaneos??2;
+    const _ativosLoja=_p?.loja_id?await db('pedidos','GET',null,`?or=(motoboy_id.eq.${motoboyId},entregador_id.eq.${motoboyId})&loja_id=eq.${_p.loja_id}&status=in.(${STATUS_ATIVOS_ENTREGA.join(',')})&select=id`):[];
+    if(Array.isArray(_ativosLoja)&&_ativosLoja.length>=_limLoja){
+      showNotif('❌ Limite Da Loja',`${motoboyNome} já está com ${_ativosLoja.length} entregas desta loja (limite da loja: ${_limLoja}).`,'var(--red)');
       return;
     }
   }
@@ -15210,6 +15224,35 @@ function _renderConfigOperacao(){
           </div>
         </div>
 
+        <div style="border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:32px;background:var(--surface2)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Entregas Ao Mesmo Tempo</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Quem Já Está Em Rota Também Recebe O Toque, Até O Limite Da Loja Do Pedido E O Teto Abaixo. O Banco Confere No Toque, No Aceite Do App E Na Alocação Do Painel.</div>
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Teto De Entregas Ativas Por Entregador</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Somando Todas As Lojas. Padrão: 3.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-teto-ativos','3',1,10,1,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">entregas</span>
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Distância Máxima Para Quem Está Em Rota</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Só Toca Quem Já Tem Entrega Se A Loja Do Pedido Novo Estiver Até Essa Distância Do Destino De Uma Entrega Dele. Padrão: 2 km.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-raio-em-rota','2',0,20,0.5,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">km</span>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Espera Para Quem Está Em Rota (Modo Todos)</label>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Segundos Depois Do Pronto Antes De Tocar Quem Já Tem Entrega, Para Os Livres Terem A Vez. Padrão: 12.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${_inp('op-espera-em-rota','12',0,120,1,'90px')}
+              <span style="font-size:13px;color:var(--text2);font-weight:600">segundos</span>
+            </div>
+          </div>
+        </div>
+
         <div style="margin-bottom:32px" id="op-taxa-saque-wrap">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text)">
             <input type="checkbox" id="op-taxa-saque" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer"/>
@@ -15249,7 +15292,8 @@ async function _carregarConfigOperacao(){
     'despacho_onda_1_raio','despacho_onda_1_min','despacho_onda_1_max',
     'despacho_onda_2_raio','despacho_onda_2_min','despacho_onda_2_max',
     'despacho_onda_3_raio','despacho_onda_3_min','despacho_onda_3_max',
-    'despacho_onda_4_raio','despacho_onda_4_min','despacho_onda_4_max'];
+    'despacho_onda_4_raio','despacho_onda_4_min','despacho_onda_4_max',
+    'despacho_teto_ativos_total','despacho_raio_em_rota_km','despacho_espera_em_rota_seg'];
   const results=await Promise.all(keys.map(k=>db('configuracoes','GET',null,`?chave=eq.${k}&limit=1`)));
   const cfg={};keys.forEach((k,i)=>{cfg[k]=(Array.isArray(results[i])&&results[i][0])?results[i][0].valor:null;});
   const modoVal=cfg['modo_despacho']||'todos';
@@ -15263,6 +15307,9 @@ async function _carregarConfigOperacao(){
   _set('op-o1-raio',cfg['despacho_onda_1_raio'],'4');  _set('op-o1-min',cfg['despacho_onda_1_min'],'0');  _set('op-o1-max',cfg['despacho_onda_1_max'],'2');
   _set('op-o2-raio',cfg['despacho_onda_2_raio'],'8');  _set('op-o2-min',cfg['despacho_onda_2_min'],'2');  _set('op-o2-max',cfg['despacho_onda_2_max'],'4');
   _set('op-o3-raio',cfg['despacho_onda_3_raio'],'16'); _set('op-o3-min',cfg['despacho_onda_3_min'],'4');  _set('op-o3-max',cfg['despacho_onda_3_max'],'6');
+  _set('op-teto-ativos',cfg['despacho_teto_ativos_total'],'3');
+  _set('op-raio-em-rota',cfg['despacho_raio_em_rota_km'],'2');
+  _set('op-espera-em-rota',cfg['despacho_espera_em_rota_seg'],'12');
   _set('op-o4-raio',cfg['despacho_onda_4_raio'],'32'); _set('op-o4-min',cfg['despacho_onda_4_min'],'6');  _set('op-o4-max',cfg['despacho_onda_4_max'],'8');
   _carregarTaxaSaque();
 }
@@ -15297,9 +15344,16 @@ async function _salvarConfigOperacao(){
   const g=(id,def='')=>document.getElementById(id)?.value?.trim()||def;
   const raio=g('op-raio-busca');
   if(!raio){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Informe O Raio De Busca</span>';return;}
+  const teto=parseInt(g('op-teto-ativos','3'),10),raioRota=parseFloat(g('op-raio-em-rota','2').replace(',','.')),esperaRota=parseInt(g('op-espera-em-rota','12'),10);
+  if(!(teto>=1&&teto<=10)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Teto De Entregas Ativas: De 1 A 10</span>';return;}
+  if(!(raioRota>=0&&raioRota<=20)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Distância Para Quem Está Em Rota: De 0 A 20 km</span>';return;}
+  if(!(esperaRota>=0&&esperaRota<=120)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Espera Para Quem Está Em Rota: De 0 A 120 Segundos</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await Promise.all([
     _upsertConfigWa('modo_despacho',_opModoAtual),
+    _upsertConfigWa('despacho_teto_ativos_total',teto),
+    _upsertConfigWa('despacho_raio_em_rota_km',raioRota),
+    _upsertConfigWa('despacho_espera_em_rota_seg',esperaRota),
     _upsertConfigWa('despacho_raio_busca_km',raio),
     _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
     _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
