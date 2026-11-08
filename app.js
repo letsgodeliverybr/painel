@@ -6133,6 +6133,9 @@ async function abrirAlocarMotoboy(pedidoId){
   // teto — a trava de verdade (não confia só nessa lista, que pode estar
   // um pouco desatualizada) fica em alocarMotoboy(), com dado fresco do banco.
   const _contarAtivos=id=>_pedidosAtivosGlobal.filter(p=>(p.motoboy_id===id||p.entregador_id===id)&&STATUS_ATIVOS_ENTREGA.includes(p.status_detalhado||p.status)).length;
+  // Busca por nome/telefone (2026-11-07): usa o mesmo pedido, coleta, bloqueios
+  // da loja e contagem de ativos da lista padrão. Ver _alocBuscar().
+  _alocCtx={pedidoId,latColeta,lngColeta,idsBloq:_idsBloqLoja,contarAtivos:_contarAtivos};
   const listaMotoboys=motoboys.length===0
     ?`<div style="text-align:center;padding:24px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🛵</div>Nenhum Motoboy Online</div>`
     :motoboysNoRaio.length===0
@@ -6150,14 +6153,64 @@ async function abrirAlocarMotoboy(pedidoId){
   const avisoRealocacao=temEntregadorAtivo
     ?`<div style="background:#7c2d12;border:1px solid #ea580c;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#fed7aa"><b>⚠️ Esse Pedido Já Tem Um Entregador Em Andamento.</b> Escolher Outro Abaixo Vai Desalocar O Entregador Atual (Ele Será Avisado Por Notificação) E Reabrir O Pedido Como Disponível Pro Novo.</div>`
     :'';
-  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys Disponíveis (${motoboysNoRaio.length})</div>${listaMotoboys}</div></div>`;
+  modal.innerHTML=`<div class="modal"><div class="modal-header"><span class="modal-title">${_icone('bike',18)} Alocar Motoboy — #${p.numero||pedidoId.substring(0,6)}</span><button class="modal-close" onclick="document.getElementById('modal-alocar-motoboy').classList.remove('open')">${_icone('x',16)}</button></div><div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">📍 ${p.endereco||'—'} · <span style="color:var(--green);font-weight:700">R$ ${(p.valor||0).toFixed(2)}</span></div>${avisoRealocacao}<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Motoboys Disponíveis (${motoboysNoRaio.length})</div><input id="aloc-busca" type="text" autocomplete="off" placeholder="${currentPerfil==='adm'?'Buscar Por Nome Ou Telefone (Inclui Offline)':'Buscar Por Nome Ou Telefone'}" oninput="_alocBuscarDepois(this.value)" style="width:100%;box-sizing:border-box;padding:9px 12px;margin-bottom:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"><div id="aloc-busca-res" style="display:none"></div><div id="aloc-padrao">${listaMotoboys}</div></div></div>`;
   modal.classList.add('open');
+}
+// Busca no modal Alocar Motoboy (2026-11-07): por nome ou telefone, fora da
+// lista padrão (que continua só com os disponíveis no raio). O ADM também vê
+// quem está OFFLINE (etiqueta; confirmação em alocarMotoboy()); os outros
+// perfis só acham quem está disponível. Bloqueado na plataforma ou nesta loja
+// não aparece (o banco recusa a loja de qualquer jeito).
+let _alocCtx=null,_alocBuscaTimer=null,_alocBuscaSeq=0;
+function _alocBuscarDepois(v){clearTimeout(_alocBuscaTimer);_alocBuscaTimer=setTimeout(()=>_alocBuscar(v),300);}
+async function _alocBuscar(v){
+  const ctx=_alocCtx;
+  const padrao=document.getElementById('aloc-padrao'),res=document.getElementById('aloc-busca-res');
+  if(!ctx||!padrao||!res)return;
+  const q=String(v||'').trim();
+  const seq=++_alocBuscaSeq;
+  if(q.length<2){res.style.display='none';res.innerHTML='';padrao.style.display='';return;}
+  // Vírgula, parênteses e * quebram o or=() do PostgREST; telefone é gravado
+  // com máscara, então os dígitos viram *1*6*9*... (casa com ou sem máscara).
+  const nomeQ=q.replace(/[*,()]/g,' ').replace(/\s+/g,' ').trim();
+  const dig=q.replace(/\D/g,'');
+  const conds=[];
+  if(nomeQ)conds.push(`nome.ilike.*${encodeURIComponent(nomeQ)}*`);
+  if(dig.length>=3)conds.push(`telefone.ilike.*${dig.split('').join('*')}*`);
+  if(!conds.length)return;
+  const ehAdm=currentPerfil==='adm';
+  const lista=await db('entregadores','GET',null,`?or=(${conds.join(',')})${ehAdm?'':'&disponivel=eq.true'}&order=nome.asc&limit=20&select=id,nome,telefone,disponivel,status,lat,lng`);
+  if(seq!==_alocBuscaSeq||_alocCtx!==ctx)return; // digitou de novo ou trocou de pedido
+  const achados=(Array.isArray(lista)?lista:[]).filter(m=>m.status!=='bloqueado'&&!ctx.idsBloq.has(m.id))
+    .map(m=>({...m,_dist:(ctx.latColeta!=null&&ctx.lngColeta!=null&&m.lat!=null&&m.lng!=null)?calcularDistancia(ctx.latColeta,ctx.lngColeta,m.lat,m.lng):null}));
+  const linhas=achados.map(m=>{
+    const _ativos=ctx.contarAtivos(m.id);const _lotado=_ativos>=LIMITE_PEDIDOS_ALOCACAO_MANUAL;const _off=m.disponivel!==true;
+    const etiqueta=_lotado?`<div style="background:#ef444420;color:#ef4444;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">🔴 Lotado (${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL})</div>`
+      :_off?`<div style="background:#6b728030;color:#d1d5db;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">OFFLINE</div>`
+      :`<div style="background:#22c55e20;color:#22c55e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">${_ativos}/${LIMITE_PEDIDOS_ALOCACAO_MANUAL} ativos</div>`;
+    return`<div ${_lotado?'':`onclick="alocarMotoboy('${ctx.pedidoId}','${m.id}','${_tpNomeJs(m.nome||'')}',this)"`} style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:${_lotado?'not-allowed':'pointer'};border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);opacity:${_lotado?0.5:1}" ${_lotado?'':`onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"`}><div style="width:36px;height:36px;background:${_off?'#6b7280':'#22c55e'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🛵</div><div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px">${_escHtml(m.nome||'—')}</div><div style="font-size:11px;color:var(--text2)">${_escHtml(m.telefone||(_off?'Offline':'Online'))}</div></div>${m._dist!=null?`<div style="font-size:12px;color:var(--text2);font-weight:600;white-space:nowrap">📍 ${m._dist.toFixed(1)} km</div>`:''}${etiqueta}</div>`;
+  }).join('');
+  res.innerHTML=`<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Resultado Da Busca (${achados.length}${achados.length===20?'+':''})</div>${linhas||`<div style="text-align:center;padding:16px;color:var(--text3)">Nenhum Entregador Encontrado${ehAdm?'':' Entre Os Disponíveis'}</div>`}`;
+  res.style.display='';padrao.style.display='none';
 }
 async function alocarMotoboy(pedidoId,motoboyId,motoboyNome,el){
   const _p=allPedidos.find(x=>x.id===pedidoId);
   // Pedido de teste do Open Delivery não recebe entregador (2026-10-06): o banco
   // também recusa (tg_aa_od_teste_sem_alocacao). Teste os webhooks pelo seletor.
   if(_p?.od_teste){showNotif('Pedido De Teste','Não Aloque Entregador: Use O Seletor De Status Para Testar.','var(--yellow)');return;}
+  // Entregador offline (2026-11-07): só o ADM aloca, e só depois de confirmar.
+  // Lê do banco na hora do clique (a lista pode estar desatualizada); sem
+  // conseguir confirmar, não aloca. O banco não confere online/offline — essa
+  // trava é só do painel.
+  const _estadoEnt=await db('entregadores','GET',null,`?id=eq.${motoboyId}&select=disponivel`);
+  if(!Array.isArray(_estadoEnt)||!_estadoEnt.length){
+    showNotif('Não Foi Possível Alocar','Não Consegui Confirmar Se O Entregador Está Online. Tente De Novo.','var(--red)');
+    return;
+  }
+  if(_estadoEnt[0].disponivel!==true){
+    if(currentPerfil!=='adm'){showNotif('Entregador Offline','Só O ADM Pode Alocar Um Entregador Offline.','var(--red)');return;}
+    if(!confirm(`${motoboyNome} Está OFFLINE.\n\nEle Recebe A Notificação, Mas Pode Não Ver Até Abrir O App. Alocar Mesmo Assim?`))return;
+  }
   // Trava real (2026-09-10, bug real corrigido) — o banner em
   // abrirAlocarMotoboy() é só contexto visual, essa confirmação é o que
   // de fato impede o clique acidental: pedido já tem entregador ATIVO
