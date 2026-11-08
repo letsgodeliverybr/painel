@@ -3028,7 +3028,7 @@ function _npRecalcularTaxas(){
 
 const TODOS_STATUS=[
   {key:'agendado',       label:'Agendado',          cor:'#ef4444'},
-  {key:'recebido',       label:'Recebido',           cor:'#ef4444'},
+  {key:'recebido',       label:'Em Preparo',         cor:'#ef4444'},
   {key:'pronto',         label:'Pronto',             cor:'#e91e8c'},
   {key:'aceito',         label:'Aceito',             cor:'#eab308'},
   {key:'chegou_no_local',label:'Chegou No Local',    cor:'#06b6d4'},
@@ -4097,7 +4097,7 @@ async function confirmarPagamento(pedidoId){
   showNotif('✅ Pagamento Confirmado!','Entrega Finalizada Para O Motoboy');await atualizarTudo();
 }
 
-const STATUS_LABEL={aguardando_pagamento:'Aguardando Pagamento',recebido:'Recebido',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou No Local',em_rota:'Em Rota',chegou_destino:'Chegou No Destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na Fila',agendado:'Agendado'};
+const STATUS_LABEL={aguardando_pagamento:'Aguardando Pagamento',recebido:'Em Preparo',pronto:'Pronto',aceito:'Aceito',chegou_local:'Chegou No Local',em_rota:'Em Rota',chegou_destino:'Chegou No Destino',retornando:'Retornando',finalizado:'Finalizado',cancelado:'Cancelado',disponivel:'Disponível',aguardando:'Aguardando',entregue:'Entregue',fila:'Na Fila',agendado:'Agendado'};
 const STATUS_CORES={recebido:'#ef4444',pronto:'#e91e8c',aceito:'#eab308',no_local:'#38BDF8',chegou_local:'#06b6d4',chegou_no_local:'#06b6d4',em_rota:'#1A56DB',chegou_destino:'#7c3aed',retornando:'#16a34a',finalizado:'#16a34a',cancelado:'#ef4444',disponivel:'#6b7280',aguardando:'#eab308',entregue:'#16a34a',fila:'#6b7280',agendado:'#ef4444'};
 function getStatusKey(p){return p.status_detalhado||p.status||'disponivel';}
 function getStatusLabel(p){const k=getStatusKey(p);return STATUS_LABEL[k]||k;}
@@ -5628,7 +5628,7 @@ function renderPedidosLista(){
   // Agendado (2026-10-27): bolinha vermelha ao lado da de Recebido, com
   // "Agendado" no tooltip — antes o pedido agendado não entrava em nenhuma.
   const _SB_HEADER=[
-    {key:'recebido',color:'#EF4444',label:'Recebido'},{key:'agendado',color:'#EF4444',label:'Agendado'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
+    {key:'recebido',color:'#EF4444',label:'Em Preparo'},{key:'agendado',color:'#EF4444',label:'Agendado'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
     {key:'chegou_local',color:'#38BDF8'},{key:'em_rota',color:'#1A56DB'},
     {key:'chegou_destino',color:'#7C3AED'},{key:'retornando',color:'#10B981'},
   ];
@@ -5650,7 +5650,7 @@ function renderPedidosLista(){
   }
   if(filtered.length===0){lista.innerHTML='<div class="empty-lista" style="color:#475569"><div class="ei">📦</div><p>Nenhum Pedido</p></div>';return;}
   const STATUS_BUBBLES=[
-    {key:'recebido',color:'#EF4444',label:'Recebido'},
+    {key:'recebido',color:'#EF4444',label:'Em Preparo'},
     {key:'agendado',color:'#EF4444',label:'Agendado'},
     {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
