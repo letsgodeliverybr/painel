@@ -12595,20 +12595,23 @@ async function _salvarCla(claId,cidSafe){
 let _vagasAno=new Date().getFullYear(),_vagasMes=new Date().getMonth();
 let _vagasDoMes=[],_feriadosCache=[],_vagasLojas=[],_vagasEntregadoresCache=[],_vagasDiaAberto=null,_vagasMinhaLoja=null;
 
-function _vagasEhFimDeSemanaOuFeriado(dataStr){
-  const dow=new Date(dataStr+'T00:00:00').getDay();
-  const feriado=_feriadosCache.some(f=>f.data===dataStr);
-  return dow===0||dow===6||feriado;
-}
-function _vagasCalcularValor(dataStr){
-  return _vagasEhFimDeSemanaOuFeriado(dataStr)?40:30;
+// Valor fixo por vaga (2026-11-08): configuracoes.vaga_valor_fixo (padrão
+// R$50, só ADM muda — _vagasAbrirValor). O banco (tg_vaga_valor_fixo) grava
+// esse valor em toda vaga nova, então aqui é só a prévia; vagas já criadas
+// não mudam. Antes: R$40 fim de semana/feriado, R$30 nos outros dias.
+let _vagasValorFixo=50;
+function _vagasCalcularValor(){return _vagasValorFixo;}
+async function _vagasCarregarValor(){
+  const r=await db('configuracoes','GET',null,'?chave=eq.vaga_valor_fixo&select=valor');
+  const n=parseFloat(String(Array.isArray(r)&&r[0]?r[0].valor:'').replace(',','.'));
+  _vagasValorFixo=n>0&&n<=1000?n:50;
 }
 
 async function renderVagasPage(){
   const hoje=new Date();
   _vagasAno=hoje.getFullYear();_vagasMes=hoje.getMonth();
   document.getElementById('app-body').innerHTML=`<div class="alt-page">
-    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='suporte'?'Solicitar Fixo':'Entrega Dedicada'}</div>${currentPerfil==='adm'?`<button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button>`:''}</div>
+    <div class="page-header"><div class="page-title">${_icone('calendar-days',22)} ${currentPerfil==='suporte'?'Solicitar Fixo':'Entrega Dedicada'}</div>${currentPerfil==='adm'?`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirValor()">${_icone('circle-dollar-sign',16,'btn-ico')}Valor Da Vaga</button><button class="btn-sm btn-primary-sm" onclick="_vagasAbrirFeriados()">${_icone('calendar',16,'btn-ico')}Gerenciar Feriados</button></div>`:''}</div>
     <div class="card"><div style="padding:16px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <button onclick="_vagasMudarMes(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text)">‹</button>
@@ -12630,6 +12633,7 @@ async function renderVagasPage(){
     const minhaLoja=await db('lojas','GET',null,`?id=eq.${currentUser?.loja_id}&select=id,endereco`);
     _vagasMinhaLoja=Array.isArray(minhaLoja)&&minhaLoja[0]?minhaLoja[0]:null;
   }
+  await _vagasCarregarValor();
   await _vagasCarregarMes();
 }
 
@@ -12747,7 +12751,7 @@ function _vagasAbrirDia(dataStr,semRolar){
             <div class="fi" style="margin-bottom:10px"><label>Período</label>
               <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','10:00–14:00')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
             </div>
-            <div class="fi" style="margin-bottom:14px"><label>Valor (Calculado Automaticamente, Por Vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
+            <div class="fi" style="margin-bottom:14px"><label>Valor (Fixo, Por Vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
             <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:${passado?'not-allowed':'pointer'};width:100%;opacity:${passado?.5:1};display:inline-flex;align-items:center;justify-content:center">${_icone('check',16,'btn-ico')}Criar Vaga</button>
           </fieldset>
           <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
@@ -12881,11 +12885,43 @@ async function _vagasConfirmarAlocar(vagaId,entregadorId){
   if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto,true);
 }
 
-// Só admin (2026-09-29): feriados_importantes é global (sem loja_id) e
-// define o preço da vaga (R$40 feriado/fim de semana, R$30 senão — ver
-// _vagasCalcularValor); loja/suporte não podem mexer. Guarda aqui também
+// Só admin (2026-09-29): feriados_importantes é global (sem loja_id) e só
+// destaca o dia no calendário (desde 2026-11-08 não muda mais o preço da
+// vaga — ver _vagasCalcularValor); loja/suporte não podem mexer. Guarda aqui também
 // além de esconder o botão em renderVagasPage. Obs.: a tabela está com RLS
 // ligada e sem política (nem o admin grava) — correção de RLS pendente.
+// Valor da vaga (só ADM; o banco também recusa quem não é ADM).
+function _vagasAbrirValor(){
+  if(currentPerfil!=='adm')return;
+  let modal=document.getElementById('modal-vagas-valor');
+  if(!modal){modal=document.createElement('div');modal.id='modal-vagas-valor';modal.className='modal-overlay';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:380px">
+    <div class="modal-header"><span class="modal-title">${_icone('circle-dollar-sign',18)} Valor Da Vaga</span><button class="modal-close" onclick="document.getElementById('modal-vagas-valor').classList.remove('open')">${_icone('x',16)}</button></div>
+    <div class="modal-body">
+      <div class="fi" style="margin-bottom:8px"><label>Valor Fixo Por Vaga (R$)</label><input type="number" id="vg-valor-fixo" min="1" max="1000" step="0.01" value="${_vagasValorFixo}" style="${_scInput()}"/></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Vale Para Todas As Vagas Novas, Em Qualquer Dia. Vagas Já Criadas Ou Pagas Não Mudam.</div>
+      <button onclick="_vagasSalvarValor()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button>
+    </div>
+  </div>`;
+  modal.classList.add('open');
+}
+async function _vagasSalvarValor(){
+  if(currentPerfil!=='adm')return;
+  const n=Math.round(parseFloat(String(document.getElementById('vg-valor-fixo')?.value||'').replace(',','.'))*100)/100;
+  if(!(n>0&&n<=1000)){showNotif('Atenção','Informe Um Valor Entre R$ 1 E R$ 1.000','var(--yellow)');return;}
+  const agora=new Date().toISOString();
+  const ex=await db('configuracoes','GET',null,'?chave=eq.vaga_valor_fixo&select=chave');
+  const res=Array.isArray(ex)&&ex.length
+    ?await db('configuracoes','PATCH',{valor:String(n),updated_at:agora},'?chave=eq.vaga_valor_fixo')
+    :await db('configuracoes','POST',{chave:'vaga_valor_fixo',valor:String(n),created_at:agora,updated_at:agora});
+  if(!Array.isArray(res)||!res.length){showNotif('❌ Erro Ao Salvar O Valor','','var(--red)');return;}
+  await logAcao('vaga_valor_fixo',{de:_vagasValorFixo,para:n});
+  _vagasValorFixo=n;
+  document.getElementById('modal-vagas-valor')?.classList.remove('open');
+  showNotif('✅ Valor Da Vaga Salvo',`R$ ${n.toFixed(2)} Nas Vagas Novas`,'var(--green)');
+  if(_vagasDiaAberto)_vagasAbrirDia(_vagasDiaAberto,true);
+}
+
 async function _vagasAbrirFeriados(){
   if(currentPerfil!=='adm')return;
   let modal=document.getElementById('modal-feriados');
