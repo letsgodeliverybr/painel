@@ -11582,11 +11582,12 @@ async function _cpReativar(id){
 // partir dela.
 const _FIN_POR_PAGINA=15;
 let _fin={lojaId:null,loja:null,equipe:false,linhas:[],grupos:[],pagina:0,filtro:{ini:'',fim:'',tipo:''},abertos:new Set()};
-const _FIN_TIPOS=[['','Todos Os Tipos'],['recarga','Recarga Pix'],['bonus','Bônus'],['entrega','Débito De Entrega'],['estorno','Estorno De Entrega'],['ajuste','Ajuste']];
+const _FIN_TIPOS=[['','Todos Os Tipos'],['recarga','Recarga Pix'],['bonus','Bônus'],['entrega','Débito De Entrega'],['estorno','Estorno De Entrega'],['diaria','Diária Entrega Dedicada'],['ajuste','Ajuste']];
 function _finTipo(r){
   if(r.tipo==='bonus')return'bonus';
   const o=r.origem||'';
   if(o==='recarga')return'recarga';
+  if(o==='diaria'||o==='estorno_diaria')return'diaria'; // vaga finalizada / finalização desfeita (fn_cobranca_diaria_loja)
   if(o==='entrega'||(r.tipo==='debito'&&/^entrega #/i.test(r.observacoes||'')))return'entrega';
   if(o==='estorno'||(r.tipo==='credito'&&/^estorno #/i.test(r.observacoes||'')))return'estorno';
   if(!o&&r.tipo==='credito')return'recarga';
@@ -13685,7 +13686,7 @@ async function _enviarFaturaHistorico(cobId){
 // na aba Gerar Pagamentos (_gpAtualizarResumo), não aqui.
 function _gcAtualizarResumo(rowsCobranca){
   const el=document.getElementById('gc-resumo');if(!el)return;
-  const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total,0);
+  const totalCobrar=rowsCobranca.reduce((s,r)=>s+r.total+(r.diarias||0),0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
       <div class="stat-card"><div class="stat-label">Total A Cobrar Das Lojas</div><div class="stat-value" style="font-size:24px;color:#1A56DB">R$ ${totalCobrar.toFixed(2)}</div></div>
@@ -13721,6 +13722,14 @@ async function _buscarCobrancas(){
     if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--red)">Não Foi Possível Conferir Os Pedidos Pagos Com Crédito. Tente De Novo.</div>';
     return;
   }
+  // Diárias de Entrega Dedicada pendentes (lojas de faturamento). O banco
+  // (tg_fatura_somar_diarias) soma esse valor no valor_total ao gravar a
+  // fatura — o POST abaixo manda só o valor dos pedidos. Sem a prévia, não gera.
+  const diarias=await dbRpc('faturamento_diarias_pendentes',{p_fim:fim});
+  if(!diarias||diarias.ok!==true||!Array.isArray(diarias.lojas)){
+    if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--red)">Não Foi Possível Conferir As Diárias De Entrega Dedicada. Tente De Novo.</div>';
+    return;
+  }
   const pagosCreditoSet=new Set(pagosCredito.pedidos.map(r=>r.pedido_id));
   const jaGeradasSet=new Set((Array.isArray(jaGeradas)?jaGeradas:[]).map(r=>r.loja_id));
   const creditoLojas=new Set((Array.isArray(lojas)?lojas:[]).filter(l=>l.tipo_cobranca==='credito').map(l=>l.id));
@@ -13730,6 +13739,12 @@ async function _buscarCobrancas(){
     if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
     _gcResultados[lid].total+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
     _gcResultados[lid].qtd++;
+  });
+  diarias.lojas.forEach(d=>{
+    const lid=d.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid))return;
+    if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
+    _gcResultados[lid].diarias=parseFloat(d.valor)||0;
+    _gcResultados[lid].qtdDiarias=parseInt(d.qtd)||0;
   });
   const rows=Object.values(_gcResultados);
   _gcAtualizarResumo(rows);
@@ -13741,12 +13756,13 @@ async function _buscarCobrancas(){
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('store',16,'btn-ico')}Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Total A Cobrar</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Diárias</th><th>Total A Cobrar</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
         <td>${r.qtd}</td>
-        <td style="font-weight:700;color:#1A56DB">R$ ${r.total.toFixed(2)}</td>
+        <td>${r.diarias?`${r.qtdDiarias} · R$ ${r.diarias.toFixed(2)}`:'—'}</td>
+        <td style="font-weight:700;color:#1A56DB">R$ ${(r.total+(r.diarias||0)).toFixed(2)}</td>
       </tr>`).join('')}</tbody>
     </table></div>`;
 }
@@ -13961,10 +13977,12 @@ async function verFaturaCobranca(cobId){
   const faixasLoja=await _getFaixasCobranca(c.loja_id);
   const totalEntregas=pedidosData.length>0
     ?Math.round(pedidosData.reduce((acc,p)=>acc+(_calcTaxaLoja(p,faixasLoja)-(parseFloat(p.gorjeta)||0)),0)*100)/100
-    :(parseFloat(c.valor_total)||0);
+    :Math.round(((parseFloat(c.valor_total)||0)-(parseFloat(c.valor_diarias)||0))*100)/100;
   const qtdPedidos=pedidosData.length||c.qtd_pedidos||0;
+  // Diárias de Entrega Dedicada (somadas pelo banco no valor_total; negativo = estorno)
+  const valorDiarias=parseFloat(c.valor_diarias)||0,qtdDiarias=parseInt(c.qtd_diarias)||0;
   const totalGorjetas=Math.round(pedidosData.reduce((acc,p)=>acc+(parseFloat(p.gorjeta)||0),0)*100)/100;
-  const valorOriginalFatura=totalEntregas+totalGorjetas;
+  const valorOriginalFatura=Math.round((totalEntregas+totalGorjetas+valorDiarias)*100)/100;
   // Fatura já paga: NÃO recalcula juros/multa vivos contra hoje — o valor
   // real cobrado já foi congelado em valor_pago_final no momento da
   // aprovação (ver comentário em _aprovarCobrancaUnica/_aprovarCobrancaLote
@@ -14018,8 +14036,9 @@ async function verFaturaCobranca(cobId){
           <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">1</td><td style="${tdS}">Entregas</td><td style="${tdQ}">${qtdPedidos}</td><td style="${tdV};color:#1A56DB">R$ ${totalEntregas.toFixed(2)}</td></tr>
           <tr style="border-bottom:1px solid #f3f4f6"><td style="${tdN}">2</td><td style="${tdS}">Esperas</td><td style="${tdQ}">0</td><td style="${tdV};color:#9ca3af">R$ 0,00</td></tr>
           <tr><td style="${tdN}">3</td><td style="${tdS}">Gorjetas</td><td style="${tdQ}">${pedidosData.filter(p=>parseFloat(p.gorjeta)>0).length}</td><td style="${tdV};color:${totalGorjetas>0?'#059669':'#9ca3af'}">R$ ${totalGorjetas.toFixed(2)}</td></tr>
+          ${valorDiarias||qtdDiarias?`<tr style="border-top:1px solid #f3f4f6"><td style="${tdN}">4</td><td style="${tdS}">${valorDiarias<0?'Estorno De Diárias (Entrega Dedicada)':'Diárias (Entrega Dedicada)'}</td><td style="${tdQ}">${Math.abs(qtdDiarias)}</td><td style="${tdV};color:${valorDiarias<0?'#dc2626':'#1A56DB'}">R$ ${valorDiarias.toFixed(2)}</td></tr>`:''}
         </tbody>
-        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">Total</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${(totalEntregas+totalGorjetas).toFixed(2)}</td></tr></tfoot>
+        <tfoot><tr style="background:#f8faff;border-top:2px solid #dbeafe"><td colspan="3" style="padding:14px 12px;font-weight:700;color:#1A56DB;text-align:right;font-size:14px;letter-spacing:.3px">Total</td><td style="padding:14px 12px;font-weight:800;color:#1A56DB;text-align:right;font-size:20px">R$ ${valorOriginalFatura.toFixed(2)}</td></tr></tfoot>
       </table>
     </div>
     ${faturaVencida?`<div style="padding:18px 32px;background:#fef2f2;border-bottom:1px solid #e5e7eb">
