@@ -15581,7 +15581,51 @@ async function _agConfig(){
     <div style="font-size:11px;color:var(--text3);margin-top:16px">Última Alteração: ${_agHora(c.atualizado_em)} · Veja Quem Mudou Na Aba Histórico.</div>
     <div id="ag-cfg-fb" style="min-height:18px;margin:12px 0"></div>
     ${_agBtn(_icone('save',16,'btn-ico')+'Salvar Configurações','_agConfigSalvar()')}
+  </div>
+  <div id="ag-excl" style="max-width:760px;margin-top:16px"></div>`;
+  _agExcluidas();
+}
+// Lojas fora das metas: as entregas delas não contam para as faixas nem para o
+// contador do card do app. Vale por dia, de hoje (inteiro) em diante; bônus já
+// pago fica. Tirar da lista não apaga: a loja volta a contar de hoje em diante.
+async function _agExcluidas(){
+  const el=document.getElementById('ag-excl');if(!el)return;
+  const r=await dbRpc('agenda_lojas_excluidas_listar',{});
+  if(!Array.isArray(r)){el.innerHTML='<div class="card" style="padding:16px 20px;color:var(--red)">Não Foi Possível Carregar As Lojas Fora Das Metas.</div>';return;}
+  if(!allLojas.length){const l=await db('lojas','GET',null,'?select=id,nome&order=nome.asc');if(Array.isArray(l))allLojas=l;}
+  const ativas=r.filter(x=>x.ativa),antigas=r.filter(x=>!x.ativa);
+  const linha=x=>`<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:700;color:var(--text)">${_escHtml(x.loja)}</div>
+      <div style="font-size:11px;color:var(--text3)">Fora Desde ${_agDataBr(x.desde)}${x.ate?` · Voltou A Contar Em ${_agDataBr(x.ate)}`:''}${x.motivo?` · ${_escHtml(x.motivo)}`:''}</div></div>
+      ${x.ativa?_agBtn('Voltar A Contar',`_agExcluidaReincluir('${x.id}')`,'var(--text3)'):''}</div>`;
+  el.innerHTML=`<div class="card" style="padding:20px 24px">
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">Lojas Que Não Contam Para As Metas</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">As Entregas Destas Lojas Não Contam Para A Faixa 1, A Faixa 2 Nem Para O Contador Do App. Vale Para O Dia De Hoje Inteiro Em Diante; Dias Anteriores E Bônus Já Pago Não Mudam.</div>
+    ${ativas.length?ativas.map(linha).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhuma Loja Na Lista.</div>'}
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">
+      <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Loja</div>${_agInp('ag-excl-loja','','text','260px','list="ag-excl-lista" placeholder="Digite o nome"')}
+      <datalist id="ag-excl-lista">${allLojas.map(l=>`<option value="${_agAttr(l.nome)}"></option>`).join('')}</datalist></div>
+      <div><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:4px">Motivo (Opcional)</div>${_agInp('ag-excl-motivo','','text','220px')}</div>
+      ${_agBtn(_icone('plus',14,'btn-ico')+'Tirar Das Metas','_agExcluidaIncluir()')}
+    </div>
+    ${antigas.length?`<details style="margin-top:12px"><summary style="font-size:12px;color:var(--text2);cursor:pointer">Já Saíram Da Lista (${antigas.length})</summary>${antigas.map(linha).join('')}</details>`:''}
   </div>`;
+}
+async function _agExcluidaIncluir(){
+  const nome=(document.getElementById('ag-excl-loja')?.value||'').trim();
+  const achadas=allLojas.filter(l=>(l.nome||'').trim().toLowerCase()===nome.toLowerCase());
+  if(!achadas.length){showNotif('Atenção','Escolha Uma Loja Da Lista','var(--yellow)');return;}
+  if(achadas.length>1){showNotif('Atenção','Há Mais De Uma Loja Com Esse Nome','var(--yellow)');return;}
+  if(!confirm(`Tirar ${achadas[0].nome} das metas do Agendamento?\n\nAs entregas dela deixam de contar já no dia de hoje inteiro. Bônus já pago não muda.`))return;
+  const r=await dbRpc('agenda_loja_excluir',{p_loja:achadas[0].id,p_motivo:document.getElementById('ag-excl-motivo')?.value||null});
+  if(r&&r.ok)showNotif('✅ '+(r.msg||'Feito'),'');else showNotif('Erro',(r&&r.msg)||'Não Foi Possível Salvar','var(--red)');
+  _agExcluidas();
+}
+async function _agExcluidaReincluir(id){
+  if(!confirm('Esta loja volta a contar para as metas a partir do dia de hoje inteiro. Dias anteriores continuam de fora. Confirma?'))return;
+  const r=await dbRpc('agenda_loja_reincluir',{p_id:id});
+  if(r&&r.ok)showNotif('✅ '+(r.msg||'Feito'),'');else showNotif('Erro',(r&&r.msg)||'Não Foi Possível Salvar','var(--red)');
+  _agExcluidas();
 }
 async function _agConfigSalvar(){
   const fb=document.getElementById('ag-cfg-fb');const body={};
