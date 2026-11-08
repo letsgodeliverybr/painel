@@ -12779,13 +12779,14 @@ function _vagasRenderCard(v){
   const entregador=_vagasEntregadoresCache.find(e=>e.id===v.entregador_id);
   const _selo=(fundo,cor,txt)=>`<span style="background:${fundo};color:${cor};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">${txt}</span>`;
   const badge=v.status==='preenchida'?_selo('#dbeafe','#1d4ed8','Preenchida'):v.status==='finalizada'?_selo('#e5e7eb','#374151','Finalizada'):v.status==='cancelada'?_selo('#fee2e2','#b91c1c','Cancelada'):_selo('#d1fae5','#059669','Disponível');
-  return `<div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px">
       <div>
         ${currentPerfil!=='loja'?`<div style="font-size:13px;font-weight:700;color:var(--text)">${loja?.nome||'—'}</div>`:''}
         <div style="font-size:12px;color:var(--text2)">${v.endereco||'—'}</div>
         <div style="font-size:12px;color:var(--text3)">${(v.horario_inicio||'').slice(0,5)} - ${(v.horario_fim||'').slice(0,5)} · R$ ${parseFloat(v.valor).toFixed(2)}</div>
         ${v.status==='preenchida'?`<div style="font-size:12px;color:#1d4ed8;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:5px">${_icone('bike',14)} ${entregador?.nome||'Motoboy Alocado'}</div>`:''}
+        <div id="vg-ent-${v.id}" style="font-size:13px;font-weight:700;color:var(--text);margin-top:6px">${v.entregador_id?'…':'—'}</div>
       </div>
       ${badge}
     </div>
@@ -12840,6 +12841,24 @@ function _vagasAbrirDia(dataStr,semRolar){
       </div>
     </div>`;
   if(!semRolar&&window.innerWidth<700)painel.scrollIntoView({behavior:'smooth',block:'start'});
+  _vagasCarregarEntregas();
+}
+
+// Entregas da vaga (2026-11-08): do entregador da vaga, na loja da vaga, no
+// horário da vaga (pelo aceite), sem teste — vagas_entregas_resumo (loja só vê
+// as dela). Só informa: o valor da vaga não muda. Atualiza a cada 30 s.
+let _vagasEntTimer=null;
+async function _vagasCarregarEntregas(){
+  clearTimeout(_vagasEntTimer);
+  const ids=_vagasDoMes.filter(v=>v.data===_vagasDiaAberto&&v.entregador_id).map(v=>v.id);
+  if(!ids.length||!document.getElementById('vg-lista-dia'))return;
+  const r=await dbRpc('vagas_entregas_resumo',{p_vagas:ids});
+  if(r&&!Array.isArray(r))for(const id of ids){
+    const el=document.getElementById('vg-ent-'+id),c=r[id];if(!el||!c)continue;
+    const n=(c.finalizadas||0)+(c.em_andamento||0);
+    el.innerHTML=`${n} entrega${n===1?'':'s'} · <span style="color:#16a34a">${c.finalizadas} finalizada${c.finalizadas===1?'':'s'}</span> · <span style="color:#d97706">${c.em_andamento} em andamento</span> · <span style="color:#dc2626">${c.canceladas} cancelada${c.canceladas===1?'':'s'}</span>`;
+  }
+  _vagasEntTimer=setTimeout(()=>{if(document.getElementById('vg-lista-dia'))_vagasCarregarEntregas();},30000);
 }
 
 function _vagasAtualizarEnderecoLoja(){
