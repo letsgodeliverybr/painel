@@ -5360,10 +5360,21 @@ function _retornoItensTxt(p){
   const a=Array.isArray(p.retorno_itens)?p.retorno_itens:[];
   return a.map(x=>m[x]||x).join(', ');
 }
+const _RET_EMOJI={dinheiro:'💵',maquina:'💳',retornavel:'♻️'};
+// Retorno na lista (2026-11-09): com itens escolhidos mostra os emojis do que
+// trazer (💵💳♻️, texto no hover); com retorno mas sem itens (antigos) mostra
+// 🔄; sem retorno não entra (a coluna vira '—').
+function _retornoBadge(p){
+  if(!p.com_retorno)return'';
+  const itens=Array.isArray(p.retorno_itens)?p.retorno_itens:[];
+  const txt=_retornoItensTxt(p);
+  return itens.length
+    ?`<span title="Trazer: ${txt}" style="font-size:12px;letter-spacing:2px">${itens.map(x=>_RET_EMOJI[x]||'').join('')}</span>`
+    :`<span title="Com Retorno">🔄</span>`;
+}
 function _iconsLogistica(p){
-  const _retTxt=p.com_retorno?_retornoItensTxt(p):'';
   const icons=[
-    p.com_retorno?`<span title="Com Retorno${_retTxt?' — Trazer: '+_retTxt:''}">🔄${_retTxt?` <span style="font-size:10px;color:var(--text3);font-weight:600">${_retTxt}</span>`:''}</span>`:'',
+    _retornoBadge(p),
     parseFloat(p.gorjeta)>0?`<span title="Com Gorjeta">🎁</span>`:'',
     parseFloat(p.preco_dinamico)>0?(p.preco_dinamico_origem==='global'?`<span title="Feriado/Promoção Global">📅</span>`:`<span title="Taxa Dinâmica (Cidade)">🌧️</span>`):'',
   ].filter(Boolean);
