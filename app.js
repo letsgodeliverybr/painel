@@ -12778,10 +12778,11 @@ function _vagasRenderCard(v){
   const loja=_vagasLojas.find(l=>l.id===v.loja_id)||allLojas.find(l=>l.id===v.loja_id);
   const entregador=_vagasEntregadoresCache.find(e=>e.id===v.entregador_id);
   const _selo=(fundo,cor,txt)=>`<span style="background:${fundo};color:${cor};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">${txt}</span>`;
-  const badge=v.status==='preenchida'?_selo('#dbeafe','#1d4ed8','Preenchida'):v.status==='finalizada'?_selo('#e5e7eb','#374151','Finalizada'):v.status==='cancelada'?_selo('#fee2e2','#b91c1c','Cancelada'):_selo('#d1fae5','#059669','Disponível');
+  const semEnt=v.status==='preenchida'&&v.revisao==='sem_entregas';
+  const badge=semEnt?_selo('#fef3c7','#b45309','Sem Entregas · Revisar'):v.status==='preenchida'?_selo('#dbeafe','#1d4ed8','Preenchida'):v.status==='finalizada'?_selo('#e5e7eb','#374151','Finalizada'):v.status==='cancelada'?_selo('#fee2e2','#b91c1c','Cancelada'):_selo('#d1fae5','#059669','Disponível');
   // Quadro nítido (2026-11-08): borda clara de 2px (vale no tema escuro e no
   // claro) e borda esquerda de 4px na cor da situação.
-  const corSit={preenchida:'#3b82f6',disponivel:'#22c55e',finalizada:'#9ca3af',cancelada:'#ef4444'}[v.status]||'#9ca3af';
+  const corSit=semEnt?'#f59e0b':({preenchida:'#3b82f6',disponivel:'#22c55e',finalizada:'#9ca3af',cancelada:'#ef4444'}[v.status]||'#9ca3af');
   return `<div style="background:var(--surface2);border:2px solid #94a3b8;border-left:4px solid ${corSit};border-radius:12px;padding:14px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px">
       <div>
@@ -12905,27 +12906,41 @@ async function _vagasSalvar(dataStr){
 // Vale pros 3 perfis (loja só vê as vagas dela — _lojaFiltro). Cada ação
 // grava em logs_acoes (logAcao) e, se havia entregador, avisa por push
 // (edge function notify-vaga).
+// Fim do horário (2026-11-08): a rotina do banco finaliza sozinha. Depois do
+// fim a loja não vê mais Finalizar/Cancelar (fala com o suporte); ADM e
+// suporte ajustam com motivo (vaga_ajustar), inclusive Estornar a finalizada.
+function _vagaEncerrada(v){
+  const ini=(v.horario_inicio||'').slice(0,5),fim=(v.horario_fim||'').slice(0,5);if(!fim)return false;
+  let dia=v.data;
+  if(fim<=ini){const d=new Date(v.data+'T12:00:00');d.setDate(d.getDate()+1);dia=d.toLocaleDateString('en-CA');}
+  const agora=new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,16);
+  return agora>`${dia} ${fim}`;
+}
 function _vagasRegraAcoes(v){
   const hoje=_dataHojeBrasilia(),passado=v.data<hoje,ehHoje=v.data===hoje;
   const fechada=v.status==='finalizada'||v.status==='cancelada';
   const livre=v.status==='disponivel',ocupada=v.status==='preenchida';
   const motivoFechada=v.status==='finalizada'?'Vaga Já Finalizada':'Vaga Já Cancelada';
+  const enc=_vagaEncerrada(v),equipe=currentPerfil==='adm'||currentPerfil==='suporte';
+  const OCULTO='oculto';
   return {
-    alocar:livre&&!passado?null:fechada?motivoFechada:ocupada?'Vaga Já Tem Entregador':'Dia Já Passou',
-    desatribuir:ocupada&&!passado?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Dia Já Passou',
-    finalizar:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Só No Dia Da Vaga Ou Depois',
-    cancelar:fechada?motivoFechada:null,
+    alocar:livre&&!passado&&!enc?null:fechada?motivoFechada:ocupada?'Vaga Já Tem Entregador':'Horário Encerrado',
+    desatribuir:ocupada&&!passado&&!enc?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Horário Encerrado',
+    finalizar:enc&&!equipe&&!fechada?OCULTO:ocupada&&(passado||ehHoje)?null:fechada?motivoFechada:livre?'Vaga Sem Entregador':'Só No Dia Da Vaga Ou Depois',
+    cancelar:enc&&!equipe&&!fechada?OCULTO:fechada?motivoFechada:null,
+    estornar:equipe&&v.status==='finalizada'?null:OCULTO,
   };
 }
 function _vagasAcoesHtml(v){
   const r=_vagasRegraAcoes(v);
-  const b=(chave,icone,txt,fn,cor)=>{const bloq=r[chave];return `<button class="vg-acao${cor?' vg-acao-'+cor:''}" ${bloq?`disabled title="${bloq}"`:`onclick="${fn}('${v.id}')" title="${txt}"`}>${_icone(icone,15,'btn-ico')}${txt}</button>`;};
-  return `<div class="vg-acoes">${b('alocar','user-plus','Alocar Entregador','_vagasAbrirAlocar','azul')}${b('desatribuir','user-minus','Desatribuir','_vagasDesatribuir')}${b('finalizar','circle-check','Finalizar Vaga','_vagasFinalizar','verde')}${b('cancelar','circle-x','Cancelar Vaga','_vagasCancelar','vermelho')}</div>`;
+  const b=(chave,icone,txt,fn,cor)=>{const bloq=r[chave];if(bloq==='oculto')return '';return `<button class="vg-acao${cor?' vg-acao-'+cor:''}" ${bloq?`disabled title="${bloq}"`:`onclick="${fn}('${v.id}')" title="${txt}"`}>${_icone(icone,15,'btn-ico')}${txt}</button>`;};
+  return `<div class="vg-acoes">${b('alocar','user-plus','Alocar Entregador','_vagasAbrirAlocar','azul')}${b('desatribuir','user-minus','Desatribuir','_vagasDesatribuir')}${b('finalizar','circle-check','Finalizar Vaga','_vagasFinalizar','verde')}${b('cancelar','circle-x','Cancelar Vaga','_vagasCancelar','vermelho')}${b('estornar','refresh-cw','Estornar Diária','_vagasEstornar','vermelho')}</div>`;
 }
 async function _vagasMudarStatus(vagaId,acao){
   const v=_vagasDoMes.find(x=>x.id===vagaId);if(!v)return;
   if(_vagasRegraAcoes(v)[acao]){showNotif('Ação Indisponível',_vagasRegraAcoes(v)[acao],'var(--yellow)');return;}
   const [ano,mes,dia]=v.data.split('-');const quando=`${dia}/${mes} ${(v.horario_inicio||'').slice(0,5)}–${(v.horario_fim||'').slice(0,5)}`;
+  if((currentPerfil==='adm'||currentPerfil==='suporte')&&(acao==='estornar'||(_vagaEncerrada(v)&&(acao==='finalizar'||acao==='cancelar'))))return _vagasAjustar(v,acao,quando);
   const txt={desatribuir:`Tirar o entregador da vaga de ${quando}? Ela volta a ficar disponível.`,finalizar:`Finalizar a vaga de ${quando} como cumprida?`,cancelar:`Cancelar a vaga de ${quando}?${v.entregador_id?' O entregador será avisado.':''}`}[acao];
   if(!confirm(txt))return;
   // condição de status no filtro: não sobrescreve se a vaga mudou em outra tela
@@ -12945,6 +12960,20 @@ async function _vagasMudarStatus(vagaId,acao){
 function _vagasDesatribuir(id){return _vagasMudarStatus(id,'desatribuir');}
 function _vagasFinalizar(id){return _vagasMudarStatus(id,'finalizar');}
 function _vagasCancelar(id){return _vagasMudarStatus(id,'cancelar');}
+function _vagasEstornar(id){return _vagasMudarStatus(id,'estornar');}
+// Ajuste depois do fim do horário (ADM/suporte): motivo obrigatório, gravado
+// no banco (vagas_ajustes). Estornar desfaz o pagamento e a cobrança.
+async function _vagasAjustar(v,acao,quando){
+  const txt={estornar:`Estornar a diária de ${quando}? O entregador perde os R$ ${parseFloat(v.valor).toFixed(2)} e a loja é estornada.`,finalizar:`Finalizar a vaga de ${quando}? O entregador recebe e a loja é cobrada.`,cancelar:`Cancelar a vaga de ${quando}? Sem pagamento e sem cobrança.`}[acao];
+  const motivo=prompt(`${txt}\n\nMotivo (obrigatório):`);
+  if(motivo===null)return;
+  if(motivo.trim().length<5){showNotif('Atenção','Escreva O Motivo (Pelo Menos 5 Letras)','var(--yellow)');return;}
+  const r=await _rpcRede('vaga_ajustar',{p_vaga:v.id,p_acao:acao,p_motivo:motivo.trim()});
+  if(!r.ok){showNotif('❌ Ajuste Não Feito',r.msg,'var(--red)');await _vagasCarregarMes();return;}
+  await logAcao('vaga_ajuste_'+acao,{vaga_id:v.id,loja_id:v.loja_id,data:v.data,status_anterior:v.status,motivo:motivo.trim()});
+  showNotif({estornar:'✅ Diária Estornada',finalizar:'✅ Vaga Finalizada',cancelar:'🗑️ Vaga Cancelada'}[acao],'',acao==='finalizar'?'var(--green)':'var(--red)');
+  await _vagasCarregarMes();
+}
 
 function _vagasAbrirAlocar(vagaId){
   let modal=document.getElementById('modal-vagas-alocar');
