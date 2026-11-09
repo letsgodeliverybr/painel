@@ -13210,50 +13210,65 @@ async function _calcularPagamentos(){
   const horaIni=document.getElementById('gp-hora-inicio')?.value||'00:00';
   const horaFim=document.getElementById('gp-hora-fim')?.value||'23:59';
   // pedidos.finalizado_em é timestamp SEM fuso, já local — string direta,
-  // sem Date()/-03:00 (única tabela filtrada aqui; saques/creditos_entregadores
-  // abaixo usam campos `date` puro, não precisam de hora).
+  // sem Date()/-03:00 (única tabela filtrada aqui; creditos_entregadores
+  // abaixo usa campo `date` puro, não precisa de hora).
   const inicioISO=`${dataIni}T${horaIni}:00`;
   const fimISO=`${dataFim}T${horaFim}:59`;
-  const selectFields='motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
-  const [pedidos,entregadores,saquesPeriodo,creditosPeriodo]=await Promise.all([
+  const selectFields='id,motoboy_id,entregador_id,taxa_motoboy,taxa_entrega_motoboy,taxa_entrega,gorjeta,distancia_km,com_retorno,loja_id,preco_dinamico';
+  const [pedidos,entregadores,creditosPeriodo]=await Promise.all([
     db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=${selectFields}`),
     db('entregadores','GET',null,'?select=*'),
-    db('saques','GET',null,`?select=entregador_id,valor_bruto,valor&data_inicio=lte.${dataFim}&data_fim=gt.${dataIni}&status=neq.cancelado`),
-    db('creditos_entregadores','GET',null,`?select=entregador_id,tipo,valor&data=gte.${dataIni}&data=lte.${dataFim}&tipo=in.(credito,debito)`),
+    db('creditos_entregadores','GET',null,`?select=id,entregador_id,tipo,valor&data=gte.${dataIni}&data=lte.${dataFim}&tipo=in.(credito,debito)`),
   ]);
-  // Soma saques gerados DENTRO do período exato (data_inicio >= inicio E data_fim <= fim)
-  const saquesPorEid={};
-  (Array.isArray(saquesPeriodo)?saquesPeriodo:[]).forEach(s=>{
-    if(!s.entregador_id)return;
-    saquesPorEid[s.entregador_id]=(saquesPorEid[s.entregador_id]||0)+parseFloat(s.valor_bruto||s.valor||0);
-  });
   const arr=Array.isArray(pedidos)?pedidos:[];
+  const creds=Array.isArray(creditosPeriodo)?creditosPeriodo:[];
+  // Sem pedido repetido (2026-11-08): o banco diz quais pedidos/créditos do
+  // período já estão em algum pagamento (pendente ou pago, de qualquer
+  // período) e quais saques rápidos da semana ainda não foram descontados.
+  // Antes o desconto era por soma de saques com período cruzando a busca, e
+  // pagamento terminando no último dia buscado ficava de fora.
+  const conf=await _rpcRede('pagamento_motoboy_conferir',{p_pedidos:arr.map(p=>p.id),p_creditos:creds.map(c=>c.id),p_de:dataIni,p_ate:dataFim});
+  if(!conf.ok){if(lista)lista.innerHTML=`<div style="padding:24px;text-align:center;color:#ef4444">${_escHtml(conf.msg)}</div>`;return;}
+  const pedPagos=new Set(conf.data?.pedidos||[]);
+  const credPagos=new Set(conf.data?.creditos||[]);
   await _preCarregarFaixasLojas(arr);
   _gpResultados={};
+  const _gpLinha=eid=>{
+    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0,pedidos:[],creditos:[],rapidos:[]};}
+    return _gpResultados[eid];
+  };
   arr.forEach(p=>{
     const eid=p.motoboy_id||p.entregador_id;if(!eid)return;
-    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0};}
+    const r=_gpLinha(eid);
     const tx=_valorPagoMotoboyPedido(p,_tabelaFaixasPagPorLoja);
-    _gpResultados[eid].total+=tx;
-    _gpResultados[eid].total=Math.round(_gpResultados[eid].total*100)/100;
-    _gpResultados[eid].qtd++;
+    if(pedPagos.has(p.id)){r.jaRetirado=Math.round((r.jaRetirado+tx)*100)/100;return;}
+    r.total=Math.round((r.total+tx)*100)/100;
+    r.qtd++;
+    r.pedidos.push(p.id);
   });
   // Crédito/débito manual (Créditos > Crédito/Débito Entregadores) no mesmo
   // período — entra na conta junto com os pedidos, inclusive pra entregador
   // que não tenha nenhum pedido no período (senão o ajuste sumiria em
-  // silêncio).
-  (Array.isArray(creditosPeriodo)?creditosPeriodo:[]).forEach(c=>{
+  // silêncio). O que já entrou em pagamento conta como já retirado.
+  creds.forEach(c=>{
     const eid=c.entregador_id;if(!eid)return;
-    if(!_gpResultados[eid]){const ent=(Array.isArray(entregadores)?entregadores:[]).find(e=>e.id===eid)||{id:eid,nome:'Desconhecido'};_gpResultados[eid]={entregador:ent,total:0,qtd:0,jaRetirado:0};}
+    const r=_gpLinha(eid);
     const delta=(c.tipo==='credito'?1:-1)*(parseFloat(c.valor)||0);
-    _gpResultados[eid].total=Math.round((_gpResultados[eid].total+delta)*100)/100;
+    if(credPagos.has(c.id)){r.jaRetirado=Math.round((r.jaRetirado+delta)*100)/100;return;}
+    r.total=Math.round((r.total+delta)*100)/100;
+    r.creditos.push(c.id);
   });
-  // Desconta saques já realizados no período; oculta entregadores totalmente quitados
-  Object.keys(_gpResultados).forEach(eid=>{
-    const jaRetirado=Math.round((saquesPorEid[eid]||0)*100)/100;
-    _gpResultados[eid].jaRetirado=jaRetirado;
-    _gpResultados[eid].total=Math.max(0,Math.round((_gpResultados[eid].total-jaRetirado)*100)/100);
+  // Saques rápidos (app) ainda não descontados: saem do total a pagar e
+  // ficam presos a este pagamento quando ele for gerado.
+  (conf.data?.rapidos||[]).forEach(s=>{
+    const r=_gpResultados[s.entregador_id];if(!r)return;
+    const v=parseFloat(s.valor)||0;
+    r.jaRetirado=Math.round((r.jaRetirado+v)*100)/100;
+    r.total=Math.round((r.total-v)*100)/100;
+    r.rapidos.push(s.id);
   });
+  // Oculta entregadores totalmente quitados
+  Object.values(_gpResultados).forEach(r=>{r.total=Math.max(0,r.total);});
   const rows=Object.values(_gpResultados).filter(r=>r.total>0);
   _gpAtualizarResumo(rows);
   if(!lista)return;
@@ -13330,14 +13345,17 @@ async function _gerarPagamento(){
   if(!selecionados.length){showNotif('Atenção','Selecione Ao Menos Um Entregador','var(--yellow)');return;}
   const inicio=document.getElementById('gp-data-inicio')?.value||null;
   const fim=document.getElementById('gp-data-fim')?.value||null;
-  const agora=new Date().toISOString();let ok=0;
+  let ok=0;const erros=[];
   for(const eid of selecionados){
     const r=_gpResultados[eid];if(!r)continue;
     const valor=Math.round(r.total*100)/100;
     console.log(`[gerarPagamento] entregador_id=${eid} periodo_inicio=${inicio} periodo_fim=${fim} total_calculado=${valor} qtd_pedidos=${r.qtd}`);
-    const res=await db('saques','POST',{entregador_id:eid,valor,status:'pendente',qtd_pedidos:r.qtd,data_inicio:inicio,data_fim:fim,created_at:agora,updated_at:agora});
-    if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
+    // O banco grava o pagamento junto com os pedidos que ele cobre e recusa
+    // pedido que já esteja em outro pagamento.
+    const res=await _rpcRede('pagamento_motoboy_gerar',{p_entregador:eid,p_inicio:inicio,p_fim:fim,p_valor:valor,p_pedidos:r.pedidos,p_creditos:r.creditos,p_rapidos:r.rapidos});
+    if(res.ok)ok++;else erros.push(`${r.entregador.nome||'—'}: ${res.msg}`);
   }
+  if(erros.length)showNotif('⚠️ Pagamento Não Gerado',erros.join(' | '),'var(--yellow)');
   if(ok>0){
     showNotif(`✅ ${ok} Pagamento(s) Gerado(s)!`,'');
     _saquesPendentesCount+=ok;renderNavSidebar(_navAtivo);
@@ -13345,7 +13363,7 @@ async function _gerarPagamento(){
     _gpHistoricoOffset=0;
     _carregarHistoricoSaques(false);
     document.getElementById('gp-lista').innerHTML='';
-  } else {
+  } else if(!erros.length){
     showNotif('❌ Erro Ao Gerar Pagamento','Verifique As Permissões Da Tabela Saques No Supabase','var(--red)');
   }
 }
