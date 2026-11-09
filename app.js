@@ -1410,10 +1410,25 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .vg-criar{width:100%;height:46px;background:#1A56DB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(26,86,219,.32);cursor:pointer}
     .vg-form-bloqueado .vg-criar{cursor:not-allowed;opacity:.5;box-shadow:none}
     .vg-aviso{margin-top:8px;font-size:12px;color:var(--text);opacity:.7;text-align:center}
-    /* Com Retorno: itens a trazer (2026-11-09) */
-    .cr-ret-op{display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;color:var(--text);user-select:none;transition:border-color .15s,background .15s}
-    .cr-ret-op input{width:15px;height:15px;cursor:pointer;accent-color:#1A56DB}
-    .cr-ret-op:has(input:checked){border-color:#1A56DB;background:rgba(26,86,219,.12)}
+    /* Com Retorno: card flutuante ancorado ao botão (2026-11-09) */
+    .cr-retpop-ov{position:fixed;inset:0;z-index:1000;background:transparent}
+    .cr-retpop{position:fixed;z-index:1001;width:300px;max-width:calc(100vw - 16px);background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.38);padding:14px;opacity:0;transform:translateY(-8px);transition:opacity .2s ease,transform .2s ease}
+    .cr-retpop.aberto{opacity:1;transform:translateY(0)}
+    .cr-retpop-seta{position:absolute;top:-7px;width:14px;height:14px;background:var(--surface);border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)}
+    .cr-retpop-titulo{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px}
+    .cr-retpop-op{display:flex;align-items:center;gap:12px;height:52px;padding:0 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--surface2);user-select:none;transition:border-color .15s,background .15s}
+    .cr-retpop-op.on{border-color:#1A56DB;background:rgba(26,86,219,.12)}
+    .cr-retpop-op .cr-ic{font-size:18px;flex-shrink:0}
+    .cr-retpop-op .cr-nome{flex:1;font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.3px}
+    .cr-retpop-op .cr-mark{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;color:transparent;flex-shrink:0}
+    .cr-retpop-op.on .cr-mark{background:#1A56DB;border-color:#1A56DB;color:#fff}
+    .cr-retpop-confirmar{width:100%;height:42px;background:#1A56DB;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;margin-top:4px;font-family:Inter,sans-serif}
+    @media(max-width:760px){
+      .cr-retpop-ov{background:rgba(0,0,0,.45)}
+      .cr-retpop{left:0;right:0;bottom:0;top:auto;width:auto;max-width:none;border-radius:16px 16px 0 0;transform:translateY(100%)}
+      .cr-retpop.aberto{transform:translateY(0)}
+      .cr-retpop-seta{display:none}
+    }
     .vg-qtd{display:flex;align-items:stretch;gap:8px}
     .vg-qtd-btn{flex:0 0 42px;height:42px;border:1px solid rgba(148,163,184,.55);border-radius:8px;background:color-mix(in srgb,var(--surface2) 82%,#000);color:var(--text);font-size:20px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif}
     .vg-qtd-btn:hover{border-color:#3b82f6}
@@ -2832,18 +2847,45 @@ async function _crCalcularTaxa(){
   _atualizarBtnCriarEntrega();
 }
 function _crCalcularTaxaDebounce(){clearTimeout(_crCalcTimer);_crCalcTimer=setTimeout(_crCalcularTaxa,700);}
-let _crRetornoItens=[];
-function _crRetornoItemChange(){
-  _crRetornoItens=[...document.querySelectorAll('#cr-retorno-sel input:checked')].map(c=>c.value);
+let _crRetItens=[];
+const _CR_RET_OPCOES=[['dinheiro','💵','DINHEIRO'],['maquina','💳','MÁQUINA DE CARTÃO'],['retornavel','📦','RETORNÁVEL']];
+const _CR_RET_CURTO={dinheiro:'Dinheiro',maquina:'Máquina',retornavel:'Retornável'};
+function _crRetAtualizarLabel(){
+  const lbl=document.getElementById('cr-retorno-lbl');if(!lbl)return;
+  if(!_crRetornoAtivo){lbl.textContent='Sem Ret';lbl.style.color='var(--text3)';return;}
+  lbl.textContent=_crRetItens.length?_crRetItens.map(x=>_CR_RET_CURTO[x]||x).join(' + '):'Com Ret';
+  lbl.style.color='#1A56DB';
 }
-function _crRetornoSelAbrir(abrir){
-  const sel=document.getElementById('cr-retorno-sel');if(!sel)return;
-  if(abrir){sel.style.maxHeight=sel.scrollHeight+'px';}
-  else{sel.style.maxHeight='0';sel.querySelectorAll('input:checked').forEach(c=>c.checked=false);_crRetornoItens=[];}
+function _crRetFechar(){document.getElementById('cr-ret-pop-ov')?.remove();}
+function _crRetAbrirCard(){
+  _crRetFechar();
+  const ov=document.createElement('div');ov.id='cr-ret-pop-ov';ov.className='cr-retpop-ov';
+  ov.onclick=e=>{if(e.target===ov)_crRetFechar();};
+  let temp=[..._crRetItens];
+  const pop=document.createElement('div');pop.className='cr-retpop';
+  pop.innerHTML=`<div class="cr-retpop-seta"></div><div class="cr-retpop-titulo">O que o entregador traz de volta?</div>`+
+    _CR_RET_OPCOES.map(([v,ic,t])=>`<div class="cr-retpop-op${temp.includes(v)?' on':''}" data-v="${v}"><span class="cr-ic">${ic}</span><span class="cr-nome">${t}</span><span class="cr-mark">${_icone('check',12)}</span></div>`).join('')+
+    `<button class="cr-retpop-confirmar">Confirmar</button>`;
+  ov.appendChild(pop);document.body.appendChild(ov);
+  const btn=document.getElementById('cr-retorno-btn');
+  if(btn&&window.innerWidth>760){
+    const r=btn.getBoundingClientRect();
+    let left=Math.max(8,Math.min(r.left,window.innerWidth-308));
+    pop.style.top=(r.bottom+10)+'px';pop.style.left=left+'px';
+    const seta=pop.querySelector('.cr-retpop-seta');if(seta)seta.style.left=Math.max(10,r.left-left+8)+'px';
+  }
+  pop.querySelectorAll('.cr-retpop-op').forEach(el=>el.onclick=()=>{
+    const v=el.dataset.v;
+    if(temp.includes(v)){temp=temp.filter(x=>x!==v);el.classList.remove('on');}
+    else{temp.push(v);el.classList.add('on');}
+  });
+  pop.querySelector('.cr-retpop-confirmar').onclick=()=>{_crRetItens=temp.slice();_crRetFechar();_crRetAtualizarLabel();};
+  requestAnimationFrame(()=>pop.classList.add('aberto'));
 }
 async function _criarEntregaRapidaToggle(){
   _crRetornoAtivo=!_crRetornoAtivo;
-  _crRetornoSelAbrir(_crRetornoAtivo);
+  if(_crRetornoAtivo){_crRetAbrirCard();}else{_crRetFechar();_crRetItens=[];}
+  _crRetAtualizarLabel();
   const track=document.getElementById('cr-retorno-track');
   const thumb=document.getElementById('cr-retorno-thumb');
   const lbl=document.getElementById('cr-retorno-lbl');
@@ -2945,7 +2987,7 @@ async function _criarEntregaRapida(){
   // já está carregado em memória, não precisa de fetch extra. Mesmo motivo/
   // comentário de _criarPedidoInterno().
   const _pontosPadraoCr=allLojas.find(l=>l.id===lojaId)?.pontos_padrao??4;
-  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,taxa_entrega_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,retorno_itens:(_crRetornoAtivo&&_crRetornoItens.length)?_crRetornoItens:null,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
+  const pedido={numero:numFinal,numero_loja:numFinal,endereco:endFinal,valor:valorPedido,descricao:'',cliente,telefone,gorjeta,status:'recebido',status_detalhado:'recebido',origem:'backend',loja_id:lojaId,latitude:geo?.lat||null,longitude:geo?.lng||null,taxa_entrega:_taxaEntrega,taxa_motoboy:_taxaMotoboy,taxa_entrega_motoboy:_taxaMotoboy,pontos:_pontosPadraoCr,pontos_base:_pontosPadraoCr,distancia_km:_distKm,com_retorno:_crRetornoAtivo,retorno_itens:(_crRetornoAtivo&&_crRetItens.length)?_crRetItens:null,preco_dinamico:_pdCliente,preco_dinamico_origem:_pdOrigemCr||null,recebido_em:agora,created_at:agora,codigo_confirmacao:null};
   console.log('[CR] pedido a criar:', pedido);
   let result=null;
   // Etapa 2c: quem confere o saldo e debita é o banco, na gravação.
@@ -2966,7 +3008,7 @@ async function _criarEntregaRapida(){
     document.getElementById('cr-complemento').value='';
     document.getElementById('cr-valor').value='';
     document.getElementById('cr-gorjeta').value='';
-    _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;_crDesenharRota(null);_crRetornoSelAbrir(false);
+    _crRetornoAtivo=false;_crLastDistKm=null;_crLastTaxa=0;_crDesenharRota(null);_crRetFechar();_crRetItens=[];
     const btn=document.getElementById('cr-retorno-btn');const lbl=document.getElementById('cr-retorno-lbl');
     if(btn)btn.style.background='#3a3a3a';if(lbl){lbl.textContent='Sem Ret';lbl.style.color='#888';}
     atualizarTudo();
@@ -5213,12 +5255,6 @@ function renderMapaPage(){
           <span id="cr-dist-taxa" style="font-size:11px;color:#4ade80;font-weight:700;white-space:nowrap;min-width:50px"></span>
           <span id="cr-pd-badge" style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap;display:none"></span>
           <button id="btn-criar-entrega" onclick="_criarEntregaRapida()" class="cr-btn-criar">${_icone('plus',16,'btn-ico')}Criar Entrega</button>
-        </div>
-        <div id="cr-retorno-sel" style="max-height:0;overflow:hidden;transition:max-height .2s ease;width:100%">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px 2px">
-            <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Trazer De Volta:</span>
-            ${['dinheiro|DINHEIRO','maquina|MÁQUINA DE CARTÃO','retornavel|RETORNÁVEL'].map(o=>{const[v,t]=o.split('|');return `<label class="cr-ret-op"><input type="checkbox" value="${v}" onchange="_crRetornoItemChange()"/><span>${t}</span></label>`;}).join('')}
-          </div>
         </div>
         <div style="flex:1;overflow:auto;background:var(--bg) !important;min-height:300px;min-width:0">
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Inter,sans-serif;background:var(--bg) !important;border:1px solid var(--border)">
