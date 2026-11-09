@@ -2848,7 +2848,7 @@ async function _crCalcularTaxa(){
 }
 function _crCalcularTaxaDebounce(){clearTimeout(_crCalcTimer);_crCalcTimer=setTimeout(_crCalcularTaxa,700);}
 let _crRetItens=[];
-const _CR_RET_OPCOES=[['dinheiro','💵','DINHEIRO'],['maquina','💳','MÁQUINA DE CARTÃO'],['retornavel','📦','RETORNÁVEL']];
+const _CR_RET_OPCOES=[['dinheiro','💵','DINHEIRO'],['maquina','💳','MÁQUINA DE CARTÃO'],['retornavel','♻️','RETORNÁVEL']];
 const _CR_RET_CURTO={dinheiro:'Dinheiro',maquina:'Máquina',retornavel:'Retornável'};
 function _crRetAtualizarLabel(){
   const lbl=document.getElementById('cr-retorno-lbl');if(!lbl)return;
