@@ -13057,31 +13057,47 @@ function _vagasAbrirAlocar(vagaId){
   modal.innerHTML=`<div class="modal" style="max-width:420px">
     <div class="modal-header"><span class="modal-title">${_icone('user-plus',18)} Alocar Entregador</span><button class="modal-close" onclick="document.getElementById('modal-vagas-alocar').classList.remove('open')">${_icone('x',16)}</button></div>
     <div class="modal-body">
-      <div class="fi" style="margin-bottom:12px"><label>CPF Do Motoboy</label><input type="text" id="va-cpf" placeholder="000.000.000-00" style="${_scInput()}"/></div>
-      <button onclick="_vagasBuscarCpf('${vagaId}')" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">${_icone('search',16,'btn-ico')}Buscar</button>
+      <div class="fi" style="margin-bottom:12px"><label>Nome Ou CPF Do Motoboy</label><input type="text" id="va-busca" autocomplete="off" placeholder="Digite O Nome Ou O CPF..." oninput="_vagasAlocarBuscar('${vagaId}')" style="${_scInput()}"/></div>
+      <div id="va-lista"></div>
       <div id="va-resultado" style="margin-top:14px"></div>
     </div>
   </div>`;
   modal.classList.add('open');
 }
 
-async function _vagasBuscarCpf(vagaId){
-  const cpfDigitado=(document.getElementById('va-cpf')?.value||'').trim();
-  const resultado=document.getElementById('va-resultado');
-  if(!cpfDigitado){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Digite Um CPF.</span>';return;}
-  if(resultado)resultado.innerHTML='<span style="color:var(--text3);font-size:13px">Buscando...</span>';
-  const cpfSoDigitos=cpfDigitado.replace(/\D/g,'');
-  // Compara com e sem formatação, mesmo critério já usado no app entregador
-  // pra checar CPF duplicado — cobre qualquer padrão gravado no banco.
-  const rows=await db('entregadores','GET',null,`?or=(cpf.eq.${encodeURIComponent(cpfDigitado)},cpf.eq.${cpfSoDigitos})&select=id,nome,cpf,modal_veiculo&limit=1`);
-  const ent=Array.isArray(rows)&&rows[0]?rows[0]:null;
-  if(!ent){if(resultado)resultado.innerHTML='<span style="color:#ef4444;font-size:13px">Nenhum Entregador Encontrado Com Esse CPF.</span>';return;}
-  if((ent.modal_veiculo||'').toLowerCase()!=='moto'){
-    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px"><b>${ent.nome}</b> Encontrado, Mas Não Está Cadastrado Com Moto (Veículo: ${ent.modal_veiculo||'—'}).<br>Vagas Fixas Exigem Motoboy De Moto — Alocação Bloqueada.</div>`;
+// Busca por nome ou CPF (2026-11-09): a função entregadores_buscar devolve até
+// 8 (nome, bairro, modal) sem diferenciar maiúscula/acento e inclui offline;
+// clicar num resultado abre o Confirmar. Antes só casava CPF exato e um nome
+// caía no entregador de CPF vazio.
+let _vagasAlocarSeq=0;
+async function _vagasAlocarBuscar(vagaId){
+  const termo=(document.getElementById('va-busca')?.value||'').trim();
+  const lista=document.getElementById('va-lista'),resultado=document.getElementById('va-resultado');
+  if(resultado)resultado.innerHTML='';
+  if(!lista)return;
+  if(termo.length<2){lista.innerHTML='';return;}
+  const seq=++_vagasAlocarSeq;
+  lista.innerHTML='<div style="color:var(--text3);font-size:13px;padding:6px 2px">Buscando...</div>';
+  const r=await _rpcRede('entregadores_buscar',{p_termo:termo});
+  if(seq!==_vagasAlocarSeq)return;                 // resposta antiga: ignora
+  if(!r.ok){lista.innerHTML=`<span style="color:#ef4444;font-size:13px">${_escHtml(r.msg||'Erro na busca.')}</span>`;return;}
+  const achados=Array.isArray(r.data)?r.data:[];
+  if(!achados.length){lista.innerHTML='<div style="color:var(--text3);font-size:13px;padding:6px 2px">Nenhum Entregador Encontrado.</div>';return;}
+  _vagasAlocarCache={};
+  lista.innerHTML=achados.map(e=>{_vagasAlocarCache[e.id]={nome:e.nome,modal:e.modal_veiculo};return `<div onclick="_vagasAlocarEscolher('${vagaId}','${e.id}')" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--surface2)"><span style="font-weight:600;color:var(--text);font-size:13px">${_escHtml(e.nome||'—')}</span><span style="font-size:12px;color:var(--text3)">${_escHtml(e.bairro||'—')}</span></div>`;}).join('');
+}
+let _vagasAlocarCache={};
+function _vagasAlocarEscolher(vagaId,entregadorId){
+  const ent=_vagasAlocarCache[entregadorId];if(!ent)return;
+  const lista=document.getElementById('va-lista'),resultado=document.getElementById('va-resultado');
+  if(lista)lista.innerHTML='';
+  if(!resultado)return;
+  if((ent.modal||'').toLowerCase()!=='moto'){
+    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px"><b>${_escHtml(ent.nome)}</b> Encontrado, Mas Não Está Cadastrado Com Moto (Veículo: ${_escHtml(ent.modal||'—')}).<br>Vagas Fixas Exigem Motoboy De Moto — Alocação Bloqueada.</div>`;
     return;
   }
-  resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Encontrado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${ent.nome}</div></div>
-    <button onclick="_vagasConfirmarAlocar('${vagaId}','${ent.id}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Confirmar Alocação</button>`;
+  resultado.innerHTML=`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-size:13px;color:var(--text3)">Selecionado:</div><div style="font-size:15px;font-weight:700;color:var(--text)">${_escHtml(ent.nome)}</div></div>
+    <button onclick="_vagasConfirmarAlocar('${vagaId}','${entregadorId}')" style="width:100%;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Confirmar Alocação</button>`;
 }
 
 async function _vagasConfirmarAlocar(vagaId,entregadorId){
