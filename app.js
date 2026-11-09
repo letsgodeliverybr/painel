@@ -8602,10 +8602,11 @@ async function _opcoesVendedorLoja(selecionado){
 // "Todas"/"Todos" sempre no topo. O escolhido fica num hidden com o mesmo id
 // da lista antiga (vazio = Todas/Todos), então quem lê .value não muda.
 const _fbListas={};
+let _fbAberto=null; // id do filtro-busca com a lista aberta (reposiciona no scroll)
 const _fbNorm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 function _fbCampoHtml(id,todos,estilo){
   _fbListas[id]={todos,itens:[],res:[],digitou:false};
-  return`<div style="position:relative"><input type="hidden" id="${id}" value=""/><input type="text" id="${id}-busca" value="${todos}" autocomplete="off" placeholder="Digite O Nome..." onfocus="this.select();_fbFiltrar('${id}')" oninput="_fbFiltrar('${id}',true)" onkeydown="if(event.key==='Enter'){event.preventDefault();_fbEnter('${id}')}else if(event.key==='Escape')this.blur()" onblur="_fbFechar('${id}')" style="${estilo}"/><div id="${id}-sug" onmousedown="event.preventDefault()" style="display:none;position:absolute;left:0;top:100%;min-width:100%;max-width:320px;margin-top:4px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div>`;
+  return`<div style="position:relative"><input type="hidden" id="${id}" value=""/><input type="text" id="${id}-busca" value="${todos}" autocomplete="off" placeholder="Digite O Nome..." onfocus="this.select();_fbFiltrar('${id}')" oninput="_fbFiltrar('${id}',true)" onkeydown="if(event.key==='Enter'){event.preventDefault();_fbEnter('${id}')}else if(event.key==='Escape')this.blur()" onblur="_fbFechar('${id}')" style="${estilo}"/><div id="${id}-sug" onmousedown="event.preventDefault()" style="display:none;position:fixed;z-index:9999;box-sizing:border-box;max-height:288px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div>`;
 }
 function _fbDefinir(id,itens){
   const f=_fbListas[id];if(!f)return;
@@ -8622,6 +8623,22 @@ function _fbFiltrar(id,digitou){
   const op=(v,txt,marcado)=>`<div onclick="_fbEscolher('${id}','${v}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);${marcado?'font-weight:700':''}">${txt}</div>`;
   sug.innerHTML=op('',_escHtml(f.todos),!atual)+(f.res.length?f.res.map(e=>op(e.id,_escHtml(e.nome),e.id===atual)).join(''):'<div style="padding:8px 12px;font-size:12px;color:var(--text3)">Nenhum Resultado.</div>');
   sug.style.display='block';
+  // Lista em position:fixed: não é cortada pelo card nem fica atrás dos cards
+  // de baixo; cola logo abaixo do campo, mesma largura, por cima de tudo.
+  _fbAberto=id;_fbPosicionar(id);
+}
+function _fbPosicionar(id){
+  const busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
+  if(!busca||!sug||sug.style.display==='none')return;
+  const r=busca.getBoundingClientRect();
+  sug.style.left=r.left+'px';
+  sug.style.top=(r.bottom+4)+'px';
+  sug.style.width=r.width+'px';
+}
+if(typeof window!=='undefined'&&!window._fbReposLigado){
+  window._fbReposLigado=1;
+  window.addEventListener('scroll',()=>{if(_fbAberto)_fbPosicionar(_fbAberto);},true);
+  window.addEventListener('resize',()=>{if(_fbAberto)_fbPosicionar(_fbAberto);});
 }
 function _fbEscolher(id,v){
   const f=_fbListas[id],hid=document.getElementById(id),busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
@@ -8629,7 +8646,7 @@ function _fbEscolher(id,v){
   const e=v?f.itens.find(x=>x.id===v):null;
   hid.value=e?e.id:'';
   busca.value=e?e.nome:f.todos;
-  if(sug)sug.style.display='none';
+  if(sug)sug.style.display='none';_fbAberto=null;
   f.digitou=false;
 }
 // Enter: escolhe o 1º resultado do que foi digitado (campo vazio = Todas/Todos)
@@ -8642,7 +8659,7 @@ function _fbEnter(id){
 // saiu sem escolher: volta a mostrar o que está valendo no filtro
 function _fbFechar(id){
   const f=_fbListas[id],hid=document.getElementById(id),busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
-  if(sug)sug.style.display='none';
+  if(sug)sug.style.display='none';_fbAberto=null;
   if(!f||!hid||!busca)return;
   const e=hid.value?f.itens.find(x=>x.id===hid.value):null;
   busca.value=e?e.nome:f.todos;
