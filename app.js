@@ -191,11 +191,11 @@ const NAV_ITEMS_LOJA_RODAPE=[
   ]},
 ];
 const NAV_ITEMS_LOJA=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'package',label:'Pedidos'},{id:'preco-dinamico',icon:'trending-up',label:'Preço Dinâmico'},{id:'vagas',icon:'calendar-days',label:'Entrega Dedicada'}];
+const NAV_ITEMS_SUPORTE=[{id:'mapa',icon:'map',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'package',label:'Pedidos'}];
 const tabsAdm=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'cadastros',icon:'🗂️',label:'Cadastros'},{id:'logs',icon:'📋',label:'Logs'}];
 const tabsLojaAdm=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'meu-cardapio',icon:'🍽️',label:'Meu Cardápio'}];
 const tabsLoja=[{id:'novo-pedido',icon:'➕',label:'Novo Pedido'},{id:'loja-pedidos',icon:'📦',label:'Meus Pedidos'},{id:'loja-mapa',icon:'🗺️',label:'Rastrear'},{id:'loja-relatorio',icon:'📈',label:'Relatório'}];
-const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'},{id:'preco-dinamico',icon:'📈',label:'Preço Dinâmico'},{id:'vagas',icon:'🗓️',label:'Vagas Disponíveis'}];
+const tabsSuporte=[{id:'mapa',icon:'🗺️',label:'Mapa Ao Vivo'},{id:'pedidos',icon:'📦',label:'Relatório Entregas'}];
 let _sidebarBusca='';
 const _gruposColapsados=new Set();
 let _tabelaPedidosDia=[],_tabelaPagina=0;
@@ -4912,7 +4912,17 @@ function _mdSyncPainel(){
   const ab=!sb.classList.contains('sb-minimized');b.classList.toggle('md-aberto',ab);b.setAttribute('aria-expanded',ab?'true':'false');
 }
 let _navUltimoLogin=null;
+// Suporte perdeu acesso a Preço Dinâmico e Entrega Dedicada (2026-11-09):
+// cada ação de escrita dessas telas recusa o perfil (defesa em profundidade;
+// o menu e o goTab já não levam lá, e o banco também barra).
+function _suporteSemAcesso(){
+  if(currentPerfil==='suporte'){showNotif('Acesso Removido','Preço Dinâmico e Entrega Dedicada saíram do perfil Suporte.','var(--yellow)');return true;}
+  return false;
+}
 function goTab(id){
+  // Suporte não abre Preço Dinâmico nem Entrega Dedicada (itens removidos do
+  // menu; aqui barra link direto ou aba antiga → cai no Mapa).
+  if(currentPerfil==='suporte'&&(id==='preco-dinamico'||id==='vagas'))id='mapa';
   // Loja entra pela tela Início: o login (de produção e deste arquivo)
   // sempre chama goTab('mapa') — na PRIMEIRA navegação de cada login a loja
   // é desviada pra 'loja-inicio' antes de qualquer render (sem flash).
@@ -8127,6 +8137,7 @@ async function _desativarPrecoDinamico(tipo){
 }
 
 async function salvarPrecoDinamico(tipo){
+  if(_suporteSemAcesso())return;
   const input=document.getElementById(`preco-din-valor-${tipo}`);
   const fb=document.getElementById(`preco-din-feedback-${tipo}`);
   const valor=parseFloat(input?.value)||0;
@@ -8292,6 +8303,7 @@ function _pdSelecionarTodos(multiId){
 }
 
 async function _salvarPdCidade(tipo,cidSafe,cidade,multiId){
+  if(_suporteSemAcesso())return;
   const cidKey=`${tipo}_${cidSafe}`;
   const input=document.getElementById(`pd-cid-valor-${cidKey}`);
   const fb=document.getElementById(`pd-cid-feedback-${cidKey}`);
@@ -13019,6 +13031,7 @@ function _vagasQtdAjustar(delta){
 function _vagasQtdValor(){let n=parseInt(document.getElementById('vg-qtd')?.value,10);return isNaN(n)?1:Math.min(20,Math.max(1,n));}
 
 async function _vagasSalvar(dataStr){
+  if(_suporteSemAcesso())return;
   const fb=document.getElementById('vg-feedback');
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:document.getElementById('vg-loja')?.value;
   const endereco=(document.getElementById('vg-endereco')?.value||'').trim();
@@ -13086,6 +13099,7 @@ function _vagasAcoesHtml(v){
   return `<div class="vg-acoes">${b('alocar','user-plus','Alocar Entregador','_vagasAbrirAlocar','azul')}${b('desatribuir','user-minus','Desatribuir','_vagasDesatribuir')}${b('finalizar','circle-check','Finalizar Vaga','_vagasFinalizar','verde')}${b('cancelar','circle-x','Cancelar Vaga','_vagasCancelar','vermelho')}${b('estornar','refresh-cw','Estornar Diária','_vagasEstornar','vermelho')}</div>`;
 }
 async function _vagasMudarStatus(vagaId,acao){
+  if(_suporteSemAcesso())return;
   const v=_vagasDoMes.find(x=>x.id===vagaId);if(!v)return;
   if(_vagasRegraAcoes(v)[acao]){showNotif('Ação Indisponível',_vagasRegraAcoes(v)[acao],'var(--yellow)');return;}
   const [ano,mes,dia]=v.data.split('-');const quando=`${dia}/${mes} ${(v.horario_inicio||'').slice(0,5)}–${(v.horario_fim||'').slice(0,5)}`;
@@ -13174,6 +13188,7 @@ function _vagasAlocarEscolher(vagaId,entregadorId){
 }
 
 async function _vagasConfirmarAlocar(vagaId,entregadorId){
+  if(_suporteSemAcesso())return;
   const res=await dbPatch('vagas_motoboy_fixo',{status:'preenchida',entregador_id:entregadorId,updated_at:new Date().toISOString()},`?id=eq.${vagaId}`);
   if(res===null){showNotif('❌ Erro Ao Alocar','','var(--red)');return;}
   showNotif('✅ Entregador Alocado!','');
