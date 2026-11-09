@@ -2633,7 +2633,7 @@ function showNotif(title,msg,color='var(--green)'){
 async function abrirModal(id){
   document.getElementById(id).classList.add('open');
   if(id==='modal-pedido'){
-    _npRetornoAtivo=false;
+    _npRetornoAtivo=false;_npRetItens=[];_retCardFechar();
     setTimeout(async()=>{
       const modalBody=document.querySelector('#modal-pedido .modal-body');
       // Bug real corrigido aqui (2026-09-10): antes, se o form já tinha
@@ -2678,7 +2678,7 @@ async function abrirModal(id){
         <div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div>
         <div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div>
         <div class="form-row">
-          <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div>
+          <div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span id="np-retorno-ic" style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div>
           <div class="fi"></div>
         </div>
                 <div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div>
@@ -2856,18 +2856,18 @@ function _crRetAtualizarLabel(){
   lbl.textContent=_crRetItens.length?_crRetItens.map(x=>_CR_RET_CURTO[x]||x).join(' + '):'Com Ret';
   lbl.style.color='#1A56DB';
 }
-function _crRetFechar(){document.getElementById('cr-ret-pop-ov')?.remove();}
-function _crRetAbrirCard(){
-  _crRetFechar();
+function _retCardFechar(){document.getElementById('cr-ret-pop-ov')?.remove();}
+function _retCardAbrir(anchorId,itensIniciais,onConfirm){
+  _retCardFechar();
   const ov=document.createElement('div');ov.id='cr-ret-pop-ov';ov.className='cr-retpop-ov';
-  ov.onclick=e=>{if(e.target===ov)_crRetFechar();};
-  let temp=[..._crRetItens];
+  ov.onclick=e=>{if(e.target===ov)_retCardFechar();};
+  let temp=[...(itensIniciais||[])];
   const pop=document.createElement('div');pop.className='cr-retpop';
   pop.innerHTML=`<div class="cr-retpop-seta"></div><div class="cr-retpop-titulo">O que o entregador traz de volta?</div>`+
     _CR_RET_OPCOES.map(([v,ic,t])=>`<div class="cr-retpop-op${temp.includes(v)?' on':''}" data-v="${v}"><span class="cr-ic">${ic}</span><span class="cr-nome">${t}</span><span class="cr-mark">${_icone('check',12)}</span></div>`).join('')+
     `<button class="cr-retpop-confirmar">Confirmar</button>`;
   ov.appendChild(pop);document.body.appendChild(ov);
-  const btn=document.getElementById('cr-retorno-btn');
+  const btn=document.getElementById(anchorId);
   if(btn&&window.innerWidth>760){
     const r=btn.getBoundingClientRect();
     let left=Math.max(8,Math.min(r.left,window.innerWidth-308));
@@ -2879,9 +2879,11 @@ function _crRetAbrirCard(){
     if(temp.includes(v)){temp=temp.filter(x=>x!==v);el.classList.remove('on');}
     else{temp.push(v);el.classList.add('on');}
   });
-  pop.querySelector('.cr-retpop-confirmar').onclick=()=>{_crRetItens=temp.slice();_crRetFechar();_crRetAtualizarLabel();};
+  pop.querySelector('.cr-retpop-confirmar').onclick=()=>{onConfirm(temp.slice());_retCardFechar();};
   requestAnimationFrame(()=>pop.classList.add('aberto'));
 }
+function _crRetFechar(){_retCardFechar();}
+function _crRetAbrirCard(){_retCardAbrir('cr-retorno-btn',_crRetItens,sel=>{_crRetItens=sel;_crRetAtualizarLabel();});}
 async function _criarEntregaRapidaToggle(){
   _crRetornoAtivo=!_crRetornoAtivo;
   if(_crRetornoAtivo){_crRetAbrirCard();}else{_crRetFechar();_crRetItens=[];}
@@ -6130,14 +6132,19 @@ ${p.taxa_extra!=null?`<div class="form-row"><div class="fi"><label>Taxa Extra (R
 </div><div class="modal-footer"><button class="btn-modal-cancel" onclick="document.getElementById('modal-editar-pedido').classList.remove('open')">Cancelar</button><button onclick="salvarEdicaoPedido('${pedidoId}')" style="background:#10B981;border:none;border-radius:10px;padding:10px 24px;color:#fff;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:14px">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
 }
-let _npRetornoAtivo=false;
+let _npRetornoAtivo=false,_npRetItens=[];
 let _npPdC=0, _npPdE=0; // PD capturado no último calcularTaxaAuto, reutilizado em criarPedido
+function _npRetAtualizarLabel(){
+  const btn=document.getElementById('np-retorno-btn'),lbl=document.getElementById('np-retorno-lbl'),ic=document.getElementById('np-retorno-ic');
+  if(btn)btn.style.background=_npRetornoAtivo?'#1A56DB':'#3a3a3a';
+  if(ic)ic.textContent=_npRetornoAtivo?'↩':'—';
+  if(lbl){lbl.textContent=!_npRetornoAtivo?'Sem Retorno':(_npRetItens.length?_npRetItens.map(x=>_CR_RET_CURTO[x]||x).join(' + '):'Com Retorno');lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
+}
 function _npToggleRetorno(){
   _npRetornoAtivo=!_npRetornoAtivo;
-  const btn=document.getElementById('np-retorno-btn');
-  const lbl=document.getElementById('np-retorno-lbl');
-  if(btn)btn.style.background=_npRetornoAtivo?'#1A56DB':'#3a3a3a';
-  if(lbl){lbl.textContent=_npRetornoAtivo?'Com Retorno':'Sem Retorno';lbl.style.color=_npRetornoAtivo?'#fff':'#888888';}
+  if(_npRetornoAtivo){_retCardAbrir('np-retorno-btn',_npRetItens,sel=>{_npRetItens=sel;_npRetAtualizarLabel();});}
+  else{_retCardFechar();_npRetItens=[];}
+  _npRetAtualizarLabel();
   calcularTaxaAuto();
 }
 let _epRetornoAtivo=false;
@@ -6725,7 +6732,7 @@ async function _criarPedidoInterno(){
   // PD foi realmente usado — ela recalculava usando o PD do CLIENTE por
   // engano, gerando falso-positivo de "motoboy pago a menos" sempre que os
   // dois PDs divergiam (achado real, pedidos #7395/#15/#001/#002 de hoje).
-  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',plataforma_origem:plataformaOrigemSel||null,loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,taxa_entrega_motoboy:taxaMotoboy,gorjeta,pontos:pontosPadrao,pontos_base:pontosPadrao,distancia_km:distKm,com_retorno:_npRetornoAtivo,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
+  const pedido={numero:String(numero),numero_loja:String(numero),endereco:enderecoFinal,valor,descricao,cliente,telefone:telefonePedido||null,status:statusInicial,status_detalhado:statusInicial,origem:currentPerfil==='loja'?'loja':'backend',plataforma_origem:plataformaOrigemSel||null,loja_id:finalLojaId,latitude:geo.lat,longitude:geo.lng,taxa_entrega:taxa,taxa_motoboy:taxaMotoboy,taxa_entrega_motoboy:taxaMotoboy,gorjeta,pontos:pontosPadrao,pontos_base:pontosPadrao,distancia_km:distKm,com_retorno:_npRetornoAtivo,retorno_itens:(_npRetornoAtivo&&_npRetItens.length)?_npRetItens:null,preco_dinamico:_pdC,preco_dinamico_origem:_pdOrigemNp||null,recebido_em:agendarOn?null:agora,created_at:agora,codigo_confirmacao:null};
   if(enderecoColeta)pedido.endereco_coleta=enderecoColeta;
   if(geoColeta){pedido.latitude_coleta=geoColeta.lat;pedido.longitude_coleta=geoColeta.lng;}
   if(contatoColeta)pedido.contato_coleta=contatoColeta;
@@ -8407,14 +8414,14 @@ async function _desativarPdCidade(tipo,cidade){
 }
 
 async function renderNovoPedidoPage(){
-  _npRetornoAtivo=false;
+  _npRetornoAtivo=false;_npRetItens=[];_retCardFechar();
   const lojas=currentPerfil==='adm'?await db('lojas','GET',null,'?ativo=eq.true&order=nome.asc'):[];
   _npLojasData=lojas;
   const seletorLoja=currentPerfil==='adm'
     ?`<div class="form-row full"><div class="fi" style="position:relative"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label><input type="text" id="np-loja-busca" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_npLojaFiltrar(this.value)" onfocus="_npLojaFiltrar(this.value)" style="background:var(--surface2);color:var(--text);border:1px solid #1A56DB;border-radius:8px;padding:9px 12px;width:100%;font-family:Inter,sans-serif;font-size:14px;box-sizing:border-box;outline:none"/><input type="hidden" id="np-loja-id"/><div id="np-loja-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#2D2D2D;border:1px solid #3A3A3A;border-radius:8px;z-index:999;max-height:240px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:2px"></div></div></div>`
     :_redeVisaoGeral()?`<div class="form-row full"><div class="fi"><label style="color:#1A56DB;font-weight:700">🏪 Loja</label>${_npRedeSelectHtml()}<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}"></div></div>`
     :`<input type="hidden" id="np-loja-id" value="${currentUser?.loja_id||''}">`;
-  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
+  document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span id="np-retorno-ic" style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
 
 let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
