@@ -4752,7 +4752,7 @@ async function _tpAbrir(lojaId){
     <div id="tp-valor" style="font-size:52px;font-weight:800;text-align:center;color:var(--accent);line-height:1.1;margin:8px 0 16px">${r.tempo} min</div>
     <input type="range" id="tp-range" min="1" max="30" step="1" value="${r.tempo}" oninput="document.getElementById('tp-valor').textContent=this.value+' min'" style="width:100%;height:36px;accent-color:var(--accent);cursor:pointer"/>
     <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:2px"><span>1 min</span><span>30 min</span></div>
-    <div style="font-size:12px;color:var(--text2);margin-top:14px">O Entregador É Chamado ${r.toque_antes} Min Antes Do Pronto (Nunca Antes De 1 Min Do Pedido). Marcar Pronto Na Mão Ou Pelo iFood Chama Na Hora. Vale Para Os Próximos Pedidos.</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:14px">O Entregador É Chamado Quando O Pedido Fica Pronto (Pelo Tempo De Preparo Acima, Ou Ao Marcar Pronto Na Mão / Pelo iFood). Nunca Antes. Vale Para Os Próximos Pedidos.</div>
     ${hist.length?`<details style="margin-top:12px"><summary style="font-size:12px;color:var(--text2);cursor:pointer">Histórico (${hist.length})</summary>${hist.map(h=>`<div style="font-size:11px;color:var(--text3);padding:4px 0;border-top:1px solid var(--border)">${quando(h.em)} · ${_escHtml(h.quem||'')}: ${h.de??'—'} → ${h.para} min</div>`).join('')}</details>`:''}
   </div><div class="modal-footer"><button class="btn-modal-cancel" onclick="${fechar}">Cancelar</button><button onclick="_tpSalvar()" style="background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">${_icone('check',16,'btn-ico')}Salvar</button></div></div>`;
   modal.classList.add('open');
@@ -15570,14 +15570,6 @@ function _renderConfigOperacao(){
               <span style="font-size:13px;color:var(--text2);font-weight:600">segundos</span>
             </div>
           </div>
-          <div style="margin-top:16px">
-            <label style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Chamar Entregador Antes Do Pronto</label>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Com O Tempo De Preparo Da Loja, O Toque Sai Quando Faltar Esse Tempo Para O Pronto (Nunca Antes De 1 Min Do Pedido). Vale Para Os Próximos Pedidos. Padrão: 10.</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              ${_inp('op-toque-antes-pronto','10',0,30,1,'90px')}
-              <span style="font-size:13px;color:var(--text2);font-weight:600">minutos</span>
-            </div>
-          </div>
         </div>
 
         <div style="margin-bottom:32px" id="op-taxa-saque-wrap">
@@ -15620,7 +15612,7 @@ async function _carregarConfigOperacao(){
     'despacho_onda_2_raio','despacho_onda_2_min','despacho_onda_2_max',
     'despacho_onda_3_raio','despacho_onda_3_min','despacho_onda_3_max',
     'despacho_onda_4_raio','despacho_onda_4_min','despacho_onda_4_max',
-    'despacho_teto_ativos_total','despacho_raio_em_rota_km','despacho_espera_em_rota_seg','despacho_toque_antes_pronto_min'];
+    'despacho_teto_ativos_total','despacho_raio_em_rota_km','despacho_espera_em_rota_seg'];
   const results=await Promise.all(keys.map(k=>db('configuracoes','GET',null,`?chave=eq.${k}&limit=1`)));
   const cfg={};keys.forEach((k,i)=>{cfg[k]=(Array.isArray(results[i])&&results[i][0])?results[i][0].valor:null;});
   const modoVal=cfg['modo_despacho']||'todos';
@@ -15637,7 +15629,6 @@ async function _carregarConfigOperacao(){
   _set('op-teto-ativos',cfg['despacho_teto_ativos_total'],'3');
   _set('op-raio-em-rota',cfg['despacho_raio_em_rota_km'],'2');
   _set('op-espera-em-rota',cfg['despacho_espera_em_rota_seg'],'12');
-  _set('op-toque-antes-pronto',cfg['despacho_toque_antes_pronto_min'],'10');
   _set('op-o4-raio',cfg['despacho_onda_4_raio'],'32'); _set('op-o4-min',cfg['despacho_onda_4_min'],'6');  _set('op-o4-max',cfg['despacho_onda_4_max'],'8');
   _carregarTaxaSaque();
 }
@@ -15675,8 +15666,6 @@ async function _salvarConfigOperacao(){
   const teto=parseInt(g('op-teto-ativos','3'),10),raioRota=parseFloat(g('op-raio-em-rota','2').replace(',','.')),esperaRota=parseInt(g('op-espera-em-rota','12'),10);
   if(!(teto>=1&&teto<=10)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Teto De Entregas Ativas: De 1 A 10</span>';return;}
   if(!(raioRota>=0&&raioRota<=20)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Distância Para Quem Está Em Rota: De 0 A 20 km</span>';return;}
-  const toqueAntes=parseInt(g('op-toque-antes-pronto','10'),10);
-  if(!(toqueAntes>=0&&toqueAntes<=30)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Chamar Antes Do Pronto: De 0 A 30 Minutos</span>';return;}
   if(!(esperaRota>=0&&esperaRota<=120)){if(fb)fb.innerHTML='<span style="color:var(--red);font-size:12px">Espera Para Quem Está Em Rota: De 0 A 120 Segundos</span>';return;}
   if(fb)fb.innerHTML='<span style="color:var(--text2);font-size:12px">⏳ Salvando...</span>';
   await Promise.all([
@@ -15684,7 +15673,6 @@ async function _salvarConfigOperacao(){
     _upsertConfigWa('despacho_teto_ativos_total',teto),
     _upsertConfigWa('despacho_raio_em_rota_km',raioRota),
     _upsertConfigWa('despacho_espera_em_rota_seg',esperaRota),
-    _upsertConfigWa('despacho_toque_antes_pronto_min',toqueAntes),
     _upsertConfigWa('despacho_raio_busca_km',raio),
     _upsertConfigWa('despacho_raio_limite_km',g('op-raio-limite','32')),
     _upsertConfigWa('despacho_tempo_exibicao_seg',g('op-tempo-exib','29')),
