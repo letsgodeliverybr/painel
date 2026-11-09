@@ -1392,6 +1392,30 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     @media (max-width:760px){.vg-painel-grid{grid-template-columns:1fr}}
     /* Nova Vaga (2026-11-08): mesmo contorno dos quadros das vagas da lista */
     .vg-form{background:var(--surface2);border:2px solid #94a3b8;border-radius:12px;padding:14px 16px}
+    /* Nova Vaga, acabamento (2026-11-08): textos na cor principal do tema,
+       campos com 42px, foco azul, só-leitura com cadeado, botão 46px. */
+    .vg-form-titulo{font-size:15px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+    html .vg-form .fi>label{color:var(--text) !important;opacity:.85;font-size:12px !important;text-transform:uppercase !important;letter-spacing:.6px !important;font-weight:700 !important;margin-bottom:6px !important}
+    .vg-form .fi{margin-bottom:16px}
+    .vg-campo{display:block;width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid rgba(148,163,184,.55);border-radius:8px;background:color-mix(in srgb,var(--surface2) 82%,#000);color:var(--text);font-size:13px;font-family:Inter,sans-serif;outline:none;transition:border-color .15s,box-shadow .15s}
+    .vg-campo:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+    .vg-campo::placeholder{color:var(--text);opacity:.55}
+    .vg-ro{position:relative}
+    .vg-ro .vg-campo{background:color-mix(in srgb,var(--surface2) 70%,#64748b);padding-right:34px;cursor:default;opacity:1;-webkit-text-fill-color:var(--text)}
+    .vg-ro-cadeado{position:absolute;right:11px;top:50%;transform:translateY(-50%);display:inline-flex;color:var(--text);opacity:.5;pointer-events:none}
+    html .vg-form .fi label.vg-periodo:not(:has(input:checked)){border:1px solid rgba(148,163,184,.55) !important;background:transparent !important}
+    html .vg-form .fi label.vg-periodo:has(input:checked){border:2px solid #3b82f6 !important;background:rgba(59,130,246,.16) !important}
+    .vg-form .vg-periodo-hora{color:var(--text);opacity:.85}
+    .vg-form .vg-periodo:has(input:checked) .vg-periodo-hora{opacity:1}
+    .vg-criar{width:100%;height:46px;background:#1A56DB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(26,86,219,.32);cursor:pointer}
+    .vg-form-bloqueado .vg-criar{cursor:not-allowed;opacity:.5;box-shadow:none}
+    .vg-aviso{margin-top:8px;font-size:12px;color:var(--text);opacity:.7;text-align:center}
+    .vg-busca{position:relative}
+    .vg-loja-lista{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;max-height:304px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--surface2);border:1px solid rgba(148,163,184,.55);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+    .vg-loja-item{padding:0 12px;min-height:38px;display:flex;align-items:center;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid rgba(148,163,184,.18)}
+    .vg-loja-item:last-child{border-bottom:none}
+    .vg-loja-item:hover{background:rgba(59,130,246,.16)}
+    .vg-loja-vazio{padding:10px 12px;font-size:13px;color:var(--text);opacity:.7}
     .vg-form-bloqueado fieldset{opacity:.55}
     .vg-periodos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
     .vg-periodo{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;min-width:0;transition:border-color .15s,background .15s}
@@ -12811,7 +12835,9 @@ function _vagasAbrirDia(dataStr,semRolar){
   const diasSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
   const dow=diasSem[new Date(Date.UTC(+ano,+mes-1,+dia)).getUTCDay()];
   const vagasDoDia=_vagasDoMes.filter(v=>v.data===dataStr);
-  const lojaOpts=currentPerfil==='loja'?'':`<select id="vg-loja" style="${_scInput()}" onchange="_vagasAtualizarEnderecoLoja()"><option value="">Selecione A Loja...</option>${_vagasLojas.map(l=>`<option value="${l.id}" data-endereco="${(l.endereco||'').replace(/"/g,'&quot;')}">${l.nome}</option>`).join('')}</select>`;
+  // Loja com busca (2026-11-08): campo de texto filtra por nome (sem
+  // maiúscula/acento); o id escolhido fica no #vg-loja escondido.
+  const lojaOpts=currentPerfil==='loja'?'':`<div class="vg-busca"><input type="hidden" id="vg-loja" value=""/><input type="text" id="vg-loja-busca" class="vg-campo" placeholder="Digite O Nome Da Loja..." autocomplete="off" oninput="_vagasLojaFiltrar()" onfocus="_vagasLojaFiltrar()" onblur="setTimeout(()=>_vagasLojaFechar(),150)" onkeydown="_vagasLojaTecla(event)"/><div id="vg-loja-lista" class="vg-loja-lista"></div></div>`;
   const enderecoValor=currentPerfil==='loja'?(_vagasMinhaLoja?.endereco||''):'';
   const valorPrevia=_vagasCalcularValor(dataStr);
   const periodo=(id,icone,nome,hora)=>`<label class="vg-periodo" for="${id}"><input type="checkbox" id="${id}"/><span class="vg-periodo-caixa">${_icone('check',14)}</span><span class="vg-periodo-icone">${_icone(icone,18)}</span><span class="vg-periodo-texto"><span class="vg-periodo-nome">${nome}</span><span class="vg-periodo-hora">${hora}</span></span></label>`;
@@ -12828,16 +12854,17 @@ function _vagasAbrirDia(dataStr,semRolar){
           <div id="vg-lista-dia">${vagasDoDia.length?vagasDoDia.map(v=>_vagasRenderCard(v)).join(''):'<div style="color:var(--text3);font-size:13px;padding:14px;background:var(--surface2);border-radius:8px">Nenhuma Vaga Cadastrada Nesse Dia Ainda.</div>'}</div>
         </div>
         <div class="vg-form${passado?' vg-form-bloqueado':''}">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px">${_icone('plus',14)} Nova Vaga Em ${dia}/${mes}/${ano}</div>
+          <div class="vg-form-titulo">${_icone('plus',16)} Nova Vaga Em ${dia}/${mes}/${ano}</div>
           ${passado?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_icone('lock',16)} Dia Já Passou — Não É Possível Criar Vagas Nesta Data.</div>`:''}
           <fieldset ${passado?'disabled':''} style="border:none;padding:0;margin:0;min-width:0">
-            ${currentPerfil!=='loja'?`<div class="fi" style="margin-bottom:10px"><label>Loja</label>${lojaOpts}</div>`:''}
-            <div class="fi" style="margin-bottom:10px"><label>Endereço</label><input type="text" id="vg-endereco" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione A Loja Acima'}" style="${_scInput()};opacity:.7"/></div>
-            <div class="fi" style="margin-bottom:10px"><label>Período</label>
+            ${currentPerfil!=='loja'?`<div class="fi"><label>Loja</label>${lojaOpts}</div>`:''}
+            <div class="fi"><label>Endereço</label><div class="vg-ro"><input type="text" id="vg-endereco" class="vg-campo" value="${enderecoValor}" disabled placeholder="${currentPerfil==='loja'?'':'Selecione A Loja Acima'}"/><span class="vg-ro-cadeado">${_icone('lock',14)}</span></div></div>
+            <div class="fi"><label>Período</label>
               <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','09:00–15:30')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
             </div>
-            <div class="fi" style="margin-bottom:14px"><label>Valor (Fixo, Por Vaga)</label><input type="text" value="R$ ${valorPrevia.toFixed(2)}" disabled style="${_scInput()};opacity:.7"/></div>
-            <button onclick="_vagasSalvar('${dataStr}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:${passado?'not-allowed':'pointer'};width:100%;opacity:${passado?.5:1};display:inline-flex;align-items:center;justify-content:center">${_icone('check',16,'btn-ico')}Criar Vaga</button>
+            <div class="fi"><label>Valor (Fixo, Por Vaga)</label><div class="vg-ro"><input type="text" class="vg-campo" value="R$ ${valorPrevia.toFixed(2)}" disabled/><span class="vg-ro-cadeado">${_icone('lock',14)}</span></div></div>
+            <button onclick="_vagasSalvar('${dataStr}')" class="vg-criar">${_icone('check',16,'btn-ico')}Criar Vaga</button>
+            <div class="vg-aviso">O valor é fixo e a vaga finaliza sozinha no fim do horário.</div>
           </fieldset>
           <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
         </div>
@@ -12868,10 +12895,34 @@ async function _vagasCarregarEntregas(){
 }
 
 function _vagasAtualizarEnderecoLoja(){
-  const sel=document.getElementById('vg-loja');
-  const opt=sel?.selectedOptions?.[0];
+  const id=document.getElementById('vg-loja')?.value;
+  const loja=id?_vagasLojas.find(l=>l.id===id):null;
   const campo=document.getElementById('vg-endereco');
-  if(campo)campo.value=opt?.dataset.endereco||'';
+  if(campo)campo.value=loja?.endereco||'';
+}
+const _vagasSemAcento=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function _vagasLojaFiltrar(){
+  const busca=document.getElementById('vg-loja-busca'),lista=document.getElementById('vg-loja-lista'),oculto=document.getElementById('vg-loja');
+  if(!busca||!lista)return;
+  const termo=_vagasSemAcento(busca.value.trim());
+  // texto mudou depois de escolher: desfaz a escolha (e o endereço)
+  const escolhida=oculto?.value?_vagasLojas.find(l=>l.id===oculto.value):null;
+  if(escolhida&&escolhida.nome!==busca.value){oculto.value='';_vagasAtualizarEnderecoLoja();}
+  const achadas=_vagasLojas.filter(l=>!termo||_vagasSemAcento(l.nome).includes(termo)).slice(0,8);
+  lista.innerHTML=achadas.length?achadas.map(l=>`<div class="vg-loja-item" onmousedown="event.preventDefault();_vagasLojaEscolher('${l.id}')">${_escHtml(l.nome||'—')}</div>`).join(''):'<div class="vg-loja-vazio">Nenhuma Loja Encontrada</div>';
+  lista.style.display='block';
+}
+function _vagasLojaEscolher(id){
+  const loja=_vagasLojas.find(l=>l.id===id);if(!loja)return;
+  document.getElementById('vg-loja').value=loja.id;
+  document.getElementById('vg-loja-busca').value=loja.nome||'';
+  _vagasLojaFechar();
+  _vagasAtualizarEnderecoLoja();
+}
+function _vagasLojaFechar(){const lista=document.getElementById('vg-loja-lista');if(lista)lista.style.display='none';}
+function _vagasLojaTecla(e){
+  if(e.key==='Escape'){_vagasLojaFechar();return;}
+  if(e.key==='Enter'){e.preventDefault();const primeira=document.querySelector('#vg-loja-lista .vg-loja-item');if(primeira)primeira.dispatchEvent(new MouseEvent('mousedown'));}
 }
 
 async function _vagasSalvar(dataStr){
