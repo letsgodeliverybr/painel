@@ -1410,6 +1410,13 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     .vg-criar{width:100%;height:46px;background:#1A56DB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(26,86,219,.32);cursor:pointer}
     .vg-form-bloqueado .vg-criar{cursor:not-allowed;opacity:.5;box-shadow:none}
     .vg-aviso{margin-top:8px;font-size:12px;color:var(--text);opacity:.7;text-align:center}
+    .vg-qtd{display:flex;align-items:stretch;gap:8px}
+    .vg-qtd-btn{flex:0 0 42px;height:42px;border:1px solid rgba(148,163,184,.55);border-radius:8px;background:color-mix(in srgb,var(--surface2) 82%,#000);color:var(--text);font-size:20px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif}
+    .vg-qtd-btn:hover{border-color:#3b82f6}
+    fieldset:disabled .vg-qtd-btn{cursor:not-allowed;opacity:.5}
+    .vg-qtd input{flex:1 1 auto;text-align:center;font-weight:700}
+    .vg-qtd input::-webkit-outer-spin-button,.vg-qtd input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .vg-qtd input[type=number]{-moz-appearance:textfield}
     .vg-busca{position:relative}
     .vg-loja-lista{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;max-height:304px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--surface2);border:1px solid rgba(148,163,184,.55);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
     .vg-loja-item{padding:0 12px;min-height:38px;display:flex;align-items:center;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid rgba(148,163,184,.18)}
@@ -12863,7 +12870,8 @@ function _vagasAbrirDia(dataStr,semRolar){
               <div class="vg-periodos">${periodo('vg-periodo-almoco','sun','Almoço','09:00–15:30')}${periodo('vg-periodo-jantar','moon','Jantar','18:00–23:59')}</div>
             </div>
             <div class="fi"><label>Valor (Fixo, Por Vaga)</label><div class="vg-ro"><input type="text" class="vg-campo" value="R$ ${valorPrevia.toFixed(2)}" disabled/><span class="vg-ro-cadeado">${_icone('lock',14)}</span></div></div>
-            <button onclick="_vagasSalvar('${dataStr}')" class="vg-criar">${_icone('check',16,'btn-ico')}Criar Vaga</button>
+            <div class="fi"><label>Quantidade De Vagas</label><div class="vg-qtd"><button type="button" class="vg-qtd-btn" onclick="_vagasQtdAjustar(-1)">−</button><input type="number" id="vg-qtd" class="vg-campo" value="1" min="1" max="20" inputmode="numeric" oninput="_vagasQtdAjustar(0)"/><button type="button" class="vg-qtd-btn" onclick="_vagasQtdAjustar(1)">+</button></div></div>
+            <button onclick="_vagasSalvar('${dataStr}')" class="vg-criar" id="vg-criar-btn">${_icone('check',16,'btn-ico')}<span id="vg-criar-txt">Criar Vaga</span></button>
             <div class="vg-aviso">O valor é fixo e a vaga finaliza sozinha no fim do horário.</div>
           </fieldset>
           <div id="vg-feedback" style="margin-top:8px;font-size:13px"></div>
@@ -12925,6 +12933,18 @@ function _vagasLojaTecla(e){
   if(e.key==='Enter'){e.preventDefault();const primeira=document.querySelector('#vg-loja-lista .vg-loja-item');if(primeira)primeira.dispatchEvent(new MouseEvent('mousedown'));}
 }
 
+// Quantidade de vagas (2026-11-09): 1 a 20, com − e +; atualiza o rótulo do
+// botão ('Criar Vaga' / 'Criar N vagas').
+function _vagasQtdAjustar(delta){
+  const inp=document.getElementById('vg-qtd');if(!inp)return;
+  let n=parseInt(inp.value,10);if(isNaN(n))n=1;
+  n=Math.min(20,Math.max(1,n+delta));
+  inp.value=n;
+  const txt=document.getElementById('vg-criar-txt');
+  if(txt)txt.textContent=n>1?`Criar ${n} vagas`:'Criar Vaga';
+}
+function _vagasQtdValor(){let n=parseInt(document.getElementById('vg-qtd')?.value,10);return isNaN(n)?1:Math.min(20,Math.max(1,n));}
+
 async function _vagasSalvar(dataStr){
   const fb=document.getElementById('vg-feedback');
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:document.getElementById('vg-loja')?.value;
@@ -12936,19 +12956,22 @@ async function _vagasSalvar(dataStr){
   const periodos=[];
   if(almoco)periodos.push({horario_inicio:'09:00',horario_fim:'15:30'}); // Almoço 09:00–15:30 desde 2026-11-08 (antes 10:00–14:00); vagas já criadas não mudam
   if(jantar)periodos.push({horario_inicio:'18:00',horario_fim:'23:59'});
+  const qtd=_vagasQtdValor();
   if(fb)fb.innerHTML='<span style="color:var(--text3)">Salvando...</span>';
-  let erro=false;
-  for(const p of periodos){
+  // qtd × períodos vagas idênticas; conta criadas e falhas (cada POST é uma
+  // vaga nova, com a cobrança e as regras de sempre). Falha não repete.
+  let ok=0,falha=0;
+  for(let i=0;i<qtd;i++)for(const p of periodos){
     const payload={loja_id:lojaId,data:dataStr,endereco,horario_inicio:p.horario_inicio,horario_fim:p.horario_fim,valor,status:'disponivel'};
     const res=await db('vagas_motoboy_fixo','POST',payload);
-    if(!res||res.length===0)erro=true;
+    if(res&&res.length>0)ok++;else falha++;
   }
-  if(!erro){
-    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${periodos.length>1?'Vagas Criadas!':'Vaga Criada!'}</span>`;
-    await _vagasCarregarMes(); // re-renderiza calendário e painel do dia
+  if(falha===0){
+    if(fb)fb.innerHTML=`<span style="color:#22c55e">✅ ${ok>1?ok+' Vagas Criadas!':'Vaga Criada!'}</span>`;
   } else {
-    if(fb)fb.innerHTML='<span style="color:#ef4444">❌ Erro Ao Criar Vaga.</span>';
+    if(fb)fb.innerHTML=`<span style="color:#ef4444">⚠️ ${ok} criada(s), ${falha} não. Tente de novo só as que faltam.</span>`;
   }
+  await _vagasCarregarMes(); // re-renderiza calendário e painel do dia
 }
 
 // Ações da vaga (2026-09-29): 4 botões sempre visíveis; os que não valem no
