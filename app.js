@@ -1390,6 +1390,8 @@ const _agendamentoNoFuturo=(agendadoParaVal)=>!agendadoParaVal||new Date(agendad
     /* Entrega Dedicada: painel do dia abaixo do calendário (ver _vagasAbrirDia) */
     .vg-painel-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
     @media (max-width:760px){.vg-painel-grid{grid-template-columns:1fr}}
+    /* Nova Vaga (2026-11-08): mesmo contorno dos quadros das vagas da lista */
+    .vg-form{background:var(--surface2);border:2px solid #94a3b8;border-radius:12px;padding:14px 16px}
     .vg-form-bloqueado fieldset{opacity:.55}
     .vg-periodos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
     .vg-periodo{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;min-width:0;transition:border-color .15s,background .15s}
