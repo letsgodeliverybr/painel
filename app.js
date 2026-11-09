@@ -13826,15 +13826,24 @@ async function _buscarCobrancas(){
   const fimISO=`${fim}T${hFim}:59`;
   const lista=document.getElementById('gc-lista');
   if(lista)lista.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">🔍 Buscando...</div>';
-  const [pedidos,lojas,jaGeradas]=await Promise.all([
+  const [pedidos,lojas]=await Promise.all([
     // Só cobra pedido com entregador (2026-10-06): finalizado sem ninguém
     // vinculado (ex: concluído pelo próprio iFood, ou finalizado à mão depois
     // de desalocar) não gera cobrança. Só afeta faturas NOVAS; o detalhe das
     // faturas já geradas (verFaturaCobranca) não muda.
     db('pedidos','GET',null,`?status=eq.finalizado&od_teste=is.false&or=(motoboy_id.not.is.null,entregador_id.not.is.null)&finalizado_em=gte.${inicioISO}&finalizado_em=lte.${fimISO}&select=id,loja_id,taxa_entrega,gorjeta`),
     db('lojas','GET',null,'?select=id,nome,tipo_cobranca'),
-    db('cobrancas_lojas','GET',null,`?select=loja_id&data_inicio=eq.${inicio}&data_fim=eq.${fim}&status=in.(pendente,pago,aprovado)`),
   ]);
+  // Fatura sem pedido repetido (2026-11-08): o banco diz quais pedidos da
+  // busca já estão em alguma fatura (pendente ou paga, de qualquer período).
+  // Antes só pulava a loja com fatura de período idêntico ao buscado.
+  const _pedArr=Array.isArray(pedidos)?pedidos:[];
+  const jaCobrados=await _rpcRede('fatura_conferir',{p_pedidos:_pedArr.map(p=>p.id)});
+  if(!jaCobrados.ok||!Array.isArray(jaCobrados.data?.pedidos)){
+    if(lista)lista.innerHTML=`<div style="padding:24px;text-align:center;color:var(--red)">Não Foi Possível Conferir Os Pedidos Já Cobrados. ${_escHtml(jaCobrados.msg||'')}</div>`;
+    return;
+  }
+  const jaCobradosSet=new Set(jaCobrados.data.pedidos);
   // Pedido já pago com crédito (loja que trocou de crédito para faturamento
   // no meio do período) nunca entra na fatura. Sem essa lista não gera nada.
   const pagosCredito=await dbRpc('faturamento_pedidos_pagos_credito',{p_ini:inicioISO,p_fim:fimISO});
@@ -13851,22 +13860,28 @@ async function _buscarCobrancas(){
     return;
   }
   const pagosCreditoSet=new Set(pagosCredito.pedidos.map(r=>r.pedido_id));
-  const jaGeradasSet=new Set((Array.isArray(jaGeradas)?jaGeradas:[]).map(r=>r.loja_id));
   const creditoLojas=new Set((Array.isArray(lojas)?lojas:[]).filter(l=>l.tipo_cobranca==='credito').map(l=>l.id));
   _gcResultados={};
-  (Array.isArray(pedidos)?pedidos:[]).forEach(p=>{
-    const lid=p.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid)||pagosCreditoSet.has(p.id))return;
-    if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
-    _gcResultados[lid].total+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
-    _gcResultados[lid].qtd++;
+  const _gcLinha=lid=>{
+    if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0,pedidos:[],jaQtd:0,jaValor:0};}
+    return _gcResultados[lid];
+  };
+  _pedArr.forEach(p=>{
+    const lid=p.loja_id;if(!lid||creditoLojas.has(lid)||pagosCreditoSet.has(p.id))return;
+    const r=_gcLinha(lid),v=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);
+    if(jaCobradosSet.has(p.id)){r.jaQtd++;r.jaValor=Math.round((r.jaValor+v)*100)/100;return;}
+    r.total=Math.round((r.total+v)*100)/100;
+    r.qtd++;
+    r.pedidos.push(p.id);
   });
   diarias.lojas.forEach(d=>{
-    const lid=d.loja_id;if(!lid||jaGeradasSet.has(lid)||creditoLojas.has(lid))return;
-    if(!_gcResultados[lid]){const loja=(Array.isArray(lojas)?lojas:[]).find(l=>l.id===lid)||{id:lid,nome:'Desconhecida'};_gcResultados[lid]={loja,total:0,qtd:0};}
+    const lid=d.loja_id;if(!lid||creditoLojas.has(lid))return;
+    _gcLinha(lid);
     _gcResultados[lid].diarias=parseFloat(d.valor)||0;
     _gcResultados[lid].qtdDiarias=parseInt(d.qtd)||0;
   });
-  const rows=Object.values(_gcResultados);
+  // Loja só com pedidos já cobrados (e sem diária pendente) não aparece.
+  const rows=Object.values(_gcResultados).filter(r=>r.qtd>0||r.diarias);
   _gcAtualizarResumo(rows);
   if(!lista)return;
   if(!rows.length){lista.innerHTML=`<div style="padding:48px;text-align:center;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">📭</div><div>Nenhuma Loja Com Pedidos Finalizados No Período</div></div>`;return;}
@@ -13876,11 +13891,12 @@ async function _buscarCobrancas(){
       <button onclick="_gerarCobranca()" style="margin-left:auto;background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('store',16,'btn-ico')}Gerar Cobrança</button>
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Diárias</th><th>Total A Cobrar</th></tr></thead>
+      <thead><tr><th style="width:40px"></th><th>Loja</th><th>Pedidos</th><th>Já Cobrado</th><th>Diárias</th><th>Total A Cobrar</th></tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td><input type="checkbox" class="gc-cb" value="${r.loja.id}" style="width:16px;height:16px;cursor:pointer"/></td>
         <td style="font-weight:600;color:var(--text)">${r.loja.nome||'—'}</td>
         <td>${r.qtd}</td>
+        <td style="color:${r.jaQtd?'#f59e0b':'var(--text3)'}">${r.jaQtd?`${r.jaQtd} · R$ ${r.jaValor.toFixed(2)}`:'—'}</td>
         <td>${r.diarias?`${r.qtdDiarias} · R$ ${r.diarias.toFixed(2)}`:'—'}</td>
         <td style="font-weight:700;color:#1A56DB">R$ ${(r.total+(r.diarias||0)).toFixed(2)}</td>
       </tr>`).join('')}</tbody>
@@ -13894,14 +13910,17 @@ async function _gerarCobranca(){
   const fim=document.getElementById('gc-data-fim')?.value;
   const selecionadas=[...document.querySelectorAll('.gc-cb:checked')].map(cb=>cb.value);
   if(!selecionadas.length){showNotif('Atenção','Selecione Ao Menos Uma Loja','var(--yellow)');return;}
-  const agora=new Date().toISOString();let ok=0;
+  let ok=0;const erros=[];
   for(const lid of selecionadas){
     const r=_gcResultados[lid];if(!r)continue;
     const valor=Math.round(r.total*100)/100;
-    const res=await db('cobrancas_lojas','POST',{loja_id:lid,valor_total:valor,status:'pendente',data_inicio:inicio,data_fim:fim,qtd_pedidos:r.qtd,created_at:agora,updated_at:agora});
-    if(res&&(Array.isArray(res)?res.length>0:res.id))ok++;
+    // O banco grava a fatura junto com os pedidos que ela cobra e recusa
+    // pedido já cobrado em outra fatura (diárias somadas pelo banco).
+    const res=await _rpcRede('fatura_gerar',{p_loja:lid,p_inicio:inicio,p_fim:fim,p_valor:valor,p_pedidos:r.pedidos||[]});
+    if(res.ok)ok++;else erros.push(`${r.loja.nome||'—'}: ${res.msg}`);
   }
-  showNotif(`✅ ${ok} Cobrança(s) Gerada(s)!`,'');
+  if(erros.length)showNotif('⚠️ Cobrança Não Gerada',erros.join(' | '),'var(--yellow)');
+  if(ok)showNotif(`✅ ${ok} Cobrança(s) Gerada(s)!`,'');
   _gcHistoricoOffset=0;
   _carregarHistoricoCobrancas(false);
   document.getElementById('gc-lista').innerHTML='';
