@@ -16645,6 +16645,17 @@ async function _rastreioFetch(path){
     return await r.json();
   }catch(e){return null;}
 }
+// Entregador do rastreio (2026-11-08): a tabela de entregadores não abre mais
+// sem login; o banco devolve só nome e foto do entregador deste pedido
+// (posição e telefone só durante a entrega).
+async function _rastreioEntregador(pedidoId){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/rastreio_entregador`,{method:'POST',headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({p_pedido:pedidoId})});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return j?[j]:null;
+  }catch(e){return null;}
+}
 // Mesma lógica de previsão já usada em renderPedidosLista/abrirInfoPedido
 // (_indicadorPrazoPedido — janela fixa de 30min a partir de aceito_em) —
 // não existe ETA real baseado em distância/rota em nenhum lugar do sistema
@@ -16772,7 +16783,7 @@ async function _iniciarRastreioPublico(pedidoId){
     const motoboyId=p.motoboy_id||p.entregador_id;
     const [lojas,motoboys]=await Promise.all([
       p.loja_id?_rastreioFetch(`lojas?id=eq.${p.loja_id}&select=id,nome,latitude,longitude,endereco`):Promise.resolve(null),
-      motoboyId?_rastreioFetch(`entregadores?id=eq.${motoboyId}&select=id,nome,lat,lng,telefone,foto_perfil`):Promise.resolve(null),
+      motoboyId?_rastreioEntregador(pedidoId):Promise.resolve(null),
     ]);
     const loja=lojas?.[0]||null;
     const motoboy=motoboys?.[0]||null;
