@@ -5139,19 +5139,6 @@ async function _lojaCarregarCrescimento(){
   if(!document.getElementById('loja-banner-boas-vindas'))return;
   _lojaSetPeriodoCrescimento('7d');
 }
-// Mesma carga do grafico de crescimento, porem para a tela Inicio da loja
-// (renderLojaInicioPage) em vez do banner desligado: mesma consulta, mesmo
-// cache e mesmo _lojaSetPeriodoCrescimento; so muda a guarda do elemento
-// (card da Inicio, nao o overlay). Fire-and-forget, nao bloqueia o Resumo.
-async function _lojaInicioCarregarCrescimento(lojaId){
-  if(!lojaId)return;
-  const hojeDate=new Date();
-  const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  const pedidos=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,created_at&order=created_at.asc`,1000);
-  _lojaPedidosCacheCrescimento=Array.isArray(pedidos)?pedidos:[];
-  if(!document.getElementById('loja-cresc-chart'))return;
-  _lojaSetPeriodoCrescimento('7d');
-}
 function _renderLojaBannerBoasVindas(){
   _lojaBannerRenderizadoAgora=false;
   // DESLIGADA (2026-09-29, pedido do usuário): a loja vai direto pro Gestor
@@ -9076,7 +9063,8 @@ document.addEventListener('click',e=>{
 // a partir do mesmo fetch de 12 meses em cache (_ceoPedidosCache), sem
 // refazer request ao trocar o período (item 20/30 do documento: atualização
 // inteligente, evita N+1).
-function _ceoBucketPorDia(pedidos,dias){
+function _ceoBucketPorDia(pedidos,dias,valorFn){
+  const _v=valorFn||(p=>(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0));
   const buckets=[];
   for(let i=dias-1;i>=0;i--){
     const chave=new Date(Date.now()-i*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
@@ -9086,11 +9074,12 @@ function _ceoBucketPorDia(pedidos,dias){
   pedidos.forEach(p=>{
     const i=idx.get(p.created_at.slice(0,10));
     if(i===undefined)return;
-    if(p.status==='finalizado'||p.status==='entregue'){buckets[i].faturamento+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);buckets[i].pedidos+=1;}
+    if(p.status==='finalizado'||p.status==='entregue'){buckets[i].faturamento+=_v(p);buckets[i].pedidos+=1;}
   });
   return buckets;
 }
-function _ceoBucketPorMes(pedidos,meses){
+function _ceoBucketPorMes(pedidos,meses,valorFn){
+  const _v=valorFn||(p=>(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0));
   const hoje=new Date();
   const y0=hoje.getFullYear(),m0=hoje.getMonth()+1;
   const seq=[];
@@ -9103,7 +9092,7 @@ function _ceoBucketPorMes(pedidos,meses){
   pedidos.forEach(p=>{
     const i=idx.get(p.created_at.slice(0,7));
     if(i===undefined)return;
-    if(p.status==='finalizado'||p.status==='entregue'){seq[i].faturamento+=(parseFloat(p.taxa_entrega)||0)+(parseFloat(p.gorjeta)||0);seq[i].pedidos+=1;}
+    if(p.status==='finalizado'||p.status==='entregue'){seq[i].faturamento+=_v(p);seq[i].pedidos+=1;}
   });
   return seq;
 }
@@ -9237,6 +9226,33 @@ function _ceoSetPeriodo(p){
   const el=document.getElementById('ceo-chart');
   if(el)el.innerHTML=_renderCeoLineChart(buckets);
   _ceoAttachChartTooltip();
+}
+// === Visao Executiva reaproveitada na Inicio da loja ===
+// Mesmo componente do ADM (_renderCeoLineChart + _ceoAttachChartTooltip +
+// estilos .ceo-*), so que com os pedidos de UMA loja e Faturamento = valor
+// do pedido (nao taxa+gorjeta). Reaproveita os mesmos ids (#ceo-chart...):
+// a loja nunca abre a Visao Executiva, entao nao ha colisao em runtime.
+let _lojaExecPedidosCache=[];
+const _LOJA_EXEC_VALOR=p=>parseFloat(p.valor)||0;
+function _lojaExecSetPeriodo(p){
+  document.querySelectorAll('.ceo-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+  const c=_lojaExecPedidosCache;
+  const buckets=p==='7d'?_ceoBucketPorDia(c,7,_LOJA_EXEC_VALOR)
+    :p==='30d'?_ceoBucketPorDia(c,30,_LOJA_EXEC_VALOR)
+    :p==='6m'?_ceoBucketPorMes(c,6,_LOJA_EXEC_VALOR)
+    :_ceoBucketPorMes(c,12,_LOJA_EXEC_VALOR);
+  const el=document.getElementById('ceo-chart');
+  if(el)el.innerHTML=_renderCeoLineChart(buckets);
+  _ceoAttachChartTooltip();
+}
+async function _lojaExecCarregar(lojaId){
+  if(!lojaId)return;
+  const hojeDate=new Date();
+  const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const pedidos=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,valor,created_at&order=created_at.asc`,1000);
+  _lojaExecPedidosCache=Array.isArray(pedidos)?pedidos:[];
+  if(!document.getElementById('ceo-chart'))return;
+  _lojaExecSetPeriodo('30d');
 }
 // Saudação dinâmica por horário de Brasília — manhã/tarde/noite, cada uma
 // com ícone próprio. parseInt de toLocaleTimeString(hour12:false) pode
@@ -16380,7 +16396,7 @@ function _liNovoPedido(){
 }
 async function renderLojaInicioPage(){
   _liEstilos();
-  _lojaBannerInjectStyles(); // estilos do seletor 7d/30d/6m do card Crescimento
+  _ceoInjectStyles(); // reaproveita o visual/tema da Visao Executiva
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
   const body=document.getElementById('app-body');
   const cab=`<div class="page-header"><div class="page-title">${_icone('house',22)} Início</div></div>`;
@@ -16394,6 +16410,9 @@ async function renderLojaInicioPage(){
   if(!_chatBadgeInterval)_iniciarChatBadgeLoja();
   _carregarSaldoTopbar();
   _liSlide=0;_liPausado=false;
+  const _execSaud=_ceoSaudacao();
+  const _execNome=((currentUser?.nome||'').trim().split(/\s+/)[0])||'Loja';
+  const _execSelo=currentPerfil==='loja'?'Loja':(currentPerfil||'Loja');
   const slides=_liSlidesAtivos().map((s,i)=>`<div class="li-slide">
       <div class="li-slide-texto"><div class="li-slide-tag${s.tagDestaque?' destaque':''}">${_icone(s.tagDestaque?'badge-percent':'sparkles',14)} ${(typeof s.tag==='function'?s.tag():s.tag)||'Novidade Para Sua Loja'}</div>
         <div class="li-slide-titulo">${s.titulo}</div><div class="li-slide-desc"${s.id?` id="li-desc-${s.id}"`:''}>${typeof s.texto==='function'?s.texto():s.texto}</div>
@@ -16407,7 +16426,25 @@ async function renderLojaInicioPage(){
   const conteudos=LOJA_INICIO_CONTEUDOS.length?`<div class="li-secao-titulo">Conteúdos Para Você</div>
     <div class="li-grid2">${LOJA_INICIO_CONTEUDOS.map(c=>`<div class="card li-card"><div class="li-card-icone">${_icone('circle-play',22)}</div><div><div class="li-card-titulo">${_escHtml(c.titulo||'')}</div><div class="li-card-texto">${_escHtml(c.descricao||'')}</div>${c.url?`<a class="btn-sm btn-primary-sm" href="${_escHtml(c.url)}" target="_blank" rel="noopener" style="text-decoration:none">Assistir</a>`:''}</div></div>`).join('')}</div>`:'';
   body.innerHTML=`<div class="alt-page"><div class="li-wrap">
-    ${cab}
+    <div class="ceo-header">
+      <div class="ceo-greeting-block">
+        <h1>${_execSaud.icone} ${_execSaud.texto}, ${_execNome} <span class="ceo-badge-ceo">${_execSelo}</span></h1>
+        <div class="ceo-subtitle">Aqui Está O Resumo Da Performance Da Sua Loja Hoje.</div>
+        <div class="ceo-frase">"${_ceoFraseDoDia()}"</div>
+      </div>
+    </div>
+    <div class="ceo-block">
+      <div class="ceo-block-header">
+        <span class="ceo-block-title">📈 Crescimento Da Loja</span>
+        <div class="ceo-periodo-toggle">
+          <button class="ceo-periodo-btn" data-p="7d" onclick="_lojaExecSetPeriodo('7d')">7 Dias</button>
+          <button class="ceo-periodo-btn active" data-p="30d" onclick="_lojaExecSetPeriodo('30d')">30 Dias</button>
+          <button class="ceo-periodo-btn" data-p="6m" onclick="_lojaExecSetPeriodo('6m')">6 Meses</button>
+          <button class="ceo-periodo-btn" data-p="12m" onclick="_lojaExecSetPeriodo('12m')">12 Meses</button>
+        </div>
+      </div>
+      <div class="ceo-block-body" id="ceo-chart"><div style="color:var(--text3);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
     <div class="li-carrossel" id="li-carrossel" onmouseenter="_liPausado=true" onmouseleave="_liPausado=false">
       <div class="li-trilho" id="li-trilho">${slides}</div>
       <button class="li-seta" style="left:12px" onclick="_liIrSlide(_liSlide-1);_liIniciarTimer()" aria-label="Anterior">${_icone('chevron-left',18)}</button>
@@ -16421,30 +16458,11 @@ async function renderLojaInicioPage(){
     </div>
     <div class="li-secao-titulo">Resumo De Hoje</div>
     <div id="li-resumo"><div class="card" style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
-    <div class="li-secao-titulo">Crescimento Da Loja</div>
-    <div class="card" style="padding:0;overflow:hidden;background:#12151A;border:1px solid rgba(255,255,255,.08)">
-      <div style="padding:20px 22px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-          <span style="font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px">↗ Crescimento Da Loja</span>
-          <div class="loja-cresc-periodo-group">
-            <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 Dias</button>
-            <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 Dias</button>
-            <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 Meses</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:32px;margin-bottom:8px">
-          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Pedidos</div><div id="loja-cresc-pedidos" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
-          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Faturamento</div><div id="loja-cresc-faturamento" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
-        </div>
-        <div id="loja-cresc-delta" style="font-size:11.5px;margin-bottom:16px;min-height:15px">&nbsp;</div>
-        <div id="loja-cresc-chart"><div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Carregando...</div></div>
-      </div>
-    </div>
     ${conteudos}
   </div></div>`;
   _liIniciarTimer();
   _liAtualizarSlidePrepago(lojaId);
-  _lojaInicioCarregarCrescimento(lojaId); // card Crescimento Da Loja (nao bloqueia o resumo)
+  _lojaExecCarregar(lojaId); // grafico Crescimento Da Loja (Visao Executiva reaproveitada), nao bloqueia o resumo
   // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
   // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
   const hoje=_dataHojeBrasilia();
