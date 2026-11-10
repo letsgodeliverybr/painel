@@ -16917,6 +16917,18 @@ async function _rastreioEntregador(pedidoId){
     return j?[j]:null;
   }catch(e){return null;}
 }
+// Rastreio publico le o pedido por RPC (rastreio_pedido) em vez de ler a
+// tabela pedidos direto: a tabela nao abre mais para anon (RLS 2026-11). A
+// RPC e SECURITY DEFINER e devolve so os campos deste pedido (mesmo modelo de
+// link-capability: precisa do UUID). Mantem o formato [obj] que atualizar() espera.
+async function _rastreioPedido(pedidoId){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/rastreio_pedido`,{method:'POST',headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({p_pedido:pedidoId})});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return j?[j]:null;
+  }catch(e){return null;}
+}
 // Mesma lógica de previsão já usada em renderPedidosLista/abrirInfoPedido
 // (_indicadorPrazoPedido — janela fixa de 30min a partir de aceito_em) —
 // não existe ETA real baseado em distância/rota em nenhum lugar do sistema
@@ -17024,7 +17036,7 @@ async function _iniciarRastreioPublico(pedidoId){
   let lojaMarker=null,motoboyMarker=null,destinoMarker=null,primeiraCarga=true,pararPolling=false;
 
   async function atualizar(){
-    const pedidos=await _rastreioFetch(`pedidos?id=eq.${pedidoId}&select=id,numero,numero_loja,status,status_detalhado,cliente,cliente_nome,telefone,endereco,latitude,longitude,endereco_coleta,latitude_coleta,longitude_coleta,itens,total_pedido,descricao,codigo_confirmacao,motoboy_id,entregador_id,loja_id,created_at,pronto_em,aceito_em,agendado_para`);
+    const pedidos=await _rastreioPedido(pedidoId);
     const p=pedidos?.[0];
     if(!p){
       cardEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">Pedido Não Encontrado.</div>`;
