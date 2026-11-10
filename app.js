@@ -9233,7 +9233,7 @@ function _ceoSetPeriodo(p){
 // do pedido (nao taxa+gorjeta). Reaproveita os mesmos ids (#ceo-chart...):
 // a loja nunca abre a Visao Executiva, entao nao ha colisao em runtime.
 let _lojaExecPedidosCache=[];
-const _LOJA_EXEC_VALOR=p=>parseFloat(p.valor)||0;
+const _LOJA_EXEC_VALOR=p=>parseFloat(p.taxa_entrega)||0; // taxa de entrega (p/ bater com a fatura); ADM segue taxa+gorjeta
 function _lojaExecSetPeriodo(p){
   document.querySelectorAll('.ceo-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
   const c=_lojaExecPedidosCache;
@@ -9249,7 +9249,7 @@ async function _lojaExecCarregar(lojaId){
   if(!lojaId)return;
   const hojeDate=new Date();
   const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  const pedidos=await _dbTodasLinhas('pedidos',`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,valor,created_at&order=created_at.asc`,1000);
+  const pedidos=await _dbTodasLinhas('pedidos',`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,created_at&order=created_at.asc`,1000);
   _lojaExecPedidosCache=Array.isArray(pedidos)?pedidos:[];
   if(!document.getElementById('ceo-chart'))return;
   _lojaExecSetPeriodo('30d');
