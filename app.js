@@ -9264,7 +9264,10 @@ function _lojaExecSetPeriodo(p){
     :p==='6m'?_lojaFatBucketMes(c,6)
     :_lojaFatBucketMes(c,12);
   const el=document.getElementById('ceo-chart');
-  if(el)el.innerHTML=_renderCeoLineChart(buckets,'Faturas');
+  if(!el)return;
+  // Loja credito (nao gera fatura) ou sem faturas no periodo: aviso no lugar do grafico vazio
+  if(!buckets.some(b=>b.faturamento>0)){el.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px">Sem Faturas No Período</div>';return;}
+  el.innerHTML=_renderCeoLineChart(buckets,'Faturas');
   _ceoAttachChartTooltip();
 }
 async function _lojaExecCarregar(lojaId){
