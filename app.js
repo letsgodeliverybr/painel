@@ -8424,7 +8424,7 @@ async function renderNovoPedidoPage(){
   document.getElementById('app-body').innerHTML=`<div class="alt-page" style="display:flex;align-items:flex-start;justify-content:center"><div style="width:100%;max-width:520px"><div class="page-header"><div class="page-title">${_icone('plus',22)} Novo Pedido</div></div><div class="card"><div class="modal-body">${seletorLoja}<div class="form-row full"><div class="fi"><label>Plataforma De Origem</label><select id="np-plataforma-origem"><option value="">Próprio / Direto</option><option value="ifood_manual">iFood (Loja Não Integrada)</option></select></div></div><div class="form-row"><div class="fi"><label>Nº Pedido</label><input id="np-numero" placeholder="0001"/></div><div class="fi"><label>Cliente</label><input id="np-cliente" placeholder="Nome"/></div></div><div class="form-row full"><div class="fi"><label>Telefone</label><input id="np-telefone" placeholder="(16) 99999-9999"/></div></div><div class="form-row full"><div class="fi"><label>Endereço De Entrega</label><div style="display:flex;gap:6px"><input id="np-endereco" placeholder="Rua, Número, Bairro" autocomplete="off" oninput="onChangeEnderecoDebounce()" onfocus="iniciarAutocompleteEndereco('np-endereco','np-lat','np-lng','np-endereco-feedback')" style="flex:1"/><button type="button" onclick="_npRecalcularTaxas()" style="background:#1A56DB;color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif">${_icone('map-pin',16,'btn-ico')}Recalcular</button></div><input type="hidden" id="np-lat"/><input type="hidden" id="np-lng"/></div></div><div id="np-endereco-feedback" style="font-size:11px;margin:2px 0 6px;min-height:16px"></div><div class="form-row full"><div class="fi"><label>Complemento</label><input id="np-complemento" placeholder="Apto, Bloco, Ponto De Referência"/></div></div><div class="form-row"><div class="fi"><label>Valor do Pedido (R$)</label><input type="number" id="np-valor" placeholder="0.00" step="0.01"/></div><div class="fi"><label>Distância</label><input id="np-km" placeholder="—" readonly style="background:var(--surface2);color:#60a5fa;font-weight:700;cursor:default"/></div></div><div class="form-row"><div class="fi"><label>Taxa de entrega (R$)</label><input type="number" id="np-taxa" placeholder="0.00" step="0.01"/></div><div class="fi"></div></div><div id="np-pd-badge" style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:4px;min-height:14px;display:none"></div><div class="form-row"><div class="fi"><label>Gorjeta entregador (R$)</label><input type="number" id="np-gorjeta" placeholder="0.00" step="0.50" value="0" oninput="onChangeGorjeta()"/></div><div class="fi"><label>Retorno</label><div id="np-retorno-btn" onclick="_npToggleRetorno()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;cursor:pointer;background:#3a3a3a;transition:background .15s;user-select:none"><span id="np-retorno-ic" style="font-size:16px">—</span><span id="np-retorno-lbl" style="font-size:13px;font-weight:600;color:#888888">Sem Retorno</span></div></div></div><div id="np-gorjeta-info" style="font-size:11px;color:#f59e0b;margin-bottom:4px;min-height:14px"></div><div class="form-row full"><div class="fi"><label>⭐ Pontos</label><input type="number" id="np-pontos" value="4" min="1" max="20"/></div></div><div class="form-row full"><div class="fi"><label>Observações</label><textarea id="np-descricao" placeholder="Itens Do Pedido..."></textarea></div></div><div id="np-feedback" style="margin-top:4px"></div><div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn-modal-primary js-btn-criar-pedido" onclick="criarPedido()">${_icone('rocket',16,'btn-ico')}Criar Pedido</button></div></div></div></div></div>`;
 }
 
-let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[];
+let _fpLojas=[],_fpEntregadores=[],_fpPedidos=[],_fpRedes=[];
 // ── C.A.C. — Custo de Aquisição de Cliente ─────────────────────────────
 // Substituiu a página "Aguardando Pagamento" (2026-09-27). Rastreia, por
 // vendedor/expansão, as lojas que ele trouxe (lojas.vendedor_id) e calcula
@@ -8605,7 +8605,7 @@ const _fbListas={};
 let _fbAberto=null; // id do filtro-busca com a lista aberta (reposiciona no scroll)
 const _fbNorm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 function _fbCampoHtml(id,todos,estilo){
-  _fbListas[id]={todos,itens:[],res:[],digitou:false};
+  _fbListas[id]={todos,itens:[],res:[],digitou:false,onPick:null};
   return`<div style="position:relative"><input type="hidden" id="${id}" value=""/><input type="text" id="${id}-busca" value="${todos}" autocomplete="off" placeholder="Digite O Nome..." onfocus="this.select();_fbFiltrar('${id}')" oninput="_fbFiltrar('${id}',true)" onkeydown="if(event.key==='Enter'){event.preventDefault();_fbEnter('${id}')}else if(event.key==='Escape')this.blur()" onblur="_fbFechar('${id}')" style="${estilo}"/><div id="${id}-sug" onmousedown="event.preventDefault()" style="display:none;position:fixed;z-index:9999;box-sizing:border-box;max-height:288px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div></div>`;
 }
 function _fbDefinir(id,itens){
@@ -8648,7 +8648,11 @@ function _fbEscolher(id,v){
   busca.value=e?e.nome:f.todos;
   if(sug)sug.style.display='none';_fbAberto=null;
   f.digitou=false;
+  if(f.onPick)f.onPick(hid.value);
 }
+// Liga um callback pra quando o valor do campo-busca muda (ex.: filtro Rede
+// re-popula o filtro Loja). Só o campo que registra dispara; os outros não.
+function _fbAoEscolher(id,fn){const f=_fbListas[id];if(f)f.onPick=fn;}
 // Enter: escolhe o 1º resultado do que foi digitado (campo vazio = Todas/Todos)
 function _fbEnter(id){
   const f=_fbListas[id],busca=document.getElementById(id+'-busca');if(!f||!busca)return;
@@ -8666,6 +8670,17 @@ function _fbFechar(id){
   f.digitou=false;
 }
 
+// Filtro Rede (2026-11-09): escolher uma rede restringe o filtro Loja às
+// lojas dela e refaz a busca (indicadores, gráficos e lista passam a só
+// essa rede). 'Todas' volta a lista cheia. Usa redes_credito (cadastro que
+// já existe); as lojas carregam rede_credito_id.
+function _fpRedeMudou(redeId){
+  const r=redeId||document.getElementById('fp-rede')?.value||'';
+  const lojas=r?(Array.isArray(_fpLojas)?_fpLojas:[]).filter(l=>l.rede_credito_id===r):_fpLojas;
+  _fbDefinir('fp-loja',lojas);
+  _fbEscolher('fp-loja','');
+  _buscarPedidosAdmin();
+}
 async function renderPedidosPage(){
   const hoje=_dataHojeBrasilia();
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
@@ -8676,6 +8691,7 @@ async function renderPedidosPage(){
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('Data Início')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
         <div>${_lbl('Data Fim')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-fim" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-fim" value="23:59" style="${_is};width:86px"/></div></div>
+        ${currentPerfil!=='loja'?`<div>${_lbl('REDE')}${_fbCampoHtml('fp-rede','Todas',`${_is};min-width:160px`)}</div>`:''}
         <div>${_lbl('LOJA')}${_fbCampoHtml('fp-loja','Todas',`${_is};min-width:180px`)}</div>
         <div>${_lbl('ENTREGADOR')}${_fbCampoHtml('fp-entregador','Todos',`${_is};min-width:180px`)}</div>
         <div>${_lbl('Buscar Pedido')}<input type="text" id="fp-numero" placeholder="Nº Pedido..." style="${_is};min-width:110px"/></div>
@@ -8702,9 +8718,10 @@ async function renderPedidosPage(){
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição De Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th style="width:1%;min-width:56px;white-space:nowrap;text-align:center;padding-left:6px;padding-right:6px">Origem</th><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha Do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?15:currentPerfil==='suporte'?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
-  [_fpEntregadores,_fpLojas]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca&order=nome.asc${_lojaFiltroId()}`)]);
+  [_fpEntregadores,_fpLojas,_fpRedes]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca,rede_credito_id&order=nome.asc${_lojaFiltroId()}`),currentPerfil!=='loja'?dbRpc('redes_listar'):Promise.resolve([])]);
   _fbDefinir('fp-loja',_fpLojas);
   _fbDefinir('fp-entregador',_fpEntregadores);
+  if(currentPerfil!=='loja'){_fpRedes=Array.isArray(_fpRedes)?_fpRedes:[];_fbDefinir('fp-rede',_fpRedes);_fbAoEscolher('fp-rede',_fpRedeMudou);}
   if(currentPerfil==='loja'&&currentUser?.loja_id&&!_redeVisaoGeral()){
     _fbEscolher('fp-loja',currentUser.loja_id);
     const b=document.getElementById('fp-loja-busca');if(b)b.disabled=true;
@@ -8720,6 +8737,7 @@ async function _buscarPedidosAdmin(){
   const horaFim=document.getElementById('fp-hora-fim')?.value||'23:59';
   const lojaId=document.getElementById('fp-loja')?.value;
   const entId=document.getElementById('fp-entregador')?.value;
+  const redeId=document.getElementById('fp-rede')?.value;
   const numBusca=(document.getElementById('fp-numero')?.value||'').trim();
   // Sem limit= aqui de propósito — mesmo um limit=10000 explícito não
   // adianta, porque o projeto Supabase tem um teto de linhas por request
@@ -8745,6 +8763,7 @@ async function _buscarPedidosAdmin(){
     qsCreditos+=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;
   }
   if(lojaId){const _lj=`&loja_id=eq.${lojaId}`;qs+=_lj;qsCreditos+=_lj;}
+  else if(redeId){const _ids=(Array.isArray(_fpLojas)?_fpLojas:[]).filter(l=>l.rede_credito_id===redeId).map(l=>l.id);const _lj=`&loja_id=in.(${_ids.length?_ids.join(','):'00000000-0000-0000-0000-000000000000'})`;qs+=_lj;qsCreditos+=_lj;}
   // Contas a pagar: soma as contas 'pago' cuja competência (dia 1 do mês) caia
   // em qualquer mês tocado pelo período — comparar contra o dia 1 do mês de
   // dataIni e o dia 1 do mês de dataFim já cobre todo mês entre os dois.
@@ -8756,7 +8775,7 @@ async function _buscarPedidosAdmin(){
   // de verdade, então não filtra por loja/número (não se aplicam) e não entra
   // em nenhum card de resumo acima (Total, Finalizados, KM, Faturamento...),
   // só aparece como linha visual no fim da tabela.
-  const _mostrarCreditosEntregador=currentPerfil==='adm'&&!lojaId&&!numBusca;
+  const _mostrarCreditosEntregador=currentPerfil==='adm'&&!lojaId&&!redeId&&!numBusca;
   let qsCreditosEnt='?select=entregador_id,tipo,valor,observacoes,data&tipo=in.(credito,debito)&order=data.desc';
   if(entId)qsCreditosEnt+=`&entregador_id=eq.${entId}`;
   if(dataIni)qsCreditosEnt+=`&data=gte.${dataIni}`;
