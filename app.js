@@ -9233,25 +9233,46 @@ function _ceoSetPeriodo(p){
 // estilos .ceo-*), so que com os pedidos de UMA loja e Faturamento = valor
 // do pedido (nao taxa+gorjeta). Reaproveita os mesmos ids (#ceo-chart...):
 // a loja nunca abre a Visao Executiva, entao nao ha colisao em runtime.
-let _lojaExecPedidosCache=[];
-const _LOJA_EXEC_VALOR=p=>parseFloat(p.taxa_entrega)||0; // taxa de entrega (p/ bater com a fatura); ADM segue taxa+gorjeta
+// Dados do grafico vem das FATURAS da loja (cobrancas_lojas), nao dos pedidos:
+// assim bate exatamente com o Financeiro. A fatura = taxa+gorjeta dos finalizados
+// (por finalizado_em) + diarias - pagos por credito; nao da pra re-derivar barato
+// no cliente, entao somamos o proprio valor_total por data da fatura (data_fim).
+// Em "Toda A Rede" soma todas as lojas da rede. ADM (Visao Executiva) intacto.
+let _lojaExecFaturasCache=[];
+function _lojaFatBucketDia(fats,dias){
+  const buckets=[];
+  for(let i=dias-1;i>=0;i--){
+    const chave=new Date(Date.now()-i*86400000).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+    buckets.push({chave,label:chave.slice(8,10)+'/'+chave.slice(5,7),faturamento:0,pedidos:0});
+  }
+  const idx=new Map(buckets.map((b,i)=>[b.chave,i]));
+  fats.forEach(f=>{const i=idx.get(String(f.data_fim).slice(0,10));if(i===undefined)return;buckets[i].faturamento+=parseFloat(f.valor_total)||0;buckets[i].pedidos+=parseInt(f.qtd_pedidos,10)||0;});
+  return buckets;
+}
+function _lojaFatBucketMes(fats,meses){
+  const hoje=new Date();const y0=hoje.getFullYear(),m0=hoje.getMonth()+1;const seq=[];
+  for(let i=meses-1;i>=0;i--){let mm=m0-i,yy=y0;while(mm<1){mm+=12;yy--;}seq.push({chave:`${yy}-${String(mm).padStart(2,'0')}`,label:`${String(mm).padStart(2,'0')}/${yy}`,faturamento:0,pedidos:0});}
+  const idx=new Map(seq.map((b,i)=>[b.chave,i]));
+  fats.forEach(f=>{const i=idx.get(String(f.data_fim).slice(0,7));if(i===undefined)return;seq[i].faturamento+=parseFloat(f.valor_total)||0;seq[i].pedidos+=parseInt(f.qtd_pedidos,10)||0;});
+  return seq;
+}
 function _lojaExecSetPeriodo(p){
   document.querySelectorAll('.ceo-periodo-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
-  const c=_lojaExecPedidosCache;
-  const buckets=p==='7d'?_ceoBucketPorDia(c,7,_LOJA_EXEC_VALOR)
-    :p==='30d'?_ceoBucketPorDia(c,30,_LOJA_EXEC_VALOR)
-    :p==='6m'?_ceoBucketPorMes(c,6,_LOJA_EXEC_VALOR)
-    :_ceoBucketPorMes(c,12,_LOJA_EXEC_VALOR);
+  const c=_lojaExecFaturasCache;
+  const buckets=p==='7d'?_lojaFatBucketDia(c,7)
+    :p==='30d'?_lojaFatBucketDia(c,30)
+    :p==='6m'?_lojaFatBucketMes(c,6)
+    :_lojaFatBucketMes(c,12);
   const el=document.getElementById('ceo-chart');
-  if(el)el.innerHTML=_renderCeoLineChart(buckets,'Taxa De Entrega');
+  if(el)el.innerHTML=_renderCeoLineChart(buckets,'Faturas');
   _ceoAttachChartTooltip();
 }
 async function _lojaExecCarregar(lojaId){
   if(!lojaId)return;
   const hojeDate=new Date();
   const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  const pedidos=await _dbTodasLinhas('pedidos',`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,created_at&order=created_at.asc`,1000);
-  _lojaExecPedidosCache=Array.isArray(pedidos)?pedidos:[];
+  const fats=await _dbTodasLinhas('cobrancas_lojas',`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&status=in.(pendente,pago,recusado)&data_fim=gte.${dataIni12m}&select=valor_total,qtd_pedidos,data_fim&order=data_fim.asc`,1000);
+  _lojaExecFaturasCache=Array.isArray(fats)?fats:[];
   if(!document.getElementById('ceo-chart'))return;
   _lojaExecSetPeriodo('30d');
 }
