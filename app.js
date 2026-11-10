@@ -9120,7 +9120,8 @@ function _ceoFmtEixoReal(v){
 // Geometria do último gráfico desenhado — guardada pra _ceoAttachChartTooltip
 // converter posição do mouse em índice de bucket sem reparsear o SVG.
 let _ceoChartGeom=null;
-function _renderCeoLineChart(buckets){
+function _renderCeoLineChart(buckets,labelFat){
+  labelFat=labelFat||'Faturamento';
   if(!buckets.length){_ceoChartGeom=null;return'<div style="color:var(--text3);text-align:center;padding:40px">Sem Dados No Período</div>';}
   const W=960,H=240,padL=50,padR=44,padT=16,padB=32;
   const plotW=W-padL-padR,plotH=H-padT-padB;
@@ -9130,7 +9131,7 @@ function _renderCeoLineChart(buckets){
   const xAt=i=>n===1?padL+plotW/2:padL+(i/(n-1))*plotW;
   const yFat=v=>padT+plotH-(v/maxFat)*plotH;
   const yPed=v=>padT+plotH-(v/maxPed)*plotH;
-  _ceoChartGeom={buckets,padL,padR,padT,padB,plotW,plotH,xAt,yFat,yPed};
+  _ceoChartGeom={buckets,padL,padR,padT,padB,plotW,plotH,xAt,yFat,yPed,labelFat};
   const lineFat=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yFat(b.faturamento).toFixed(1)}`).join(' ');
   const linePed=buckets.map((b,i)=>`${xAt(i).toFixed(1)},${yPed(b.pedidos).toFixed(1)}`).join(' ');
   const dotsFat=buckets.map((b,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yFat(b.faturamento).toFixed(1)}" r="3" fill="var(--accent)"/>`).join('');
@@ -9164,7 +9165,7 @@ function _renderCeoLineChart(buckets){
   <div id="ceo-chart-tip" style="display:none;position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--text);line-height:1.6;pointer-events:none;white-space:nowrap;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.45)"></div>
   </div>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Faturamento (Eixo Esquerdo)</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>${labelFat} (Eixo Esquerdo)</span>
     <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Pedidos Finalizados (Eixo Direito)</span>
     <span style="color:var(--text3)">· Passe O Mouse No Gráfico Pra Ver O Valor Exato</span>
   </div>`;
@@ -9204,7 +9205,7 @@ function _ceoAttachChartTooltip(){
     guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.style.opacity='1';
     dotFat.setAttribute('cx',cx);dotFat.setAttribute('cy',cyFat);dotFat.style.opacity='1';
     dotPed.setAttribute('cx',cx);dotPed.setAttribute('cy',cyPed);dotPed.style.opacity='1';
-    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${_ceoFmtTooltipTitulo(b)}</div><div style="color:var(--accent)">● Faturamento: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} Finalizado${b.pedidos===1?'':'s'}</div>`;
+    tip.innerHTML=`<div style="font-weight:700;margin-bottom:2px;color:var(--text)">${_ceoFmtTooltipTitulo(b)}</div><div style="color:var(--accent)">● ${g.labelFat||'Faturamento'}: ${_fmtMoedaCaixa(b.faturamento)}</div><div style="color:#22c55e">● Pedidos: ${b.pedidos} Finalizado${b.pedidos===1?'':'s'}</div>`;
     const wrapRect=wrap.getBoundingClientRect();
     let left=e.clientX-wrapRect.left+14;
     const top=Math.max(0,e.clientY-wrapRect.top-52);
@@ -9242,7 +9243,7 @@ function _lojaExecSetPeriodo(p){
     :p==='6m'?_ceoBucketPorMes(c,6,_LOJA_EXEC_VALOR)
     :_ceoBucketPorMes(c,12,_LOJA_EXEC_VALOR);
   const el=document.getElementById('ceo-chart');
-  if(el)el.innerHTML=_renderCeoLineChart(buckets);
+  if(el)el.innerHTML=_renderCeoLineChart(buckets,'Taxa De Entrega');
   _ceoAttachChartTooltip();
 }
 async function _lojaExecCarregar(lojaId){
