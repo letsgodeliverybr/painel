@@ -5139,6 +5139,19 @@ async function _lojaCarregarCrescimento(){
   if(!document.getElementById('loja-banner-boas-vindas'))return;
   _lojaSetPeriodoCrescimento('7d');
 }
+// Mesma carga do grafico de crescimento, porem para a tela Inicio da loja
+// (renderLojaInicioPage) em vez do banner desligado: mesma consulta, mesmo
+// cache e mesmo _lojaSetPeriodoCrescimento; so muda a guarda do elemento
+// (card da Inicio, nao o overlay). Fire-and-forget, nao bloqueia o Resumo.
+async function _lojaInicioCarregarCrescimento(lojaId){
+  if(!lojaId)return;
+  const hojeDate=new Date();
+  const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const pedidos=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,taxa_entrega,gorjeta,created_at&order=created_at.asc`,1000);
+  _lojaPedidosCacheCrescimento=Array.isArray(pedidos)?pedidos:[];
+  if(!document.getElementById('loja-cresc-chart'))return;
+  _lojaSetPeriodoCrescimento('7d');
+}
 function _renderLojaBannerBoasVindas(){
   _lojaBannerRenderizadoAgora=false;
   // DESLIGADA (2026-09-29, pedido do usuário): a loja vai direto pro Gestor
@@ -16367,6 +16380,7 @@ function _liNovoPedido(){
 }
 async function renderLojaInicioPage(){
   _liEstilos();
+  _lojaBannerInjectStyles(); // estilos do seletor 7d/30d/6m do card Crescimento
   const lojaId=currentPerfil==='loja'?currentUser?.loja_id:null;
   const body=document.getElementById('app-body');
   const cab=`<div class="page-header"><div class="page-title">${_icone('house',22)} Início</div></div>`;
@@ -16407,10 +16421,30 @@ async function renderLojaInicioPage(){
     </div>
     <div class="li-secao-titulo">Resumo De Hoje</div>
     <div id="li-resumo"><div class="card" style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div>
+    <div class="li-secao-titulo">Crescimento Da Loja</div>
+    <div class="card" style="padding:0;overflow:hidden;background:#12151A;border:1px solid rgba(255,255,255,.08)">
+      <div style="padding:20px 22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+          <span style="font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.1px">↗ Crescimento Da Loja</span>
+          <div class="loja-cresc-periodo-group">
+            <button class="loja-cresc-periodo-btn active" data-p="7d" onclick="_lojaSetPeriodoCrescimento('7d')">7 Dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="30d" onclick="_lojaSetPeriodoCrescimento('30d')">30 Dias</button>
+            <button class="loja-cresc-periodo-btn" data-p="6m" onclick="_lojaSetPeriodoCrescimento('6m')">6 Meses</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:32px;margin-bottom:8px">
+          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Pedidos</div><div id="loja-cresc-pedidos" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
+          <div><div style="font-size:9.5px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:5px">Faturamento</div><div id="loja-cresc-faturamento" style="font-size:25px;font-weight:800;color:#fff;letter-spacing:-.2px">—</div></div>
+        </div>
+        <div id="loja-cresc-delta" style="font-size:11.5px;margin-bottom:16px;min-height:15px">&nbsp;</div>
+        <div id="loja-cresc-chart"><div style="color:rgba(255,255,255,.35);font-size:11.5px;text-align:center;padding:32px 0">Carregando...</div></div>
+      </div>
+    </div>
     ${conteudos}
   </div></div>`;
   _liIniciarTimer();
   _liAtualizarSlidePrepago(lojaId);
+  _lojaInicioCarregarCrescimento(lojaId); // card Crescimento Da Loja (nao bloqueia o resumo)
   // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
   // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
   const hoje=_dataHojeBrasilia();
