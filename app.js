@@ -9249,7 +9249,7 @@ async function _lojaExecCarregar(lojaId){
   if(!lojaId)return;
   const hojeDate=new Date();
   const dataIni12m=new Date(hojeDate.getFullYear()-1,hojeDate.getMonth(),hojeDate.getDate()).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
-  const pedidos=await _dbTodasLinhas('pedidos',`?loja_id=eq.${lojaId}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,valor,created_at&order=created_at.asc`,1000);
+  const pedidos=await _dbTodasLinhas('pedidos',`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&created_at=gte.${dataIni12m}T00:00:00&select=id,status,valor,created_at&order=created_at.asc`,1000);
   _lojaExecPedidosCache=Array.isArray(pedidos)?pedidos:[];
   if(!document.getElementById('ceo-chart'))return;
   _lojaExecSetPeriodo('30d');
@@ -11969,7 +11969,7 @@ async function renderFaturasLojaPage(lojaIdEquipe){
   _finFiltrar();
   // faturas antigas (lojas que já faturaram)
   const fw=document.getElementById('fin-faturas-wrap');
-  const fat=await db('cobrancas_lojas','GET',null,`?select=id&loja_id=eq.${lojaId}&limit=1`);
+  const fat=await db('cobrancas_lojas','GET',null,`?select=id&${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&limit=1`);
   if(fw&&Array.isArray(fat)&&fat.length){fw.style.display='block';_flBuscar(lojaId);}
 }
 function _finRenderTopo(saldo){
@@ -12240,7 +12240,9 @@ async function _flBuscar(lojaId){
   lojaId=lojaId||currentUser?.loja_id;
   const atualWrap=document.getElementById('fl-atual');
   const histWrap=document.getElementById('fl-tabela');if(!histWrap)return;
-  const qs=`?select=*&loja_id=eq.${lojaId}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
+  const _rede=_redeVisaoGeral();
+  const _nomeLoja=id=>_escHtml((_redeLojas.find(l=>l.loja_id===id)||{}).loja_nome||'');
+  const qs=`?select=*&${_rede?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
   const rows=await db('cobrancas_lojas','GET',null,qs);
   const todas=Array.isArray(rows)?rows:[];
   const pendentes=todas.filter(c=>c.status==='pendente');
@@ -12250,7 +12252,7 @@ async function _flBuscar(lojaId){
     anotadas.sort((a,b)=>b._diasAtraso-a._diasAtraso);
     atual=anotadas[0];
   }
-  if(atualWrap)atualWrap.innerHTML=atual?_renderFaturaAtualCard(atual):'';
+  if(atualWrap)atualWrap.innerHTML=atual?_renderFaturaAtualCard(atual,_rede?_nomeLoja(atual.loja_id):null):'';
   const hist=todas.filter(c=>c.id!==atual?.id);
   if(!hist.length){histWrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma Fatura No Histórico</div>';return;}
   const badge=c=>c.status==='pago'
@@ -12259,9 +12261,9 @@ async function _flBuscar(lojaId){
     ?`<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Pendente</span>`
     :`<span style="background:#fee2e2;color:#ef4444;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">❌ Recusado</span>`;
   histWrap.innerHTML=`<div style="overflow-x:auto"><table>
-    <thead><tr><th>Data</th><th>Período</th><th>Valor</th><th>Status</th><th>Ver Fatura</th></tr></thead>
+    <thead><tr><th>Data</th>${_rede?'<th>Loja</th>':''}<th>Período</th><th>Valor</th><th>Status</th><th>Ver Fatura</th></tr></thead>
     <tbody>${hist.map(c=>`<tr>
-      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>
+      <td style="font-size:12px;color:var(--text3)">${formatarDataHora(c.updated_at||c.created_at)}</td>${_rede?`<td style="font-size:12px;color:var(--text2)">${_nomeLoja(c.loja_id)}</td>`:''}
       <td style="font-size:12px;color:var(--text2)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</td>
       <td style="font-weight:700;color:#1A56DB">R$ ${(parseFloat(c.status==='pago'&&c.valor_pago_final!=null?c.valor_pago_final:c.valor_total)||0).toFixed(2)}${c.status==='pago'&&c.valor_pago_final!=null&&c.valor_pago_final!==c.valor_total?`<div style="font-size:10px;font-weight:600;color:var(--text3)">orig. R$ ${(parseFloat(c.valor_total)||0).toFixed(2)}</div>`:''}</td>
       <td>${badge(c)}</td>
@@ -12269,7 +12271,7 @@ async function _flBuscar(lojaId){
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
-function _renderFaturaAtualCard(c){
+function _renderFaturaAtualCard(c,lojaNome){
   const {diasAtraso,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD);
   const vencida=diasAtraso>=1;
   // Card resumido de propósito: só o valor total já atualizado em
@@ -12279,7 +12281,7 @@ function _renderFaturaAtualCard(c){
   // (_buscarCobrancasPendentes), que já usam _calcularJurosMultaFatura
   // de forma independente.
   return`<div class="card" style="margin-bottom:14px;border:2px solid ${vencida?'#ef4444':'var(--accent)'}">
-    <div class="card-header"><span class="card-title">${vencida?'🔴':'🟡'} Fatura Atual</span></div>
+    <div class="card-header"><span class="card-title">${vencida?'🔴':'🟡'} Fatura Atual${lojaNome?` · ${lojaNome}`:''}</span></div>
     <div style="padding:20px">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px">
         <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Período</div><div style="font-size:14px;font-weight:600;color:var(--text)">${formatarDataBR(c.data_inicio)} – ${formatarDataBR(c.data_fim)}</div></div>
@@ -16435,7 +16437,7 @@ async function renderLojaInicioPage(){
     </div>
     <div class="ceo-block">
       <div class="ceo-block-header">
-        <span class="ceo-block-title">📈 Crescimento Da Loja</span>
+        <span class="ceo-block-title">📈 ${_redeVisaoGeral()?'Crescimento Da Rede':'Crescimento Da Loja'}</span>
         <div class="ceo-periodo-toggle">
           <button class="ceo-periodo-btn" data-p="7d" onclick="_lojaExecSetPeriodo('7d')">7 Dias</button>
           <button class="ceo-periodo-btn active" data-p="30d" onclick="_lojaExecSetPeriodo('30d')">30 Dias</button>
@@ -16466,9 +16468,9 @@ async function renderLojaInicioPage(){
   // Resumo de hoje: só pedidos da loja logada, dia de hoje em Brasília
   // (pedidos.created_at é timestamp sem fuso já em hora de Brasília).
   const hoje=_dataHojeBrasilia();
-  const pedidos=await db('pedidos','GET',null,`?loja_id=eq.${lojaId}&created_at=gte.${hoje}T00:00:00&created_at=lte.${hoje}T23:59:59.999&select=id,loja_id,status,status_detalhado,valor`);
+  const pedidos=await db('pedidos','GET',null,`?${_redeVisaoGeral()?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&created_at=gte.${hoje}T00:00:00&created_at=lte.${hoje}T23:59:59.999&select=id,loja_id,status,status_detalhado,valor`);
   const res=document.getElementById('li-resumo');if(!res)return;
-  const lista=(Array.isArray(pedidos)?pedidos:[]).filter(p=>p.loja_id===lojaId);
+  const lista=(Array.isArray(pedidos)?pedidos:[]).filter(p=>_redeVisaoGeral()?_redeLojas.some(l=>l.loja_id===p.loja_id):p.loja_id===lojaId);
   const k=p=>getStatusKey(p);
   const canc=lista.filter(p=>k(p)==='cancelado').length,fin=lista.filter(p=>k(p)==='finalizado').length;
   const comValor=lista.filter(p=>k(p)!=='cancelado'&&parseFloat(p.valor)>0);
