@@ -4950,7 +4950,9 @@ function _suporteSemAcesso(){
 function goTab(id){
   // Suporte não abre Preço Dinâmico nem Entrega Dedicada (itens removidos do
   // menu; aqui barra link direto ou aba antiga → cai no Mapa).
-  if(currentPerfil==='suporte'&&(id==='preco-dinamico'||id==='vagas'))id='mapa';
+  // 2026-11-12: lista fechada — o suporte só abre Mapa Ao Vivo e Pedidos
+  // (barra chamada direta a telas com outras datas/relatórios/financeiro).
+  if(currentPerfil==='suporte'&&!['mapa','pedidos'].includes(id))id='mapa';
   // Loja entra pela tela Início: o login (de produção e deste arquivo)
   // sempre chama goTab('mapa') — na PRIMEIRA navegação de cada login a loja
   // é desviada pra 'loja-inicio' antes de qualquer render (sem flash).
@@ -8663,16 +8665,33 @@ function _fbDefinir(id,itens){
   const f=_fbListas[id];if(!f)return;
   f.itens=(Array.isArray(itens)?itens:[]).map(e=>({id:e.id,nome:e.nome||e.id?.substring(0,8)||''}));
 }
+// 2026-11-12: perfil SUPORTE — filtros Rede e Loja da tela Pedidos não listam
+// tudo ao abrir: sugestões só a partir de 2 letras, no máximo 8. ADM e loja
+// continuam com a lista inteira ao entrar no campo.
+const _FB_BUSCA_RESTRITA=new Set(['fp-rede','fp-loja']);
+const _FB_MIN_LETRAS=2,_FB_MAX_SUGESTOES=8;
+function _fbRestrito(id){return currentPerfil==='suporte'&&_FB_BUSCA_RESTRITA.has(id);}
 function _fbFiltrar(id,digitou){
   const f=_fbListas[id],busca=document.getElementById(id+'-busca'),sug=document.getElementById(id+'-sug');
   if(!f||!busca||!sug)return;
   // ao entrar no campo mostra a lista inteira; ao digitar, filtra
   f.digitou=!!digitou;
   const t=digitou?_fbNorm(busca.value.trim()):'';
-  f.res=f.itens.filter(e=>!t||_fbNorm(e.nome).includes(t));
   const atual=document.getElementById(id)?.value||'';
   const op=(v,txt,marcado)=>`<div onclick="_fbEscolher('${id}','${v}')" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);${marcado?'font-weight:700':''}">${txt}</div>`;
-  sug.innerHTML=op('',_escHtml(f.todos),!atual)+(f.res.length?f.res.map(e=>op(e.id,_escHtml(e.nome),e.id===atual)).join(''):'<div style="padding:8px 12px;font-size:12px;color:var(--text3)">Nenhum Resultado.</div>');
+  const aviso=txt=>`<div style="padding:8px 12px;font-size:12px;color:var(--text3)">${txt}</div>`;
+  let extra='';
+  if(_fbRestrito(id)&&t.length<_FB_MIN_LETRAS){
+    f.res=[];
+    extra=aviso('Digite Pelo Menos 2 Letras Do Nome');
+  }else{
+    f.res=f.itens.filter(e=>!t||_fbNorm(e.nome).includes(t));
+    if(_fbRestrito(id)&&f.res.length>_FB_MAX_SUGESTOES){
+      extra=aviso(`+${f.res.length-_FB_MAX_SUGESTOES} — Continue Digitando`);
+      f.res=f.res.slice(0,_FB_MAX_SUGESTOES);
+    }
+  }
+  sug.innerHTML=op('',_escHtml(f.todos),!atual)+(f.res.length?f.res.map(e=>op(e.id,_escHtml(e.nome),e.id===atual)).join('')+extra:(extra||aviso('Nenhum Resultado')));
   sug.style.display='block';
   // Lista em position:fixed: não é cortada pelo card nem fica atrás dos cards
   // de baixo; cola logo abaixo do campo, mesma largura, por cima de tudo.
@@ -8732,6 +8751,25 @@ function _fpRedeMudou(redeId){
   _fbEscolher('fp-loja','');
   _buscarPedidosAdmin();
 }
+// 2026-11-12: perfil SUPORTE vê só o dia de hoje na tela Pedidos (00:00 a
+// 23:59, Brasília). Campos de data/hora desativados; ao virar o dia a tela
+// troca sozinha; a busca também força hoje (não confia nos campos).
+let _supDiaTimer=null;
+function _supTravarDia(){
+  if(currentPerfil!=='suporte')return;
+  const hoje=_dataHojeBrasilia();
+  [['fp-data-ini',hoje],['fp-data-fim',hoje],['fp-hora-ini','00:00'],['fp-hora-fim','23:59']].forEach(([id,v])=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.value=v;el.disabled=true;el.readOnly=true;
+    el.title='Perfil Suporte: só o dia de hoje';el.style.opacity='.6';el.style.cursor='not-allowed';
+  });
+  clearInterval(_supDiaTimer);
+  _supDiaTimer=setInterval(()=>{
+    const ini=document.getElementById('fp-data-ini');
+    if(!ini||currentPerfil!=='suporte'){clearInterval(_supDiaTimer);_supDiaTimer=null;return;}
+    if(ini.value!==_dataHojeBrasilia()){_supTravarDia();_buscarPedidosAdmin();}
+  },30000);
+}
 async function renderPedidosPage(){
   const hoje=_dataHojeBrasilia();
   const _is='padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif';
@@ -8769,6 +8807,7 @@ async function renderPedidosPage(){
     <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">📏 Distribuição De Distância (KM)</span></div><div style="padding:16px 20px" id="fp-km-bars"><div style="color:var(--text3);text-align:center;padding:20px">Carregando...</div></div></div>
     <div class="card"><div style="overflow-x:auto"><table><thead><tr><th style="width:1%;min-width:56px;white-space:nowrap;text-align:center;padding-left:6px;padding-right:6px">Origem</th><th>Pedido</th><th>Loja</th><th>Endereço</th>${currentPerfil!=='suporte'?'<th>Valor</th>':''}<th>Entregador</th><th>KM</th>${currentPerfil==='adm'?'<th>Pago</th>':''}${currentPerfil!=='suporte'?'<th>Cobrado</th>':''}${currentPerfil==='adm'?'<th>Lucro</th>':''}<th>Logística</th><th>Status</th><th>Cobrança</th><th>Horário</th><th>Ver Linha Do Tempo</th></tr></thead><tbody id="tbody-pedidos"><tr><td colspan="${currentPerfil==='adm'?15:currentPerfil==='suporte'?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody></table></div></div>
   </div>`;
+  _supTravarDia();
   [_fpEntregadores,_fpLojas,_fpRedes]=await Promise.all([db('entregadores','GET',null,'?select=id,nome&order=nome.asc'),db('lojas','GET',null,`?select=id,nome,tipo_cobranca,rede_credito_id&order=nome.asc${_lojaFiltroId()}`),currentPerfil!=='loja'?dbRpc('redes_listar'):Promise.resolve([])]);
   _fbDefinir('fp-loja',_fpLojas);
   _fbDefinir('fp-entregador',_fpEntregadores);
@@ -8782,10 +8821,11 @@ async function renderPedidosPage(){
 async function _buscarPedidosAdmin(){
   const tbody=document.getElementById('tbody-pedidos');if(!tbody)return;
   tbody.innerHTML=`<tr><td colspan="${currentPerfil==='adm'?15:currentPerfil==='suporte'?11:13}" style="text-align:center;padding:32px;color:var(--text3)">Buscando...</td></tr>`;
-  const dataIni=document.getElementById('fp-data-ini')?.value;
-  const dataFim=document.getElementById('fp-data-fim')?.value;
-  const horaIni=document.getElementById('fp-hora-ini')?.value||'00:00';
-  const horaFim=document.getElementById('fp-hora-fim')?.value||'23:59';
+  const _supHoje=currentPerfil==='suporte'?_dataHojeBrasilia():null; // suporte: sempre hoje
+  const dataIni=_supHoje||document.getElementById('fp-data-ini')?.value;
+  const dataFim=_supHoje||document.getElementById('fp-data-fim')?.value;
+  const horaIni=_supHoje?'00:00':(document.getElementById('fp-hora-ini')?.value||'00:00');
+  const horaFim=_supHoje?'23:59':(document.getElementById('fp-hora-fim')?.value||'23:59');
   const lojaId=document.getElementById('fp-loja')?.value;
   const entId=document.getElementById('fp-entregador')?.value;
   const redeId=document.getElementById('fp-rede')?.value;
