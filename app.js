@@ -2635,6 +2635,7 @@ function showNotif(title,msg,color='var(--green)'){
 // MODAL HELPERS — com injeção de loja no modal-pedido
 // ═══════════════════════════════════════════════
 async function abrirModal(id){
+  if(id==='modal-pedido'&&_suporteNaoCria())return;
   document.getElementById(id).classList.add('open');
   if(id==='modal-pedido'){
     _npRetornoAtivo=false;_npRetItens=[];_retCardFechar();
@@ -2916,6 +2917,7 @@ async function _criarEntregaRapidaToggle(){
   }
 }
 async function _criarEntregaRapida(){
+  if(_suporteNaoCria())return;
   const endereco=(document.getElementById('cr-endereco')?.value||'').trim();
   const cliente=(document.getElementById('cr-cliente')?.value||'').trim();
   const telefone=(document.getElementById('cr-telefone')?.value||'').trim()||null;
@@ -3659,6 +3661,7 @@ function _crPreencherLojaPerfilLoja(){
   selCr.style.opacity='0.7';selCr.style.cursor='default';
 }
 function _abrirCriarEntregaTopbar(){
+  if(_suporteNaoCria())return;
   if(_navAtivo==='mapa'){
     const el=document.getElementById('cr-endereco');
     if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'nearest'});}
@@ -4502,7 +4505,26 @@ function abrirInfoPedido(pedidoId){
   modal.classList.add('open');
 }
 
+// 2026-11-12: o suporte não cria entrega. O login de produção
+// (hostinger/index.html) ainda mostra o "Criar Entrega" da barra para o
+// suporte com display:flex; esta regra (!important) esconde o botão e o
+// formulário rápido do Mapa Ao Vivo inteiro (Valor, Gorjeta, prévia de km e
+// taxa) sem depender de subir o HTML de novo. As ações também recusam.
+function _aplicarClassePerfil(){
+  document.body.classList.toggle('perfil-suporte',currentPerfil==='suporte');
+  if(!document.getElementById('estilo-perfil-suporte')){
+    const st=document.createElement('style');st.id='estilo-perfil-suporte';
+    st.textContent='body.perfil-suporte #btn-criar-entrega-topbar,body.perfil-suporte .cr-toolbar{display:none!important}';
+    document.head.appendChild(st);
+  }
+}
+const _MSG_SUPORTE_CRIAR='O perfil Suporte não cria entregas.';
+function _suporteNaoCria(){
+  if(currentPerfil==='suporte'){showNotif('🔒 Sem Permissão',_MSG_SUPORTE_CRIAR,'var(--yellow)');return true;}
+  return false;
+}
 function renderNavSidebar(activeId){
+  _aplicarClassePerfil();
   _navAtivo=activeId||_navAtivo;
   _navTipEsconder();
   setTimeout(()=>{ // depois do innerHTML do corpo do menu, logo abaixo
@@ -4665,7 +4687,7 @@ async function fazerLogin(){
   _lojaLoginRecente=true;
   renderTabs();setTimeout(()=>goTab(currentPerfil==='adm'?'ceo':'mapa'),100);
   const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
-  const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display=currentPerfil==='suporte'?'flex':'none';
+  const btnCriarTop=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop)btnCriarTop.style.display='none'; // 2026-11-12: era só do suporte, que não cria mais entrega
   const btnIrMapa=document.getElementById('btn-ir-mapa');if(btnIrMapa)btnIrMapa.style.display='flex';
   _carregarSaldoTopbar();
   if(currentPerfil==='adm'){_carregarBadgeSaques();_carregarBadgeSaqueRapido();}
@@ -5256,7 +5278,7 @@ function renderMapaPage(){
       </div>
       <div id="mapa-resize-handle" class="mapa-resize-handle"></div>
       <div id="tabela-mapa-section" style="flex:1;min-height:80px;min-width:0;background:var(--bg) !important;display:flex;flex-direction:column;overflow:hidden">
-        <div class="cr-toolbar">
+        <div class="cr-toolbar"${currentPerfil==='suporte'?' style="display:none"':''}>
           <select id="cr-loja-id" class="cr-input" style="max-width:150px"><option value="">Selecione A Loja...</option></select>
           <input id="cr-numero-pedido" placeholder="Nº Pedido" class="cr-input" style="width:70px"/>
           <div class="cr-divider"></div>
@@ -6681,6 +6703,7 @@ async function _checarEnderecoDuplicadoRecente(lojaId,geo,enderecoRaw){
 }
 
 async function criarPedido(){
+  if(_suporteNaoCria())return;
   const _btnsCp=[...document.querySelectorAll('.js-btn-criar-pedido')];
   if(_btnsCp.some(b=>b.disabled))return;
   _btnsCp.forEach(b=>b.disabled=true);
@@ -17199,7 +17222,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const badgeMap={adm:'badge-adm',loja:'badge-loja',suporte:'badge-suporte'},labelMap={adm:'ADM',loja:'LOJA',suporte:'SUPORTE'};
     const badge=document.getElementById('user-perfil-badge');badge.className='user-perfil-badge '+(badgeMap[currentPerfil]||'');badge.textContent=labelMap[currentPerfil]||currentPerfil;
     const btnNovo=document.getElementById('btn-novo-pedido');if(btnNovo)btnNovo.style.display=currentPerfil==='adm'||currentPerfil==='loja'?'flex':'none';
-    const btnCriarTop2=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop2)btnCriarTop2.style.display=currentPerfil==='suporte'?'flex':'none';
+    const btnCriarTop2=document.getElementById('btn-criar-entrega-topbar');if(btnCriarTop2)btnCriarTop2.style.display='none'; // 2026-11-12: idem
     const btnIrMapa2=document.getElementById('btn-ir-mapa');if(btnIrMapa2)btnIrMapa2.style.display='flex';
     renderTabs();setTimeout(()=>{goTab(currentPerfil==='adm'?'ceo':'mapa');_carregarSaldoTopbar();},150);
     if(currentPerfil==='adm'||currentPerfil==='suporte'){iniciarRoteirizacao();iniciarScheduler();}
