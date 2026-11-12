@@ -3630,7 +3630,7 @@ async function _carregarSaldoTopbar(){
         alertBanner.style.display='block';
       }else if(alertBanner){alertBanner.style.display='none';}
       _atualizarBtnCriarEntrega();
-    } else if(['adm','admin','suporte'].includes(currentPerfil)){
+    } else if(['adm','admin'].includes(currentPerfil)){ // 2026-11-12: suporte sem WALLET
       // Equipe: botão clicável abre a tela de recarga na visão da equipe.
       val.textContent='0,00';
       el.style.display='flex';
