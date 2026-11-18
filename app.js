@@ -14609,53 +14609,164 @@ function _enviarComprovanteWhatsappFatura(cobId,numFatura,periodo,valorTotal){
   window.open(`https://wa.me/5511991702772?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
-// Item 10 do checklist de homologação iFood — comanda impressa no modelo
-// pedido pelo iFood: ID do pedido, itens com observações, modo de entrega,
-// CPF/CNPJ, troco, info de cupom. Todos os campos já vêm mapeados desde a
-// Fase 1 (mapearPedidoIfood/app.js) — aqui só monta a página de impressão,
-// igual ao padrão já usado em _imprimirFatura (janela nova + print()).
-// Funciona pra qualquer pedido (não só iFood), omitindo os campos vazios.
+// Comanda impressa (botão Comanda / Imprimir Comanda) — modelo de cozinha,
+// 2026-11-18, para TODAS as lojas e todas as origens (iFood, painel, Open
+// Delivery). Substitui o modelo do item 10 da homologação iFood, mantendo os
+// campos que ele exigia (ID do pedido, itens, modo de entrega, CPF/CNPJ,
+// troco, cupom, código de coleta). Cada bloco só aparece se o dado existir:
+// pedido sem itens, sem pagamento ou sem endereço imprime só o resto.
+//  - número e hora grandes no topo;
+//  - pratos com quantidade grande, complementos (items[].options) e
+//    observações do cliente destacadas;
+//  - bebidas fora dos pratos, numa caixa "BEBIDAS: N" (N = unidades). O iFood
+//    não manda categoria do item: bebida é reconhecida pelo nome
+//    (_COMANDA_RE_BEBIDA), inclusive quando vem como complemento de um combo;
+//  - faixa preta de pagamento (_comandaPagamento);
+//  - endereço de entrega em destaque.
+// Avisos do sistema gravados em descricao (_ehAvisoIfood) não vão para a
+// comanda: são da equipe, não do cliente.
 function _escHtml(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const _COMANDA_RE_BEBIDA=/(?<![\p{L}\d])(refri\p{L}*|coca|cola|guaran[aá]|fanta|sprite|pepsi|schweppes|kuat|itub[aá][ií]na|soda|t[oô]nica|suco|del valle|[aá]gua|cerveja|chopp?|heineken|brahma|skol|budweiser|stella|corona|amstel|energ[eé]tico|red bull|monster|ch[aá] gelado|h2oh|isot[oô]nico|gatorade|powerade|vinho|caipirinha|long neck)(?![\p{L}\d])/iu;
+// \b não serve: em JS ele não trata letra acentuada como letra (guaraná, água).
+// Complemento que é pedido do cliente (tirar/separar algo) sai destacado.
+const _COMANDA_RE_OBS_OPCAO=/^\s*(sem(?![\p{L}])|aten[çc][ãa]o|retirar|tirar)|separad/iu;
+const _COMANDA_AVISOS=['Pagamento não informado pelo iFood','Loja de crédito: pedido retido','Loja de crédito:'];
+function _comandaMoeda(v){return 'R$ '+(Math.round((parseFloat(v)||0)*100)/100).toFixed(2).replace('.',',');}
+function _comandaQtd(o){const q=parseFloat(o?.quantidade??o?.quantity);return q>0?q:1;}
+function _comandaNome(o){return String(o?.nome??o?.name??'').trim();}
+function _comandaObsItem(it){return String(it?.observations??it?.observacao??it?.observacoes??it?.obs??'').trim();}
+// Hora/data direto do texto: pedidos.created_at é hora de Brasília sem fuso.
+function _comandaDataHora(v){
+  const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if(m)return{hora:`${m[4]}:${m[5]}`,data:`${m[3]}/${m[2]}/${m[1]}`};
+  const d=v?new Date(v):null;if(!d||isNaN(d))return{hora:'',data:''};
+  return{hora:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),data:d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})};
+}
+function _comandaItens(p){
+  let it=p?.itens;
+  if(typeof it==='string'){try{it=JSON.parse(it);}catch(e){it=[];}}
+  return Array.isArray(it)?it.filter(x=>x&&typeof x==='object'&&_comandaNome(x)):[];
+}
+function _comandaObsPedido(p){
+  return String(p?.descricao||'').split('|').map(s=>s.trim())
+    .filter(s=>s&&!_COMANDA_AVISOS.some(a=>s.startsWith(a))).join(' · ');
+}
+// Faixa preta. iFood: o /logistics só manda "payments" quando falta cobrar na
+// entrega (type OFFLINE). Sem payments e sem valor a cobrar = pago no app
+// (vale para os pedidos antigos, com forma_pagamento vazia, e para os novos,
+// com 'online', se o pacote pagamento_ifood for aplicado).
+function _comandaPagamento(p){
+  const fp=String(p?.forma_pagamento||'').toLowerCase();
+  const cobrar=parseFloat(p?.valor)||0;
+  const troco=parseFloat(p?.troco_para)||0;
+  const ifood=p?.origem==='ifood';
+  const band=p?.bandeira_cartao?String(p.bandeira_cartao).toUpperCase():'';
+  if(fp==='dinheiro'){
+    if(troco>0)return{titulo:`TROCO PARA ${_comandaMoeda(troco)}`,sub:[cobrar>0?`COBRAR ${_comandaMoeda(cobrar)}`:'',troco>cobrar&&cobrar>0?`LEVAR ${_comandaMoeda(troco-cobrar)} DE TROCO`:''].filter(Boolean).join(' · ')};
+    return{titulo:'DINHEIRO',sub:cobrar>0?`COBRAR ${_comandaMoeda(cobrar)} · SEM TROCO`:''};
+  }
+  if(fp==='cartao'&&cobrar>0)return{titulo:'MÁQUINA DE CARTÃO',sub:[band,`COBRAR ${_comandaMoeda(cobrar)}`].filter(Boolean).join(' · ')};
+  if(fp==='pix'&&cobrar>0)return{titulo:'PIX NA ENTREGA',sub:`COBRAR ${_comandaMoeda(cobrar)}`};
+  if(ifood&&cobrar<=0&&!p?.com_retorno)return{titulo:'PAGO NO IFOOD',sub:''};
+  if(fp==='online')return{titulo:'PAGO ONLINE',sub:''};
+  if(fp==='cartao'||fp==='pix')return{titulo:'PAGO',sub:band};
+  if(cobrar>0&&p?.com_retorno)return{titulo:`COBRAR ${_comandaMoeda(cobrar)}`,sub:'NA ENTREGA'};
+  return null;
+}
+function _comandaHtml(p,lojaNome){
+  const itens=_comandaItens(p);
+  const pratos=[],bebidas=[];
+  for(const it of itens){
+    const nome=_comandaNome(it),q=_comandaQtd(it);
+    const opcoes=Array.isArray(it.options)?it.options.filter(o=>_comandaNome(o)):[];
+    if(_COMANDA_RE_BEBIDA.test(nome)){bebidas.push({nome,q,obs:_comandaObsItem(it),de:''});continue;}
+    const resto=[];
+    for(const o of opcoes){
+      if(_COMANDA_RE_BEBIDA.test(_comandaNome(o)))bebidas.push({nome:_comandaNome(o),q:_comandaQtd(o)*q,obs:'',de:nome});
+      else resto.push(o);
+    }
+    pratos.push({it,nome,q,opcoes:resto,obs:_comandaObsItem(it)});
+  }
+  const nBeb=bebidas.reduce((s,b)=>s+b.q,0);
+  const dh=_comandaDataHora(p?.created_at);
+  const ag=p?.agendado_para?_comandaDataHora(new Date(p.agendado_para).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'})):null;
+  const origem={ifood:'IFOOD',open_delivery:'OPEN DELIVERY',loja:'PAINEL',backend:'PAINEL'}[p?.origem]||'';
+  const pag=_comandaPagamento(p);
+  const obsPed=_comandaObsPedido(p);
+  const endereco=String(p?.endereco_entrega||p?.endereco||'').trim();
+  const cliente=String(p?.nome_cliente||p?.cliente||'').trim();
+  const total=parseFloat(p?.total_pedido)||parseFloat(p?.valor)||0;
+  const q=n=>Number.isInteger(n)?n:String(n).replace('.',',');
+  const pratosHtml=pratos.map(x=>`<div class="prato">
+      <div class="prato-l"><span class="qtd">${q(x.q)}x</span><span class="pnome">${_escHtml(x.nome)}</span></div>
+      ${_itemTemPreco(x.it)?`<div class="preco">${_comandaMoeda((parseFloat(x.it.preco??x.it.price)||0)*x.q)}</div>`:''}
+      ${x.opcoes.map(o=>`<div class="op${_COMANDA_RE_OBS_OPCAO.test(_comandaNome(o))?' op-dest':''}">${_comandaQtd(o)>1?`${q(_comandaQtd(o))}x `:'+ '}${_escHtml(_comandaNome(o))}</div>`).join('')}
+      ${x.obs?`<div class="obs">OBS: ${_escHtml(x.obs)}</div>`:''}
+    </div>`).join('');
+  const bebidasHtml=nBeb?`<div class="bebidas"><div class="beb-tit">BEBIDAS: ${q(nBeb)}</div>${bebidas.map(b=>`<div class="beb"><span class="qtd-b">${q(b.q)}x</span> ${_escHtml(b.nome)}${b.de?`<div class="beb-de">(no ${_escHtml(b.de)})</div>`:''}${b.obs?`<div class="obs">OBS: ${_escHtml(b.obs)}</div>`:''}</div>`).join('')}</div>`:'';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda #${_escHtml(p?.numero||'')}</title>
+  <style>
+    @page{size:80mm auto;margin:0}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#000;width:76mm;padding:3mm;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .topo{text-align:center;border-bottom:3px solid #000;padding-bottom:6px}
+    .num{font-size:46px;line-height:1;font-weight:900}
+    .hora{font-size:34px;line-height:1.05;font-weight:900}
+    .meta{font-size:12px;font-weight:600;margin-top:3px}
+    .modo{font-size:16px;font-weight:900;margin-top:4px}
+    .agendado{font-size:18px;font-weight:900;border:3px solid #000;margin-top:4px;padding:2px}
+    .codigo{text-align:center;border:3px solid #000;padding:4px;margin-top:6px}
+    .codigo .lbl{font-size:11px}.codigo .cnum{font-size:26px;font-weight:900;letter-spacing:5px}
+    .sec{border-top:2px dashed #000;margin-top:6px;padding-top:6px}
+    .prato{margin-bottom:8px}
+    .prato-l{display:flex;gap:6px;align-items:baseline}
+    .qtd{font-size:26px;font-weight:900;min-width:38px}
+    .pnome{font-size:19px;font-weight:900;line-height:1.15}
+    .preco{font-size:13px;text-align:right}
+    .op{font-size:15px;font-weight:700;padding-left:44px;line-height:1.3}
+    .op-dest{background:#000;color:#fff;display:inline-block;margin-left:44px;padding:1px 5px;margin-top:2px}
+    .obs{font-size:16px;font-weight:900;border:3px solid #000;padding:3px 5px;margin:4px 0 0 0}
+    .bebidas{border:5px solid #000;padding:6px;margin-top:8px}
+    .beb-tit{font-size:24px;font-weight:900;text-align:center;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:4px}
+    .beb{font-size:17px;font-weight:800;margin:3px 0}.qtd-b{font-size:20px;font-weight:900}
+    .beb-de{font-size:12px;font-weight:600;padding-left:30px}
+    .obsped{font-size:16px;font-weight:900;border:3px solid #000;padding:4px 6px;margin-top:8px}
+    .obsped .lbl{font-size:11px;display:block}
+    .pag{background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:8px}
+    .pag .t{font-size:25px;font-weight:900;line-height:1.1}
+    .pag .s{font-size:15px;font-weight:800;margin-top:3px}
+    .end{margin-top:8px;border-top:3px solid #000;padding-top:6px}
+    .end .lbl{font-size:12px}
+    .end .tx{font-size:20px;font-weight:900;line-height:1.2}
+    .cli{font-size:15px;margin-top:4px}
+    .linha{display:flex;justify-content:space-between;gap:6px;font-size:14px;margin-top:3px}
+    .total{font-size:18px;font-weight:900;border-top:3px solid #000;margin-top:6px;padding-top:5px}
+  </style></head><body>
+    <div class="topo">
+      <div class="num">#${_escHtml(p?.numero||String(p?.id||'').substring(0,6))}</div>
+      ${dh.hora?`<div class="hora">${_escHtml(dh.hora)}</div>`:''}
+      <div class="meta">${[dh.data,origem,lojaNome].filter(Boolean).map(_escHtml).join(' · ')}</div>
+      <div class="modo">${p?.retirada?'RETIRADA NA LOJA':'ENTREGA'}</div>
+      ${ag&&ag.hora?`<div class="agendado">AGENDADO ${_escHtml(ag.data)} ${_escHtml(ag.hora)}</div>`:''}
+    </div>
+    ${p?.ifood_pickup_code?`<div class="codigo"><div class="lbl">CÓDIGO DE COLETA (IFOOD)</div><div class="cnum">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
+    ${pratos.length?`<div class="sec">${pratosHtml}</div>`:''}
+    ${bebidasHtml}
+    ${obsPed?`<div class="obsped"><span class="lbl">OBSERVAÇÕES</span>${_escHtml(obsPed)}</div>`:''}
+    ${pag?`<div class="pag"><div class="t">${_escHtml(pag.titulo)}</div>${pag.sub?`<div class="s">${_escHtml(pag.sub)}</div>`:''}</div>`:''}
+    ${!p?.retirada&&endereco?`<div class="end"><div class="lbl">ENTREGAR EM</div><div class="tx">${_escHtml(endereco)}</div></div>`:''}
+    ${cliente||p?.cliente_documento?`<div class="cli">${cliente?`Cliente: ${_escHtml(cliente)}`:''}${p?.cliente_documento?`<br>CPF/CNPJ: ${_escHtml(p.cliente_documento)}`:''}</div>`:''}
+    ${p?.cupom_valor?`<div class="linha"><span>Cupom</span><span>${_comandaMoeda(p.cupom_valor)}</span></div>`:''}
+    ${total>0?`<div class="total linha"><span>TOTAL</span><span>${_comandaMoeda(total)}</span></div>`:''}
+  </body></html>`;
+}
 function _imprimirComanda(pedidoId){
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!p)return;
-  const itens=Array.isArray(p.itens)?p.itens:[];
-  const dataHora=p.created_at?formatarData(p.created_at)+' '+formatarHora(p.created_at):'';
-  const itensHtml=itens.map(it=>`<div class="item"><div class="item-linha"><span>${it.quantidade||it.quantity||1}x ${_escHtml(it.nome||it.name||'—')}</span>${_itemTemPreco(it)?`<span>R$ ${((parseFloat(it.preco||it.price||0))*(it.quantidade||it.quantity||1)).toFixed(2)}</span>`:''}</div>${it.observations?`<div class="obs">↳ ${_escHtml(it.observations)}</div>`:''}</div>`).join('');
-  const pagamentoTxt=p.forma_pagamento?`${_escHtml(p.forma_pagamento)}${p.bandeira_cartao?` (${_escHtml(p.bandeira_cartao)})`:''}`:'';
-  const patrocinadores=Array.isArray(p.cupom_detalhes)&&p.cupom_detalhes[0]?.sponsorshipValues?.length?p.cupom_detalhes[0].sponsorshipValues.map(s=>_escHtml(s.name)).join(', '):'';
-  const w=window.open('','_blank','width=420,height=720');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda #${_escHtml(p.numero||'')}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',monospace;background:#fff;padding:16px;width:320px;color:#000;font-weight:600}
-    .header{text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px}
-    .header h1{font-size:23px}
-    .modo{font-weight:700;font-size:15px;margin-top:2px}
-    .linha{display:flex;justify-content:space-between;font-size:15px;margin:3px 0;gap:8px}
-    .secao{border-top:1px dashed #000;margin-top:8px;padding-top:8px}
-    .item-linha{display:flex;justify-content:space-between;font-size:15px}
-    .obs{font-size:12px;padding-left:10px;font-style:italic}
-    .total{font-weight:700;font-size:17px;border-top:2px dashed #000;margin-top:8px;padding-top:8px}
-    .codigo{text-align:center;border:2px solid #000;border-radius:6px;padding:8px;margin-top:8px}
-    .codigo .lbl{font-size:11px;letter-spacing:1px}
-    .codigo .num{font-size:25px;font-weight:700;letter-spacing:6px}
-  </style></head><body>
-    <div class="header"><h1>#${_escHtml(p.numero||pedidoId.substring(0,6))}</h1><div style="font-size:11px">${_escHtml(dataHora)}</div><div class="modo">${p.retirada?'🏪 Retirada Na Loja':'🛵 Entrega'}</div></div>
-    ${p.ifood_pickup_code?`<div class="codigo"><div class="lbl">Código De Coleta (iFood)</div><div class="num">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
-    <div class="secao">
-      <div class="linha"><span>${_escHtml(p.nome_cliente||p.cliente||'—')}</span></div>
-      ${p.cliente_documento?`<div class="linha"><span>CPF/CNPJ:</span><span>${_escHtml(p.cliente_documento)}</span></div>`:''}
-      ${!p.retirada&&(p.endereco||p.endereco_entrega)?`<div class="linha"><span>${_escHtml(p.endereco_entrega||p.endereco)}</span></div>`:''}
-    </div>
-    <div class="secao">${itensHtml||'<div>—</div>'}</div>
-    <div class="secao">
-      ${pagamentoTxt?`<div class="linha"><span>Pagamento:</span><span>${pagamentoTxt}</span></div>`:''}
-      ${p.troco_para?`<div class="linha"><span>Troco Para:</span><span>R$ ${parseFloat(p.troco_para).toFixed(2)}</span></div>`:''}
-      ${p.cupom_valor?`<div class="linha"><span>Cupom:</span><span>R$ ${parseFloat(p.cupom_valor).toFixed(2)}${patrocinadores?` (${patrocinadores})`:''}</span></div>`:''}
-    </div>
-    <div class="total linha"><span>Total</span><span>R$ ${parseFloat(p.total_pedido||p.valor||0).toFixed(2)}</span></div>
-  </body></html>`);
+  const lojaNome=(typeof allLojas!=='undefined'&&Array.isArray(allLojas)?allLojas.find(l=>l.id===p.loja_id)?.nome:'')||'';
+  const w=window.open('','_blank','width=420,height=760');
+  if(!w){showNotif('Comanda','Libere as janelas pop-up deste site para imprimir.','var(--red)');return;}
+  w.document.write(_comandaHtml(p,lojaNome));
   w.document.close();w.focus();setTimeout(()=>w.print(),400);
 }
 
