@@ -14610,6 +14610,12 @@ function _enviarComprovanteWhatsappFatura(cobId,numFatura,periodo,valorTotal){
 }
 
 // Comanda impressa (botão Comanda / Imprimir Comanda) — modelo de cozinha,
+// 2026-11-18 (compacta, leitura fácil): estilo da comanda do iFood; grandes
+// o número, a quantidade, o prato, BEBIDAS, o pagamento e o endereço (número
+// da casa em destaque); complementos 18px em negrito; dados secundários
+// (cliente, 0800 + localizador, CPF/CNPJ, cupom, ID iFood) juntos, só se
+// existirem. Tudo preto puro. Meta (dd/mm · origem · loja · modo) encolhe
+// até 15px para caber numa linha.
 // 2026-11-18, para TODAS as lojas e todas as origens (iFood, painel, Open
 // Delivery). Substitui o modelo do item 10 da homologação iFood, mantendo os
 // campos que ele exigia (ID do pedido, itens, modo de entrega, CPF/CNPJ,
@@ -14700,64 +14706,80 @@ function _comandaHtml(p,lojaNome){
   const pratosHtml=pratos.map(x=>`<div class="prato">
       <div class="prato-l"><span class="qtd">${q(x.q)}x</span><span class="pnome">${_escHtml(x.nome)}</span></div>
       ${_itemTemPreco(x.it)?`<div class="preco">${_comandaMoeda((parseFloat(x.it.preco??x.it.price)||0)*x.q)}</div>`:''}
-      ${x.opcoes.map(o=>`<div class="op${_COMANDA_RE_OBS_OPCAO.test(_comandaNome(o))?' op-dest':''}">${_comandaQtd(o)>1?`${q(_comandaQtd(o))}x `:'+ '}${_escHtml(_comandaNome(o))}</div>`).join('')}
+      ${x.opcoes.map(o=>`<div class="op"><span${_COMANDA_RE_OBS_OPCAO.test(_comandaNome(o))?' class="op-dest"':''}>${_comandaQtd(o)>1?`${q(_comandaQtd(o))}x `:'+ '}${_escHtml(_comandaNome(o))}</span></div>`).join('')}
       ${x.obs?`<div class="obs">OBS: ${_escHtml(x.obs)}</div>`:''}
     </div>`).join('');
-  const bebidasHtml=nBeb?`<div class="bebidas"><div class="beb-tit">BEBIDAS: ${q(nBeb)}</div>${bebidas.map(b=>`<div class="beb"><span class="qtd-b">${q(b.q)}x</span> ${_escHtml(b.nome)}${b.de?`<div class="beb-de">(no ${_escHtml(b.de)})</div>`:''}${b.obs?`<div class="obs">OBS: ${_escHtml(b.obs)}</div>`:''}</div>`).join('')}</div>`:'';
+  const bebidasHtml=nBeb?`<div class="bebidas"><div class="beb-tit">BEBIDAS: <span class="beb-n">${q(nBeb)}</span></div>${bebidas.map(b=>`<div class="beb"><span class="qtd-b">${q(b.q)}x</span> ${_escHtml(b.nome)}${b.de?` <span class="beb-de">(no ${_escHtml(b.de)})</span>`:''}${b.obs?`<div class="obs">OBS: ${_escHtml(b.obs)}</div>`:''}</div>`).join('')}</div>`:'';
+  // Número da casa em destaque: o primeiro ", 123" do endereço (rua, número).
+  const endHtml=(()=>{const m=endereco.match(/^(.*?,\s*)(\d+[A-Za-z]?)(?![\d])/);
+    return m?`${_escHtml(m[1])}<span class="ncasa">${_escHtml(m[2])}</span>${_escHtml(endereco.slice(m[0].length))}`:_escHtml(endereco);})();
+  // Informações secundárias, juntas e só se existirem (como na comanda do iFood).
+  const tel0800=String(p?.telefone_0800||'').split('·')[0].trim();
+  const loc=String(p?.ifood_phone_localizer||'').trim();
+  const info=[
+    cliente?`<b>Cliente:</b> ${_escHtml(cliente)}`:'',
+    tel0800||loc?[tel0800?`<b>Tel.:</b> ${_escHtml(tel0800)}`:'',loc?`<b>Localizador:</b> ${_escHtml(loc)}`:''].filter(Boolean).join(' · '):'',
+    p?.cliente_documento?`<b>CPF/CNPJ:</b> ${_escHtml(p.cliente_documento)}`:'',
+    p?.cupom_valor>0?`<b>Cupom:</b> ${_comandaMoeda(p.cupom_valor)}`:'',
+    p?.ifood_order_id?`<b>ID iFood:</b> <span class="id">${_escHtml(p.ifood_order_id)}</span>`:'',
+  ].filter(Boolean);
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda #${_escHtml(p?.numero||'')}</title>
   <style>
+    /* Compacta, leitura fácil (2026-11-18): menor letra 16px (só o ID iFood),
+       tudo preto puro e negrito, sem cinza; grandes: número, quantidade,
+       prato, BEBIDAS, pagamento e endereço. */
     @page{size:80mm auto;margin:0}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#000;width:76mm;padding:3mm;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .topo{text-align:center;border-bottom:3px solid #000;padding-bottom:6px}
-    .num{font-size:46px;line-height:1;font-weight:900}
-    .hora{font-size:34px;line-height:1.05;font-weight:900}
-    .meta{font-size:12px;font-weight:600;margin-top:3px}
-    .modo{font-size:16px;font-weight:900;margin-top:4px}
-    .agendado{font-size:18px;font-weight:900;border:3px solid #000;margin-top:4px;padding:2px}
-    .codigo{text-align:center;border:3px solid #000;padding:4px;margin-top:6px}
-    .codigo .lbl{font-size:11px}.codigo .cnum{font-size:26px;font-weight:900;letter-spacing:5px}
-    .sec{border-top:2px dashed #000;margin-top:6px;padding-top:6px}
-    .prato{margin-bottom:8px}
-    .prato-l{display:flex;gap:6px;align-items:baseline}
-    .qtd{font-size:26px;font-weight:900;min-width:38px}
-    .pnome{font-size:19px;font-weight:900;line-height:1.15}
-    .preco{font-size:13px;text-align:right}
-    .op{font-size:15px;font-weight:700;padding-left:44px;line-height:1.3}
-    .op-dest{background:#000;color:#fff;display:inline-block;margin-left:44px;padding:1px 5px;margin-top:2px}
-    .obs{font-size:16px;font-weight:900;border:3px solid #000;padding:3px 5px;margin:4px 0 0 0}
-    .bebidas{border:5px solid #000;padding:6px;margin-top:8px}
-    .beb-tit{font-size:24px;font-weight:900;text-align:center;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:4px}
-    .beb{font-size:17px;font-weight:800;margin:3px 0}.qtd-b{font-size:20px;font-weight:900}
-    .beb-de{font-size:12px;font-weight:600;padding-left:30px}
-    .obsped{font-size:16px;font-weight:900;border:3px solid #000;padding:4px 6px;margin-top:8px}
-    .obsped .lbl{font-size:11px;display:block}
-    .pag{background:#000;color:#fff;text-align:center;padding:8px 4px;margin-top:8px}
-    .pag .t{font-size:25px;font-weight:900;line-height:1.1}
-    .pag .s{font-size:15px;font-weight:800;margin-top:3px}
-    .end{margin-top:8px;border-top:3px solid #000;padding-top:6px}
-    .end .lbl{font-size:12px}
-    .end .tx{font-size:20px;font-weight:900;line-height:1.2}
-    .cli{font-size:15px;margin-top:4px}
-    .linha{display:flex;justify-content:space-between;gap:6px;font-size:14px;margin-top:3px}
-    .total{font-size:18px;font-weight:900;border-top:3px solid #000;margin-top:6px;padding-top:5px}
+    *{margin:0;padding:0;box-sizing:border-box;color:#000}
+    body{font-family:Arial,Helvetica,sans-serif;background:#fff;width:76mm;padding:2mm 3mm;font-weight:800;font-size:18px;line-height:1.2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .topo{display:flex;justify-content:space-between;align-items:center;gap:6px}
+    .dir{text-align:right}.modo{font-size:17px;font-weight:900}
+    .num{font-size:52px;line-height:1;font-weight:900}
+    .hora{font-size:30px;line-height:1;font-weight:900}
+    .meta{font-size:18px;font-weight:900;margin-top:2px;white-space:nowrap;overflow:hidden}
+    .agendado{font-size:22px;font-weight:900;border:3px solid #000;margin-top:4px;padding:2px 4px;text-align:center}
+    .codigo{display:flex;justify-content:space-between;align-items:center;border:3px solid #000;padding:2px 6px;margin-top:4px}
+    .codigo .cnum{font-size:30px;font-weight:900;letter-spacing:4px}
+    .sec{margin-top:6px;border-top:3px solid #000;padding-top:4px}
+    .prato{padding:3px 0 4px;border-bottom:2px dashed #000}
+    .prato:last-child{border-bottom:none;padding-bottom:0}
+    .prato-l{display:flex;gap:6px;align-items:flex-start}
+    .qtd{font-size:42px;font-weight:900;line-height:.95;flex-shrink:0}
+    .pnome{font-size:22px;font-weight:900;line-height:1.1;padding-top:3px}
+    .preco{font-size:18px;text-align:right;font-weight:900}
+    .op{font-size:18px;font-weight:900;line-height:1.15;padding-left:8px}
+    .op-dest{background:#000;color:#fff;padding:0 5px}
+    .obs{font-size:20px;font-weight:900;border:3px solid #000;padding:2px 6px;margin-top:4px}
+    .bebidas{border:5px solid #000;padding:2px 8px 4px;margin-top:6px}
+    .beb-tit{font-size:26px;font-weight:900;text-align:center;line-height:1.1}
+    .beb-n{font-size:46px;font-weight:900;line-height:1}
+    .beb{font-size:21px;font-weight:900;margin-top:2px}.qtd-b{font-size:28px;font-weight:900}
+    .beb-de{font-size:17px;font-weight:900}
+    .obsped{font-size:20px;font-weight:900;border:3px solid #000;padding:3px 6px;margin-top:6px}
+    .lbl{font-size:16px;font-weight:900;letter-spacing:.3px}
+    .pag{background:#000;text-align:center;padding:5px 2px;margin-top:6px}
+    .pag *{color:#fff}
+    .pag .t{font-size:28px;font-weight:900;line-height:1.05;white-space:nowrap;overflow:hidden}
+    .pag .s{font-size:20px;font-weight:900;margin-top:2px;line-height:1.15}
+    .end{margin-top:6px}
+    .end .tx{font-size:24px;font-weight:900;line-height:1.2}
+    .ncasa{font-size:32px;border:3px solid #000;padding:0 4px;line-height:1.05}
+    .info{margin-top:6px;border-top:3px solid #000;padding-top:4px;font-size:18px;line-height:1.25}
+    .info b{font-weight:900}
+    .info .id{font-size:16px;word-break:break-all}
+    .total{display:flex;justify-content:space-between;font-size:24px;font-weight:900;border-top:3px solid #000;margin-top:4px;padding-top:4px}
   </style></head><body>
-    <div class="topo">
-      <div class="num">#${_escHtml(p?.numero||String(p?.id||'').substring(0,6))}</div>
-      ${dh.hora?`<div class="hora">${_escHtml(dh.hora)}</div>`:''}
-      <div class="meta">${[dh.data,origem,lojaNome].filter(Boolean).map(_escHtml).join(' · ')}</div>
-      <div class="modo">${p?.retirada?'RETIRADA NA LOJA':'ENTREGA'}</div>
-      ${ag&&ag.hora?`<div class="agendado">AGENDADO ${_escHtml(ag.data)} ${_escHtml(ag.hora)}</div>`:''}
-    </div>
-    ${p?.ifood_pickup_code?`<div class="codigo"><div class="lbl">CÓDIGO DE COLETA (IFOOD)</div><div class="cnum">${_escHtml(p.ifood_pickup_code)}</div></div>`:''}
+    <div class="topo"><div class="num">#${_escHtml(p?.numero||String(p?.id||'').substring(0,6))}</div><div class="dir">${dh.hora?`<div class="hora">${_escHtml(dh.hora)}</div>`:''}<div class="modo">${p?.retirada?'RETIRADA':'ENTREGA'}</div></div></div>
+    <div class="meta" id="meta">${[dh.data.slice(0,5),origem,String(lojaNome||'').replace(/\s*-\s*[A-Z]{2}\s*$/,'')].filter(Boolean).map(_escHtml).join(' · ')}</div>
+    ${ag&&ag.hora?`<div class="agendado">AGENDADO ${_escHtml(ag.data.slice(0,5))} ${_escHtml(ag.hora)}</div>`:''}
+    ${p?.ifood_pickup_code?`<div class="codigo"><span class="lbl">CÓDIGO DE COLETA</span><span class="cnum">${_escHtml(p.ifood_pickup_code)}</span></div>`:''}
     ${pratos.length?`<div class="sec">${pratosHtml}</div>`:''}
     ${bebidasHtml}
-    ${obsPed?`<div class="obsped"><span class="lbl">OBSERVAÇÕES</span>${_escHtml(obsPed)}</div>`:''}
+    ${obsPed?`<div class="obsped"><span class="lbl">OBSERVAÇÕES: </span>${_escHtml(obsPed)}</div>`:''}
     ${pag?`<div class="pag"><div class="t">${_escHtml(pag.titulo)}</div>${pag.sub?`<div class="s">${_escHtml(pag.sub)}</div>`:''}</div>`:''}
-    ${!p?.retirada&&endereco?`<div class="end"><div class="lbl">ENTREGAR EM</div><div class="tx">${_escHtml(endereco)}</div></div>`:''}
-    ${cliente||p?.cliente_documento?`<div class="cli">${cliente?`Cliente: ${_escHtml(cliente)}`:''}${p?.cliente_documento?`<br>CPF/CNPJ: ${_escHtml(p.cliente_documento)}`:''}</div>`:''}
-    ${p?.cupom_valor?`<div class="linha"><span>Cupom</span><span>${_comandaMoeda(p.cupom_valor)}</span></div>`:''}
-    ${total>0?`<div class="total linha"><span>TOTAL</span><span>${_comandaMoeda(total)}</span></div>`:''}
+    ${!p?.retirada&&endereco?`<div class="end"><span class="lbl">ENTREGAR EM:</span><div class="tx">${endHtml}</div></div>`:''}
+    ${info.length?`<div class="info">${info.map(l=>`<div>${l}</div>`).join('')}</div>`:''}
+    ${total>0?`<div class="total"><span>TOTAL</span><span>${_comandaMoeda(total)}</span></div>`:''}
+    <script>(function(){function caber(el,ini,min){if(!el)return;var t=ini;el.style.fontSize=t+'px';while(el.scrollWidth>el.clientWidth&&t>min){t-=0.5;el.style.fontSize=t+'px';}if(el.scrollWidth>el.clientWidth)el.style.whiteSpace='normal';}caber(document.getElementById('meta'),18,15);caber(document.querySelector('.pag .t'),28,22);})();<\/script>
   </body></html>`;
 }
 function _imprimirComanda(pedidoId){
