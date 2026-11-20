@@ -8016,6 +8016,7 @@ async function renderPrecoDinamicoPage(){
         <div id="pd-wrap-cliente"></div>
         <div id="pd-wrap-entregador"></div>
       </div>
+      <div id="pd-wrap-excluidas" style="margin-bottom:28px"></div>
       <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;margin-bottom:10px">Por Cidade</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <select id="pd-cidade-select" onchange="_pdSelecionarCidade(this.value)" style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;cursor:pointer">
@@ -8026,6 +8027,7 @@ async function renderPrecoDinamicoPage(){
     </div>`;
   _renderPrecoDinamicoTab(document.getElementById('pd-wrap-cliente'),'cliente');
   _renderPrecoDinamicoTab(document.getElementById('pd-wrap-entregador'),'entregador');
+  _renderPdExcluidas(document.getElementById('pd-wrap-excluidas'));
   const lojas=await db('lojas','GET',null,'?select=cidade&ativo=eq.true');
   const cidades=[...new Set((lojas||[]).map(l=>l.cidade).filter(Boolean))].sort();
   const sel=document.getElementById('pd-cidade-select');
@@ -8037,6 +8039,72 @@ async function renderPrecoDinamicoPage(){
     });
     const defaultCidade=cidades.includes('Ribeirão Preto')?'Ribeirão Preto':cidades[0]||'';
     if(defaultCidade){sel.value=defaultCidade;_pdSelecionarCidade(defaultCidade);}
+  }
+}
+
+// Lojas fora do Preço Dinâmico (2026-11-20): lista em
+// configuracoes.preco_dinamico_lojas_excluidas (array de loja_id). Quem aplica
+// é o banco (preco_dinamico_vigente), que zera Cobrança e Pagamento, global e
+// por cidade. A lista fica separada do valor do PD, então desligar e religar o
+// PD não mexe nela. Só vale para pedidos criados depois de salvar.
+async function _renderPdExcluidas(el){
+  if(!el)return;
+  el.innerHTML='<div class="card"><div style="padding:20px;color:var(--text3);font-size:13px">⏳ Carregando...</div></div>';
+  try{
+    const [lojas,cfg]=await Promise.all([
+      db('lojas','GET',null,'?ativo=eq.true&select=id,nome&order=nome.asc'),
+      db('configuracoes','GET',null,'?chave=eq.preco_dinamico_lojas_excluidas'),
+    ]);
+    let excl=[];try{excl=JSON.parse(cfg?.[0]?.valor||'[]');}catch(e){excl=[];}
+    if(!Array.isArray(excl))excl=[];
+    const multiId='pd-excl-multi';
+    const opts=(lojas||[]).map(l=>`<label class="pd-cid-opt" style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px"><input type="checkbox" value="${l.id}" ${excl.includes(l.id)?'checked':''} onchange="_pdExclContar()" style="width:14px;height:14px;cursor:pointer"/>${_escHtml(l.nome)}</label>`).join('');
+    el.innerHTML=`
+      <div class="card">
+        <div class="card-header"><span class="card-title">🚫 Lojas Fora Do Preço Dinâmico</span><span id="pd-excl-cont" style="font-size:12px;color:var(--text3)"></span></div>
+        <div style="padding:20px">
+          <p style="color:var(--text2);font-size:13px;margin:0 0 12px">As Lojas Marcadas Não Recebem Preço Dinâmico Na Cobrança Da Loja Nem No Pagamento Do Entregador, Global E Por Cidade. Continua Valendo Quando O Preço Dinâmico For Religado. Vale Só Para Pedidos Novos.</p>
+          <input type="text" placeholder="Buscar..." oninput="_pdFiltrarOpcoes('${multiId}',this.value)"
+            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:12px;background:var(--surface2);color:var(--text);font-family:Inter,sans-serif;box-sizing:border-box;outline:none;border-bottom:none"/>
+          <div id="${multiId}" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:6px 10px;background:var(--surface2);margin-bottom:12px">
+            ${opts||'<div style="color:var(--text3);font-size:12px">Nenhuma Loja</div>'}
+          </div>
+          <div id="pd-excl-feedback" style="margin-bottom:10px;font-size:12px"></div>
+          <button class="btn-modal-primary" onclick="_salvarPdExcluidas()">${_icone('save',16,'btn-ico')}Salvar</button>
+        </div>
+      </div>`;
+    _pdExclContar();
+  }catch(e){
+    console.error('[PD-excl] erro ao carregar',e);
+    el.innerHTML='<div class="card"><div style="padding:20px;color:var(--red);font-size:13px">❌ Erro Ao Carregar As Lojas Excluídas.</div></div>';
+  }
+}
+
+function _pdExclContar(){
+  const n=document.querySelectorAll('#pd-excl-multi input[type=checkbox]:checked').length;
+  const c=document.getElementById('pd-excl-cont');
+  if(c)c.textContent=n?`${n} ${n===1?'Loja':'Lojas'} Fora`:'Nenhuma Loja Fora';
+}
+
+async function _salvarPdExcluidas(){
+  if(_suporteSemAcesso())return;
+  const fb=document.getElementById('pd-excl-feedback');
+  const ids=[...document.querySelectorAll('#pd-excl-multi input[type=checkbox]:checked')].map(c=>c.value);
+  if(fb)fb.innerHTML='<span style="color:var(--text2)">⏳ Salvando...</span>';
+  const agora=new Date().toISOString();
+  const chave='preco_dinamico_lojas_excluidas';
+  try{
+    const existing=await db('configuracoes','GET',null,`?chave=eq.${chave}`);
+    const res=existing&&existing.length>0
+      ?await db('configuracoes','PATCH',{valor:JSON.stringify(ids),updated_at:agora},`?chave=eq.${chave}`)
+      :await db('configuracoes','POST',{chave,valor:JSON.stringify(ids),created_at:agora,updated_at:agora});
+    if(!res||res.length===0)throw new Error('PATCH/POST retornou vazio (permissão/RLS?)');
+    console.log('[PD-excl] salvo',ids.length,'lojas');
+    if(fb)fb.innerHTML='<span style="color:var(--green)">✅ Salvo!</span>';
+    showNotif('✅ Lojas Fora Do Preço Dinâmico Salvas!','');
+  }catch(e){
+    console.error('[PD-excl] erro ao salvar',e);
+    if(fb)fb.innerHTML='<span style="color:var(--red)">❌ Erro Ao Salvar</span>';
   }
 }
 
