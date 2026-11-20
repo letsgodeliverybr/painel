@@ -534,9 +534,12 @@ function _diasAtrasoFatura(vencYMD){
 // juros para fatura < R$ 100). Fatura já paga não passa por aqui: o valor
 // fica congelado em valor_pago_final na aprovação.
 const FATURA_MULTA_PCT=0.05,FATURA_MULTA_MIN=5,FATURA_JUROS_DIA=0.003;
-function _calcularJurosMultaFatura(valorOriginal,vencYMD){
+// isento = cobrancas_lojas.encargos_isentos_em preenchido (2026-11-20): fatura
+// sem multa e juros por decisão do ADM; segue vencida, mas no valor original.
+function _calcularJurosMultaFatura(valorOriginal,vencYMD,isento){
   const diasAtraso=Math.max(0,_diasAtrasoFatura(vencYMD));
   const valOrig=parseFloat(valorOriginal)||0;
+  if(isento)return{diasAtraso,multa:0,juros:0,taxaFixa:0,valorAtualizado:Math.round(valOrig*100)/100,isento:true};
   if(diasAtraso<=0)return{diasAtraso:0,multa:0,juros:0,taxaFixa:0,valorAtualizado:Math.round(valOrig*100)/100};
   const multa=Math.max(Math.round(valOrig*FATURA_MULTA_PCT*100)/100,FATURA_MULTA_MIN);
   const juros=Math.round(valOrig*FATURA_JUROS_DIA*diasAtraso*100)/100;
@@ -12457,7 +12460,7 @@ async function _flBuscar(lojaId){
   </table></div>`;
 }
 function _renderFaturaAtualCard(c,lojaNome){
-  const {diasAtraso,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD);
+  const {diasAtraso,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD,c.encargos_isentos_em);
   const vencida=diasAtraso>=1;
   // Card resumido de propósito: só o valor total já atualizado em
   // destaque, sem o detalhamento linha a linha de multa/juros — esse
@@ -14443,7 +14446,7 @@ async function _buscarCobrancasPendentes(){
     return;
   }
   let _acN=cobrancas.length,_acPed=0,_acVal=0;
-  cobrancas.forEach(c=>{const _v=_faturaVencimentoYMD(c);const _r=_calcularJurosMultaFatura(c.valor_total,_v);_acPed+=parseInt(c.qtd_pedidos)||0;_acVal+=(_r.diasAtraso>=1?_r.valorAtualizado:(parseFloat(c.valor_total)||0));});
+  cobrancas.forEach(c=>{const _v=_faturaVencimentoYMD(c);const _r=_calcularJurosMultaFatura(c.valor_total,_v,c.encargos_isentos_em);_acPed+=parseInt(c.qtd_pedidos)||0;_acVal+=(_r.diasAtraso>=1?_r.valorAtualizado:(parseFloat(c.valor_total)||0));});
   pendWrap.innerHTML=`
     <div id="ac-resumo" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:12px 16px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)">
       <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">A Aprovar</span>
@@ -14458,7 +14461,7 @@ async function _buscarCobrancasPendentes(){
       <tbody>${cobrancas.map(c=>{
         const loja=c.lojas||{};
         const vencYMD=_faturaVencimentoYMD(c);
-        const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,vencYMD);
+        const {diasAtraso,multa,juros,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,vencYMD,c.encargos_isentos_em);
         const vencida=diasAtraso>=1;
         const detalheVencida=`+multa R$ ${multa.toFixed(2)} +juros R$ ${juros.toFixed(2)}`;
         return`<tr id="cob-row-${c.id}">
@@ -14505,11 +14508,11 @@ function _acToggleAll(checked){document.querySelectorAll('.ac-cb').forEach(cb=>c
 // que _calcularJurosMultaFatura depende de "hoje" e a fatura já foi paga
 // naquele momento específico. valor_total original nunca é sobrescrito.
 async function _valorFinalParaAprovar(id){
-  const rows=await db('cobrancas_lojas','GET',null,`?id=eq.${id}&select=id,valor_total,created_at&limit=1`);
+  const rows=await db('cobrancas_lojas','GET',null,`?id=eq.${id}&select=id,valor_total,created_at,encargos_isentos_em&limit=1`);
   const c=Array.isArray(rows)?rows[0]:null;
   if(!c)return null;
   const vencYMD=_faturaVencimentoYMD(c);
-  return _calcularJurosMultaFatura(c.valor_total,vencYMD).valorAtualizado;
+  return _calcularJurosMultaFatura(c.valor_total,vencYMD,c.encargos_isentos_em).valorAtualizado;
 }
 
 async function _aprovarCobrancasSelecionadas(){
@@ -14598,7 +14601,7 @@ async function verFaturaCobranca(cobId){
   const jaPago=c.status==='pago';
   const {diasAtraso,multa,juros,valorAtualizado}=jaPago
     ?{diasAtraso:0,multa:0,juros:0,valorAtualizado:valorOriginalFatura}
-    :_calcularJurosMultaFatura(valorOriginalFatura,vencYMD);
+    :_calcularJurosMultaFatura(valorOriginalFatura,vencYMD,c.encargos_isentos_em);
   const faturaVencida=!jaPago&&diasAtraso>=1;
   const valorFinalExibido=jaPago?(parseFloat(c.valor_pago_final??c.valor_total)||valorOriginalFatura):(faturaVencida?valorAtualizado:valorOriginalFatura);
   const tdN='padding:14px 12px;font-size:13px;color:#9ca3af';
