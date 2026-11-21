@@ -12488,17 +12488,15 @@ async function _flBuscar(lojaId){
   const _rede=_redeVisaoGeral();
   const _nomeLoja=id=>_escHtml((_redeLojas.find(l=>l.loja_id===id)||{}).loja_nome||'');
   const qs=`?select=*&${_rede?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&status=in.(pendente,pago,recusado)&order=created_at.desc&limit=200`;
-  const rows=await db('cobrancas_lojas','GET',null,qs);
+  // Pendentes numa busca própria (sem o limite de 200 do histórico): o card
+  // soma todas, mesmo que alguma pendente seja antiga (2026-11-21).
+  const qsPend=`?select=*&${_rede?`loja_id=in.(${_redeIds()})`:`loja_id=eq.${lojaId}`}&status=eq.pendente&order=created_at.asc`;
+  const [rows,pendRows]=await Promise.all([db('cobrancas_lojas','GET',null,qs),db('cobrancas_lojas','GET',null,qsPend)]);
   const todas=Array.isArray(rows)?rows:[];
-  const pendentes=todas.filter(c=>c.status==='pendente');
-  let atual=null;
-  if(pendentes.length){
-    const anotadas=pendentes.map(c=>{const vencYMD=_faturaVencimentoYMD(c);return{...c,_vencYMD:vencYMD,_diasAtraso:_diasAtrasoFatura(vencYMD)};});
-    anotadas.sort((a,b)=>b._diasAtraso-a._diasAtraso);
-    atual=anotadas[0];
-  }
-  if(atualWrap)atualWrap.innerHTML=atual?_renderFaturaAtualCard(atual,_rede?_nomeLoja(atual.loja_id):null):'';
-  const hist=todas.filter(c=>c.id!==atual?.id);
+  const pendentes=Array.isArray(pendRows)?pendRows:todas.filter(c=>c.status==='pendente');
+  if(atualWrap)atualWrap.innerHTML=pendentes.length?_renderFaturasAbertasCard(pendentes,_rede?_nomeLoja:null):'';
+  // Histórico mostra todas, inclusive as pendentes (cada uma com o seu Ver Fatura).
+  const hist=todas;
   if(!hist.length){histWrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text3)">Nenhuma Fatura No Histórico</div>';return;}
   const badge=c=>c.status==='pago'
     ?`<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">✅ Pago</span>`
@@ -12515,6 +12513,55 @@ async function _flBuscar(lojaId){
       <td><button onclick="verFaturaCobranca('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">${_icone('file-text',16,'btn-ico')}Ver Fatura</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+}
+// Card "Fatura Atual" (2026-11-21): resumo de TODAS as faturas pendentes.
+// Valor de cada fatura = o mesmo que aparece no Ver Fatura (_calcularJurosMultaFatura,
+// com isenção respeitada); aqui só soma. nomeLoja != null = visão Toda A Rede.
+function _renderFaturasAbertasCard(pendentes,nomeLoja){
+  const fmt=v=>'R$ '+(Number(v)||0).toFixed(2);
+  const itens=pendentes.map(c=>{
+    const vencYMD=_faturaVencimentoYMD(c);
+    const r=_calcularJurosMultaFatura(c.valor_total,vencYMD,c.encargos_isentos_em);
+    return{c,vencYMD,dias:r.diasAtraso,orig:parseFloat(c.valor_total)||0,atual:r.valorAtualizado};
+  });
+  const resumo=arr=>{
+    const maisAntiga=arr.slice().sort((a,b)=>a.vencYMD<b.vencYMD?-1:a.vencYMD>b.vencYMD?1:b.dias-a.dias)[0];
+    const orig=Math.round(arr.reduce((t,x)=>t+x.orig,0)*100)/100;
+    const atual=Math.round(arr.reduce((t,x)=>t+x.atual,0)*100)/100;
+    return{qtd:arr.length,orig,atual,enc:Math.round((atual-orig)*100)/100,maisAntiga};
+  };
+  const g=resumo(itens);
+  const vencida=g.maisAntiga.dias>=1;
+  const vencTxt=x=>`${formatarDataBR(x.vencYMD)}${x.dias>=1?` · ${x.dias} dia${x.dias>1?'s':''} de atraso`:_diasAtrasoFatura(x.vencYMD)===0?' · vence hoje':''}`;
+  const lbl='font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px';
+  let porLoja='';
+  if(nomeLoja){
+    const grupos={};itens.forEach(x=>{(grupos[x.c.loja_id]=grupos[x.c.loja_id]||[]).push(x);});
+    const linhas=Object.entries(grupos).map(([id,arr])=>({id,nome:nomeLoja(id),r:resumo(arr)})).sort((a,b)=>b.r.atual-a.r.atual);
+    porLoja=`<div style="overflow-x:auto;margin-bottom:16px"><table>
+      <thead><tr><th>Loja</th><th>Faturas</th><th>Total Em Aberto</th><th>Vencimento Mais Antigo</th></tr></thead>
+      <tbody>${linhas.map(l=>`<tr>
+        <td style="font-size:12px;color:var(--text)">${l.nome||'—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${l.r.qtd}</td>
+        <td style="font-weight:700;color:${l.r.maisAntiga.dias>=1?'#dc2626':'#1A56DB'}">${fmt(l.r.atual)}</td>
+        <td style="font-size:12px;color:${l.r.maisAntiga.dias>=1?'#ef4444':'var(--text2)'}">${vencTxt(l.r.maisAntiga)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  }
+  return`<div class="card" style="margin-bottom:14px;border:2px solid ${vencida?'#ef4444':'var(--accent)'}">
+    <div class="card-header"><span class="card-title">${vencida?'🔴':'🟡'} Fatura Atual${nomeLoja?' · Toda A Rede':''}</span></div>
+    <div style="padding:20px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:12px">
+        <div><div style="${lbl}">Faturas Em Aberto</div><div style="font-size:14px;font-weight:600;color:var(--text)">${g.qtd} Fatura${g.qtd>1?'s':''}</div></div>
+        <div><div style="${lbl}">Vencimento Mais Antigo</div><div style="font-size:14px;font-weight:600;color:${vencida?'#ef4444':'var(--text)'}">${vencTxt(g.maisAntiga)}</div></div>
+      </div>
+      <div style="${lbl}">Total Em Aberto</div>
+      <div style="font-size:28px;font-weight:800;color:${vencida?'#dc2626':'#1A56DB'};margin-bottom:${g.enc>0?'2px':'16px'}">${fmt(g.atual)}</div>
+      ${g.enc>0?`<div style="font-size:12px;color:var(--text3);margin-bottom:16px">Original ${fmt(g.orig)} + Multa E Juros ${fmt(g.enc)}</div>`:''}
+      ${porLoja}
+      <button onclick="verFaturaCobranca('${g.maisAntiga.c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('file-text',16,'btn-ico')}Ver Fatura Mais Antiga</button>
+      ${g.qtd>1?`<div style="font-size:12px;color:var(--text3);margin-top:8px">As Demais Estão No Histórico Abaixo, Cada Uma Com O Seu Ver Fatura.</div>`:''}
+    </div>
+  </div>`;
 }
 function _renderFaturaAtualCard(c,lojaNome){
   const {diasAtraso,valorAtualizado}=_calcularJurosMultaFatura(c.valor_total,c._vencYMD,c.encargos_isentos_em);
