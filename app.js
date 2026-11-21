@@ -12522,27 +12522,29 @@ function _renderFaturasAbertasCard(pendentes,nomeLoja){
   const itens=pendentes.map(c=>{
     const vencYMD=_faturaVencimentoYMD(c);
     const r=_calcularJurosMultaFatura(c.valor_total,vencYMD,c.encargos_isentos_em);
-    return{c,vencYMD,dias:r.diasAtraso,orig:parseFloat(c.valor_total)||0,atual:r.valorAtualizado};
+    return{c,vencYMD,dias:r.diasAtraso,orig:parseFloat(c.valor_total)||0,atual:r.valorAtualizado,ent:parseInt(c.qtd_pedidos,10)||0};
   });
   const resumo=arr=>{
     const maisAntiga=arr.slice().sort((a,b)=>a.vencYMD<b.vencYMD?-1:a.vencYMD>b.vencYMD?1:b.dias-a.dias)[0];
     const orig=Math.round(arr.reduce((t,x)=>t+x.orig,0)*100)/100;
     const atual=Math.round(arr.reduce((t,x)=>t+x.atual,0)*100)/100;
-    return{qtd:arr.length,orig,atual,enc:Math.round((atual-orig)*100)/100,maisAntiga};
+    return{qtd:arr.length,orig,atual,enc:Math.round((atual-orig)*100)/100,maisAntiga,ent:arr.reduce((t,x)=>t+x.ent,0)};
   };
   const g=resumo(itens);
   const vencida=g.maisAntiga.dias>=1;
   const vencTxt=x=>`${formatarDataBR(x.vencYMD)}${x.dias>=1?` · ${x.dias} dia${x.dias>1?'s':''} de atraso`:_diasAtrasoFatura(x.vencYMD)===0?' · vence hoje':''}`;
   const lbl='font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px';
+  const entTxt=n=>`${n} entrega${n===1?'':'s'}`;
   let porLoja='';
   if(nomeLoja){
     const grupos={};itens.forEach(x=>{(grupos[x.c.loja_id]=grupos[x.c.loja_id]||[]).push(x);});
     const linhas=Object.entries(grupos).map(([id,arr])=>({id,nome:nomeLoja(id),r:resumo(arr)})).sort((a,b)=>b.r.atual-a.r.atual);
     porLoja=`<div style="overflow-x:auto;margin-bottom:16px"><table>
-      <thead><tr><th>Loja</th><th>Faturas</th><th>Total Em Aberto</th><th>Vencimento Mais Antigo</th></tr></thead>
+      <thead><tr><th>Loja</th><th>Faturas</th><th>Entregas</th><th>Total Em Aberto</th><th>Vencimento Mais Antigo</th></tr></thead>
       <tbody>${linhas.map(l=>`<tr>
         <td style="font-size:12px;color:var(--text)">${l.nome||'—'}</td>
         <td style="font-size:12px;color:var(--text2)">${l.r.qtd}</td>
+        <td style="font-size:12px;color:var(--text2)">${l.r.ent}</td>
         <td style="font-weight:700;color:${l.r.maisAntiga.dias>=1?'#dc2626':'#1A56DB'}">${fmt(l.r.atual)}</td>
         <td style="font-size:12px;color:${l.r.maisAntiga.dias>=1?'#ef4444':'var(--text2)'}">${vencTxt(l.r.maisAntiga)}</td>
       </tr>`).join('')}</tbody></table></div>`;
@@ -12555,7 +12557,7 @@ function _renderFaturasAbertasCard(pendentes,nomeLoja){
         <div><div style="${lbl}">Vencimento Mais Antigo</div><div style="font-size:14px;font-weight:600;color:${vencida?'#ef4444':'var(--text)'}">${vencTxt(g.maisAntiga)}</div></div>
       </div>
       <div style="${lbl}">Total Em Aberto</div>
-      <div style="font-size:28px;font-weight:800;color:${vencida?'#dc2626':'#1A56DB'};margin-bottom:${g.enc>0?'2px':'16px'}">${fmt(g.atual)}</div>
+      <div style="font-size:28px;font-weight:800;color:${vencida?'#dc2626':'#1A56DB'};margin-bottom:${g.enc>0?'2px':'16px'}">${fmt(g.atual)} <span style="font-size:15px;font-weight:600;color:var(--text3)">· ${entTxt(g.ent)}</span></div>
       ${g.enc>0?`<div style="font-size:12px;color:var(--text3);margin-bottom:16px">Original ${fmt(g.orig)} + Multa E Juros ${fmt(g.enc)}</div>`:''}
       ${porLoja}
       <button onclick="verFaturaCobranca('${g.maisAntiga.c.id}')" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">${_icone('file-text',16,'btn-ico')}Ver Fatura Mais Antiga</button>
