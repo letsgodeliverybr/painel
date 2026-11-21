@@ -582,6 +582,12 @@ function _iniciarFaturaBannerLoja(){
 function _tickFaturaBanner(){
   const el=document.getElementById('alerta-fatura-loja');
   if(!el)return;
+  const _fd=_fdStatus[currentUser?.loja_id];
+  if(_fd?.fatura){
+    const t=document.getElementById('alerta-fatura-loja-titulo');if(t)t.textContent=_fdTexto(_fd);
+    const fb=document.getElementById('alerta-fatura-loja-fechar');if(fb)fb.style.display='none';
+    el.style.display='flex';if(_fd.bloqueado)_chamarAtencaoFaturaBanner(el,true);return;
+  }
   if(!_faturaAtualLoja){el.style.display='none';return;}
   // Só o estado "fatura aberta" (diasAtraso<0, ainda não venceu) entra no
   // ciclo aparece/some (10min/1min) — "vence hoje" (diasAtraso===0) e
@@ -3189,6 +3195,7 @@ async function alterarStatusPedidoTabela(pedidoId,novoStatus){
       return;
     }
     if(!(await _confirmarProntoCreditoRetido(_pChk)))return;
+    if(!(await _confirmarProntoFaturaDiaria(_pChk)))return;
   }
   // Bug real corrigido (2026-09-19): mesma trava de alterarStatusPedido —
   // ver comentário lá. Pedido com_retorno não pode finalizar por aqui sem
@@ -3474,6 +3481,7 @@ async function marcarPedidoPronto(pedidoId, statusAtual){
   if(statusAtual==='pronto')return;
   const p=allPedidos.find(x=>x.id===pedidoId)||_tabelaPedidosDia.find(x=>x.id===pedidoId);
   if(!(await _confirmarProntoCreditoRetido(p)))return;
+  if(!(await _confirmarProntoFaturaDiaria(p)))return;
   // Trava real (2026-09-12, bug real corrigido — pedido #3): antes disso
   // era possível marcar "pronto" (e o pedido seguir despacho normal,
   // aceite de motoboy incluído) num pedido ainda aguardando_pagamento,
@@ -4305,6 +4313,50 @@ async function _confirmarProntoCreditoRetido(p){
   if(confirm(`Pedido #${_n} está retido: o saldo da loja não cobre a taxa.\n${_txt}.\n\nEle não pode ir para pronto nem para os motoboys enquanto estiver retido. Ele é liberado sozinho quando o saldo cobrir a taxa.\n\nAbrir o financeiro da loja para lançar crédito?`))abrirFinanceiroLoja(p.loja_id);
   return false;
 }
+// Fechamento diário (2026-11-20): situação vem do banco (fechamento_status_loja).
+// O banco segura o pronto sozinho (tg_01a_fechamento_retem_pronto); aqui só
+// avisa e leva para as faturas. Carrega no máximo 1x por minuto.
+let _fdStatus={},_fdCarregadoEm=0;
+async function _fdCarregar(forcar){
+  if(!forcar&&Date.now()-_fdCarregadoEm<60000)return;
+  _fdCarregadoEm=Date.now();
+  const ids=(allLojas||[]).filter(l=>l.fechamento==='diario').map(l=>l.id);
+  const novo={};
+  await Promise.all(ids.map(async id=>{const r=await dbRpc('fechamento_status_loja',{p_loja:id});if(r&&r.diario)novo[id]=r;}));
+  _fdStatus=novo;
+}
+function _fdTexto(st){
+  if(!st?.fatura)return'';
+  const f=st.fatura,v='R$ '+(Number(f.valor)||0).toFixed(2).replace('.',',');
+  if(st.bloqueado)return`🚫 Fatura Nº ${f.numero} do dia ${f.dia} (${v}) em aberto: os pedidos ficam em preparo e não vão para os entregadores até a aprovação do pagamento.`;
+  // antes da data de início da trava (ex.: faturas de 20 a 21/11 com trava a partir de 23/11)
+  if(!f.bloqueia_em)return`🧾 Fatura Nº ${f.numero} do dia ${f.dia} (${v}) em aberto. A partir de ${st.trava_desde||'—'} (${st.hora}), com a fatura do dia anterior em aberto, os pedidos ficam em preparo até a aprovação.`;
+  const b=new Date(f.bloqueia_em),dd=String(b.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit'}));
+  return`🧾 Fatura Nº ${f.numero} do dia ${f.dia} (${v}) em aberto. Pague antes de abrir a loja: a partir de ${st.hora} de ${dd}, sem aprovação, os pedidos ficam em preparo.`;
+}
+function _alertaFaturaDiaria(p){
+  const st=_fdStatus[p?.loja_id];
+  if(!st?.fatura||!['recebido','agendado','pronto'].includes(p.status))return'';
+  const ir=currentPerfil==='loja'?"goTab('faturas')":`abrirFinanceiroLoja('${p.loja_id}')`;
+  const cor=st.bloqueado?'#b91c1c':'#92400e',bg=st.bloqueado?'#fee2e2':'#fef3c7',bd=st.bloqueado?'#ef4444':'#f59e0b';
+  return`<div onclick="event.stopPropagation();${ir}" style="cursor:pointer;background:${bg};border:1px solid ${bd};border-radius:10px;padding:8px 10px;margin-bottom:10px;color:${cor};font-size:12px;font-weight:600">${_escHtml(_fdTexto(st))} <u>Ver Faturas</u></div>`;
+}
+async function _confirmarProntoFaturaDiaria(p){
+  if(!p?.loja_id)return true;
+  const l=(allLojas||[]).find(x=>x.id===p.loja_id);
+  if(l&&l.fechamento!=='diario')return true;
+  const st=await dbRpc('fechamento_status_loja',{p_loja:p.loja_id});
+  if(!st||!st.bloqueado)return true;
+  _fdStatus[p.loja_id]=st;
+  const n=p.numero||String(p.id||'').substring(0,6);
+  if(currentPerfil==='loja'){
+    showNotif('Fatura Em Aberto',`#${n}: ${st.motivo||'Fatura do dia anterior em aberto.'}`,'var(--yellow)');
+    goTab('faturas');
+    return false;
+  }
+  if(confirm(`Pedido #${n}: ${st.motivo||'fatura do dia anterior em aberto'}\n\nO banco não deixa ir para pronto. Abrir as faturas da loja?`))abrirFinanceiroLoja(p.loja_id);
+  return false;
+}
 function _alertaPagamentoIfood(p){
   if(p.origem!=='ifood'||!_ehAvisoIfood(p.descricao))return'';
   return`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;color:#92400e;font-size:12px;font-weight:600">${_icone('triangle-alert',16)}<span>${_escHtml(p.descricao)}</span></div>`;
@@ -4462,6 +4514,7 @@ function abrirInfoPedido(pedidoId){
         <div><div style="font-size:11px;color:var(--text3);font-weight:600">Previsão De Entrega</div><div style="font-size:14px;font-weight:700;color:var(--text)">${formatarHora(new Date(previsaoMs).toISOString())}</div></div>
         <div style="font-size:12px;font-weight:700;color:${_prazo.cor}">${restanteTxt}</div>
       </div>
+      ${_alertaFaturaDiaria(p)}
       ${_alertaPagamentoIfood(p)}
       ${_blocoTrocaEndereco(p)}
       <div style="display:flex;align-items:flex-start;justify-content:center;margin-bottom:20px;gap:0">
@@ -5741,6 +5794,7 @@ async function atualizarTudo(){
   allMotoboys=await db('entregadores','GET',null,_qsMotoboys);
   await _carregarOfertasAguardando();
   allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lojaFiltroId()}`);
+  await _fdCarregar();
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
   await processarAutoPronto();
@@ -5863,7 +5917,7 @@ function renderPedidosLista(){
       const _dot=(i)=>{const done=i<=stepDone;return`<div style="width:14px;height:14px;border-radius:50%;background:${done?'#1A56DB':'var(--sb-border)'};border:2px solid ${done?'#1A56DB':'var(--sb-text3)'};flex-shrink:0"></div>`;};
       const _line=(i)=>`<div style="flex:1;height:2px;background:${i<stepDone?'#1A56DB':'var(--sb-border)'};margin:0 2px"></div>`;
       const _labels=['Em Preparo','Coletado','A caminho','Entregue'];
-      const progressBar=`<div style="margin-bottom:12px">
+      const progressBar=`${_alertaFaturaDiaria(p)}<div style="margin-bottom:12px">
         <div style="display:flex;align-items:center;margin-bottom:4px">${_dot(0)}${_line(0)}${_dot(1)}${_line(1)}${_dot(2)}${_line(2)}${_dot(3)}</div>
         <div style="display:flex;justify-content:space-between">${_labels.map((l,i)=>`<span style="font-size:9px;color:${i<=stepDone?'#1A56DB':'var(--sb-text3)'};font-weight:${i<=stepDone?700:400};text-align:${i===0?'left':i===3?'right':'center'};flex:${i===0||i===3?'0 0 auto':1}">${l}</span>`).join('')}</div>
       </div>`;
@@ -10457,6 +10511,7 @@ async function alterarStatusPedidoRelatorio(pedidoId,novoStatus){
     return confirmarPagamento(pedidoId);
   }
   if(novoStatus==='pronto'&&!(await _confirmarProntoCreditoRetido(p)))return;
+  if(novoStatus==='pronto'&&!(await _confirmarProntoFaturaDiaria(p)))return;
   if(novoStatus==='cancelado'&&!confirm(`Cancelar O Pedido #${p.numero||p.id?.substring(0,6)}?\nEsta Ação Pode Ser Revertida Alterando O Status Novamente.`))return;
   const agora=_agoraBrasilia();
   const update={status:novoStatus,status_detalhado:novoStatus,updated_at:agora};
@@ -10528,6 +10583,7 @@ ${r2(fi('Status',sel('el-ativo',l.ativo?'true':'false',[['true','Ativa'],['false
 ${sec('Tabelas De Preço')}
 ${r2(fi('Tabela De Cobrança',`<select id="el-tabela-cobranca" style="${ss}">${tabelasCobranca.map(t=>`<option value="${t.id}"${t.id===l.tabela_cobranca_id?' selected':''}>${t.nome}</option>`).join('')}</select>`),fi('Tabela De Pagamento Motoboy',`<select id="el-tabela-pagamento" style="${ss}">${tabelasPagamento.map(t=>`<option value="${t.id}"${t.id===l.tabela_pagamento_id?' selected':''}>${t.nome}</option>`).join('')}</select>`))}
 ${r2(fi('Tipo De Cobrança',`<select id="el-tipo-cobranca" style="${ss}"${l.rede_credito_id?' disabled title="Loja Em Carteira De Rede: Tire Da Rede Antes De Mudar"':''}><option value="faturamento"${(l.tipo_cobranca||'faturamento')==='faturamento'?' selected':''}>📄 Faturamento</option><option value="credito"${l.tipo_cobranca==='credito'?' selected':''}>💳 Crédito</option></select>`),fi('⭐ Pontos Padrão',inp('el-pontos-padrao',l.pontos_padrao??4,'4','number')))}
+${currentPerfil==='adm'&&(l.tipo_cobranca||'faturamento')==='faturamento'?r2(fi('🧾 Fechamento Da Fatura',sel('el-fechamento',l.fechamento||'semanal',[['semanal','Semanal (padrão)'],['diario','Diário: fatura todo dia 23:59']])),fi('🔒 Trava Do Pronto A Partir De (00h01)',inp('el-fechamento-trava',l.fechamento_trava_desde||'','','date'))):''}
 ${r2(fi('🛵 Limite De Pedidos Simultâneos',inp('el-limite-pedidos-simultaneos',l.limite_pedidos_simultaneos??2,'2','number')),fi('🎯 Vendedor Responsável (C.A.C.)',`<select id="el-vendedor" data-orig="${v(l.vendedor_id)}" style="${ss}">${vendedorOpts}</select>`))}
 ${r1(fi('⏱️ Tempo De Preparo',`<button type="button" id="el-tp-btn" onclick="_tpAbrir('${lojaId}')" style="${is};text-align:left;cursor:pointer;font-weight:700">${l.tempo_preparo_min??1} min — Ajustar</button>`))}
 ${r1(fi('Entregador Bloqueado',_elBloqCampoHtml(is)))}
@@ -10713,6 +10769,7 @@ async function salvarEdicaoLoja(lojaId){
     tabela_cobranca_id:g('el-tabela-cobranca')||null,
     tabela_pagamento_id:g('el-tabela-pagamento')||null,
     tipo_cobranca:g('el-tipo-cobranca')||'faturamento',
+    ...(document.getElementById('el-fechamento')?{fechamento:g('el-fechamento')||'semanal',fechamento_trava_desde:g('el-fechamento-trava')||null}:{}),
     pontos_padrao:g('el-pontos-padrao')!==''?parseInt(g('el-pontos-padrao'))||4:4,
     limite_pedidos_simultaneos:g('el-limite-pedidos-simultaneos')!==''?parseInt(g('el-limite-pedidos-simultaneos'))||2:2,
     vendedor_id:g('el-vendedor')||null,
