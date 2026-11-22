@@ -4328,6 +4328,8 @@ async function _fdCarregar(forcar){
 function _fdTexto(st){
   if(!st?.fatura)return'';
   const f=st.fatura,v='R$ '+(Number(f.valor)||0).toFixed(2).replace('.',',');
+  // Loja liberada da trava (fechamento_liberado_ate, 2026-11-22): só informa a fatura e o valor.
+  if(st.liberado&&!st.bloqueado)return`🧾 Fatura Nº ${f.numero} do dia ${f.dia} em aberto: ${v}.`;
   if(st.bloqueado)return`🚫 Fatura Nº ${f.numero} do dia ${f.dia} (${v}) em aberto: os pedidos ficam em preparo e não vão para os entregadores até a aprovação do pagamento.`;
   // antes da data de início da trava (ex.: faturas de 20 a 21/11 com trava a partir de 23/11)
   if(!f.bloqueia_em)return`🧾 Fatura Nº ${f.numero} do dia ${f.dia} (${v}) em aberto. A partir de ${st.trava_desde||'—'} (${st.hora}), com a fatura do dia anterior em aberto, os pedidos ficam em preparo até a aprovação.`;
