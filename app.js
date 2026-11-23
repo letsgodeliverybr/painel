@@ -237,7 +237,7 @@ function _pedidoVisivelMetricas(p){
   const sk=getStatusKey(p);
   if(sk==='cancelado')return p.created_at>=DATA_CORTE_METRICAS;
   if(sk==='finalizado'&&p.aceito_em&&p.chegou_destino_em){
-    const _min=(_parseUtc(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
+    const _min=(_parseChegouDestino(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
     if(_min>30)return p.created_at>=DATA_CORTE_METRICAS;
   }
   return true;
@@ -403,6 +403,12 @@ function _cidadeSufixo(c){return{'Ribeirão Preto':'RP','São José dos Campos':
 //     de forma óbvia (muda a DATA exibida, não só a hora) — por isso o
 //     teste com pedido do meio do dia não pegou da primeira vez.
 const _parseUtc=(s)=>{const t=String(s).trim().replace(' ','T');return new Date(/Z|[+-]\d{2}:?\d{2}$/.test(t)?t:t+'-03:00');};
+// pedidos.chegou_destino_em é timestamptz, mas o app grava DateTime.now().toIso8601String()
+// (hora de Brasília SEM fuso), que o banco guarda como se fosse UTC: o +00:00 que volta é
+// falso (confirmado 2026-11-22: 100% dos pedidos desde 20/10 só fecham entre coleta e
+// finalização lidos assim). Lê a hora como Brasília, ignorando o fuso. Se o app passar a
+// gravar em UTC, trocar aqui junto.
+const _parseChegouDestino=(s)=>{const t=String(s).trim().replace(' ','T').replace(/(Z|[+-]\d{2}:?\d{2})$/,'');return new Date(t+'-03:00');};
 const toBrasilia=(dataStr)=>{if(!dataStr)return null;return new Date(_parseUtc(dataStr).toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));};
 const formatarHora=(dataStr)=>{if(!dataStr)return'—';return _parseUtc(dataStr).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});};
 // Badge "⚡ Saída até HH:MM" (card de pedido, Mapa ao Vivo) — sempre
@@ -4232,7 +4238,7 @@ function _indicadorPrazoPedido(p){
     // aconteceu. Sem isso, todo pedido com_retorno pareceria atrasado
     // assim que o retorno passasse de poucos minutos.
     const jaChegou=!!p.chegou_destino_em;
-    const fimRef=jaChegou?_parseUtc(p.chegou_destino_em).getTime():Date.now();
+    const fimRef=jaChegou?_parseChegouDestino(p.chegou_destino_em).getTime():Date.now();
     const minPassados=(fimRef-_parseUtc(p.aceito_em).getTime())/60000;
     const previsaoMs=_parseUtc(p.aceito_em).getTime()+30*60*1000;
     let cor,texto;
@@ -8921,6 +8927,14 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">Cancelados</div><div class="stat-value" id="fp-card-cancelados" style="font-size:26px;color:var(--red)">—</div></div>
       <div class="stat-card"><div class="stat-label">Total KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
+      <div class="stat-card"><div class="stat-label">Coleta: Aceite → Loja</div><div class="stat-value" id="fp-card-t-loja" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-t-loja-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+      <div class="stat-card"><div class="stat-label">Coleta: Aceite → Coleta</div><div class="stat-value" id="fp-card-t-coleta" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-t-coleta-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+      <div class="stat-card"><div class="stat-label">Rota: Coleta → Entrega</div><div class="stat-value" id="fp-card-t-rota" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-t-rota-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+      <div class="stat-card"><div class="stat-label">Total: Aceite → Entrega</div><div class="stat-value" id="fp-card-t-total" style="font-size:22px;color:var(--accent)">—</div><div id="fp-card-t-total-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+      <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" id="fp-card-t-fin" style="font-size:22px;color:var(--green)">—</div></div>
+      <div class="stat-card"><div class="stat-label">% Cancelamento</div><div class="stat-value" id="fp-card-t-canc" style="font-size:22px;color:var(--red)">—</div><div id="fp-card-t-canc-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+    </div>
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
       <div class="stat-card"><div class="stat-label">Despesas</div><div class="stat-value" id="fp-card-desp" style="font-size:22px;color:var(--red)">—</div></div>
@@ -9065,6 +9079,26 @@ async function _buscarPedidosAdmin(){
   // Corte histórico: só pedidos ATRASADOS (qualquer faixa além de "0 a 30
   // min") de antes de DATA_CORTE_METRICAS somem da contagem — pedidos "no
   // prazo" (faixa 0) continuam contando desde sempre, são entregas reais.
+  // Tempos médios (2026-11-22): só finalizados, sobre o mesmo arr filtrado
+  // acima. Cada média usa só os pedidos com os dois horários e intervalo >= 0
+  // (re-aceite deixa chegou_local_em antes do aceito_em: fica de fora).
+  // Horários: aceito_em, chegou_local_em (chegou na loja), em_rota_em (coleta)
+  // = timestamp Brasília; chegou_destino_em = ver _parseChegouDestino.
+  {
+    const _med=(fnIni,fnFim)=>{const v=[];finalizados.forEach(p=>{const a=fnIni(p),b=fnFim(p);if(!a||!b)return;const m=(b-a)/60000;if(isFinite(m)&&m>=0)v.push(m);});return{n:v.length,m:v.length?v.reduce((s,x)=>s+x,0)/v.length:null};};
+    const _hU=k=>p=>p[k]?_parseUtc(p[k]):null,_hD=p=>p.chegou_destino_em?_parseChegouDestino(p.chegou_destino_em):null;
+    const _put=(id,r)=>{const e=document.getElementById(id),en=document.getElementById(id+'-n');if(e)e.textContent=r.m==null?'—':`${r.m.toFixed(1).replace('.',',')} min`;if(en)en.textContent=`${r.n} ${r.n===1?'pedido':'pedidos'}`;};
+    _put('fp-card-t-loja',_med(_hU('aceito_em'),_hU('chegou_local_em')));
+    _put('fp-card-t-coleta',_med(_hU('aceito_em'),_hU('em_rota_em')));
+    _put('fp-card-t-rota',_med(_hU('em_rota_em'),_hD));
+    _put('fp-card-t-total',_med(_hU('aceito_em'),_hD));
+    const _eFin=document.getElementById('fp-card-t-fin');if(_eFin)_eFin.textContent=finalizados.length;
+    // % Cancelamento = cancelados / todos, com o mesmo corte dos cards Todos e Cancelados
+    const _vis=arr.filter(_pedidoVisivelMetricas),_nCanc=_vis.filter(p=>getStatusKey(p)==='cancelado').length;
+    const _eC=document.getElementById('fp-card-t-canc'),_eCn=document.getElementById('fp-card-t-canc-n');
+    if(_eC)_eC.textContent=_vis.length?`${(_nCanc/_vis.length*100).toFixed(1).replace('.',',')}%`:'—';
+    if(_eCn)_eCn.textContent=`${_nCanc} de ${_vis.length}`;
+  }
   const _slaBars=document.getElementById('fp-sla-bars');
   if(_slaBars){
     const _comSla=finalizados.filter(p=>p.aceito_em&&p.chegou_destino_em);
@@ -9075,12 +9109,11 @@ async function _buscarPedidosAdmin(){
       {label:'Mais De 40 min',cor:'#ef4444',n:0},
     ];
     _comSla.forEach(p=>{
-      // _parseUtc (não new Date() puro) porque chegou_destino_em é
-      // timestamptz de verdade (vem com +00:00) mas aceito_em é timestamp
-      // sem fuso (hora local Brasília) — new Date() só dava o resultado
-      // certo por acidente, dependendo do fuso do navegador de quem abre
-      // o painel. _parseUtc trata os dois certo, não importa o fuso local.
-      const _min=(_parseUtc(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
+      // chegou_destino_em vem com um +00:00 falso (hora de Brasília gravada
+      // como UTC pelo app) — _parseChegouDestino; aceito_em é timestamp sem
+      // fuso (Brasília) — _parseUtc. Antes os dois iam por _parseUtc e o
+      // tempo dava ~-150 min, então tudo caía em "0 A 30 min".
+      const _min=(_parseChegouDestino(p.chegou_destino_em)-_parseUtc(p.aceito_em))/60000;
       const _idx=_min<=30?0:_min<=35?1:_min<=40?2:3;
       if(_idx>0&&p.created_at<DATA_CORTE_METRICAS)return; // atrasado + antes do corte: some da conta visual
       _faixas[_idx].n++;
