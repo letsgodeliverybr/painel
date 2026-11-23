@@ -5861,13 +5861,13 @@ function renderPedidosLista(){
   // "Agendado" no tooltip — antes o pedido agendado não entrava em nenhuma.
   const _SB_HEADER=[
     {key:'recebido',color:'#EF4444',label:'Em Preparo'},{key:'agendado',color:'#EF4444',label:'Agendado'},{key:'pronto',color:'#EC4899'},{key:'aceito',color:'#F59E0B'},
-    {key:'chegou_local',color:'#38BDF8'},{key:'em_rota',color:'#1A56DB'},
+    {key:'chegou_local',keys:['no_local','chegou_local','chegou_no_local'],color:'#38BDF8',label:'No Local'},{key:'em_rota',color:'#1A56DB'},
     {key:'chegou_destino',color:'#7C3AED'},{key:'retornando',color:'#10B981'},
   ];
   const bubblesEl=document.getElementById('sb-status-bubbles');
   if(bubblesEl){
     bubblesEl.innerHTML=_SB_HEADER.map(sb=>{
-      const n=allPedidos.filter(p=>getStatusKey(p)===sb.key).length;
+      const n=allPedidos.filter(p=>(sb.keys||[sb.key]).includes(getStatusKey(p))).length;
       return (n||_lojaEmRede())?`<span${sb.label?` title="${sb.label}"`:''} style="width:20px;height:20px;border-radius:50%;background:${sb.color};color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${n}</span>`:'';
     }).join('');
   }
@@ -5886,7 +5886,7 @@ function renderPedidosLista(){
     {key:'agendado',color:'#EF4444',label:'Agendado'},
     {key:'pronto',color:'#EC4899',label:'Pronto'},
     {key:'aceito',color:'#F59E0B',label:'Aceito'},
-    {key:'chegou_local',color:'#38BDF8',label:'Chegou No Local'},
+    {key:'chegou_local',keys:['no_local','chegou_local','chegou_no_local'],color:'#38BDF8',label:'No Local'},
     {key:'em_rota',color:'#1A56DB',label:'Em Rota'},
     {key:'chegou_destino',color:'#7C3AED',label:'Chegou No Destino'},
     {key:'retornando',color:'#10B981',label:'Retornando'},
@@ -5900,7 +5900,7 @@ function renderPedidosLista(){
   lista.innerHTML=Object.entries(grupos).map(([key,grupo])=>{
     const colapsado=_gruposColapsados.has(key);
     const bubbles=STATUS_BUBBLES.map(sb=>{
-      const n=grupo.pedidos.filter(p=>getStatusKey(p)===sb.key).length;
+      const n=grupo.pedidos.filter(p=>(sb.keys||[sb.key]).includes(getStatusKey(p))).length;
       return n?`<span class="sb-status-bubble" style="background:${sb.color}" title="${sb.label}">${n}</span>`:'';
     }).join('');
     const cards=grupo.pedidos.map(p=>{
