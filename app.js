@@ -8928,9 +8928,10 @@ async function renderPedidosPage(){
       <div class="stat-card"><div class="stat-label">Total KM</div><div class="stat-value" id="fp-card-km" style="font-size:22px;color:var(--text2)">—</div></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
-      <div class="stat-card"><div class="stat-label">Pronto → Entregador Na Loja</div><div class="stat-value" id="fp-card-p-loja" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-p-loja-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
-      <div class="stat-card"><div class="stat-label">Pronto → Em Rota</div><div class="stat-value" id="fp-card-p-rota" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-p-rota-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
-      <div class="stat-card"><div class="stat-label">Pronto → Chegada No Cliente</div><div class="stat-value" id="fp-card-p-dest" style="font-size:22px;color:var(--text)">—</div><div id="fp-card-p-dest-n" style="font-size:11px;color:var(--text3);margin-top:2px"></div></div>
+      <div class="stat-card"><div class="stat-label">Produção Da Loja</div><div class="stat-value" id="fp-card-p-prod" style="font-size:22px;color:var(--text)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pronto → Entregador Na Loja</div><div class="stat-value" id="fp-card-p-loja" style="font-size:22px;color:var(--text)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Rota</div><div class="stat-value" id="fp-card-p-trajeto" style="font-size:22px;color:var(--text)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pedido Finalizado: Pronto → Chegada No Cliente</div><div class="stat-value" id="fp-card-p-dest" style="font-size:22px;color:var(--text)">—</div></div>
     </div>
     ${currentPerfil==='adm'?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
       <div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="fp-card-fat" style="font-size:22px;color:var(--accent)">—</div></div>
@@ -9080,15 +9081,21 @@ async function _buscarPedidosAdmin(){
   // (data, rede, loja, entregador, nº). pronto_em, chegou_local_em e em_rota_em são
   // timestamp em hora de Brasília (_parseUtc); chegou_destino_em é o mesmo horário do
   // SLA, com a mesma correção de fuso (_parseChegouDestino). Sem pronto_em ou
-  // sem o outro horário, o pedido fica fora da média. Se o horário é ANTES do pronto
-  // (entregador já esperava na loja), conta 0 min (_TEMPO_ANTES_PRONTO='zero') ou
-  // fica fora (='fora'). O card mostra quantos foram assim.
+  // sem o outro horário, o pedido fica fora da média. Se o horário de fim é ANTES do
+  // de início (ex.: entregador já esperava na loja), conta 0 min
+  // (_TEMPO_ANTES_PRONTO='zero') ou fica fora (='fora'). Os cards só mostram o tempo.
   {
     const _TEMPO_ANTES_PRONTO='zero';
-    const _med=(k,parse=_parseUtc)=>{let n=0,soma=0,antes=0;finalizados.forEach(p=>{if(!p.pronto_em||!p[k])return;let m=(parse(p[k])-_parseUtc(p.pronto_em))/60000;if(!isFinite(m))return;if(m<0){antes++;if(_TEMPO_ANTES_PRONTO!=='zero')return;m=0;}n++;soma+=m;});return{n,antes,m:n?soma/n:null};};
-    const _put=(id,r)=>{const e=document.getElementById(id),en=document.getElementById(id+'-n');if(e)e.textContent=r.m==null?'—':`${r.m.toFixed(1).replace('.',',')} min`;if(en)en.textContent=`${r.n} ${r.n===1?'pedido':'pedidos'}`+(r.antes?` · ${r.antes} antes do pronto (${_TEMPO_ANTES_PRONTO==='zero'?'0 min':'fora'})`:'');};
+    const _med=(k,parse=_parseUtc,ini='pronto_em',lista=finalizados)=>{let n=0,soma=0,antes=0;lista.forEach(p=>{if(!p[ini]||!p[k])return;let m=(parse(p[k])-_parseUtc(p[ini]))/60000;if(!isFinite(m))return;if(m<0){antes++;if(_TEMPO_ANTES_PRONTO!=='zero')return;m=0;}n++;soma+=m;});return{n,antes,m:n?soma/n:null};};
+    const _put=(id,r)=>{const e=document.getElementById(id);if(e)e.textContent=r.m==null?'—':`${r.m.toFixed(1).replace('.',',')} min`;};
+    // Produção da loja (2026-11-22): recebido_em (entrada em "recebido"; sem ele, created_at)
+    // → pronto_em, ambos Brasília. Agendados do iFood (origem ifood + agendado_para) ficam
+    // fora: o iFood marca pronto perto da hora agendada. Prontos em menos de 1 min entram.
+    _put('fp-card-p-prod',_med('pronto_em',_parseUtc,'_rec',finalizados.filter(p=>!(p.origem==='ifood'&&p.agendado_para)).map(p=>({...p,_rec:p.recebido_em||p.created_at}))));
     _put('fp-card-p-loja',_med('chegou_local_em'));
-    _put('fp-card-p-rota',_med('em_rota_em'));
+    // Rota: em_rota_em (Brasília) → chegou_destino_em (fuso do SLA)
+    _put('fp-card-p-trajeto',_med('chegou_destino_em',_parseChegouDestino,'em_rota_em'));
+    // Pedido finalizado: pronto_em → chegou_destino_em (fuso do SLA)
     _put('fp-card-p-dest',_med('chegou_destino_em',_parseChegouDestino));
     // Card Cancelados: "N · X,X%" — cancelados / todos, com o mesmo corte dos cards Todos e Cancelados
     const _vis=arr.filter(_pedidoVisivelMetricas),_nCanc=_vis.filter(p=>getStatusKey(p)==='cancelado').length;
