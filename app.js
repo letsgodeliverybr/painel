@@ -5818,9 +5818,16 @@ async function atualizarTudo(){
   // das primeiras ~3h do dia, ex: criados 00h-03h de Brasília).
   const _hoje=_dataHojeBrasilia();
   const _ini=`${_hoje}T00:00:00`,_fim=`${_hoje}T23:59:59.999`;
-  const contadoresHoje=await db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=in.(finalizado,cancelado)${_lf}`);
-  const finalizadosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='finalizado').length;
-  const canceladosHoje=contadoresHoje.filter(p=>getStatusKey(p)==='cancelado').length;
+  // 2026-11-24: Finalizados Hoje conta pela data de FINALIZAÇÃO (finalizado_em,
+  // também timestamp sem fuso em hora de Brasília — string direta), a mesma
+  // data da fatura, do fechamento diário e do repasse: agendado criado em outro
+  // dia entra no dia em que terminou. Cancelados Hoje continua pela criação.
+  // Só exibição.
+  const [_finHoje,_cancHoje]=await Promise.all([
+    db('pedidos','GET',null,`?select=status,status_detalhado&finalizado_em=gte.${_ini}&finalizado_em=lte.${_fim}&status=eq.finalizado${_lf}`),
+    db('pedidos','GET',null,`?select=status,status_detalhado&created_at=gte.${_ini}&created_at=lte.${_fim}&status=eq.cancelado${_lf}`)]);
+  const finalizadosHoje=(Array.isArray(_finHoje)?_finHoje:[]).filter(p=>getStatusKey(p)==='finalizado').length;
+  const canceladosHoje=(Array.isArray(_cancHoje)?_cancHoje:[]).filter(p=>getStatusKey(p)==='cancelado').length;
   const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   setVal('ms-online',online);setVal('ms-pedidos',allPedidos.length);setVal('ms-preparo',emPreparo);
   setVal('ms-procurando',procurando);setVal('ms-rota',emRota);setVal('ms-finalizados',finalizadosHoje);setVal('ms-cancelados',canceladosHoje);
@@ -8914,6 +8921,7 @@ async function renderPedidosPage(){
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>${_lbl('Data Início')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-ini" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-ini" value="00:00" style="${_is};width:86px"/></div></div>
         <div>${_lbl('Data Fim')}<div style="display:flex;gap:4px"><input type="date" id="fp-data-fim" value="${hoje}" style="${_is}"/><input type="time" id="fp-hora-fim" value="23:59" style="${_is};width:86px"/></div></div>
+        <div>${_lbl('Filtrar Data Por')}<select id="fp-tipo-data" onchange="_buscarPedidosAdmin()" style="${_is}"><option value="finalizacao" selected>Finalização</option><option value="criacao">Criação</option></select></div>
         ${currentPerfil!=='loja'?`<div>${_lbl('REDE')}${_fbCampoHtml('fp-rede','Todas',`${_is};min-width:160px`)}</div>`:''}
         <div>${_lbl('LOJA')}${_fbCampoHtml('fp-loja','Todas',`${_is};min-width:180px`)}</div>
         <div>${_lbl('ENTREGADOR')}${_fbCampoHtml('fp-entregador','Todos',`${_is};min-width:180px`)}</div>
@@ -8985,14 +8993,22 @@ async function _buscarPedidosAdmin(){
   // (confirmado via information_schema) — compara direto, sem Date()/-03:00.
   // creditos_lojas.created_at é `timestamptz` de verdade (também confirmado)
   // — esse SIM precisa da conversão local→UTC, mantida como já estava.
-  if(dataIni){
-    qs+=`&created_at=gte.${dataIni}T${horaIni}:00`;
-    qsCreditos+=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;
+  // 2026-11-24: "Filtrar Data Por" (padrão Finalização). Finalização: pedido
+  // finalizado entra pelo finalizado_em (a data da fatura/fechamento/repasse);
+  // finalizado sem finalizado_em (casos antigos) e os demais (cancelados, em
+  // andamento) entram pela criação. Criação: tudo pelo created_at, como antes.
+  // Só muda quais pedidos aparecem; a busca de créditos da loja não muda.
+  const _porFin=(document.getElementById('fp-tipo-data')?.value||'finalizacao')!=='criacao';
+  const _de=dataIni?`${dataIni}T${horaIni}:00`:null,_ate=dataFim?`${dataFim}T${horaFim}:59`:null;
+  if(_porFin&&(_de||_ate)){
+    const _f=c=>[_de&&`${c}.gte.${_de}`,_ate&&`${c}.lte.${_ate}`].filter(Boolean).join(',');
+    qs+=`&or=(and(status.eq.finalizado,finalizado_em.not.is.null,${_f('finalizado_em')}),and(status.eq.finalizado,finalizado_em.is.null,${_f('created_at')}),and(status.neq.finalizado,${_f('created_at')}))`;
+  }else{
+    if(_de)qs+=`&created_at=gte.${_de}`;
+    if(_ate)qs+=`&created_at=lte.${_ate}`;
   }
-  if(dataFim){
-    qs+=`&created_at=lte.${dataFim}T${horaFim}:59`;
-    qsCreditos+=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;
-  }
+  if(dataIni)qsCreditos+=`&created_at=gte.${new Date(`${dataIni}T${horaIni}:00-03:00`).toISOString()}`;
+  if(dataFim)qsCreditos+=`&created_at=lte.${new Date(`${dataFim}T${horaFim}:59-03:00`).toISOString()}`;
   if(lojaId){const _lj=`&loja_id=eq.${lojaId}`;qs+=_lj;qsCreditos+=_lj;}
   else if(redeId){const _ids=(Array.isArray(_fpLojas)?_fpLojas:[]).filter(l=>l.rede_credito_id===redeId).map(l=>l.id);const _lj=`&loja_id=in.(${_ids.length?_ids.join(','):'00000000-0000-0000-0000-000000000000'})`;qs+=_lj;qsCreditos+=_lj;}
   // Contas a pagar: soma as contas 'pago' cuja competência (dia 1 do mês) caia
