@@ -9104,10 +9104,15 @@ async function _buscarPedidosAdmin(){
     const _TEMPO_ANTES_PRONTO='zero';
     const _med=(k,parse=_parseUtc,ini='pronto_em',lista=finalizados)=>{let n=0,soma=0,antes=0;lista.forEach(p=>{if(!p[ini]||!p[k])return;let m=(parse(p[k])-_parseUtc(p[ini]))/60000;if(!isFinite(m))return;if(m<0){antes++;if(_TEMPO_ANTES_PRONTO!=='zero')return;m=0;}n++;soma+=m;});return{n,antes,m:n?soma/n:null};};
     const _put=(id,r)=>{const e=document.getElementById(id);if(e)e.textContent=r.m==null?'—':`${r.m.toFixed(1).replace('.',',')} min`;};
-    // Produção da loja (2026-11-22): recebido_em (entrada em "recebido"; sem ele, created_at)
-    // → pronto_em, ambos Brasília. Agendados do iFood (origem ifood + agendado_para) ficam
-    // fora: o iFood marca pronto perto da hora agendada. Prontos em menos de 1 min entram.
-    _put('fp-card-p-prod',_med('pronto_em',_parseUtc,'_rec',finalizados.filter(p=>!(p.origem==='ifood'&&p.agendado_para)).map(p=>({...p,_rec:p.recebido_em||p.created_at}))));
+    // Produção da loja (2026-11-22; agendados 2026-11-24): recebido_em (entrada em
+    // "recebido"; sem ele, created_at) → pronto_em, ambos Brasília. Agendado (qualquer
+    // origem) marcado para até 60 min depois da criação conta normal; marcado para mais
+    // de 60 min depois fica FORA da média (o banco não grava quando o agendado foi
+    // liberado para a loja preparar). agendado_para é timestamptz e created_at é
+    // Brasília sem fuso: _parseUtc trata os dois. Prontos em menos de 1 min entram.
+    const _AGEND_PROD_MAX_MIN=60;
+    const _agendCurto=p=>!p.agendado_para||(_parseUtc(p.agendado_para)-_parseUtc(p.created_at))/60000<=_AGEND_PROD_MAX_MIN;
+    _put('fp-card-p-prod',_med('pronto_em',_parseUtc,'_rec',finalizados.filter(_agendCurto).map(p=>({...p,_rec:p.recebido_em||p.created_at}))));
     _put('fp-card-p-loja',_med('chegou_local_em'));
     // Rota: em_rota_em (Brasília) → chegou_destino_em (fuso do SLA)
     _put('fp-card-p-trajeto',_med('chegou_destino_em',_parseChegouDestino,'em_rota_em'));
