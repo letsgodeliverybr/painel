@@ -595,6 +595,11 @@ function _tickFaturaBanner(){
     el.style.display='flex';if(_fd.bloqueado)_chamarAtencaoFaturaBanner(el,true);return;
   }
   if(!_faturaAtualLoja){el.style.display='none';return;}
+  if(_lojaSemFaturaVencida()){
+    const t=document.getElementById('alerta-fatura-loja-titulo');if(t)t.textContent='🧾 Fatura Em Aberto. Clique Para Ver A Fatura.';
+    const fb=document.getElementById('alerta-fatura-loja-fechar');if(fb)fb.style.display='none';
+    el.style.display='flex';return;
+  }
   // Só o estado "fatura aberta" (diasAtraso<0, ainda não venceu) entra no
   // ciclo aparece/some (10min/1min) — "vence hoje" (diasAtraso===0) e
   // "vencida" (diasAtraso>=1) ficam fixos na tela até a fatura ser paga
@@ -3687,11 +3692,17 @@ function _abrirCriarEntregaTopbar(){
     setTimeout(()=>{const el=document.getElementById('cr-endereco');if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'nearest'});}},600);
   }
 }
+// Loja com fatura diária sem multa e juros (lojas.fatura_diaria_sem_encargos, 2026-11-26: Dona Franga e Varanda):
+// fatura em aberto nunca aparece como vencida para a loja — botão normal e só o aviso amarelo de fatura em aberto.
+function _lojaSemFaturaVencida(){
+  return currentPerfil==='loja'&&(allLojas||[]).find(l=>l.id===currentUser?.loja_id)?.fatura_diaria_sem_encargos===true;
+}
 function _atualizarBtnCriarEntrega(){
   if(currentPerfil!=='loja')return;
   const btn=document.getElementById('btn-criar-entrega');
   if(!btn)return;
   const _lojaBtn=allLojas.find(l=>l.id===currentUser?.loja_id);
+  const _vencidaBtn=_faturaVencidaLoja&&_lojaBtn?.fatura_diaria_sem_encargos!==true;
   const _tipoBtn=_lojaBtn?.tipo_cobranca||'faturamento';
   const insuficiente=_tipoBtn==='credito'&&(_saldoLojaAtual<=0||(_crLastTaxa>0&&_saldoLojaAtual<_crLastTaxa));
   // Fatura vencida só mostra o aviso visual (rótulo + cor de alerta) — não
@@ -3700,9 +3711,9 @@ function _atualizarBtnCriarEntrega(){
   // de "desabilitado" — cinza dava a entender que o botão estava
   // bloqueado mesmo continuando clicável; âmbar avisa sem parecer morto.
   btn.disabled=insuficiente;
-  btn.style.setProperty('background',insuficiente?'#6b7280':_faturaVencidaLoja?'#f59e0b':'#1A56DB','important');
+  btn.style.setProperty('background',insuficiente?'#6b7280':_vencidaBtn?'#f59e0b':'#1A56DB','important');
   btn.style.cursor=insuficiente?'not-allowed':'pointer';
-  btn.innerHTML=insuficiente?_icone('ban',16,'btn-ico')+'Saldo insuficiente':_faturaVencidaLoja?_icone('ban',16,'btn-ico')+'Fatura vencida':_icone('plus',16,'btn-ico')+'Criar Entrega';
+  btn.innerHTML=insuficiente?_icone('ban',16,'btn-ico')+'Saldo insuficiente':_vencidaBtn?_icone('ban',16,'btn-ico')+'Fatura vencida':_icone('plus',16,'btn-ico')+'Criar Entrega';
 }
 
 // ── RECARGA DE SALDO VIA PIX MANUAL (BR Code / Pix Copia e Cola) ──
@@ -5802,6 +5813,7 @@ async function atualizarTudo(){
   allMotoboys=await db('entregadores','GET',null,_qsMotoboys);
   await _carregarOfertasAguardando();
   allLojas=await db('lojas','GET',null,`?ativo=eq.true${_lojaFiltroId()}`);
+  if(currentPerfil==='loja')_atualizarBtnCriarEntrega();
   await _fdCarregar();
   if(!_faixasPagamento.length) _faixasPagamento=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_PAGAMENTO_ID}&order=km_ate.asc`);
   if(!_faixasCobranca.length) _faixasCobranca=await db('tabelas_preco_faixas','GET',null,`?tabela_id=eq.${TABELA_COBRANCA_ID}&order=km_ate.asc`);
