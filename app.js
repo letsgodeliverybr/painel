@@ -12680,7 +12680,7 @@ async function renderRankingPage(aba){
 
 async function _renderRankingLista(){
   const el=document.getElementById('ranking-content');if(!el)return;
-  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 Da Semana Atual Por Pontos. A Semana Fecha Domingo 23:59, O Prêmio É Calculado Na Terça E Creditado No Saldo Na Quarta (A Partir Da Semana De 30/11).</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>${currentPerfil==='adm'?'<div class="card" style="margin-top:16px"><div style="padding:14px 20px;font-weight:700">Semanas Fechadas</div><div id="ranking-semanas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>':''}`;
+  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 Da Semana Atual Por Pontos. A Semana Fecha Domingo 23:59, O Prêmio É Calculado Na Segunda E Creditado No Saldo Na Terça Às 09:00 (A Partir Da Semana De 30/11).</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>${currentPerfil==='adm'?'<div class="card" style="margin-top:16px"><div style="padding:14px 20px;font-weight:700">Semanas Fechadas</div><div id="ranking-semanas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>':''}`;
   if(currentPerfil==='adm')_renderRankingSemanas();
   const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&pontos_semana=gt.0&order=pontos_semana.desc&limit=10');
   const lista=document.getElementById('ranking-lista');if(!lista)return;
@@ -12695,7 +12695,7 @@ async function _renderRankingLista(){
   </tr>`).join('')}</tbody></table></div>`;
 }
 
-// Semanas fechadas do ranking (2026-11-26): fechamento domingo 23:59, cálculo terça, crédito quarta — tudo no banco
+// Semanas fechadas do ranking (2026-11-26): fechamento domingo 23:59, cálculo segunda 00:05, crédito terça 09:00 — tudo no banco
 // (ranking_fechar_semana / ranking_calcular_premios / ranking_creditar_premios). Aqui só lê as últimas 3 semanas.
 const _RK_STATUS={fechado:['Fechado','#64748b'],calculado:['Calculado','#f59e0b'],pago:['Creditado','#22c55e'],retido:['Retido','#ef4444'],sem_premio:['Sem Prêmio','#94a3b8']};
 async function _renderRankingSemanas(){
