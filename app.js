@@ -12680,7 +12680,8 @@ async function renderRankingPage(aba){
 
 async function _renderRankingLista(){
   const el=document.getElementById('ranking-content');if(!el)return;
-  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 Da Semana Atual Por Pontos — Só Informativo, Sem Pagamento Automático.</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>`;
+  el.innerHTML=`<div class="card"><div style="padding:16px 20px;font-size:12px;color:var(--text3)">Top 10 Da Semana Atual Por Pontos. A Semana Fecha Domingo 23:59, O Prêmio É Calculado Na Terça E Creditado No Saldo Na Quarta (A Partir Da Semana De 30/11).</div><div id="ranking-lista"><div style="padding:32px;text-align:center;color:var(--text3)">Carregando...</div></div></div>${currentPerfil==='adm'?'<div class="card" style="margin-top:16px"><div style="padding:14px 20px;font-weight:700">Semanas Fechadas</div><div id="ranking-semanas"><div style="padding:24px;text-align:center;color:var(--text3)">Carregando...</div></div></div>':''}`;
+  if(currentPerfil==='adm')_renderRankingSemanas();
   const entregadores=await db('entregadores','GET',null,'?select=id,nome,pontos_semana&pontos_semana=gt.0&order=pontos_semana.desc&limit=10');
   const lista=document.getElementById('ranking-lista');if(!lista)return;
   const arr=Array.isArray(entregadores)?entregadores:[];
@@ -12692,6 +12693,22 @@ async function _renderRankingLista(){
     <td style="font-weight:700;color:var(--accent)">${e.pontos_semana??0}</td>
     <td style="font-weight:700;color:#22c55e;white-space:nowrap">R$ ${(_RANKING_PREMIOS[i]||0).toFixed(2).replace('.',',')}</td>
   </tr>`).join('')}</tbody></table></div>`;
+}
+
+// Semanas fechadas do ranking (2026-11-26): fechamento domingo 23:59, cálculo terça, crédito quarta — tudo no banco
+// (ranking_fechar_semana / ranking_calcular_premios / ranking_creditar_premios). Aqui só lê as últimas 3 semanas.
+const _RK_STATUS={fechado:['Fechado','#64748b'],calculado:['Calculado','#f59e0b'],pago:['Creditado','#22c55e'],retido:['Retido','#ef4444'],sem_premio:['Sem Prêmio','#94a3b8']};
+async function _renderRankingSemanas(){
+  const box=document.getElementById('ranking-semanas');if(!box)return;
+  const rows=await db('ranking_semanas','GET',null,'?select=semana_inicio,semana_fim,nome,pontos,posicao,empate,premio,status,motivo,pago_em&or=(premio.gt.0,status.eq.retido,posicao.lte.10)&order=semana_inicio.desc,posicao.asc&limit=60');
+  const arr=Array.isArray(rows)?rows:[];
+  if(!arr.length){box.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3)">Nenhuma Semana Fechada Ainda</div>';return;}
+  const semanas=[...new Set(arr.map(r=>r.semana_inicio))].slice(0,3);
+  const dm=d=>String(d).slice(5,10).split('-').reverse().join('/');
+  box.innerHTML=semanas.map(sem=>{const L=arr.filter(r=>r.semana_inicio===sem);const tot=L.filter(r=>r.status!=='retido').reduce((a,r)=>a+(+r.premio||0),0);
+    return`<div style="padding:10px 20px;font-size:13px;font-weight:700;border-top:1px solid var(--border)">Semana ${dm(L[0].semana_inicio)} A ${dm(L[0].semana_fim)} · R$ ${tot.toFixed(2).replace('.',',')}</div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Posição</th><th>Entregador</th><th>Pontos</th><th>Prêmio</th><th>Situação</th></tr></thead><tbody>${L.map(r=>{const st=_RK_STATUS[r.status]||[r.status,'var(--text2)'];
+      return`<tr><td style="font-weight:800">${r.posicao?r.posicao+'º':'—'}${r.empate>1?' <span style="font-size:11px;color:var(--text3)">(empate)</span>':''}</td><td style="font-weight:600">${_escHtml(r.nome||'—')}</td><td>${Number(r.pontos||0).toLocaleString('pt-BR')}</td><td style="font-weight:700;color:#22c55e">R$ ${(+r.premio||0).toFixed(2).replace('.',',')}</td><td><span style="color:${st[1]};font-weight:700">${st[0]}</span>${r.motivo?`<div style="font-size:11px;color:var(--text3)">${_escHtml(r.motivo)}</div>`:''}</td></tr>`;}).join('')}</tbody></table></div>`;}).join('');
 }
 
 // ── SORTEIOS (admin) — Parte 2 do sorteio #CadaKmUmSonho (2026-10-12) ──
